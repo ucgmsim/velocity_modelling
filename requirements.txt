@@ -1,0 +1,4 @@
+numpy<2
+scipy
+shapely
+qcore @ git@github.com:ucgmsim/qcore.git
