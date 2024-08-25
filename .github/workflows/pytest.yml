@@ -1,0 +1,26 @@
+name: Pytest Check
+
+on: [pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+      - name: Run tests
+        run: |
+          pytest --cov=source_modelling --cov-report=json tests
+      - name: Test that module coverage is at least 95% for every module
+        run: "[[ -z $(jq '.files | to_entries[] | .value.summary.percent_covered | select(. < 95)' coverage.json) ]]"

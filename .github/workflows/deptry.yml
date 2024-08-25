@@ -1,6 +1,6 @@
 name: Deptry Dependency Check
 
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
   test:
@@ -10,7 +10,7 @@ jobs:
       # Setup the minimum required python distribution
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
       # Install deptry
       - run: pip install deptry
       # Run deptry to check that all dependencies are present.
