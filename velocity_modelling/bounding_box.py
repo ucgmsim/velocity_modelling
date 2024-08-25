@@ -44,6 +44,58 @@ class BoundingBox:
     corners: np.ndarray
 
     @classmethod
+    def from_centroid_bearing_extents(
+        cls, centroid: np.ndarray, bearing: float, extent_x: float, extent_y: float
+    ) -> Self:
+        """Create a bounding box from a centroid, bearing, and size.
+
+        The x and y-directions are determined relative to the bearing,
+
+                 N      y-direction = bearing
+                 │    /
+                 │   /
+                 │  /
+                 │ /
+                 │/
+                 ■
+                  \
+                   \
+                    \
+                     \ x-direction = bearing + 90
+
+        Parameters
+        ----------
+        centroid : np.ndarray
+            The centre of the bounding box (lat, lon).
+        bearing : float
+            A bearing from north for the bounding box, in degrees.
+        extent_x : float
+            The length along the x-direction of the bounding box, in
+            kilometres.
+        extent_y : float
+            The length along the y-direction of the bounding box, in
+            kilometres.
+
+        Returns
+        -------
+        Self
+            The bounding box with the given centre, bearing, and
+            length along the x and y-directions.
+        """
+        bearing = -np.radians(bearing)
+        corner_offset = (
+            (
+                np.array(
+                    [[-1 / 2, -1 / 2], [1 / 2, -1 / 2], [1 / 2, 1 / 2], [-1 / 2, 1 / 2]]
+                ).T
+                @ geo.rotation_matrix(bearing)
+            )
+            * np.array([extent_x, extent_y])
+            * 1000
+        )
+        return cls(centroid + corner_offset)
+
+    @classmethod
     def from_wgs84_coordinates(cls, corner_coordinates: np.ndarray) -> Self:
         """Construct a bounding box from a list of corners.
 
