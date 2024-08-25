@@ -45,26 +45,39 @@ class BoundingBox:
 
     @classmethod
     def from_wgs84_coordinates(cls, corner_coordinates: np.ndarray) -> Self:
+        """Construct a bounding box from a list of corners.
+
+        Parameters
+        ----------
+        corner_coordinates : np.ndarray
+            The corners in (lat, lon) format.
+
+        Returns
+        -------
+        Self
+            The bounding box represented by these corners.
+        """
+
         return cls(coordinates.wgs_depth_to_nztm(corner_coordinates))
 
     @property
     def origin(self) -> np.ndarray:
-        """Returns the origin of the bounding box."""
+        """np.ndarray: The origin of the bounding box."""
         return coordinates.nztm_to_wgs_depth(np.mean(self.corners, axis=0))
 
     @property
     def extent_x(self) -> float:
-        """Returns the extent along the x-axis of the bounding box (in km)."""
+        """float: The extent along the x-axis of the bounding box (in km)."""
         return np.linalg.norm(self.corners[2] - self.corners[1]) / 1000
 
     @property
     def extent_y(self) -> float:
-        """Returns the extent along the y-axis of the bounding box (in km)."""
+        """float: The extent along the y-axis of the bounding box (in km)."""
         return np.linalg.norm(self.corners[1] - self.corners[0]) / 1000
 
     @property
     def bearing(self) -> float:
-        """Returns the bearing of the bounding box."""
+        """float: The bearing of the bounding box."""
         north_direction = np.array([1, 0, 0])
         up_direction = np.array([0, 0, 1])
         horizontal_direction = np.append(self.corners[1] - self.corners[0], 0)
@@ -74,12 +87,12 @@ class BoundingBox:
 
     @property
     def area(self) -> float:
-        """Returns the area of the bounding box."""
+        """float: The area of the bounding box."""
         return self.extent_x * self.extent_y
 
     @property
     def polygon(self) -> Polygon:
-        """Returns a shapely geometry for the bounding box."""
+        """Polygon: The shapely geometry for the bounding box."""
         return Polygon(np.append(self.corners, np.atleast_2d(self.corners[0]), axis=0))
 
     def contains(self, points: np.ndarray) -> np.ndarray:
