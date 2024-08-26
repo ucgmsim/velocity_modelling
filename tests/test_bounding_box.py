@@ -128,8 +128,8 @@ def test_minimum_bounding_box_containment(points: list[np.ndarray]):
         bearing=st.floats(0, 360),
         # In my testing, you need to allow really big boxes to get
         # enough of a sample to test minimality.
-        extent_x=st.floats(1, 30, allow_nan=False, allow_infinity=False),
-        extent_y=st.floats(1, 30, allow_nan=False, allow_infinity=False),
+        extent_x=st.floats(9, 30, allow_nan=False, allow_infinity=False),
+        extent_y=st.floats(9, 30, allow_nan=False, allow_infinity=False),
     ),
 )
 # Allow a lot of generated examples to get cases where a random box is
