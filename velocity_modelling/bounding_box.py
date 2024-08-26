@@ -252,12 +252,12 @@ def minimum_area_bounding_box(points: npt.NDArray[np.float64]) -> BoundingBox:
     aa_box = axis_aligned_bounding_box(convex_hull)
     if aa_box.area < minimum_bounding_box.area:
         return aa_box
+
+    # rotating by -minimum_rotation_angle we undo the rotation applied
+    # to obtain bounding_boxes.
     rotation_matrix = geo.rotation_matrix(-minimum_rotation_angle).T
-    return BoundingBox(
-        # rotating by -minimum_rotation_angle we undo the rotation applied
-        # to obtain bounding_boxes.
-        minimum_bounding_box.bounds @ rotation_matrix
-    )
+    corners = minimum_bounding_box.bounds @ rotation_matrix
+    return BoundingBox(corners)
 
 
 def minimum_area_bounding_box_for_polygons_masked(
