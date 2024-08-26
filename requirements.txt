@@ -2,3 +2,6 @@ numpy<2
 scipy
 shapely
 qcore @ https://github.com/ucgmsim/qcore.git
+hypothesis[numpy]
+pytest
+pytest-cov

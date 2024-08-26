@@ -25,8 +25,9 @@ from typing import Self
 import numpy as np
 import scipy as sp
 import shapely
-from qcore import coordinates, geo, point_in_polygon
 from shapely import Polygon
+
+from qcore import coordinates, geo, point_in_polygon
 
 
 @dataclasses.dataclass
@@ -41,7 +42,12 @@ class BoundingBox:
             (minimum x, minimum y).
     """
 
-    corners: np.ndarray
+    bounds: np.ndarray
+
+    @property
+    def corners(self) -> np.ndarray:
+        """np.ndarray: the corners of the bounding box in (lat, lon) format."""
+        return coordinates.nztm_to_wgs_depth(self.bounds)
 
     @classmethod
     def from_centroid_bearing_extents(
@@ -58,10 +64,10 @@ class BoundingBox:
                  │ /
                  │/
                  ■
-                  \
-                   \
-                    \
-                     \ x-direction = bearing + 90
+                  ╲
+                   ╲
+                    ╲
+                     ╲ x-direction = bearing + 90
 
         Parameters
         ----------
@@ -82,18 +88,14 @@ class BoundingBox:
             The bounding box with the given centre, bearing, and
             length along the x and y-directions.
         """
-        bearing = -np.radians(bearing)
         corner_offset = (
-            (
-                np.array(
-                    [[-1 / 2, -1 / 2], [1 / 2, -1 / 2], [1 / 2, 1 / 2], [-1 / 2, 1 / 2]]
-                ).T
-                @ geo.rotation_matrix(bearing)
+            np.array(
+                [[-1 / 2, -1 / 2], [1 / 2, -1 / 2], [1 / 2, 1 / 2], [-1 / 2, 1 / 2]]
             )
             * np.array([extent_x, extent_y])
             * 1000
-        )
-        return cls(centroid + corner_offset)
+        ) @ geo.rotation_matrix(-np.radians(bearing))
+        return cls(coordinates.wgs_depth_to_nztm(centroid) + corner_offset)
 
     @classmethod
     def from_wgs84_coordinates(cls, corner_coordinates: np.ndarray) -> Self:
@@ -115,24 +117,24 @@ class BoundingBox:
     @property
     def origin(self) -> np.ndarray:
         """np.ndarray: The origin of the bounding box."""
-        return coordinates.nztm_to_wgs_depth(np.mean(self.corners, axis=0))
+        return coordinates.nztm_to_wgs_depth(np.mean(self.bounds, axis=0))
 
     @property
     def extent_x(self) -> float:
         """float: The extent along the x-axis of the bounding box (in km)."""
-        return np.linalg.norm(self.corners[2] - self.corners[1]) / 1000
+        return np.linalg.norm(self.bounds[1] - self.bounds[0]) / 1000
 
     @property
     def extent_y(self) -> float:
         """float: The extent along the y-axis of the bounding box (in km)."""
-        return np.linalg.norm(self.corners[1] - self.corners[0]) / 1000
+        return np.linalg.norm(self.bounds[2] - self.bounds[1]) / 1000
 
     @property
     def bearing(self) -> float:
         """float: The bearing of the bounding box."""
         north_direction = np.array([1, 0, 0])
         up_direction = np.array([0, 0, 1])
-        horizontal_direction = np.append(self.corners[1] - self.corners[0], 0)
+        horizontal_direction = np.append(self.bounds[1] - self.bounds[0], 0)
         return geo.oriented_bearing_wrt_normal(
             north_direction, horizontal_direction, up_direction
         )
@@ -145,7 +147,7 @@ class BoundingBox:
     @property
     def polygon(self) -> Polygon:
         """Polygon: The shapely geometry for the bounding box."""
-        return Polygon(np.append(self.corners, np.atleast_2d(self.corners[0]), axis=0))
+        return Polygon(np.append(self.bounds, np.atleast_2d(self.bounds[0]), axis=0))
 
     def contains(self, points: np.ndarray) -> np.ndarray:
         """Filter a list of points by whether they are contained in the bounding box.
@@ -158,11 +160,19 @@ class BoundingBox:
         Returns
         -------
         np.ndarray
-            The points that lie within the bounding box
+
+        The points that lie within the bounding box
         """
-        return point_in_polygon.is_inside_postgis_parallel(
-            coordinates.wgs_depth_to_nztm(points),
-            self.corners,
+
+        x_direction = self.bounds[1] - self.bounds[0]
+        y_direction = self.bounds[-1] - self.bounds[0]
+        offset = coordinates.wgs_depth_to_nztm(points) - self.bounds[0]
+        local_coordinates, _, _, _ = np.linalg.lstsq(
+            np.array([x_direction, y_direction]).T, offset.T, rcond=None
+        )
+        return np.all(
+            ((local_coordinates > 0) | np.isclose(local_coordinates, 0, atol=1e-6))
+            & ((local_coordinates < 1) | np.isclose(local_coordinates, 1, atol=1e-6))
         )
 
 
@@ -196,6 +206,7 @@ def minimum_area_bounding_box(points: np.ndarray) -> BoundingBox:
     BoundingBox
         The minimum area bounding box.
     """
+    points = coordinates.wgs_depth_to_nztm(points)
     # This is a somewhat brute-force method to obtain the minimum-area bounding
     # box of a set of points, where the bounding box is not axis-aligned and is
     # instead allowed to be rotated. The idea is to reduce the problem to the
@@ -227,10 +238,15 @@ def minimum_area_bounding_box(points: np.ndarray) -> BoundingBox:
     minimum_rotation_angle, minimum_bounding_box = min(
         zip(rotation_angles, bounding_boxes), key=lambda rot_box: rot_box[1].area
     )
+    # axis-aligned bounding is not always included in the above
+    # search, so we should check against this too!
+    aa_box = axis_aligned_bounding_box(convex_hull)
+    if aa_box.area < minimum_bounding_box.area:
+        return aa_box
     return BoundingBox(
         # rotating by -minimum_rotation_angle we undo the rotation applied
         # to obtain bounding_boxes.
-        minimum_bounding_box.corners @ geo.rotation_matrix(-minimum_rotation_angle).T
+        minimum_bounding_box.bounds @ geo.rotation_matrix(-minimum_rotation_angle).T
     )
 
 

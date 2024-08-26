@@ -13,7 +13,7 @@ requires-python = ">=3.9"
 dynamic = ["version", "dependencies"]
 
 [tool.setuptools.package-dir]
-source_modelling = "velocity_modelling"
+velocity_modelling = "velocity_modelling"
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
