@@ -6,16 +6,19 @@ This module provides classes and functions for working with bounding boxes in
 and computing various properties such as area and bearing. The bounding box
 dimensions are in metres except where otherwise mentioned.
 
-Classes:
+Classes
+-------
     - BoundingBox: Represents a 2D bounding box with properties and methods for calculations.
 
-Functions:
+Functions
+---------
     - axis_aligned_bounding_box: Returns an axis-aligned bounding box containing points.
     - rotation_matrix: Returns the 2D rotation matrix for a given angle.
     - minimum_area_bounding_box: Returns the smallest rectangle bounding points.
     - minimum_area_bounding_box_for_polygons_masked: Returns a bounding box around masked polygons.
 
-References:
+References
+----------
     - BoundingBox wiki page: https://github.com/ucgmsim/qcore/wiki/BoundingBox
 """
 
@@ -23,11 +26,12 @@ import dataclasses
 from typing import Self
 
 import numpy as np
+import numpy.typing as npt
 import scipy as sp
 import shapely
 from shapely import Polygon
 
-from qcore import coordinates, geo, point_in_polygon
+from qcore import coordinates, geo
 
 
 @dataclasses.dataclass
@@ -42,7 +46,7 @@ class BoundingBox:
             (minimum x, minimum y).
     """
 
-    bounds: np.ndarray
+    bounds: npt.NDArray[np.float64]
 
     @property
     def corners(self) -> np.ndarray:
@@ -51,7 +55,11 @@ class BoundingBox:
 
     @classmethod
     def from_centroid_bearing_extents(
-        cls, centroid: np.ndarray, bearing: float, extent_x: float, extent_y: float
+        cls,
+        centroid: npt.ArrayLike,
+        bearing: float,
+        extent_x: float,
+        extent_y: float,
     ) -> Self:
         """Create a bounding box from a centroid, bearing, and size.
 
@@ -88,6 +96,7 @@ class BoundingBox:
             The bounding box with the given centre, bearing, and
             length along the x and y-directions.
         """
+        centroid = np.asarray(centroid)
         corner_offset = (
             np.array(
                 [[-1 / 2, -1 / 2], [1 / 2, -1 / 2], [1 / 2, 1 / 2], [-1 / 2, 1 / 2]]
@@ -98,7 +107,7 @@ class BoundingBox:
         return cls(coordinates.wgs_depth_to_nztm(centroid) + corner_offset)
 
     @classmethod
-    def from_wgs84_coordinates(cls, corner_coordinates: np.ndarray) -> Self:
+    def from_wgs84_coordinates(cls, corner_coordinates: npt.ArrayLike) -> Self:
         """Construct a bounding box from a list of corners.
 
         Parameters
@@ -111,26 +120,25 @@ class BoundingBox:
         Self
             The bounding box represented by these corners.
         """
-
-        return cls(coordinates.wgs_depth_to_nztm(corner_coordinates))
+        return cls(np.asarray(coordinates.wgs_depth_to_nztm(corner_coordinates)))
 
     @property
-    def origin(self) -> np.ndarray:
+    def origin(self) -> npt.NDArray[np.float64]:
         """np.ndarray: The origin of the bounding box."""
         return coordinates.nztm_to_wgs_depth(np.mean(self.bounds, axis=0))
 
     @property
-    def extent_x(self) -> float:
+    def extent_x(self) -> np.float64:
         """float: The extent along the x-axis of the bounding box (in km)."""
         return np.linalg.norm(self.bounds[1] - self.bounds[0]) / 1000
 
     @property
-    def extent_y(self) -> float:
+    def extent_y(self) -> np.float64:
         """float: The extent along the y-axis of the bounding box (in km)."""
         return np.linalg.norm(self.bounds[2] - self.bounds[1]) / 1000
 
     @property
-    def bearing(self) -> float:
+    def bearing(self) -> np.float64:
         """float: The bearing of the bounding box."""
         north_direction = np.array([1, 0, 0])
         up_direction = np.array([0, 0, 1])
@@ -140,7 +148,7 @@ class BoundingBox:
         )
 
     @property
-    def area(self) -> float:
+    def area(self) -> np.float64:
         """float: The area of the bounding box."""
         return self.extent_x * self.extent_y
 
@@ -149,7 +157,7 @@ class BoundingBox:
         """Polygon: The shapely geometry for the bounding box."""
         return Polygon(np.append(self.bounds, np.atleast_2d(self.bounds[0]), axis=0))
 
-    def contains(self, points: np.ndarray) -> np.ndarray:
+    def contains(self, points: npt.ArrayLike) -> bool | npt.NDArray[np.bool_]:
         """Filter a list of points by whether they are contained in the bounding box.
 
         Parameters
@@ -159,11 +167,10 @@ class BoundingBox:
 
         Returns
         -------
-        np.ndarray
-
-        The points that lie within the bounding box
+        bool or array of bools
+            A boolean mask of the points in the bounding box.
         """
-
+        points = np.asarray(points)
         x_direction = self.bounds[1] - self.bounds[0]
         y_direction = self.bounds[-1] - self.bounds[0]
         offset = coordinates.wgs_depth_to_nztm(points) - self.bounds[0]
@@ -172,19 +179,21 @@ class BoundingBox:
         )
         return np.all(
             ((local_coordinates > 0) | np.isclose(local_coordinates, 0, atol=1e-6))
-            & ((local_coordinates < 1) | np.isclose(local_coordinates, 1, atol=1e-6))
+            & ((local_coordinates < 1) | np.isclose(local_coordinates, 1, atol=1e-6)),
+            axis=0,
         )
 
 
-def axis_aligned_bounding_box(points: np.ndarray) -> BoundingBox:
-    """Returns an axis-aligned bounding box containing points.
+def axis_aligned_bounding_box(points: npt.NDArray[np.float64]) -> BoundingBox:
+    """Find the axis-aligned bounding box containing points.
 
     Parameters
     ----------
     points : np.ndarray
         The points to bound.
 
-    Returns:
+    Returns
+    -------
         BoundingBox: The axis-aligned bounding box.
     """
     min_x, min_y = np.min(points, axis=0)
@@ -193,8 +202,8 @@ def axis_aligned_bounding_box(points: np.ndarray) -> BoundingBox:
     return BoundingBox(corners)
 
 
-def minimum_area_bounding_box(points: np.ndarray) -> BoundingBox:
-    """Returns the smallest rectangle bounding points. The rectangle may be rotated.
+def minimum_area_bounding_box(points: npt.NDArray[np.float64]) -> BoundingBox:
+    """Find the smallest rectangle bounding points. The rectangle may be rotated.
 
     Parameters
     ----------
@@ -253,9 +262,7 @@ def minimum_area_bounding_box(points: np.ndarray) -> BoundingBox:
 def minimum_area_bounding_box_for_polygons_masked(
     must_include: list[Polygon], may_include: list[Polygon], mask: Polygon
 ) -> BoundingBox:
-    """
-    Return the minimum area bounding box for a list of polygons masked by
-    another polygon.
+    """Find a minimum area bounding box for the points must_include ∪ (may_include ∩ mask).
 
     Parameters
     ----------

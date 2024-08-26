@@ -106,7 +106,7 @@ def test_minimum_bounding_box_containment(points: list[np.ndarray]):
         == 3
     )
     box = bounding_box.minimum_area_bounding_box(points)
-    assert box.contains(points)
+    assert box.contains(points).all()
 
 
 # Slower test!
@@ -153,7 +153,7 @@ def test_minimum_bounding_box_minimality(
         coordinates.wgs_depth_to_nztm(points)
     )
 
-    assume(dummy_bounding_box.contains(points))
+    assume(dummy_bounding_box.contains(points).all())
     assert box.area < aa_box.area or np.isclose(aa_box.area, box.area)
     assert box.area < dummy_bounding_box.area or np.isclose(
         box.area, dummy_bounding_box.area
