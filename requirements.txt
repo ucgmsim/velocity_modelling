@@ -8,4 +8,4 @@ qcore @ git+https://github.com/ucgmsim/qcore.git
 scipy
 shapely
 typer
-workflow @ git+https://github.com/ucgmsim/workflow
+
