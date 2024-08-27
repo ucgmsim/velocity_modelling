@@ -215,7 +215,6 @@ def minimum_area_bounding_box(points: npt.NDArray[np.float64]) -> BoundingBox:
     BoundingBox
         The minimum area bounding box.
     """
-    points = coordinates.wgs_depth_to_nztm(points)
     # This is a somewhat brute-force method to obtain the minimum-area bounding
     # box of a set of points, where the bounding box is not axis-aligned and is
     # instead allowed to be rotated. The idea is to reduce the problem to the

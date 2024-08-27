@@ -1,6 +1,7 @@
 from typing import Optional
 
 import numpy as np
+import shapely
 from hypothesis import HealthCheck, assume, given, seed, settings
 from hypothesis import strategies as st
 from hypothesis.extra import numpy as nst
@@ -105,7 +106,7 @@ def test_minimum_bounding_box_containment(points: list[np.ndarray]):
         )
         == 3
     )
-    box = bounding_box.minimum_area_bounding_box(points)
+    box = bounding_box.minimum_area_bounding_box(coordinates.wgs_depth_to_nztm(points))
     assert box.contains(points).all()
 
 
@@ -148,7 +149,7 @@ def test_minimum_bounding_box_minimality(
         == 3
     )
 
-    box = bounding_box.minimum_area_bounding_box(points)
+    box = bounding_box.minimum_area_bounding_box(coordinates.wgs_depth_to_nztm(points))
     aa_box = bounding_box.axis_aligned_bounding_box(
         coordinates.wgs_depth_to_nztm(points)
     )
@@ -158,3 +159,69 @@ def test_minimum_bounding_box_minimality(
     assert box.area < dummy_bounding_box.area or np.isclose(
         box.area, dummy_bounding_box.area
     )
+
+
+def test_masked_bounding_box():
+    r"""Check that the masked bounding box works in a simple test.
+
+    We construct a scenario with three overlapping circles
+
+     must include    mask     may include
+         -------   -------     -------
+       -/...... --/       \---/       \--
+      /....... /..\        /*\           \
+     /......../....\      /***\           \
+     |........|....|      |***|           |
+     \........\..../      \***/           /
+      \........\../        \*/           /
+       -\.......--\       /---\       /--
+         -------   -------     -------
+           -1500      0          +1500
+        <------------ x ------------->
+    The bounding box should include everything inside the first
+    circle, but only the intersection of mask and the third circle.
+
+    """
+    centre = coordinates.wgs_depth_to_nztm(np.array([-43, 172]))
+    must_include_points = shapely.buffer(
+        shapely.Point(centre), 1000
+    )  # 1km circle from centre
+    mask = shapely.buffer(shapely.Point(centre + np.array([1500, 0])), 1000)
+    may_include_points = shapely.buffer(
+        shapely.Point(centre + np.array([3000, 0])), 1000
+    )
+    box = bounding_box.minimum_area_bounding_box_for_polygons_masked(
+        [must_include_points], [may_include_points], mask
+    )
+    theta = np.linspace(0, 2 * np.pi)
+    r = np.linspace(0, 1)
+    R, T = np.meshgrid(theta, r)
+    circle_coordinates = np.vstack([R.ravel(), T.ravel()])
+
+    circle_points = circle_coordinates[1] * np.vstack(
+        (np.cos(circle_coordinates[0]), np.sin(circle_coordinates[0]))
+    )
+
+    # There are some issues with the circular approximation used by
+    # shapely, so it will not contain all points right at the edge.
+    test_must_include_points = centre + 995 * circle_points.T
+    test_may_include_points = centre + np.array([3000, 0]) + 1000 * circle_points.T
+
+    test_may_include_points_mask = np.array(
+        [mask.contains(shapely.Point(p)) for p in test_may_include_points]
+    )
+    test_may_include_has_points = test_may_include_points[test_may_include_points_mask]
+    test_not_include_points = test_may_include_points[~test_may_include_points_mask]
+
+    # box contains all the points in the must include circle
+    assert box.contains(coordinates.nztm_to_wgs_depth(test_must_include_points)).all()
+    # box contains all points in may include also in the mask
+    assert box.contains(
+        coordinates.nztm_to_wgs_depth(test_may_include_has_points)
+    ).all()
+    # Can't assert that it does not contain *any* of the points in the
+    # rest of the may include circle, but it is definitely wrong to
+    # contain all of them
+    assert not box.contains(
+        coordinates.nztm_to_wgs_depth(test_not_include_points)
+    ).all()
