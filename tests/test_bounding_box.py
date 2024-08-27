@@ -12,6 +12,22 @@ from velocity_modelling.bounding_box import BoundingBox
 
 
 def coordinate(lat: float, lon: float, depth: Optional[float] = None) -> np.ndarray:
+    """Create a coordinate array.
+
+    Parameters
+    ----------
+    lat : float
+        The latitude of the coordinate
+    lon : float
+        The longitude of the coordinate.
+    depth : Optional[float]
+        The optional depth of the coordinate.
+
+    Returns
+    -------
+    np.ndarray
+        An array of [lat, lon, depth].
+    """
     if depth is not None:
         return np.array([lat, lon, depth])
     return np.array([lat, lon])
@@ -20,12 +36,42 @@ def coordinate(lat: float, lon: float, depth: Optional[float] = None) -> np.ndar
 def coordinate_hashable(
     lat: float, lon: float, depth: Optional[float] = None
 ) -> tuple[float, ...]:
+    """Create a hashable coordinate tuple.
+
+    Parameters
+    ----------
+    lat : float
+        The latitude of the coordinate
+    lon : float
+        The longitude of the coordinate.
+    depth : Optional[float]
+        The optional depth of the coordinate.
+
+    Returns
+    -------
+    tuple[float, ...]
+        A tuple (lat, lon, depth). The coordinates are rounded to 5dp
+        encouage random sampling to generate points farther apart.
+
+    """
     if depth is not None:
         return (np.round(lat, 5), np.round(lon, 5), np.round(depth, 5))
     return (np.round(lat, 5), np.round(lon, 5))
 
 
 def valid_coordinates(point_coordinates: np.ndarray) -> bool:
+    """Test if coordinates are valid (i.e. in the bounds for NZTM).
+
+    Parameters
+    ----------
+    point_coordinates : np.ndarray
+        The coordinates to check.
+
+    Returns
+    -------
+    bool
+        True if the coordinates are in bounds for NZTM.
+    """
     try:
         return np.all(np.isfinite(coordinates.wgs_depth_to_nztm(point_coordinates)))
     except ValueError:
@@ -141,6 +187,17 @@ def test_minimum_bounding_box_containment(points: list[np.ndarray]):
 def test_minimum_bounding_box_minimality(
     points: list[np.ndarray], dummy_bounding_box: BoundingBox
 ):
+    """Check that the minimum box is minimal in area.
+
+    This test heuristically evaluates the minimality of the bounding box by:
+
+    1. Generating a random set of points in a small area.
+    2. Generating a random bounding box
+    3. Finding the minimum area bounding box via minimum_area_bounding_box
+    4. Confirming that the area of this box is smaller than:
+       - The axis-aligned minimum area bounding box of these points, and
+       - The randomly sampled bounding box.
+    """
     points = np.array(points)
     assume(
         np.linalg.matrix_rank(
