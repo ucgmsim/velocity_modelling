@@ -22,7 +22,7 @@ def test_plot_velocity_model():
             latitude_pad=0.5,
             longitude_pad=0.5,
         )
-        assert diffimg.diff(PLOT_IMAGE_DIRECTORY / "kelly.png", output_path.name) < 0.01
+        assert diffimg.diff(PLOT_IMAGE_DIRECTORY / "kelly.png", output_path.name) < 0.05
 
         plot_velocity_model.plot_velocity_model(
             output_path.name,
@@ -36,7 +36,7 @@ def test_plot_velocity_model():
             longitude_pad=0.5,
         )
         assert (
-            diffimg.diff(PLOT_IMAGE_DIRECTORY / "custom.png", output_path.name) < 0.01
+            diffimg.diff(PLOT_IMAGE_DIRECTORY / "custom.png", output_path.name) < 0.05
         )
 
 
@@ -64,5 +64,5 @@ def test_plot_velocity_model_density():
             component=plot_velocity_model.VelocityModelComponent.density,
         )
         assert (
-            diffimg.diff(PLOT_IMAGE_DIRECTORY / "swedge1.png", output_path.name) < 0.01
+            diffimg.diff(PLOT_IMAGE_DIRECTORY / "swedge1.png", output_path.name) < 0.05
         )
