@@ -77,3 +77,20 @@ plot-velocity-model --centre-lon 172 --centre-lat -43 --extent-x 100 --extent-y 
 The above command would produce an output like:
 
 ![](images/custom.png)
+
+# I Want to Plot the Velocity Mode Contents over the Domain
+
+Regardless of the specification you use for the velocity model, you
+can additionally plot the velocity model contents over the domain with
+the `--velocity-model-ffp` argument. You should supply the directory
+of the velocity model, and then you can specify the velocity model
+component (density, S-wave, P-wave) to swap what you are plotting. You
+can tweak the z-slice to plot and the transparency of the plot as
+well.
+
+
+```bash
+plot-velocity-model --title "Swedge1: Density Plot" --vm-params-ffp vm_params.yaml --velocity-model-ffp velocity_model_dir/ --component density output.png
+```
+
+![](images/swedge1.png)
