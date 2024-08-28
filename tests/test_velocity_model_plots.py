@@ -21,18 +21,6 @@ SWEDGE_RHO3D_FILE_LINK = "https://www.dropbox.com/scl/fi/y8qf8zjq4zf9yeejsopya/r
 def test_plot_velocity_model():
     """Check that the plot-velocity-model script produces the same output as the wiki still."""
     with tempfile.NamedTemporaryFile(suffix=".png") as output_path:
-        # TODO: uncomment when the new realisation format is ready.
-        # plot_velocity_model.plot_velocity_model(
-        #     output_path.name,
-        #     realisation_ffp=INPUT_FFP / "rupture_1.json",
-        #     title="Rupture 1",
-        #     latitude_pad=0.5,
-        #     longitude_pad=0.5,
-        # )
-        # assert md5sum(PLOT_IMAGE_DIRECTORY / "rupture_1.png") == md5sum(
-        #     output_path.name
-        # )
-
         plot_velocity_model.plot_velocity_model(
             output_path.name,
             vm_params_ffp=INPUT_FFP / "Kelly.yaml",

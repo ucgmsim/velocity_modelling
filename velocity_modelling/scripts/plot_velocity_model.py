@@ -31,10 +31,6 @@ def plot_velocity_model(
     vm_params_ffp: Annotated[
         Optional[Path], typer.Option(help="Path to VM params YAML", dir_okay=False)
     ] = None,
-    realisation_ffp: Annotated[
-        Optional[Path],
-        typer.Option(help="Path to realisation JSON file", dir_okay=False),
-    ] = None,
     velocity_model_ffp: Annotated[
         Optional[Path],
         typer.Option(
@@ -103,14 +99,7 @@ def plot_velocity_model(
         nx = vm_params.get("nx")
         ny = vm_params.get("ny")
         nz = vm_params.get("nz")
-    elif realisation_ffp:
-        from workflow.realisations import DomainParameters, SourceConfig
 
-        domain_parameters = DomainParameters.read_from_realisation(realisation_ffp)
-        nx = domain_parameters.nx
-        ny = domain_parameters.ny
-        nz = domain_parameters.nz
-        resolution = domain_parameters.resolution
     elif all(
         parameter is not None
         for parameter in [
@@ -129,7 +118,7 @@ def plot_velocity_model(
             ny = int(round(extent_y / resolution))
     else:
         print(
-            "You must provide either a vm_params.yaml, realisation json file, or manually specify the domain parameters."
+            "You must provide either a vm_params.yaml file, or manually specify the domain parameters."
         )
         raise typer.Exit(code=1)
     region = (
@@ -145,16 +134,6 @@ def plot_velocity_model(
         close=True,
         pen="1p,black,-",
     )
-    if realisation_ffp:
-        source_config = SourceConfig.read_from_realisation(realisation_ffp)
-        for fault in source_config.source_geometries.values():
-            for plane in fault.corners.reshape((-1, 4, 3)):
-                fig.plot(
-                    x=plane[:, 1],
-                    y=plane[:, 0],
-                    close=True,
-                    pen="0.5p,black",
-                )
 
     if velocity_model_ffp and not resolution:
         print(
