@@ -58,9 +58,10 @@ def test_plot_velocity_model():
 
 def test_plot_velocity_model_density():
     """Check that velocity model contents are plotted correctly."""
-    with tempfile.NamedTemporaryFile(
-        suffix=".png"
-    ) as output_path, tempfile.TemporaryDirectory() as velocity_model_directory:
+    with (
+        tempfile.NamedTemporaryFile(suffix=".png") as output_path,
+        tempfile.TemporaryDirectory() as velocity_model_directory,
+    ):
         # Download the swedge rho3dfile for testing
         subprocess.check_call(
             [
