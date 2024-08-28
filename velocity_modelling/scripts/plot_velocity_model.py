@@ -139,7 +139,7 @@ def plot_velocity_model(
         print(
             "You must provide a resolution for the velocity model if you supply a velocity model."
         )
-        raise typer.Exit(1)
+        raise typer.Exit(code=1)
     elif velocity_model_ffp:
         filepath_map = {
             VelocityModelComponent.p_wave: "vp3dfile.p",
@@ -195,7 +195,6 @@ def plot_velocity_model(
                 / 10
             ).round(1),
         )
-        print(cmap_limits)
         cb_label_map = {
             VelocityModelComponent.s_wave: "S Wave Velocity",
             VelocityModelComponent.p_wave: "P Wave Velocity",

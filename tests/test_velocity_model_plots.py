@@ -3,6 +3,8 @@ import tempfile
 from pathlib import Path
 
 import diffimg
+import pytest
+import typer
 
 from velocity_modelling.scripts import plot_velocity_model
 
@@ -65,4 +67,40 @@ def test_plot_velocity_model_density():
         )
         assert (
             diffimg.diff(PLOT_IMAGE_DIRECTORY / "swedge1.png", output_path.name) < 0.05
+        )
+
+        # As above but with custom parameter settings
+        plot_velocity_model.plot_velocity_model(
+            output_path.name,
+            extent_x=333.6,
+            extent_y=229.20000000000002,
+            centre_lat=-45.64459685522873,
+            centre_lon=167.7643481857169,
+            bearing=38.5,
+            nz=250,
+            resolution=0.2,
+            title="Swedge1: Density Plot",
+            velocity_model_ffp=Path(velocity_model_directory),
+            component=plot_velocity_model.VelocityModelComponent.density,
+        )
+        assert (
+            diffimg.diff(PLOT_IMAGE_DIRECTORY / "swedge1.png", output_path.name) < 0.05
+        )
+
+
+def test_failing_plot_examples():
+    # Providing no input dimensions should raise an exception
+    with pytest.raises(typer.Exit):
+        plot_velocity_model.plot_velocity_model("bad.png")
+
+    # Providing a velocity model without a resolution should raise an exception
+    with pytest.raises(typer.Exit):
+        plot_velocity_model.plot_velocity_model(
+            "bad.png",
+            extent_x=333.6,
+            extent_y=229.20000000000002,
+            centre_lat=-45.64459685522873,
+            centre_lon=167.7643481857169,
+            bearing=38.5,
+            velocity_model_ffp=Path("bad_place"),
         )
