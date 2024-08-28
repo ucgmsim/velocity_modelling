@@ -1,3 +1,4 @@
+diffimg
 hypothesis[numpy]
 numpy<2
 pandas

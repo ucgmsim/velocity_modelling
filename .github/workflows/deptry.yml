@@ -14,7 +14,7 @@ jobs:
       # Install deptry
       - run: pip install deptry
       # Remove testing related packages
-      - run: sed -e '/hypothesis*/d' -e '/pytest*/d' -i requirements.txt
+      - run: sed -e '/hypothesis*/d' -e '/pytest*/d' '/diffimg*/d' -i requirements.txt
       # Install all other packages
       - run: pip install -r requirements.txt
       # Remove pyproject.toml so that deptry doesn't get confused

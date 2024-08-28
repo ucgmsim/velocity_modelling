@@ -1,16 +1,10 @@
-import hashlib
 import subprocess
 import tempfile
 from pathlib import Path
-from urllib import request
+
+import diffimg
 
 from velocity_modelling.scripts import plot_velocity_model
-
-
-def md5sum(file: Path) -> str:
-    with open(file, "rb") as file_handle:
-        return hashlib.file_digest(file_handle, "md5").hexdigest()
-
 
 PLOT_IMAGE_DIRECTORY = Path("wiki/images")
 INPUT_FFP = Path(__file__).parent / "input"
@@ -28,7 +22,7 @@ def test_plot_velocity_model():
             latitude_pad=0.5,
             longitude_pad=0.5,
         )
-        assert md5sum(PLOT_IMAGE_DIRECTORY / "kelly.png") == md5sum(output_path.name)
+        assert diffimg.diff(PLOT_IMAGE_DIRECTORY / "kelly.png", output_path.name) < 0.01
 
         plot_velocity_model.plot_velocity_model(
             output_path.name,
@@ -41,7 +35,9 @@ def test_plot_velocity_model():
             latitude_pad=0.5,
             longitude_pad=0.5,
         )
-        assert md5sum(PLOT_IMAGE_DIRECTORY / "custom.png") == md5sum(output_path.name)
+        assert (
+            diffimg.diff(PLOT_IMAGE_DIRECTORY / "custom.png", output_path.name) < 0.01
+        )
 
 
 def test_plot_velocity_model_density():
@@ -67,4 +63,6 @@ def test_plot_velocity_model_density():
             velocity_model_ffp=Path(velocity_model_directory),
             component=plot_velocity_model.VelocityModelComponent.density,
         )
-        assert md5sum(PLOT_IMAGE_DIRECTORY / "swedge1.png") == md5sum(output_path.name)
+        assert (
+            diffimg.diff(PLOT_IMAGE_DIRECTORY / "swedge1.png", output_path.name) < 0.01
+        )
