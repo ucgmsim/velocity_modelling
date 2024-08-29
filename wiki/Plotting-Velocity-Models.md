@@ -47,7 +47,7 @@ Then your output plot would look something like
 ## I Have a New Realisation JSON File
 
 Like the `vm_params.yaml` case, you can pass the realisation JSON file
-as parameter to the velocity model plotting tool. Because the
+as a parameter to the velocity model plotting tool. Because the
 realisation also contains a definition of the source geometry, this is
 also plotted on the map.
 
@@ -61,10 +61,10 @@ Here is an example of this for an automatically generated domain for rupture one
 
 ## I Want to Plot a Custom Domain
 
-Then you need to supply **all** of the following as arguments
+ou need to supply **all** of the following as arguments to `plot-velocity-model`:
 
-- The model origin latitude.
-- The model origin longitude.
+- The model centre latitude.
+- The model centre longitude.
 - The model bearing.
 - The model extents (in x and y-directions).
 
@@ -78,7 +78,7 @@ The above command would produce an output like:
 
 ![](images/custom.png)
 
-# I Want to Plot the Velocity Mode Contents over the Domain
+# I Want to Plot the Velocity Model Contents over the Domain
 
 Regardless of the specification you use for the velocity model, you
 can additionally plot the velocity model contents over the domain with
