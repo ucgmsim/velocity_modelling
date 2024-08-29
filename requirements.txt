@@ -2,11 +2,11 @@ diffimg
 hypothesis[numpy]
 numpy<2
 pandas
-pygmt_helper @ git+https://github.com/ucgmsim/pygmt_helper.git
+pygmt_helper @ git+https://github.com/ucgmsim/pygmt_helper.git@cylc
 pytest
 pytest-cov
 pyyaml
-qcore @ git+https://github.com/ucgmsim/qcore.git
+qcore @ git+https://github.com/ucgmsim/qcore.git@pegasus
 scipy
 shapely
 typer
