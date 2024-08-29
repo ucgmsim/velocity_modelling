@@ -61,7 +61,7 @@ Here is an example of this for an automatically generated domain for rupture one
 
 ## I Want to Plot a Custom Domain
 
-ou need to supply **all** of the following as arguments to `plot-velocity-model`:
+You need to supply **all** of the following as arguments to `plot-velocity-model`:
 
 - The model centre latitude.
 - The model centre longitude.
