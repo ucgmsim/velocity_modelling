@@ -17,6 +17,18 @@ app = typer.Typer()
 
 
 class VelocityModelComponent(str, Enum):
+    """Enumeration for different components of a velocity model.
+
+    Attributes
+    ----------
+    p_wave : str
+        P-wave (Primary wave) velocity component.
+    s_wave : str
+        S-wave (Secondary wave) velocity component.
+    density : str
+        Density component of the velocity model.
+    """
+
     p_wave = "p_wave"
     s_wave = "s_wave"
     density = "rho"
@@ -40,14 +52,14 @@ def plot_velocity_model(
     region: tuple[float, ...],
     **kwargs,
 ):
-    """Plot the velocity model on a pygmt.Figure.
+    """Plot the velocity model on a pygmt figure.
 
     Parameters
     ----------
     fig : pygmt.Figure
-        The pygmt.Figure object to plot on.
+        The figure to plot on.
     box : BoundingBox
-        The bounding box defining the region of interest.
+        The bounding box the bounds of the velocity model.
     velocity_model : np.memmap
         The velocity model data as a memory-mapped array.
     resolution : float
@@ -59,7 +71,7 @@ def plot_velocity_model(
     ny : int
         The number of grid points in the y-direction.
     region : tuple of float
-        The bounding box region (west, east, south, north).
+        The plotting region.
     **kwargs
         Additional keyword arguments passed to plotting.plot_grid.
     """
@@ -149,7 +161,8 @@ def load_velocity_model_file(
     Returns
     -------
     np.memmap
-        The loaded velocity model as a memory-mapped array."""
+        The loaded velocity model as a memory-mapped array.
+    """
     filepath_map = {
         VelocityModelComponent.p_wave: "vp3dfile.p",
         VelocityModelComponent.s_wave: "vs3dfile.s",
@@ -166,6 +179,9 @@ def load_velocity_model_file(
     )
 
 
+@app.command(
+    help="Plot a velocity model definition from a realisation.", name="realisation"
+)
 def plot_realisation_file(
     realisation_ffp: Annotated[
         Path, typer.Argument(help="Path to velocity model parameters")
@@ -286,6 +302,10 @@ def plot_realisation_file(
     )
 
 
+@app.command(
+    help="Plot a velocity model from a velocity model params yaml file (vm_params.yaml).",
+    name="vm-params",
+)
 def plot_vm_params(
     vm_params_ffp: Annotated[
         Path, typer.Argument(help="Path to velocity model parameters")
@@ -323,7 +343,7 @@ def plot_vm_params(
         float, typer.Option(help="Plot output DPI (higher is better)")
     ] = 300,
 ) -> None:
-    """Plot the velocity model and source geometry from a realisation file.
+    """Plot a velocity model from a velocity model params yaml file (vm_params.yaml).
 
     Parameters
     ----------
@@ -400,3 +420,7 @@ def plot_vm_params(
         dpi=dpi,
         anti_alias=True,
     )
+
+
+if __name__ == "__main__":
+    app()

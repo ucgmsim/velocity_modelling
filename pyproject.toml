@@ -12,6 +12,9 @@ readme = "README.md"
 requires-python = ">=3.9"
 dynamic = ["version", "dependencies"]
 
+[project.scripts]
+plot-velocity-model = "velocity_modelling.scripts.plot_velocity_model:app"
+
 [tool.setuptools.package-dir]
 velocity_modelling = "velocity_modelling"
 
