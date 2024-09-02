@@ -194,10 +194,10 @@ def plot_realisation_file(
     ],
     velocity_model_ffp: Annotated[
         Path | None,
-        typer.Argument(
+        typer.Option(
             help="Path to velocity model directory", file_okay=False, exists=True
         ),
-    ],
+    ] = None,
     component: Annotated[
         VelocityModelComponent,
         typer.Option(help="Velocity model component to overlay."),
