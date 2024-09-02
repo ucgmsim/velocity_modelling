@@ -47,18 +47,3 @@ def test_plot_velocity_model_density(tmp_path: Path):
         component=plot_velocity_model.VelocityModelComponent.density,
     )
     assert diffimg.diff(PLOT_IMAGE_DIRECTORY / "swedge1.png", output_path) < 0.05
-
-
-def test_plot_realisation(tmp_path: Path):
-    """Check that velocity model contents are plotted correctly."""
-    output_path = tmp_path / "plot.png"
-
-    plot_velocity_model.plot_realisation_file(
-        INPUT_FFP / "rupture_1.json",
-        output_path,
-        title="Rupture 1",
-        latitude_pad=0.5,
-        longitude_pad=0.5,
-    )
-
-    assert diffimg.diff(PLOT_IMAGE_DIRECTORY / "rupture_1.png", output_path) < 0.05

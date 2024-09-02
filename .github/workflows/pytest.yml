@@ -26,5 +26,5 @@ jobs:
       - name: Run tests
         run: |
           pytest --cov=velocity_modelling --cov-report=json tests
-      - name: Test that module coverage is at least 95% for every module
+      - name: Test that module coverage is at least 95% for every modulep
         run: "[[ -z $(jq '.files | to_entries[] | .value.summary.percent_covered | select(. < 95)' coverage.json) ]]"

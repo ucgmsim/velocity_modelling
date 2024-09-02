@@ -20,4 +20,4 @@ jobs:
       # Remove pyproject.toml so that deptry doesn't get confused
       - run: rm pyproject.toml
       # Run deptry to check that all dependencies are present.
-      - run: deptry . --per-ignore-rules "DEP001=workflow,DEP003=workflow"
+      - run: deptry .
