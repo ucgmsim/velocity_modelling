@@ -8,18 +8,18 @@ dimensions are in metres except where otherwise mentioned.
 
 Classes
 -------
-    - BoundingBox: Represents a 2D bounding box with properties and methods for calculations.
+- BoundingBox: Represents a 2D bounding box with properties and methods for calculations.
 
 Functions
 ---------
-    - axis_aligned_bounding_box: Returns an axis-aligned bounding box containing points.
-    - rotation_matrix: Returns the 2D rotation matrix for a given angle.
-    - minimum_area_bounding_box: Returns the smallest rectangle bounding points.
-    - minimum_area_bounding_box_for_polygons_masked: Returns a bounding box around masked polygons.
+- axis_aligned_bounding_box: Returns an axis-aligned bounding box containing points.
+- rotation_matrix: Returns the 2D rotation matrix for a given angle.
+- minimum_area_bounding_box: Returns the smallest rectangle bounding points.
+- minimum_area_bounding_box_for_polygons_masked: Returns a bounding box around masked polygons.
 
 References
 ----------
-    - BoundingBox wiki page: https://github.com/ucgmsim/qcore/wiki/BoundingBox
+- BoundingBox wiki page: https://github.com/ucgmsim/qcore/wiki/BoundingBox
 """
 
 import dataclasses
