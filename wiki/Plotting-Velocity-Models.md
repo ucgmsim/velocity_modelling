@@ -9,7 +9,7 @@ the definition, you are going to be using the `plot-velocity-model` script.
 In this case, you can supply the velocity model parameters file as a path
 
 ```bash
-plot-velocity-model --vm-params-ffp vm_params.yaml --title 'Kelly' --latitude-pad 0.5 --longitude-pad 0.5 output.png
+plot-velocity-model vm-params vm_params.yaml --title 'Kelly' --latitude-pad 0.5 --longitude-pad 0.5 output.png
 ```
 
 If your `vm_params.yaml` contained a model definition like so:
@@ -47,38 +47,19 @@ Then your output plot would look something like
 ## I Have a New Realisation JSON File
 
 Like the `vm_params.yaml` case, you can pass the realisation JSON file
-as parameter to the velocity model plotting tool. Because the
+as a parameter to the velocity model plotting tool. Because the
 realisation also contains a definition of the source geometry, this is
 also plotted on the map.
 
 ```bash
-plot-velocity-model --realisation-ffp realisation.json --title 'Rupture 1' --latitude-pad 0.5 --longitude-pad 0.5 output.png
+plot-velocity-model realisation realisation.json --title 'Rupture 1' --latitude-pad 0.5 --longitude-pad 0.5 output.png
 ```
 
 Here is an example of this for an automatically generated domain for rupture one in the NSHMDB.
 
 ![](images/rupture_1.png)
 
-## I Want to Plot a Custom Domain
-
-Then you need to supply **all** of the following as arguments
-
-- The model origin latitude.
-- The model origin longitude.
-- The model bearing.
-- The model extents (in x and y-directions).
-
-For example, a simple 100 x 100 km domain could be plotted like so
-
-```bash
-plot-velocity-model --centre-lon 172 --centre-lat -43 --extent-x 100 --extent-y 100 --bearing 45  --title 'Sample velocity model' --latitude-pad 0.5 --longitude-pad 0.5 output.png
-```
-
-The above command would produce an output like:
-
-![](images/custom.png)
-
-# I Want to Plot the Velocity Mode Contents over the Domain
+# I Want to Plot the Velocity Model Contents over the Domain
 
 Regardless of the specification you use for the velocity model, you
 can additionally plot the velocity model contents over the domain with
@@ -90,7 +71,7 @@ well.
 
 
 ```bash
-plot-velocity-model --title "Swedge1: Density Plot" --vm-params-ffp vm_params.yaml --velocity-model-ffp velocity_model_dir/ --component density output.png
+plot-velocity-model vm-params vm_params.yaml --title "Swedge1: Density Plot"  --velocity-model-ffp velocity_model_dir/ --component density output.png
 ```
 
 ![](images/swedge1.png)

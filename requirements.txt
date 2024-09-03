@@ -10,4 +10,3 @@ qcore @ git+https://github.com/ucgmsim/qcore@pegasus
 scipy
 shapely
 typer
-

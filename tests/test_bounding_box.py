@@ -4,7 +4,6 @@ import numpy as np
 import shapely
 from hypothesis import HealthCheck, assume, given, seed, settings
 from hypothesis import strategies as st
-from hypothesis.extra import numpy as nst
 
 from qcore import coordinates
 from velocity_modelling import bounding_box

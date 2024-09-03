@@ -12,8 +12,23 @@ readme = "README.md"
 requires-python = ">=3.9"
 dynamic = ["version", "dependencies"]
 
+[project.scripts]
+plot-velocity-model = "velocity_modelling.scripts.plot_velocity_model:app"
+
 [tool.setuptools.package-dir]
 velocity_modelling = "velocity_modelling"
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.isort]
+known-first-party = ["source_modelling", "qcore", "workflow", "pygmt_helper"]
+
+[tool.ruff.lint.per-file-ignores]
+# Ignore no docstring in __init__.py
+"__init__.py" = ["D104"]
+# Ignore docstring errors in tests folder
+"tests/**.py" = ["D"]
