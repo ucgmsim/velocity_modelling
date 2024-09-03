@@ -194,7 +194,8 @@ def axis_aligned_bounding_box(points: npt.NDArray[np.float64]) -> BoundingBox:
 
     Returns
     -------
-        BoundingBox: The axis-aligned bounding box.
+    BoundingBox
+        The axis-aligned bounding box.
     """
     min_x, min_y = np.min(points, axis=0)
     max_x, max_y = np.max(points, axis=0)
