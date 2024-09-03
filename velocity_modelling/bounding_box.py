@@ -40,10 +40,10 @@ class BoundingBox:
 
     Attributes
     ----------
-        corners : np.ndarray
-            The corners of the bounding box in cartesian coordinates. The
-            order of the corners should be counter clock-wise from the bottom-left point
-            (minimum x, minimum y).
+    corners : np.ndarray
+       The corners of the bounding box in cartesian coordinates. The
+       order of the corners should be counter clock-wise from the bottom-left point
+       (minimum x, minimum y).
     """
 
     bounds: npt.NDArray[np.float64]
