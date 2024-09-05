@@ -258,8 +258,8 @@ class BoundingBox:
             & ((local_coordinates < 1) | np.isclose(local_coordinates, 1, atol=1e-6))
         ):
             raise ValueError("Specified coordinates do not lie in bounding box.")
-
-        return np.clip(local_coordinates, 0, 1)
+        local_coordinates = np.clip(local_coordinates, 0, 1)
+        return local_coordinates.T
 
 
 def axis_aligned_bounding_box(points: npt.NDArray[np.float64]) -> BoundingBox:
