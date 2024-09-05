@@ -171,12 +171,14 @@ class BoundingBox:
             A boolean mask of the points in the bounding box.
         """
         points = np.asarray(points)
-        x_direction = self.bounds[1] - self.bounds[0]
-        y_direction = self.bounds[-1] - self.bounds[0]
         offset = coordinates.wgs_depth_to_nztm(points) - self.bounds[0]
-        local_coordinates, _, _, _ = np.linalg.lstsq(
-            np.array([x_direction, y_direction]).T, offset.T, rcond=None
+        frame = np.array(
+            [self.bounds[1] - self.bounds[0], self.bounds[2] - self.bounds[0]]
         )
+        if offset.ndim > 1:
+            offset = offset.T
+        local_coordinates = np.linalg.solve(frame.T, offset)
+
         return np.all(
             ((local_coordinates > 0) | np.isclose(local_coordinates, 0, atol=1e-6))
             & ((local_coordinates < 1) | np.isclose(local_coordinates, 1, atol=1e-6)),
@@ -248,7 +250,8 @@ class BoundingBox:
             [self.bounds[1] - self.bounds[0], self.bounds[2] - self.bounds[0]]
         )
         offset = coordinates.wgs_depth_to_nztm(global_coords) - self.bounds[0]
-
+        if offset.ndim > 1:
+            offset = offset.T
         local_coordinates = np.linalg.solve(frame.T, offset)
         if not np.all(
             ((local_coordinates > 0) | np.isclose(local_coordinates, 0, atol=1e-6))

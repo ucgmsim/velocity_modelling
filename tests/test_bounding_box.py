@@ -1,6 +1,7 @@
 from typing import Optional
 
 import numpy as np
+import pytest
 import shapely
 from hypothesis import HealthCheck, assume, given, seed, settings
 from hypothesis import strategies as st
@@ -309,3 +310,25 @@ def test_bounding_box_grid_coordinates_inversion(
         local_coords,
         atol=0.01,
     )
+
+
+@given(
+    box=st.builds(
+        BoundingBox.from_centroid_bearing_extents,
+        centroid=st.builds(
+            coordinate,
+            lat=st.floats(-47, -40),
+            lon=st.floats(166, 177),
+        ),
+        bearing=st.floats(0, 360),
+        extent_x=st.floats(20, 1000, allow_nan=False, allow_infinity=False),
+        extent_y=st.floats(20, 1000, allow_nan=False, allow_infinity=False),
+    ),
+    local_x=st.floats(0, 1),
+    local_y=st.floats(0, 1),
+)
+def test_bounding_box_containment_consistency(
+    box: BoundingBox, local_x: float, local_y: float
+):
+    local_coordinates = np.array([local_x, local_y])
+    assert box.contains(box.local_coordinates_to_wgs_depth(local_coordinates))
