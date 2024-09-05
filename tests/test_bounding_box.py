@@ -281,3 +281,31 @@ def test_masked_bounding_box():
     assert not box.contains(
         coordinates.nztm_to_wgs_depth(test_not_include_points)
     ).all()
+
+
+@given(
+    box=st.builds(
+        BoundingBox.from_centroid_bearing_extents,
+        centroid=st.builds(
+            coordinate,
+            lat=st.floats(-47, -40),
+            lon=st.floats(166, 177),
+        ),
+        bearing=st.floats(0, 360),
+        extent_x=st.floats(20, 1000, allow_nan=False, allow_infinity=False),
+        extent_y=st.floats(20, 1000, allow_nan=False, allow_infinity=False),
+    ),
+    local_x=st.floats(0, 1),
+    local_y=st.floats(0, 1),
+)
+def test_bounding_box_grid_coordinates_inversion(
+    box: BoundingBox, local_x: float, local_y: float
+):
+    local_coords = np.array([local_x, local_y])
+    assert np.allclose(
+        box.wgs_depth_coordinates_to_local_coordinates(
+            box.local_coordinates_to_wgs_depth(local_coords)
+        ),
+        local_coords,
+        atol=0.01,
+    )

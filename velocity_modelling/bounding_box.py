@@ -183,6 +183,81 @@ class BoundingBox:
             axis=0,
         )
 
+    def local_coordinates_to_wgs_depth(
+        self,
+        local_coords: npt.ArrayLike,
+    ) -> npt.NDArray[np.float64]:
+        """Convert bounding box coordinates to global coordinates.
+
+        Parameters
+        ----------
+        local_coordinates : np.ndarray
+            Local coordinates to convert. Local coordinates are 2D
+            coordinates (x, y) given for a bounding box, where x
+            represents displacement along the x-direction, and y
+            displacement along the y-direction (see diagram below).
+
+                                       1 1
+                ┌─────────────────────┐ ^
+                │                     │ │
+                │                     │ │
+                │                     │ │ +y
+                │                     │ │
+                │                     │ │
+                └─────────────────────┘ │
+             0 0   ─────────────────>
+                         +x
+        Returns
+        -------
+        np.ndarray
+            An vector of (lat, lon) transformed coordinates.
+        """
+        frame = np.array(
+            [self.bounds[1] - self.bounds[0], self.bounds[2] - self.bounds[0]]
+        )
+        nztm_coords = self.bounds[0] + local_coords @ frame
+        return coordinates.nztm_to_wgs_depth(nztm_coords)
+
+    def wgs_depth_coordinates_to_local_coordinates(
+        self, global_coords: npt.ArrayLike
+    ) -> npt.NDArray[np.float64]:
+        """Convert coordinates (lat, lon) to bounding box coordinates (x, y).
+
+        See `BoundingBox.local_coordinates_to_wgs_depth` for a description of
+        bounding box coordinates.
+
+        Parameters
+        ----------
+        global_coordinates : np.ndarray
+            Global coordinates to convert.
+
+        Returns
+        -------
+        np.ndarray
+            Coordinates (x, y) representing the position of
+            global_coordinates in bounding box coordinates.
+
+        Raises
+        ------
+        ValueError
+            If the given coordinates do not lie in the bounding box.
+        """
+        global_coords = np.asarray(global_coords)
+
+        frame = np.array(
+            [self.bounds[1] - self.bounds[0], self.bounds[2] - self.bounds[0]]
+        )
+        offset = coordinates.wgs_depth_to_nztm(global_coords) - self.bounds[0]
+
+        local_coordinates = np.linalg.solve(frame.T, offset)
+        if not np.all(
+            ((local_coordinates > 0) | np.isclose(local_coordinates, 0, atol=1e-6))
+            & ((local_coordinates < 1) | np.isclose(local_coordinates, 1, atol=1e-6))
+        ):
+            raise ValueError("Specified coordinates do not lie in bounding box.")
+
+        return np.clip(local_coordinates, 0, 1)
+
 
 def axis_aligned_bounding_box(points: npt.NDArray[np.float64]) -> BoundingBox:
     """Find the axis-aligned bounding box containing points.
