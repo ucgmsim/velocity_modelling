@@ -84,7 +84,7 @@ def valid_coordinates(point_coordinates: np.ndarray) -> bool:
         lat=st.floats(-50, -31),
         lon=st.floats(160, 180),
     ),
-    bearing=st.floats(0, 360),
+    bearing=st.floats(0, 360, exclude_max=True),
     extent_x=st.floats(0.1, 1000, allow_nan=False, allow_infinity=False),
     extent_y=st.floats(0.1, 1000, allow_nan=False, allow_infinity=False),
 )
@@ -97,12 +97,14 @@ def test_bounding_box_construction(
     )
     assume(valid_coordinates(box.corners))
     assert np.allclose(box.origin, centroid)
-    assert np.isclose(box.bearing, bearing, atol=1e-1) or (
-        np.isclose(box.bearing, 0) and np.isclose(bearing, 360)
+    # A box's bearing is not uniquely defined!
+    assert np.isclose(box.bearing, bearing % 90, atol=1e-1) or (
+        np.isclose(box.bearing, 0) and np.isclose(bearing % 90, 90)
     )
-    assert np.isclose(box.extent_x, extent_x)
-    assert np.isclose(box.extent_y, extent_y)
+    assert np.allclose([box.extent_x, box.extent_y], [extent_x, extent_y]) or np.allclose([box.extent_x, box.extent_y], [extent_y, extent_x])
     assert np.isclose(box.area, box.extent_x * box.extent_y)
+
+
 
 
 @given(

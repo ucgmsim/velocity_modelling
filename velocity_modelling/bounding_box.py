@@ -22,7 +22,6 @@ References
 - BoundingBox wiki page: https://github.com/ucgmsim/qcore/wiki/BoundingBox
 """
 
-import dataclasses
 from typing import Self
 
 import numpy as np
@@ -34,7 +33,6 @@ from shapely import Polygon
 from qcore import coordinates, geo
 
 
-@dataclasses.dataclass
 class BoundingBox:
     """Represents a 2D bounding box with properties and methods for calculations.
 
@@ -47,6 +45,22 @@ class BoundingBox:
     """
 
     bounds: npt.NDArray[np.float64]
+
+    def __init__(self, bounds: npt.NDArray[np.float64]):
+        """Create a bounding box from bounds in NZTM coordinates.
+
+        Parameters
+        ----------
+        bounds : npt.NDArray[np.float64]
+            The bounds of the box.
+        """
+        bottom_left_index = min(range(4), key=lambda i: tuple(bounds[i, ::-1]))
+        bounds = np.copy(bounds)
+        bounds[[0, bottom_left_index]] = bounds[[bottom_left_index, 0]]
+        angles = np.arctan2(*(bounds[1:] - bounds[0]).T)
+
+        indices = np.argsort(angles, kind='stable') + 1
+        self.bounds = np.vstack([bounds[0], bounds[indices]])
 
     @property
     def corners(self) -> np.ndarray:
@@ -101,9 +115,9 @@ class BoundingBox:
             np.array(
                 [[-1 / 2, -1 / 2], [1 / 2, -1 / 2], [1 / 2, 1 / 2], [-1 / 2, 1 / 2]]
             )
-            * np.array([extent_x, extent_y])
+            * np.array([extent_y, extent_x])
             * 1000
-        ) @ geo.rotation_matrix(-np.radians(bearing))
+        ) @ geo.rotation_matrix(np.radians(-bearing))
         return cls(coordinates.wgs_depth_to_nztm(centroid) + corner_offset)
 
     @classmethod
@@ -142,9 +156,9 @@ class BoundingBox:
         """float: The bearing of the bounding box."""
         north_direction = np.array([1, 0, 0])
         up_direction = np.array([0, 0, 1])
-        horizontal_direction = np.append(self.bounds[1] - self.bounds[0], 0)
+        vertical_direction = np.append(self.bounds[-1] - self.bounds[0], 0)
         return geo.oriented_bearing_wrt_normal(
-            north_direction, horizontal_direction, up_direction
+            north_direction, vertical_direction, up_direction
         )
 
     @property
@@ -173,7 +187,7 @@ class BoundingBox:
         points = np.asarray(points)
         offset = coordinates.wgs_depth_to_nztm(points) - self.bounds[0]
         frame = np.array(
-            [self.bounds[1] - self.bounds[0], self.bounds[2] - self.bounds[0]]
+            [self.bounds[1] - self.bounds[0], self.bounds[-1] - self.bounds[0]]
         )
         if offset.ndim > 1:
             offset = offset.T
@@ -215,7 +229,7 @@ class BoundingBox:
             An vector of (lat, lon) transformed coordinates.
         """
         frame = np.array(
-            [self.bounds[1] - self.bounds[0], self.bounds[2] - self.bounds[0]]
+            [self.bounds[1] - self.bounds[0], self.bounds[-1] - self.bounds[0]]
         )
         nztm_coords = self.bounds[0] + local_coords @ frame
         return coordinates.nztm_to_wgs_depth(nztm_coords)
@@ -247,7 +261,7 @@ class BoundingBox:
         global_coords = np.asarray(global_coords)
 
         frame = np.array(
-            [self.bounds[1] - self.bounds[0], self.bounds[2] - self.bounds[0]]
+            [self.bounds[1] - self.bounds[0], self.bounds[-1] - self.bounds[0]]
         )
         offset = coordinates.wgs_depth_to_nztm(global_coords) - self.bounds[0]
         if offset.ndim > 1:
@@ -260,6 +274,11 @@ class BoundingBox:
             raise ValueError("Specified coordinates do not lie in bounding box.")
         local_coordinates = np.clip(local_coordinates, 0, 1)
         return local_coordinates.T
+
+    def __repr__(self):
+        """A representation of the bounding box."""
+        cls = self.__class__.__name__
+        return f'{cls}(centre={self.origin}, bearing={self.bearing}, extent_x={self.extent_x}, extent_y={self.extent_y}, corners={self.corners})'
 
 
 def axis_aligned_bounding_box(points: npt.NDArray[np.float64]) -> BoundingBox:
