@@ -41,7 +41,7 @@ def coordinate_hashable(
     Parameters
     ----------
     lat : float
-        The latitude of the coordinate
+        The latitude of the coordinate.
     lon : float
         The longitude of the coordinate.
     depth : Optional[float]
@@ -51,7 +51,7 @@ def coordinate_hashable(
     -------
     tuple[float, ...]
         A tuple (lat, lon, depth). The coordinates are rounded to 5dp
-        encouage random sampling to generate points farther apart.
+        to encourage random sampling to generate points farther apart.
 
     """
     if depth is not None:
