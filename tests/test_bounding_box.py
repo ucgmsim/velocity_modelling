@@ -101,10 +101,10 @@ def test_bounding_box_construction(
     assert np.isclose(box.bearing, bearing % 90, atol=1e-1) or (
         np.isclose(box.bearing, 0) and np.isclose(bearing % 90, 90)
     )
-    assert np.allclose([box.extent_x, box.extent_y], [extent_x, extent_y]) or np.allclose([box.extent_x, box.extent_y], [extent_y, extent_x])
+    assert np.allclose(
+        [box.extent_x, box.extent_y], [extent_x, extent_y]
+    ) or np.allclose([box.extent_x, box.extent_y], [extent_y, extent_x])
     assert np.isclose(box.area, box.extent_x * box.extent_y)
-
-
 
 
 @given(
@@ -334,3 +334,30 @@ def test_bounding_box_containment_consistency(
 ):
     local_coordinates = np.array([local_x, local_y])
     assert box.contains(box.local_coordinates_to_wgs_depth(local_coordinates))
+
+
+@pytest.mark.parametrize(
+    "box,expected_bearing",
+    [
+        (
+            BoundingBox.from_centroid_bearing_extents(
+                np.array([-45.74097357516373, 167.209054441501]), 0, 100, 150
+            ),
+            4.117063885773218,
+        ),
+        (
+            BoundingBox.from_centroid_bearing_extents(
+                np.array([-45.74097357516373, 167.209054441501]), 30, 100, 150
+            ),
+            34.04656913667332,
+        ),
+        (
+            BoundingBox.from_centroid_bearing_extents(
+                np.array([-37.06313846120225, 174.93752057998879]), 50, 100, 80
+            ),
+            48.71324002503669,
+        ),
+    ],
+)
+def test_bounding_box_great_circle_bearing(box: BoundingBox, expected_bearing: float):
+    assert box.great_circle_bearing == pytest.approx(expected_bearing)

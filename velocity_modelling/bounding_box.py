@@ -162,6 +162,10 @@ class BoundingBox:
         )
 
     @property
+    def great_circle_bearing(self) -> np.float64:
+        return coordinates.nztm_bearing_to_great_circle_bearing(self.origin, self.extent_y / 2, self.bearing)
+
+    @property
     def area(self) -> np.float64:
         """float: The area of the bounding box."""
         return self.extent_x * self.extent_y
