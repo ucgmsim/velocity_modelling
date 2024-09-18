@@ -325,6 +325,26 @@ def test_bounding_box_grid_coordinates_inversion(
         bearing=st.floats(0, 360),
         extent_x=st.floats(20, 1000, allow_nan=False, allow_infinity=False),
         extent_y=st.floats(20, 1000, allow_nan=False, allow_infinity=False),
+    )
+)
+def test_bounding_box_boundary_values(box: BoundingBox):
+    assert np.allclose(
+        box.wgs_depth_coordinates_to_local_coordinates(box.corners),
+        np.array([[0, 0], [1, 0], [1, 1], [0, 1]]),
+    )
+
+
+@given(
+    box=st.builds(
+        BoundingBox.from_centroid_bearing_extents,
+        centroid=st.builds(
+            coordinate,
+            lat=st.floats(-47, -40),
+            lon=st.floats(166, 177),
+        ),
+        bearing=st.floats(0, 360),
+        extent_x=st.floats(20, 1000, allow_nan=False, allow_infinity=False),
+        extent_y=st.floats(20, 1000, allow_nan=False, allow_infinity=False),
     ),
     local_x=st.floats(0, 1),
     local_y=st.floats(0, 1),
