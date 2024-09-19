@@ -81,7 +81,7 @@ plot-velocity-model vm-params vm_params.yaml --title "Swedge1: Density Plot"  --
 The `view-velocity-model` tool can read a velocity model file and view its contents interactively in 3D. This may not run well if your model is particularly large or if you have a slow computer -- especially if you move the slices around. You can also configure the available slice controls between xy, yz, and xz slices. You must know the number of slices in the model's x, y and z axes. These you can either read from the `vm_params.yaml` for the old workflow, or from the realisation json file in the new workflow.
 
 ``` bash
-view-velocity-model Velocity_Model/rho3dfile.(d|p|s) NX NY NZ
+view-velocity-model Velocity_Model/(rho3dfile.d or vp3dfile.p or vs3dfile.s) NX NY NZ
 ```
 
 ![](images/velocity_model_viewer.png)
