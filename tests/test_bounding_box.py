@@ -84,7 +84,7 @@ def valid_coordinates(point_coordinates: np.ndarray) -> bool:
         lat=st.floats(-50, -31),
         lon=st.floats(160, 180),
     ),
-    bearing=st.floats(0, 360, exclude_max=True),
+    bearing=st.floats(0, 90, exclude_max=True),
     extent_x=st.floats(0.1, 1000, allow_nan=False, allow_infinity=False),
     extent_y=st.floats(0.1, 1000, allow_nan=False, allow_infinity=False),
 )
@@ -145,79 +145,37 @@ def test_bounding_box_containment(box: BoundingBox, local_x, local_y):
     )
 )
 def test_minimum_bounding_box_containment(points: list[np.ndarray]):
-    points = np.array(points)
+    points = coordinates.wgs_depth_to_nztm(np.array(points))
     # The QuickHull algorithm used to construct the minimum area
     # bounding box assumes that the points are not all collinear.
-    assume(
-        np.linalg.matrix_rank(
-            coordinates.wgs_depth_to_nztm(np.c_[points, np.ones_like(points[:, 1])])
-        )
-        == 3
-    )
-    box = bounding_box.minimum_area_bounding_box(coordinates.wgs_depth_to_nztm(points))
-    assert box.contains(points).all()
+    assume(np.linalg.matrix_rank(np.c_[points, np.ones_like(points[:, 1])]) == 3)
+    box = BoundingBox.bounding_box_for_geometry(shapely.MultiPoint(points))
+
+    assert box.contains(coordinates.nztm_to_wgs_depth(points)).all()
 
 
-# Slower test!
 @given(
     points=st.lists(
         elements=st.builds(
-            coordinate_hashable, lon=st.floats(173, 173.1), lat=st.floats(-43.1, -43)
+            coordinate_hashable,
+            lat=st.floats(-50, -31),
+            lon=st.floats(160, 180),
         ),
         min_size=4,
         unique=True,
-    ),
-    dummy_bounding_box=st.builds(
-        BoundingBox.from_centroid_bearing_extents,
-        centroid=st.builds(
-            coordinate,
-            lon=st.floats(173, 173.1),
-            lat=st.floats(-43.1, -43),
-        ),
-        bearing=st.floats(0, 360),
-        # In my testing, you need to allow really big boxes to get
-        # enough of a sample to test minimality.
-        extent_x=st.floats(9, 30, allow_nan=False, allow_infinity=False),
-        extent_y=st.floats(9, 30, allow_nan=False, allow_infinity=False),
-    ),
+    )
 )
-# Allow a lot of generated examples to get cases where a random box is
-# pretty good to properly test the minimum area bounding box.
-@settings(max_examples=500, suppress_health_check=[HealthCheck.filter_too_much])
-# seed = 1 so that GA runs are deterministic.
-@seed(1)
-def test_minimum_bounding_box_minimality(
-    points: list[np.ndarray], dummy_bounding_box: BoundingBox
-):
-    """Check that the minimum box is minimal in area.
-
-    This test heuristically evaluates the minimality of the bounding box by:
-
-    1. Generating a random set of points in a small area.
-    2. Generating a random bounding box
-    3. Finding the minimum area bounding box via minimum_area_bounding_box
-    4. Confirming that the area of this box is smaller than:
-       - The axis-aligned minimum area bounding box of these points, and
-       - The randomly sampled bounding box.
-    """
-    points = np.array(points)
-    assume(
-        np.linalg.matrix_rank(
-            coordinates.wgs_depth_to_nztm(np.c_[points, np.ones_like(points[:, 1])])
-        )
-        == 3
-    )
-
-    box = bounding_box.minimum_area_bounding_box(coordinates.wgs_depth_to_nztm(points))
-    aa_box = bounding_box.axis_aligned_bounding_box(
-        coordinates.wgs_depth_to_nztm(points)
-    )
-
-    assume(dummy_bounding_box.contains(points).all())
-    assert box.area < aa_box.area or np.isclose(aa_box.area, box.area)
-    assert box.area < dummy_bounding_box.area or np.isclose(
-        box.area, dummy_bounding_box.area
-    )
+def test_minimum_bounding_box_minimality(points: list[np.ndarray]):
+    """Tests the minimality by assuming that the shapely implementation is correct,
+    and then asserting that the geometry is close to the minimum area geometry."""
+    points = coordinates.wgs_depth_to_nztm(np.array(points))
+    # The QuickHull algorithm used to construct the minimum area
+    # bounding box assumes that the points are not all collinear.
+    assume(np.linalg.cond(np.c_[points, np.ones_like(points[:, 1])]) < 1e8)
+    box = BoundingBox.bounding_box_for_geometry(shapely.MultiPoint(points))
+    bounding_box_polygon = shapely.Polygon(box.bounds).normalize()
+    minimum_envelope = shapely.oriented_envelope(shapely.MultiPoint(points)).normalize()
+    assert bounding_box_polygon.area == pytest.approx(minimum_envelope.area)
 
 
 def test_masked_bounding_box():

@@ -26,7 +26,6 @@ from typing import Self
 
 import numpy as np
 import numpy.typing as npt
-import scipy as sp
 import shapely
 from shapely import Polygon
 
@@ -59,7 +58,7 @@ class BoundingBox:
         bounds[[0, bottom_left_index]] = bounds[[bottom_left_index, 0]]
         angles = np.arctan2(*(bounds[1:] - bounds[0]).T)
 
-        indices = np.argsort(angles, kind='stable') + 1
+        indices = np.argsort(angles, kind="stable") + 1
         self.bounds = np.vstack([bounds[0], bounds[indices]])
 
     @property
@@ -121,6 +120,42 @@ class BoundingBox:
         return cls(coordinates.wgs_depth_to_nztm(centroid) + corner_offset)
 
     @classmethod
+    def bounding_box_for_geometry(
+        cls, geometry: shapely.Geometry, axis_aligned: bool = False
+    ) -> Self:
+        """Return a bounding box that minimally encloses a geometry.
+
+        Parameters
+        ----------
+        geometry : shapely.Geometry
+            The geometry to enclose.
+        axis_aligned : bool
+            If True, ensure that the bounding box is axis-aligned.
+
+        Returns
+        -------
+        Self
+            The bounding box for this geometry.
+
+        Raises
+        ------
+        ValueError
+            If the geometry does not have a well-defined bounding box.
+            This occurs if the geometry is degenerate (either a line
+            or a point).
+        """
+        if axis_aligned:
+            bounding_box_polygon = shapely.envelope(geometry).normalize()
+        else:
+            bounding_box_polygon = shapely.oriented_envelope(geometry).normalize()
+        if not (
+            isinstance(bounding_box_polygon, shapely.Polygon)
+            and len(bounding_box_polygon.exterior.coords) - 1 == 4
+        ):
+            raise ValueError("Ill-defined geometry for bounding box.")
+        return cls(np.array(bounding_box_polygon.exterior.coords)[:-1])
+
+    @classmethod
     def from_wgs84_coordinates(cls, corner_coordinates: npt.ArrayLike) -> Self:
         """Construct a bounding box from a list of corners.
 
@@ -163,7 +198,9 @@ class BoundingBox:
 
     @property
     def great_circle_bearing(self) -> np.float64:
-        return coordinates.nztm_bearing_to_great_circle_bearing(self.origin, self.extent_y / 2, self.bearing)
+        return coordinates.nztm_bearing_to_great_circle_bearing(
+            self.origin, self.extent_y / 2, self.bearing
+        )
 
     @property
     def area(self) -> np.float64:
@@ -282,83 +319,7 @@ class BoundingBox:
     def __repr__(self):
         """A representation of the bounding box."""
         cls = self.__class__.__name__
-        return f'{cls}(centre={self.origin}, bearing={self.bearing}, extent_x={self.extent_x}, extent_y={self.extent_y}, corners={self.corners})'
-
-
-def axis_aligned_bounding_box(points: npt.NDArray[np.float64]) -> BoundingBox:
-    """Find the axis-aligned bounding box containing points.
-
-    Parameters
-    ----------
-    points : np.ndarray
-        The points to bound.
-
-    Returns
-    -------
-    BoundingBox
-        The axis-aligned bounding box.
-    """
-    min_x, min_y = np.min(points, axis=0)
-    max_x, max_y = np.max(points, axis=0)
-    corners = np.array([[min_x, min_y], [max_x, min_y], [max_x, max_y], [min_x, max_y]])
-    return BoundingBox(corners)
-
-
-def minimum_area_bounding_box(points: npt.NDArray[np.float64]) -> BoundingBox:
-    """Find the smallest rectangle bounding points. The rectangle may be rotated.
-
-    Parameters
-    ----------
-    points : np.ndarray
-        The points to bound.
-
-    Returns
-    -------
-    BoundingBox
-        The minimum area bounding box.
-    """
-    # This is a somewhat brute-force method to obtain the minimum-area bounding
-    # box of a set of points, where the bounding box is not axis-aligned and is
-    # instead allowed to be rotated. The idea is to reduce the problem to the
-    # far simpler axis-aligned bounding box by observing that the minimum
-    # area bounding box must have a side parallel with *some* edge of the
-    # convex hull of the points. By rotating the picture so that the shared
-    # edge is axis-aligned, the problem is reduced to that of finding the
-    # axis-aligned bounding box. Because we do not know this edge apriori,
-    # we simply try it for all the edges and then take the smallest area
-    # box at the end.
-    convex_hull = sp.spatial.ConvexHull(points).points
-    segments = np.array(
-        [
-            convex_hull[(i + 1) % len(convex_hull)] - convex_hull[i]
-            for i in range(len(convex_hull))
-        ]
-    )
-    # This finds the slope of each segment with respect to the axes.
-    rotation_angles = -np.arctan2(segments[:, 1], segments[:, 0])
-
-    # Create a list of rotated bounding boxes by rotating each rotation angle,
-    # and then finding the axis-aligned bounding box of the convex hull. This
-    # creates a list of boxes that are each parallel to a different segment.
-    bounding_boxes = [
-        axis_aligned_bounding_box(convex_hull @ geo.rotation_matrix(angle).T)
-        for angle in rotation_angles
-    ]
-
-    minimum_rotation_angle, minimum_bounding_box = min(
-        zip(rotation_angles, bounding_boxes), key=lambda rot_box: rot_box[1].area
-    )
-    # axis-aligned bounding is not always included in the above
-    # search, so we should check against this too!
-    aa_box = axis_aligned_bounding_box(convex_hull)
-    if aa_box.area < minimum_bounding_box.area:
-        return aa_box
-
-    # rotating by -minimum_rotation_angle we undo the rotation applied
-    # to obtain bounding_boxes.
-    rotation_matrix = geo.rotation_matrix(-minimum_rotation_angle).T
-    corners = minimum_bounding_box.bounds @ rotation_matrix
-    return BoundingBox(corners)
+        return f"{cls}(centre={self.origin}, bearing={self.bearing}, extent_x={self.extent_x}, extent_y={self.extent_y}, corners={self.corners})"
 
 
 def minimum_area_bounding_box_for_polygons_masked(
@@ -389,9 +350,4 @@ def minimum_area_bounding_box_for_polygons_masked(
             must_include_polygon, shapely.intersection(may_include_polygon, mask)
         )
     )
-
-    if isinstance(bounding_polygon, Polygon):
-        return minimum_area_bounding_box(np.array(bounding_polygon.exterior.coords))
-    return minimum_area_bounding_box(
-        np.vstack([np.array(geom.exterior.coords) for geom in bounding_polygon.geoms])
-    )
+    return BoundingBox.bounding_box_for_geometry(bounding_polygon)
