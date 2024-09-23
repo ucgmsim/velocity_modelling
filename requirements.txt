@@ -6,6 +6,7 @@ pygmt
 pygmt_helper @ git+https://github.com/ucgmsim/pygmt_helper.git
 pytest
 pytest-cov
+pyvista
 pyyaml
 qcore @ git+https://github.com/ucgmsim/qcore.git
 scipy
