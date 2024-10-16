@@ -9,7 +9,7 @@ import typer
 import yaml
 
 from pygmt_helper import plotting
-from qcore import grid
+from qcore import coordinates, grid
 from velocity_modelling import bounding_box
 from velocity_modelling.bounding_box import BoundingBox
 
@@ -96,8 +96,6 @@ def plot_velocity_model(
             "value": velocity_slice.ravel(),
         }
     )
-
-
 
     cur_grid = plotting.create_grid(
         velocity_model_df,
@@ -242,11 +240,15 @@ def plot_vm_params(
         # Extent x and extent y are swapped in meaning between the old
         # vm params and the new bounding box class. So we swap them
         # here when we load them.
+        origin = np.array([vm_params["MODEL_LAT"], vm_params["MODEL_LON"]])
+        great_circle_bearing = vm_params["MODEL_ROT"]
+        extent_x = vm_params["extent_x"]
+        extent_y = vm_params["extent_y"]
+        nztm_bearing = coordinates.great_circle_bearing_to_nztm_bearing(
+            origin, extent_y / 2, great_circle_bearing
+        )
         box = bounding_box.BoundingBox.from_centroid_bearing_extents(
-            [vm_params["MODEL_LAT"], vm_params["MODEL_LON"]],
-            vm_params["MODEL_ROT"],
-            vm_params["extent_x"],
-            vm_params["extent_y"],
+            origin, nztm_bearing, extent_y, extent_x
         )
 
         resolution = vm_params.get("hh")
