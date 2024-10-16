@@ -2,7 +2,7 @@ from typing import Optional
 
 import numpy as np
 import shapely
-from hypothesis import HealthCheck, assume, given, seed, settings
+from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
 from qcore import coordinates
