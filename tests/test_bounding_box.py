@@ -3,7 +3,7 @@ from typing import Optional
 import numpy as np
 import pytest
 import shapely
-from hypothesis import HealthCheck, assume, given, seed, settings
+from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
 from qcore import coordinates
@@ -123,7 +123,7 @@ def test_bounding_box_construction(
     local_y=st.floats(0, 1),
 )
 @settings(deadline=None)
-def test_bounding_box_containment(box: BoundingBox, local_x, local_y):
+def test_bounding_box_containment(box: BoundingBox, local_x: float, local_y: float):
     assert box.contains(
         coordinates.nztm_to_wgs_depth(
             box.bounds[0]
@@ -212,8 +212,8 @@ def test_masked_bounding_box():
     )
     theta = np.linspace(0, 2 * np.pi)
     r = np.linspace(0, 1)
-    R, T = np.meshgrid(theta, r)
-    circle_coordinates = np.vstack([R.ravel(), T.ravel()])
+    r_grid, t_grid = np.meshgrid(theta, r)
+    circle_coordinates = np.vstack([r_grid.ravel(), t_grid.ravel()])
 
     circle_points = circle_coordinates[1] * np.vstack(
         (np.cos(circle_coordinates[0]), np.sin(circle_coordinates[0]))

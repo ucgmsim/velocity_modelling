@@ -198,6 +198,11 @@ class BoundingBox:
 
     @property
     def great_circle_bearing(self) -> np.float64:
+        """float: The great-circle bearing of the bounding box.
+
+        This returns the bearing of the bounding box in WGS84
+        coordinate space (as opposed to in the NZTM coordinate space).
+        """
         return coordinates.nztm_bearing_to_great_circle_bearing(
             self.origin, self.extent_y / 2, self.bearing
         )

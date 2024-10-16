@@ -55,7 +55,6 @@ known-first-party = [
     "qcore",
     "workflow",
     "pygmt_helper",
-    "qcore",
     "empirical",
     "nshmdb",
     "IM_calculation",
