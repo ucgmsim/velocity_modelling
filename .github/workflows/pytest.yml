@@ -23,7 +23,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest --cov=source_modelling --cov-report=html tests
+          pytest --cov=velocity_modelling --cov-report=html tests
 
       - name: Upload coverage data
         uses: actions/upload-artifact@v4
