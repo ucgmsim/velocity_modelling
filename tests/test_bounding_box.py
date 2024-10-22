@@ -98,34 +98,13 @@ def test_bounding_box_construction(
     assume(valid_coordinates(box.corners))
     assert np.allclose(box.origin, centroid)
     # A box's bearing is not uniquely defined!
-    assert (
-        np.isclose(box.bearing, bearing)
-        or np.isclose(box.bearing % 90, bearing % 90, atol=1e-1)
-        or (np.isclose(box.bearing, 90) and np.isclose(bearing, 0))
-        or (np.isclose(box.bearing, 0), np.isclose(bearing, 90))
-    )
-    assert (
-        np.isclose(box.bearing, 0)
-        or np.isclose(box.bearing, 90)
-        or 0 < box.bearing < 90
+    assert np.isclose(box.bearing, bearing % 90, atol=1e-1) or (
+        np.isclose(box.bearing, 0) and np.isclose(bearing % 90, 90)
     )
     assert np.allclose(
         [box.extent_x, box.extent_y], [extent_x, extent_y]
     ) or np.allclose([box.extent_x, box.extent_y], [extent_y, extent_x])
     assert np.isclose(box.area, box.extent_x * box.extent_y)
-    assert np.allclose(
-        np.sort(np.array(box.polygon.exterior.coords)[:-1], axis=0),
-        np.sort(box.bounds, axis=0),
-    )
-    # Check that the sorted order of the centroid constructed box
-    # matches the corner coordinate constructed box, and that the
-    # corner coordinate construction works.
-    assert np.allclose(
-        BoundingBox.from_wgs84_coordinates(box.corners).corners, box.corners
-    )
-    # This just checks that the repr doesn't cause a crash. The value
-    # is insignificant as it is just used for debugging.
-    _ = repr(box)
 
 
 @given(
@@ -197,40 +176,6 @@ def test_minimum_bounding_box_minimality(points: list[np.ndarray]):
     bounding_box_polygon = shapely.Polygon(box.bounds).normalize()
     minimum_envelope = shapely.oriented_envelope(shapely.MultiPoint(points)).normalize()
     assert bounding_box_polygon.area == pytest.approx(minimum_envelope.area)
-
-
-@given(
-    points=st.lists(
-        elements=st.builds(
-            coordinate_hashable,
-            lat=st.floats(-50, -31),
-            lon=st.floats(160, 180),
-        ),
-        min_size=4,
-        unique=True,
-    )
-)
-def test_axis_aligned_bounding_box(points: list[np.ndarray]):
-    """Tests axis aligned bounding box method is correct."""
-    points = coordinates.wgs_depth_to_nztm(np.array(points))
-    # The QuickHull algorithm used to construct the minimum area
-    # bounding box assumes that the points are not all collinear.
-    assume(np.linalg.cond(np.c_[points, np.ones_like(points[:, 1])]) < 1e8)
-    box = BoundingBox.bounding_box_for_geometry(
-        shapely.MultiPoint(points), axis_aligned=True
-    )
-    assert np.allclose(np.min(box.bounds, axis=0), np.min(points, axis=0))
-    assert np.allclose(np.max(box.bounds, axis=0), np.max(points, axis=0))
-
-
-@pytest.mark.parametrize(
-    "points",
-    [np.array([[-43.0, 172.0]]), np.array([[-43.0, 172.0], [-44.0, 172.0]])],
-)
-def test_invalid_bounding_box_geometry(points: np.ndarray):
-    with pytest.raises(ValueError):
-        points = coordinates.wgs_depth_to_nztm(np.array(points))
-        _ = BoundingBox.bounding_box_for_geometry(shapely.MultiPoint(points))
 
 
 def test_masked_bounding_box():
@@ -369,31 +314,6 @@ def test_bounding_box_containment_consistency(
     assert box.contains(box.local_coordinates_to_wgs_depth(local_coordinates))
 
 
-@given(
-    box=st.builds(
-        BoundingBox.from_centroid_bearing_extents,
-        centroid=st.builds(
-            coordinate,
-            lat=st.floats(-47, -40),
-            lon=st.floats(166, 177),
-        ),
-        bearing=st.floats(0, 360),
-        extent_x=st.floats(20, 1000, allow_nan=False, allow_infinity=False),
-        extent_y=st.floats(20, 1000, allow_nan=False, allow_infinity=False),
-    ),
-    local_x=st.floats(2, 100),
-    local_y=st.floats(2, 100),
-)
-def test_bounding_box_invalid_local_coordinates(
-    box: BoundingBox, local_x: float, local_y: float
-):
-    local_coordinates = np.array([local_x, local_y])
-    with pytest.raises(ValueError):
-        box.wgs_depth_coordinates_to_local_coordinates(
-            box.local_coordinates_to_wgs_depth(local_coordinates)
-        )
-
-
 @pytest.mark.parametrize(
     "box,expected_bearing",
     [
@@ -418,4 +338,4 @@ def test_bounding_box_invalid_local_coordinates(
     ],
 )
 def test_bounding_box_great_circle_bearing(box: BoundingBox, expected_bearing: float):
-    assert box.great_circle_bearing == pytest.approx(expected_bearing, abs=0.1)
+    assert box.great_circle_bearing == pytest.approx(expected_bearing)

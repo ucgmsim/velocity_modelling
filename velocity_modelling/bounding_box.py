@@ -53,10 +53,9 @@ class BoundingBox:
         bounds : npt.NDArray[np.float64]
             The bounds of the box.
         """
-        bottom_left_index = bounds.sum(axis=-1).argmin()
+        bottom_left_index = min(range(4), key=lambda i: tuple(bounds[i, ::-1]))
         bounds = np.copy(bounds)
-        if bottom_left_index != 0:
-            bounds[[0, bottom_left_index]] = bounds[[bottom_left_index, 0]]
+        bounds[[0, bottom_left_index]] = bounds[[bottom_left_index, 0]]
         angles = np.arctan2(*(bounds[1:] - bounds[0]).T)
 
         indices = np.argsort(angles, kind="stable") + 1
@@ -192,12 +191,9 @@ class BoundingBox:
         """float: The bearing of the bounding box."""
         north_direction = np.array([1, 0, 0])
         up_direction = np.array([0, 0, 1])
-        vertical_direction = np.append(self.bounds[1] - self.bounds[0], 0)
-        return (
-            geo.oriented_bearing_wrt_normal(
-                north_direction, vertical_direction, up_direction
-            )
-            % 90
+        vertical_direction = np.append(self.bounds[-1] - self.bounds[0], 0)
+        return geo.oriented_bearing_wrt_normal(
+            north_direction, vertical_direction, up_direction
         )
 
     @property
