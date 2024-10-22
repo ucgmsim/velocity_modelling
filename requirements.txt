@@ -9,6 +9,5 @@ pytest-cov
 pyvista
 pyyaml
 qcore @ git+https://github.com/ucgmsim/qcore.git
-scipy
 shapely
 typer
