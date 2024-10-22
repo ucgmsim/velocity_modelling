@@ -53,7 +53,7 @@ class BoundingBox:
         bounds : npt.NDArray[np.float64]
             The bounds of the box.
         """
-        bottom_left_index = min(range(4), key=lambda i: tuple(bounds[i, ::-1]))
+        bottom_left_index = (bounds - np.mean(bounds, axis=0)).sum(axis=1).argmin()
         bounds = np.copy(bounds)
         bounds[[0, bottom_left_index]] = bounds[[bottom_left_index, 0]]
         angles = np.arctan2(*(bounds[1:] - bounds[0]).T)

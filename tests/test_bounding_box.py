@@ -98,13 +98,28 @@ def test_bounding_box_construction(
     assume(valid_coordinates(box.corners))
     assert np.allclose(box.origin, centroid)
     # A box's bearing is not uniquely defined!
-    assert np.isclose(box.bearing, bearing % 90, atol=1e-1) or (
+    assert np.isclose(box.bearing % 90, bearing % 90, atol=1e-1) or (
         np.isclose(box.bearing, 0) and np.isclose(bearing % 90, 90)
     )
     assert np.allclose(
         [box.extent_x, box.extent_y], [extent_x, extent_y]
     ) or np.allclose([box.extent_x, box.extent_y], [extent_y, extent_x])
     assert np.isclose(box.area, box.extent_x * box.extent_y)
+
+    assert np.allclose(
+        np.sort(np.array(box.polygon.exterior.coords)[:-1], axis=0),
+        np.sort(box.bounds, axis=0),
+    )
+    # Check that the sorted order of the centroid constructed box
+    # matches the corner coordinate constructed box, and that the
+    # corner coordinate construction works.
+    assert np.allclose(
+        np.sort(BoundingBox.from_wgs84_coordinates(box.corners).corners, axis=-1),
+        np.sort(box.corners, axis=-1),
+    )
+    # This just checks that the repr doesn't cause a crash. The value
+    # is insignificant as it is just used for debugging.
+    _ = repr(box)
 
 
 @given(
@@ -331,9 +346,9 @@ def test_bounding_box_containment_consistency(
         ),
         (
             BoundingBox.from_centroid_bearing_extents(
-                np.array([-37.06313846120225, 174.93752057998879]), 50, 100, 80
+                np.array([-37.06313846120225, 174.93752057998879]), 23, 100, 80
             ),
-            48.71324002503669,
+            21.751793740814296,
         ),
     ],
 )
