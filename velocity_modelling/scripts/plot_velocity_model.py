@@ -248,7 +248,7 @@ def plot_vm_params(
             origin, extent_x / 2, great_circle_bearing
         )
         box = bounding_box.BoundingBox.from_centroid_bearing_extents(
-            origin, great_circle_bearing, extent_x, extent_y
+            origin, nztm_bearing, extent_x, extent_y
         )
 
         resolution = vm_params.get("hh")
