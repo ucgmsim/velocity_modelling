@@ -245,10 +245,10 @@ def plot_vm_params(
         extent_x = vm_params["extent_x"]
         extent_y = vm_params["extent_y"]
         nztm_bearing = coordinates.great_circle_bearing_to_nztm_bearing(
-            origin, extent_y / 2, great_circle_bearing
+            origin, extent_x / 2, great_circle_bearing
         )
         box = bounding_box.BoundingBox.from_centroid_bearing_extents(
-            origin, nztm_bearing, extent_y, extent_x
+            origin, great_circle_bearing, extent_x, extent_y
         )
 
         resolution = vm_params.get("hh")
