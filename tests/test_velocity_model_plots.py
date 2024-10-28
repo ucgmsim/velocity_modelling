@@ -8,7 +8,7 @@ from velocity_modelling.scripts import plot_velocity_model
 PLOT_IMAGE_DIRECTORY = Path("wiki/images")
 INPUT_FFP = Path(__file__).parent / "input"
 
-# Kept at: QuakeCoRE/Jake Faulkner/rho3dfile in Dropbox.
+# Kept at: /QuakeCoRE/Test/rho3dfile in Dropbox.
 SWEDGE_RHO3D_FILE_LINK = "https://www.dropbox.com/scl/fi/y8qf8zjq4zf9yeejsopya/rho3dfile.d?rlkey=87xt4kpac94dwf9hfo5pjepyb&st=n0x5qvit&dl=0"
 
 
