@@ -8,6 +8,6 @@ pytest
 pytest-cov
 pyvista
 pyyaml
-qcore @ git+https://github.com/ucgmsim/qcore
+qcore @ git+https://github.com/ucgmsim/qcore.git
 shapely
 typer
