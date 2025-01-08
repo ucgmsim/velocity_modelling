@@ -66,6 +66,75 @@ class BoundingBox:
         """np.ndarray: the corners of the bounding box in (lat, lon) format."""
         return coordinates.nztm_to_wgs_depth(self.bounds)
 
+    def pad(
+        self,
+        pad_x: tuple[float, float] = (0.0, 0.0),
+        pad_y: tuple[float, float] = (0.0, 0.0),
+    ) -> Self:
+        """Pad the bounding box by extending it in the x and y directions.
+
+        Parameters
+        ----------
+        pad_x : tuple[float, float], default (0, 0)
+            Padding distances in kilometers for x direction (left, right).
+        pad_y : tuple[float, float], default (0, 0)
+            Padding distances in kilometers for y direction (bottom, top).
+
+        Returns
+        -------
+        Self
+            A new instance of the bounding box with applied padding
+        """
+        bounds = self.bounds
+        x_direction = bounds[1] - bounds[0]
+        x_direction /= np.linalg.norm(x_direction)
+        y_direction = bounds[-1] - bounds[0]
+        y_direction /= np.linalg.norm(y_direction)
+        delta = 1000 * np.array(
+            [
+                -pad_x[0] * x_direction - pad_y[0] * y_direction,
+                pad_x[1] * x_direction - pad_y[0] * y_direction,
+                pad_x[1] * x_direction + pad_y[1] * y_direction,
+                -pad_x[0] * x_direction + pad_y[1] * y_direction,
+            ]
+        )
+
+        return self.__class__(bounds + delta)
+
+    def shift(self, x_shift: float = 0, y_shift: float = 0) -> Self:
+        """Translate the bounding box by specified distances.
+
+        Parameters
+        ----------
+        x_shift : float, default 0
+            Distance to shift in x direction in kilometers
+        y_shift : float, default 0
+            Distance to shift in y direction in kilometers
+
+        Returns
+        -------
+        Self
+            A new instance of the bounding box translated by the specified amounts
+        """
+        return self.__class__(self.bounds + 1000 * np.array([x_shift, y_shift]))
+
+    def rotate(self, angle: float) -> Self:
+        """Rotate the bounding box around its center by a specified angle.
+
+        Parameters
+        ----------
+        angle : float
+            Rotation angle in degrees. Positive values indicate counterclockwise rotation.
+
+        Returns
+        -------
+        Self
+            A new instance of the bounding box rotated by the specified angle
+        """
+        rot_matrix = geo.rotation_matrix(np.radians(angle))
+        origin = np.mean(self.bounds, axis=0)
+        return self.__class__((self.bounds - origin) @ rot_matrix.T + origin)
+
     @classmethod
     def from_centroid_bearing_extents(
         cls,
