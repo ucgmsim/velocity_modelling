@@ -82,13 +82,14 @@ def plot_velocity_model(
     # the domain (hence, 1:-1, 1:-1),
     # 2. The fact we don't need depth (hence :2)
     lat_lon_grid = grid.coordinate_meshgrid(
-        corners[-1], corners[0], corners[-2], resolution * 1000
-    )[1:-1, 1:-1, :2]
+        corners[-1], corners[0], corners[-2], resolution * 1000, nx=nx, ny=ny
+    )[:, :, :2]
 
     # The lat lon grid has shape (nx, ny, nz), so we flip that to
     # make the veloity model.
     lat_lon_grid = np.transpose(lat_lon_grid, (1, 0, 2))
     velocity_slice = velocity_model[:, slice, :].reshape((ny, nx))
+
     velocity_model_df = pd.DataFrame(
         {
             "lat": lat_lon_grid[:, :, 0].ravel(),
