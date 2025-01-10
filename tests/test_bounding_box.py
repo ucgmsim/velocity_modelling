@@ -1,8 +1,9 @@
 from typing import Optional
 
 import numpy as np
+import pytest
 import shapely
-from hypothesis import HealthCheck, assume, given, seed, settings
+from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
 from qcore import coordinates
@@ -83,7 +84,7 @@ def valid_coordinates(point_coordinates: np.ndarray) -> bool:
         lat=st.floats(-50, -31),
         lon=st.floats(160, 180),
     ),
-    bearing=st.floats(0, 360),
+    bearing=st.floats(0, 90, exclude_max=True),
     extent_x=st.floats(0.1, 1000, allow_nan=False, allow_infinity=False),
     extent_y=st.floats(0.1, 1000, allow_nan=False, allow_infinity=False),
 )
@@ -96,12 +97,29 @@ def test_bounding_box_construction(
     )
     assume(valid_coordinates(box.corners))
     assert np.allclose(box.origin, centroid)
-    assert np.isclose(box.bearing, bearing, atol=1e-1) or (
-        np.isclose(box.bearing, 0) and np.isclose(bearing, 360)
+    # A box's bearing is not uniquely defined!
+    assert np.isclose(box.bearing % 90, bearing % 90, atol=1e-1) or (
+        np.isclose(box.bearing, 0) and np.isclose(bearing % 90, 90)
     )
-    assert np.isclose(box.extent_x, extent_x)
-    assert np.isclose(box.extent_y, extent_y)
+    assert np.allclose(
+        [box.extent_x, box.extent_y], [extent_x, extent_y]
+    ) or np.allclose([box.extent_x, box.extent_y], [extent_y, extent_x])
     assert np.isclose(box.area, box.extent_x * box.extent_y)
+
+    assert np.allclose(
+        np.sort(np.array(box.polygon.exterior.coords)[:-1], axis=0),
+        np.sort(box.bounds, axis=0),
+    )
+    # Check that the sorted order of the centroid constructed box
+    # matches the corner coordinate constructed box, and that the
+    # corner coordinate construction works.
+    assert np.allclose(
+        np.sort(BoundingBox.from_wgs84_coordinates(box.corners).corners, axis=-1),
+        np.sort(box.corners, axis=-1),
+    )
+    # This just checks that the repr doesn't cause a crash. The value
+    # is insignificant as it is just used for debugging.
+    _ = repr(box)
 
 
 @given(
@@ -120,7 +138,7 @@ def test_bounding_box_construction(
     local_y=st.floats(0, 1),
 )
 @settings(deadline=None)
-def test_bounding_box_containment(box: BoundingBox, local_x, local_y):
+def test_bounding_box_containment(box: BoundingBox, local_x: float, local_y: float):
     assert box.contains(
         coordinates.nztm_to_wgs_depth(
             box.bounds[0]
@@ -142,79 +160,37 @@ def test_bounding_box_containment(box: BoundingBox, local_x, local_y):
     )
 )
 def test_minimum_bounding_box_containment(points: list[np.ndarray]):
-    points = np.array(points)
+    points = coordinates.wgs_depth_to_nztm(np.array(points))
     # The QuickHull algorithm used to construct the minimum area
     # bounding box assumes that the points are not all collinear.
-    assume(
-        np.linalg.matrix_rank(
-            coordinates.wgs_depth_to_nztm(np.c_[points, np.ones_like(points[:, 1])])
-        )
-        == 3
-    )
-    box = bounding_box.minimum_area_bounding_box(coordinates.wgs_depth_to_nztm(points))
-    assert box.contains(points).all()
+    assume(np.linalg.matrix_rank(np.c_[points, np.ones_like(points[:, 1])]) == 3)
+    box = BoundingBox.bounding_box_for_geometry(shapely.MultiPoint(points))
+
+    assert box.contains(coordinates.nztm_to_wgs_depth(points)).all()
 
 
-# Slower test!
 @given(
     points=st.lists(
         elements=st.builds(
-            coordinate_hashable, lon=st.floats(173, 173.1), lat=st.floats(-43.1, -43)
+            coordinate_hashable,
+            lat=st.floats(-50, -31),
+            lon=st.floats(160, 180),
         ),
         min_size=4,
         unique=True,
-    ),
-    dummy_bounding_box=st.builds(
-        BoundingBox.from_centroid_bearing_extents,
-        centroid=st.builds(
-            coordinate,
-            lon=st.floats(173, 173.1),
-            lat=st.floats(-43.1, -43),
-        ),
-        bearing=st.floats(0, 360),
-        # In my testing, you need to allow really big boxes to get
-        # enough of a sample to test minimality.
-        extent_x=st.floats(9, 30, allow_nan=False, allow_infinity=False),
-        extent_y=st.floats(9, 30, allow_nan=False, allow_infinity=False),
-    ),
+    )
 )
-# Allow a lot of generated examples to get cases where a random box is
-# pretty good to properly test the minimum area bounding box.
-@settings(max_examples=500, suppress_health_check=[HealthCheck.filter_too_much])
-# seed = 1 so that GA runs are deterministic.
-@seed(1)
-def test_minimum_bounding_box_minimality(
-    points: list[np.ndarray], dummy_bounding_box: BoundingBox
-):
-    """Check that the minimum box is minimal in area.
-
-    This test heuristically evaluates the minimality of the bounding box by:
-
-    1. Generating a random set of points in a small area.
-    2. Generating a random bounding box
-    3. Finding the minimum area bounding box via minimum_area_bounding_box
-    4. Confirming that the area of this box is smaller than:
-       - The axis-aligned minimum area bounding box of these points, and
-       - The randomly sampled bounding box.
-    """
-    points = np.array(points)
-    assume(
-        np.linalg.matrix_rank(
-            coordinates.wgs_depth_to_nztm(np.c_[points, np.ones_like(points[:, 1])])
-        )
-        == 3
-    )
-
-    box = bounding_box.minimum_area_bounding_box(coordinates.wgs_depth_to_nztm(points))
-    aa_box = bounding_box.axis_aligned_bounding_box(
-        coordinates.wgs_depth_to_nztm(points)
-    )
-
-    assume(dummy_bounding_box.contains(points).all())
-    assert box.area < aa_box.area or np.isclose(aa_box.area, box.area)
-    assert box.area < dummy_bounding_box.area or np.isclose(
-        box.area, dummy_bounding_box.area
-    )
+def test_minimum_bounding_box_minimality(points: list[np.ndarray]):
+    """Tests the minimality by assuming that the shapely implementation is correct,
+    and then asserting that the geometry is close to the minimum area geometry."""
+    points = coordinates.wgs_depth_to_nztm(np.array(points))
+    # The QuickHull algorithm used to construct the minimum area
+    # bounding box assumes that the points are not all collinear.
+    assume(np.linalg.cond(np.c_[points, np.ones_like(points[:, 1])]) < 1e8)
+    box = BoundingBox.bounding_box_for_geometry(shapely.MultiPoint(points))
+    bounding_box_polygon = shapely.Polygon(box.bounds).normalize()
+    minimum_envelope = shapely.oriented_envelope(shapely.MultiPoint(points)).normalize()
+    assert bounding_box_polygon.area == pytest.approx(minimum_envelope.area)
 
 
 def test_masked_bounding_box():
@@ -251,8 +227,8 @@ def test_masked_bounding_box():
     )
     theta = np.linspace(0, 2 * np.pi)
     r = np.linspace(0, 1)
-    R, T = np.meshgrid(theta, r)
-    circle_coordinates = np.vstack([R.ravel(), T.ravel()])
+    r_grid, t_grid = np.meshgrid(theta, r)
+    circle_coordinates = np.vstack([r_grid.ravel(), t_grid.ravel()])
 
     circle_points = circle_coordinates[1] * np.vstack(
         (np.cos(circle_coordinates[0]), np.sin(circle_coordinates[0]))
@@ -281,3 +257,100 @@ def test_masked_bounding_box():
     assert not box.contains(
         coordinates.nztm_to_wgs_depth(test_not_include_points)
     ).all()
+
+
+@given(
+    box=st.builds(
+        BoundingBox.from_centroid_bearing_extents,
+        centroid=st.builds(
+            coordinate,
+            lat=st.floats(-47, -40),
+            lon=st.floats(166, 177),
+        ),
+        bearing=st.floats(0, 360),
+        extent_x=st.floats(20, 1000, allow_nan=False, allow_infinity=False),
+        extent_y=st.floats(20, 1000, allow_nan=False, allow_infinity=False),
+    ),
+    local_x=st.floats(0, 1),
+    local_y=st.floats(0, 1),
+)
+def test_bounding_box_grid_coordinates_inversion(
+    box: BoundingBox, local_x: float, local_y: float
+):
+    local_coords = np.array([local_x, local_y])
+    assert np.allclose(
+        box.wgs_depth_coordinates_to_local_coordinates(
+            box.local_coordinates_to_wgs_depth(local_coords)
+        ),
+        local_coords,
+        atol=0.01,
+    )
+
+
+@given(
+    box=st.builds(
+        BoundingBox.from_centroid_bearing_extents,
+        centroid=st.builds(
+            coordinate,
+            lat=st.floats(-47, -40),
+            lon=st.floats(166, 177),
+        ),
+        bearing=st.floats(0, 360),
+        extent_x=st.floats(20, 1000, allow_nan=False, allow_infinity=False),
+        extent_y=st.floats(20, 1000, allow_nan=False, allow_infinity=False),
+    )
+)
+def test_bounding_box_boundary_values(box: BoundingBox):
+    assert np.allclose(
+        box.wgs_depth_coordinates_to_local_coordinates(box.corners),
+        np.array([[0, 0], [1, 0], [1, 1], [0, 1]]),
+    )
+
+
+@given(
+    box=st.builds(
+        BoundingBox.from_centroid_bearing_extents,
+        centroid=st.builds(
+            coordinate,
+            lat=st.floats(-47, -40),
+            lon=st.floats(166, 177),
+        ),
+        bearing=st.floats(0, 360),
+        extent_x=st.floats(20, 1000, allow_nan=False, allow_infinity=False),
+        extent_y=st.floats(20, 1000, allow_nan=False, allow_infinity=False),
+    ),
+    local_x=st.floats(0, 1),
+    local_y=st.floats(0, 1),
+)
+def test_bounding_box_containment_consistency(
+    box: BoundingBox, local_x: float, local_y: float
+):
+    local_coordinates = np.array([local_x, local_y])
+    assert box.contains(box.local_coordinates_to_wgs_depth(local_coordinates))
+
+
+@pytest.mark.parametrize(
+    "box,expected_bearing",
+    [
+        (
+            BoundingBox.from_centroid_bearing_extents(
+                np.array([-45.74097357516373, 167.209054441501]), 0, 100, 150
+            ),
+            4.117063885773218,
+        ),
+        (
+            BoundingBox.from_centroid_bearing_extents(
+                np.array([-45.74097357516373, 167.209054441501]), 30, 100, 150
+            ),
+            34.04656913667332,
+        ),
+        (
+            BoundingBox.from_centroid_bearing_extents(
+                np.array([-37.06313846120225, 174.93752057998879]), 23, 100, 80
+            ),
+            21.751793740814296,
+        ),
+    ],
+)
+def test_bounding_box_great_circle_bearing(box: BoundingBox, expected_bearing: float):
+    assert box.great_circle_bearing == pytest.approx(expected_bearing)

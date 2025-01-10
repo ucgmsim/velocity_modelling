@@ -8,45 +8,58 @@ dimensions are in metres except where otherwise mentioned.
 
 Classes
 -------
-    - BoundingBox: Represents a 2D bounding box with properties and methods for calculations.
+- BoundingBox: Represents a 2D bounding box with properties and methods for calculations.
 
 Functions
 ---------
-    - axis_aligned_bounding_box: Returns an axis-aligned bounding box containing points.
-    - rotation_matrix: Returns the 2D rotation matrix for a given angle.
-    - minimum_area_bounding_box: Returns the smallest rectangle bounding points.
-    - minimum_area_bounding_box_for_polygons_masked: Returns a bounding box around masked polygons.
+- axis_aligned_bounding_box: Returns an axis-aligned bounding box containing points.
+- rotation_matrix: Returns the 2D rotation matrix for a given angle.
+- minimum_area_bounding_box: Returns the smallest rectangle bounding points.
+- minimum_area_bounding_box_for_polygons_masked: Returns a bounding box around masked polygons.
 
 References
 ----------
-    - BoundingBox wiki page: https://github.com/ucgmsim/qcore/wiki/BoundingBox
+- BoundingBox wiki page: https://github.com/ucgmsim/qcore/wiki/BoundingBox
 """
 
-import dataclasses
 from typing import Self
 
 import numpy as np
 import numpy.typing as npt
-import scipy as sp
 import shapely
 from shapely import Polygon
 
 from qcore import coordinates, geo
 
 
-@dataclasses.dataclass
 class BoundingBox:
     """Represents a 2D bounding box with properties and methods for calculations.
 
     Attributes
     ----------
-        corners : np.ndarray
-            The corners of the bounding box in cartesian coordinates. The
-            order of the corners should be counter clock-wise from the bottom-left point
-            (minimum x, minimum y).
+    corners : np.ndarray
+       The corners of the bounding box in cartesian coordinates. The
+       order of the corners should be counter clock-wise from the bottom-left point
+       (minimum x, minimum y).
     """
 
     bounds: npt.NDArray[np.float64]
+
+    def __init__(self, bounds: npt.NDArray[np.float64]):
+        """Create a bounding box from bounds in NZTM coordinates.
+
+        Parameters
+        ----------
+        bounds : npt.NDArray[np.float64]
+            The bounds of the box.
+        """
+        bottom_left_index = (bounds - np.mean(bounds, axis=0)).sum(axis=1).argmin()
+        bounds = np.copy(bounds)
+        bounds[[0, bottom_left_index]] = bounds[[bottom_left_index, 0]]
+        angles = np.arctan2(*(bounds[1:] - bounds[0]).T)
+
+        indices = np.argsort(angles, kind="stable") + 1
+        self.bounds = np.vstack([bounds[0], bounds[indices]])
 
     @property
     def corners(self) -> np.ndarray:
@@ -101,10 +114,46 @@ class BoundingBox:
             np.array(
                 [[-1 / 2, -1 / 2], [1 / 2, -1 / 2], [1 / 2, 1 / 2], [-1 / 2, 1 / 2]]
             )
-            * np.array([extent_x, extent_y])
+            * np.array([extent_y, extent_x])
             * 1000
-        ) @ geo.rotation_matrix(-np.radians(bearing))
+        ) @ geo.rotation_matrix(np.radians(-bearing))
         return cls(coordinates.wgs_depth_to_nztm(centroid) + corner_offset)
+
+    @classmethod
+    def bounding_box_for_geometry(
+        cls, geometry: shapely.Geometry, axis_aligned: bool = False
+    ) -> Self:
+        """Return a bounding box that minimally encloses a geometry.
+
+        Parameters
+        ----------
+        geometry : shapely.Geometry
+            The geometry to enclose.
+        axis_aligned : bool
+            If True, ensure that the bounding box is axis-aligned.
+
+        Returns
+        -------
+        Self
+            The bounding box for this geometry.
+
+        Raises
+        ------
+        ValueError
+            If the geometry does not have a well-defined bounding box.
+            This occurs if the geometry is degenerate (either a line
+            or a point).
+        """
+        if axis_aligned:
+            bounding_box_polygon = shapely.envelope(geometry).normalize()
+        else:
+            bounding_box_polygon = shapely.oriented_envelope(geometry).normalize()
+        if not (
+            isinstance(bounding_box_polygon, shapely.Polygon)
+            and len(bounding_box_polygon.exterior.coords) - 1 == 4
+        ):
+            raise ValueError("Ill-defined geometry for bounding box.")
+        return cls(np.array(bounding_box_polygon.exterior.coords)[:-1])
 
     @classmethod
     def from_wgs84_coordinates(cls, corner_coordinates: npt.ArrayLike) -> Self:
@@ -142,9 +191,20 @@ class BoundingBox:
         """float: The bearing of the bounding box."""
         north_direction = np.array([1, 0, 0])
         up_direction = np.array([0, 0, 1])
-        horizontal_direction = np.append(self.bounds[1] - self.bounds[0], 0)
+        vertical_direction = np.append(self.bounds[-1] - self.bounds[0], 0)
         return geo.oriented_bearing_wrt_normal(
-            north_direction, horizontal_direction, up_direction
+            north_direction, vertical_direction, up_direction
+        )
+
+    @property
+    def great_circle_bearing(self) -> np.float64:
+        """float: The great-circle bearing of the bounding box.
+
+        This returns the bearing of the bounding box in WGS84
+        coordinate space (as opposed to in the NZTM coordinate space).
+        """
+        return coordinates.nztm_bearing_to_great_circle_bearing(
+            self.origin, self.extent_y / 2, self.bearing
         )
 
     @property
@@ -171,92 +231,100 @@ class BoundingBox:
             A boolean mask of the points in the bounding box.
         """
         points = np.asarray(points)
-        x_direction = self.bounds[1] - self.bounds[0]
-        y_direction = self.bounds[-1] - self.bounds[0]
         offset = coordinates.wgs_depth_to_nztm(points) - self.bounds[0]
-        local_coordinates, _, _, _ = np.linalg.lstsq(
-            np.array([x_direction, y_direction]).T, offset.T, rcond=None
+        frame = np.array(
+            [self.bounds[1] - self.bounds[0], self.bounds[-1] - self.bounds[0]]
         )
+        if offset.ndim > 1:
+            offset = offset.T
+        local_coordinates = np.linalg.solve(frame.T, offset)
+
         return np.all(
             ((local_coordinates > 0) | np.isclose(local_coordinates, 0, atol=1e-6))
             & ((local_coordinates < 1) | np.isclose(local_coordinates, 1, atol=1e-6)),
             axis=0,
         )
 
+    def local_coordinates_to_wgs_depth(
+        self,
+        local_coords: npt.ArrayLike,
+    ) -> npt.NDArray[np.float64]:
+        """Convert bounding box coordinates to global coordinates.
 
-def axis_aligned_bounding_box(points: npt.NDArray[np.float64]) -> BoundingBox:
-    """Find the axis-aligned bounding box containing points.
+        Parameters
+        ----------
+        local_coordinates : np.ndarray
+            Local coordinates to convert. Local coordinates are 2D
+            coordinates (x, y) given for a bounding box, where x
+            represents displacement along the x-direction, and y
+            displacement along the y-direction (see diagram below).
 
-    Parameters
-    ----------
-    points : np.ndarray
-        The points to bound.
+                                       1 1
+                ┌─────────────────────┐ ^
+                │                     │ │
+                │                     │ │
+                │                     │ │ +y
+                │                     │ │
+                │                     │ │
+                └─────────────────────┘ │
+             0 0   ─────────────────>
+                         +x
+        Returns
+        -------
+        np.ndarray
+            An vector of (lat, lon) transformed coordinates.
+        """
+        frame = np.array(
+            [self.bounds[1] - self.bounds[0], self.bounds[-1] - self.bounds[0]]
+        )
+        nztm_coords = self.bounds[0] + local_coords @ frame
+        return coordinates.nztm_to_wgs_depth(nztm_coords)
 
-    Returns
-    -------
-        BoundingBox: The axis-aligned bounding box.
-    """
-    min_x, min_y = np.min(points, axis=0)
-    max_x, max_y = np.max(points, axis=0)
-    corners = np.array([[min_x, min_y], [max_x, min_y], [max_x, max_y], [min_x, max_y]])
-    return BoundingBox(corners)
+    def wgs_depth_coordinates_to_local_coordinates(
+        self, global_coords: npt.ArrayLike
+    ) -> npt.NDArray[np.float64]:
+        """Convert coordinates (lat, lon) to bounding box coordinates (x, y).
 
+        See `BoundingBox.local_coordinates_to_wgs_depth` for a description of
+        bounding box coordinates.
 
-def minimum_area_bounding_box(points: npt.NDArray[np.float64]) -> BoundingBox:
-    """Find the smallest rectangle bounding points. The rectangle may be rotated.
+        Parameters
+        ----------
+        global_coordinates : np.ndarray
+            Global coordinates to convert.
 
-    Parameters
-    ----------
-    points : np.ndarray
-        The points to bound.
+        Returns
+        -------
+        np.ndarray
+            Coordinates (x, y) representing the position of
+            global_coordinates in bounding box coordinates.
 
-    Returns
-    -------
-    BoundingBox
-        The minimum area bounding box.
-    """
-    # This is a somewhat brute-force method to obtain the minimum-area bounding
-    # box of a set of points, where the bounding box is not axis-aligned and is
-    # instead allowed to be rotated. The idea is to reduce the problem to the
-    # far simpler axis-aligned bounding box by observing that the minimum
-    # area bounding box must have a side parallel with *some* edge of the
-    # convex hull of the points. By rotating the picture so that the shared
-    # edge is axis-aligned, the problem is reduced to that of finding the
-    # axis-aligned bounding box. Because we do not know this edge apriori,
-    # we simply try it for all the edges and then take the smallest area
-    # box at the end.
-    convex_hull = sp.spatial.ConvexHull(points).points
-    segments = np.array(
-        [
-            convex_hull[(i + 1) % len(convex_hull)] - convex_hull[i]
-            for i in range(len(convex_hull))
-        ]
-    )
-    # This finds the slope of each segment with respect to the axes.
-    rotation_angles = -np.arctan2(segments[:, 1], segments[:, 0])
+        Raises
+        ------
+        ValueError
+            If the given coordinates do not lie in the bounding box.
+        """
+        global_coords = np.asarray(global_coords)
 
-    # Create a list of rotated bounding boxes by rotating each rotation angle,
-    # and then finding the axis-aligned bounding box of the convex hull. This
-    # creates a list of boxes that are each parallel to a different segment.
-    bounding_boxes = [
-        axis_aligned_bounding_box(convex_hull @ geo.rotation_matrix(angle).T)
-        for angle in rotation_angles
-    ]
+        frame = np.array(
+            [self.bounds[1] - self.bounds[0], self.bounds[-1] - self.bounds[0]]
+        )
+        offset = coordinates.wgs_depth_to_nztm(global_coords) - self.bounds[0]
+        if offset.ndim > 1:
+            offset = offset.T
+        local_coordinates = np.linalg.solve(frame.T, offset)
+        if not np.all(
+            ((local_coordinates > 0) | np.isclose(local_coordinates, 0, atol=1e-6))
+            & ((local_coordinates < 1) | np.isclose(local_coordinates, 1, atol=1e-6))
+        ):
+            raise ValueError("Specified coordinates do not lie in bounding box.")
+        local_coordinates = np.clip(local_coordinates, 0, 1)
+        return local_coordinates.T
 
-    minimum_rotation_angle, minimum_bounding_box = min(
-        zip(rotation_angles, bounding_boxes), key=lambda rot_box: rot_box[1].area
-    )
-    # axis-aligned bounding is not always included in the above
-    # search, so we should check against this too!
-    aa_box = axis_aligned_bounding_box(convex_hull)
-    if aa_box.area < minimum_bounding_box.area:
-        return aa_box
-
-    # rotating by -minimum_rotation_angle we undo the rotation applied
-    # to obtain bounding_boxes.
-    rotation_matrix = geo.rotation_matrix(-minimum_rotation_angle).T
-    corners = minimum_bounding_box.bounds @ rotation_matrix
-    return BoundingBox(corners)
+    def __repr__(self):
+        """A representation of the bounding box."""
+        cls = self.__class__.__name__
+        return f"{cls}(centre={self.origin}, bearing={self.bearing}, extent_x={self.extent_x}, extent_y={self.extent_y}, corners={self.corners})"
 
 
 def minimum_area_bounding_box_for_polygons_masked(
@@ -287,9 +355,4 @@ def minimum_area_bounding_box_for_polygons_masked(
             must_include_polygon, shapely.intersection(may_include_polygon, mask)
         )
     )
-
-    if isinstance(bounding_polygon, Polygon):
-        return minimum_area_bounding_box(np.array(bounding_polygon.exterior.coords))
-    return minimum_area_bounding_box(
-        np.vstack([np.array(geom.exterior.coords) for geom in bounding_polygon.geoms])
-    )
+    return BoundingBox.bounding_box_for_geometry(bounding_polygon)

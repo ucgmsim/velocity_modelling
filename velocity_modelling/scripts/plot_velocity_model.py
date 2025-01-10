@@ -82,28 +82,18 @@ def plot_velocity_model(
     # the domain (hence, 1:-1, 1:-1),
     # 2. The fact we don't need depth (hence :2)
     lat_lon_grid = grid.coordinate_meshgrid(
-        corners[-1], corners[-2], corners[0], resolution * 1000
-    )[1:-1, 1:-1, :2]
+        corners[-1], corners[0], corners[-2], resolution * 1000, nx=nx, ny=ny
+    )[:, :, :2]
 
     # The lat lon grid has shape (nx, ny, nz), so we flip that to
     # make the veloity model.
     lat_lon_grid = np.transpose(lat_lon_grid, (1, 0, 2))
     velocity_slice = velocity_model[:, slice, :].reshape((ny, nx))
-    velocity_model_df = pd.DataFrame(
-        {
-            # Additionally, the lat lon grid is reversed compared to the velocity model.
-            "lat": lat_lon_grid[::-1, ::-1, 0].ravel(),
-            "lon": lat_lon_grid[::-1, ::-1, 1].ravel(),
-            "value": velocity_slice.ravel(),
-        }
-    )
 
-    velocity_slice = velocity_model[:, slice, :].reshape((ny, nx))
     velocity_model_df = pd.DataFrame(
         {
-            # Additionally, the lat lon grid is reversed compared to the velocity model.
-            "lat": lat_lon_grid[::-1, ::-1, 0].ravel(),
-            "lon": lat_lon_grid[::-1, ::-1, 1].ravel(),
+            "lat": lat_lon_grid[:, :, 0].ravel(),
+            "lon": lat_lon_grid[:, :, 1].ravel(),
             "value": velocity_slice.ravel(),
         }
     )
@@ -256,10 +246,10 @@ def plot_vm_params(
         extent_x = vm_params["extent_x"]
         extent_y = vm_params["extent_y"]
         nztm_bearing = coordinates.great_circle_bearing_to_nztm_bearing(
-            origin, extent_y / 2, great_circle_bearing
+            origin, extent_x / 2, great_circle_bearing
         )
         box = bounding_box.BoundingBox.from_centroid_bearing_extents(
-            origin, nztm_bearing, extent_y, extent_x
+            origin, nztm_bearing, extent_x, extent_y
         )
 
         resolution = vm_params.get("hh")
