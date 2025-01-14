@@ -134,6 +134,126 @@ def test_bounding_box_construction(
         extent_x=st.floats(0.1, 1000, allow_nan=False, allow_infinity=False),
         extent_y=st.floats(0.1, 1000, allow_nan=False, allow_infinity=False),
     ),
+    pad_x=st.tuples(st.floats(0, 100), st.floats(0, 100)),
+    pad_y=st.tuples(st.floats(0, 100), st.floats(0, 100)),
+)
+def test_pad_extents(
+    box: BoundingBox, pad_x: tuple[float, float], pad_y: tuple[float, float]
+):
+    padded_box = box.pad(pad_x, pad_y)
+    assert padded_box.extent_x == pytest.approx(box.extent_x + sum(pad_x), abs=0.01)
+    assert padded_box.extent_y == pytest.approx(box.extent_y + sum(pad_y), abs=0.01)
+
+
+@given(
+    box=st.builds(
+        BoundingBox.from_centroid_bearing_extents,
+        centroid=st.builds(
+            coordinate,
+            lat=st.floats(-50, -31),
+            lon=st.floats(160, 180),
+        ),
+        bearing=st.floats(0, 360),
+        extent_x=st.floats(0.1, 1000, allow_nan=False, allow_infinity=False),
+        extent_y=st.floats(0.1, 1000, allow_nan=False, allow_infinity=False),
+    ),
+    shift_x=st.floats(0, 100),
+    shift_y=st.floats(0, 100),
+)
+def test_shift_extents(box: BoundingBox, shift_x: float, shift_y: float):
+    shifted_box = box.shift(shift_x, shift_y)
+    assert coordinates.distance_between_wgs_depth_coordinates(
+        shifted_box.origin, box.origin
+    ) / 1000 == pytest.approx(np.sqrt(shift_x**2 + shift_y**2), abs=0.01)
+
+
+@given(
+    box=st.builds(
+        BoundingBox.from_centroid_bearing_extents,
+        centroid=st.builds(
+            coordinate,
+            lat=st.floats(-50, -31),
+            lon=st.floats(160, 180),
+        ),
+        bearing=st.floats(0, 360),
+        extent_x=st.floats(0.1, 1000, allow_nan=False, allow_infinity=False),
+        extent_y=st.floats(0.1, 1000, allow_nan=False, allow_infinity=False),
+    ),
+    angle_a=st.floats(0, 360, exclude_max=True),
+    angle_b=st.floats(0, 360, exclude_max=True),
+)
+def test_bearing_angle_additivity(box: BoundingBox, angle_a: float, angle_b: float):
+    assert np.allclose(
+        box.rotate(angle_a).rotate(angle_b).bounds, box.rotate(angle_a + angle_b).bounds
+    )
+
+
+@given(
+    box=st.builds(
+        BoundingBox.from_centroid_bearing_extents,
+        centroid=st.builds(
+            coordinate,
+            lat=st.floats(-50, -31),
+            lon=st.floats(160, 180),
+        ),
+        bearing=st.floats(0, 360),
+        extent_x=st.floats(0.1, 1000, allow_nan=False, allow_infinity=False),
+        extent_y=st.floats(0.1, 1000, allow_nan=False, allow_infinity=False),
+    ),
+    angle=st.floats(0, 360, exclude_max=True),
+)
+def test_bearing_angle_inverse(box: BoundingBox, angle: float):
+    assert np.allclose(box.rotate(angle).rotate(-angle).bounds, box.bounds)
+
+
+@given(
+    box=st.builds(
+        BoundingBox.from_centroid_bearing_extents,
+        centroid=st.builds(
+            coordinate,
+            lat=st.floats(-50, -31),
+            lon=st.floats(160, 180),
+        ),
+        bearing=st.floats(0, 360),
+        extent_x=st.floats(0.1, 1000, allow_nan=False, allow_infinity=False),
+        extent_y=st.floats(0.1, 1000, allow_nan=False, allow_infinity=False),
+    ),
+    angle=st.floats(0, 360, exclude_max=True),
+)
+def test_bearing_angle_area_preservation(box: BoundingBox, angle: float):
+    assert np.isclose(box.rotate(angle).area, box.area)
+
+
+@given(
+    box=st.builds(
+        BoundingBox.from_centroid_bearing_extents,
+        centroid=st.builds(
+            coordinate,
+            lat=st.floats(-50, -31),
+            lon=st.floats(160, 180),
+        ),
+        bearing=st.floats(0, 360),
+        extent_x=st.floats(0.1, 1000, allow_nan=False, allow_infinity=False),
+        extent_y=st.floats(0.1, 1000, allow_nan=False, allow_infinity=False),
+    ),
+    angle=st.floats(0, 360, exclude_max=True),
+)
+def test_bearing_angle_origin_preservation(box: BoundingBox, angle: float):
+    assert np.allclose(box.rotate(angle).origin, box.origin)
+
+
+@given(
+    box=st.builds(
+        BoundingBox.from_centroid_bearing_extents,
+        centroid=st.builds(
+            coordinate,
+            lat=st.floats(-50, -31),
+            lon=st.floats(160, 180),
+        ),
+        bearing=st.floats(0, 360),
+        extent_x=st.floats(0.1, 1000, allow_nan=False, allow_infinity=False),
+        extent_y=st.floats(0.1, 1000, allow_nan=False, allow_infinity=False),
+    ),
     local_x=st.floats(0, 1),
     local_y=st.floats(0, 1),
 )
