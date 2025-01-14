@@ -1,8 +1,10 @@
 """Utilities for reading and writing 1-D velocity profiles in different formats."""
 
 from pathlib import Path
-import pandas as pd
+
 import numpy as np
+import pandas as pd
+
 
 def read_velocity_model_1d(velocity_model_path: Path) -> pd.DataFrame:
     """Read a 1D velocity model from a Parquet file and compute depth boundaries.
