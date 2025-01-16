@@ -1,7 +1,7 @@
 diffimg
 hypothesis[numpy]
 numpy<2
-pandas
+pandas[parquet]
 pygmt
 pygmt_helper @ git+https://github.com/ucgmsim/pygmt_helper
 pytest
