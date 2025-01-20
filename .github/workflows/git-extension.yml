@@ -1,0 +1,13 @@
+name: test
+
+on: pull_request
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sed '/git\+/ { /\.git$/! s/$/.git/ }' requirements.txt
+      - uses: getsentry/action-git-diff-suggestions@main
+        with:
+          message: To keep the `requirements.txt` consistent, please update the following dependencies.
