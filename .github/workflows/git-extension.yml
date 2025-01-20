@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: sed -i '/git\+/ { /\.git$/! s/$/.git/ }' requirements.txt
-      - uses: parkerbxyz/suggest-changes@v1
+      - uses: parkerbxyz/suggest-changes@v2
         with:
           comment: 'Please change the following dependencies for consistency.'
           event: 'REQUEST_CHANGES'
