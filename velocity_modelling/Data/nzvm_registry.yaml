@@ -1,0 +1,1230 @@
+basin:
+  - name: Canterbury_Pre_Quaternary_v18p1
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Boundaries/NewCanterburyBasinBoundary_WGS84_1m.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/DEM.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+
+      - name: PlioceneTop
+        path: Canterbury_Basin/Pre_Quaternary/PlioceneTop.in
+        basin_boundary_number: 0
+        basin_submodel_name: PlioceneSubMod_v1
+
+      - name: MioceneTop
+        path: Canterbury_Basin/Pre_Quaternary/MioceneTop.in
+        basin_boundary_number: 0
+        basin_submodel_name: MioceneSubMod_v1
+
+      - name: PaleogeneTop
+        path: Canterbury_Basin/Pre_Quaternary/PaleogeneTop.in
+        basin_boundary_number: 0
+        basin_submodel_name: PaleogeneSubMod_v1
+      - name: BasementTopSurf
+        path: Canterbury_Basin/Quaternary/BasementTop.in";
+        basin_boundary_number: 0
+        basin_submodel_name: null
+  - name: Canterbury_Pre_Quaternary_v18p2
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Boundaries/NewCanterburyBasinBoundary_WGS84_1m.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/DEM.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2_Pliocene_Enforced
+
+      - name: PlioceneTop
+        path: Canterbury_Basin/Pre_Quaternary/PlioceneTop.in
+        basin_boundary_number: 0
+        basin_submodel_name: PlioceneSubMod_v1
+
+      - name: MioceneTop
+        path: Canterbury_Basin/Pre_Quaternary/MioceneTop.in
+        basin_boundary_number: 0
+        basin_submodel_name: MioceneSubMod_v1
+
+      - name: PaleogeneTop
+        path: Canterbury_Basin/Pre_Quaternary/PaleogeneTop.in
+        basin_boundary_number: 0
+        basin_submodel_name: PaleogeneSubMod_v1
+
+      - name: BasementTopSurf
+        path: Canterbury_Basin/Quaternary/BasementTop.in";
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+  - name: Canterbury_Pre_Quaternary_v18p3
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Boundaries/NewCanterburyBasinBoundary_WGS84_1m.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/DEM.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2_Pliocene_Enforced
+
+      - name: PlioceneTop
+        path: Canterbury_Basin/Pre_Quaternary/Pliocene_46_v8p9p18.in
+        basin_boundary_number: 0
+        basin_submodel_name: PlioceneSubMod_v1
+
+      - name: MioceneTop
+        path: Canterbury_Basin/Pre_Quaternary/MioceneTop.in
+        basin_boundary_number: 0
+        basin_submodel_name: MioceneSubMod_v1
+
+      - name: PaleogeneTop
+        path: Canterbury_Basin/Pre_Quaternary/PaleogeneTop.in
+        basin_boundary_number: 0
+        basin_submodel_name: PaleogeneSubMod_v1
+
+      - name: BasementTopSurf
+        path: Canterbury_Basin/Quaternary/BasementTop.in";
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+  - name: Canterbury_Pre_Quaternary_v19p1
+    ignoreBasinForSmoothing: false
+
+    basinBoundaries:
+      - path: Boundaries/NewCanterburyBasinBoundary_WGS84_1m.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/CantDEM.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2_Pliocene_Enforced
+
+      - name: PlioceneTop
+        path: Canterbury_Basin/Pre_Quaternary/Pliocene_46_v8p9p18.in
+        basin_boundary_number: 0
+        basin_submodel_name: PlioceneSubMod_v1
+
+      - name: MioceneTop
+        path: Canterbury_Basin/Pre_Quaternary/MioceneTop.in
+        basin_boundary_number: 0
+        basin_submodel_name: MioceneSubMod_v1
+
+      - name: PaleogeneTop
+        path: Canterbury_Basin/Pre_Quaternary/PaleogeneTop.in
+        basin_boundary_number: 0
+        basin_submodel_name: PaleogeneSubMod_v1
+
+      - name: BasementTopSurf
+        path: Canterbury_Basin/Quaternary/BasementTop.in";
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: Cantebury_North_v19p1
+    ignoreBasinForSmoothing: false
+
+    basinBoundaries:
+      - path: SI_BASINS/NorthCanterbury_Polygon_WGS84.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+
+      - name: NorthCanterburyBasement
+        path: SI_BASINS/NorthCanterbury_Basement_WGS84_v0p0.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+  - name: Banks_Peninsula_Volcanics_v19p1
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Boundaries/BPVBoundary.txt
+    basinSurfaces:
+      - name: BPVTop
+        path: Canterbury_Basin/BPV/BPVTop.in"
+        basin_boundary_number: 0
+        basin_submodel_name: BPVSubMod_v4
+
+      - name: MioceneTop
+        path: Canterbury_Basin/Pre_Quaternary/MioceneTop.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+  - name: Kaikoura_v19p1
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: SI_BASINS/Kaikoura_Polygon_WGS84.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+
+      - name: KaikouraBasement
+        path: SI_BASINS/Kaikoura_Basement_WGS84_v0p0.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+  - name: Cheviot_v19p1
+    ignoreBasinForSmoothing: false
+    basinBoundaryFileName:
+      - path: SI_BASINS/Cheviot_Polygon_WGS84.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+
+      - name: CheviotBasement
+        path: SI_BASINS/Cheviot_Basement_WGS84_v0p0.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: Hanmer_v19p1
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: SI_BASINS/Hanmer_Polygon_WGS84.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: HanmerBasement
+        path: SI_BASINS/Hanmer_Basement_WGS84_v0p0.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: Marlborough_v19p1
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: SI_BASINS/Marlborough_Polygon_WGS84_v0p1.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: MarlboroughBasement
+        path: SI_BASINS/Marlborough_Basement_WGS84_v0p1.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+  - name: Nelson_v19p1
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: SI_BASINS/Nelson_Polygon_WGS84.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: NelsonBasement
+        path: SI_BASINS/Nelson_Basement_WGS84_v0p0.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+  - name: Wellington_v19p1
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/Wellington/v19p1/Wellington_Polygon_WGS84.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: WellingtonBasement
+        path: Basins/Wellington/v19p1/Wellington_Basement_WGS84_v0p0.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: Wellington_v19p6
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/Wellington/v19p6/Wellington_Polygon_Wainuiomata_WGS84.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: WellingtonBasement
+        path: Basins/Wellington/v19p6/Wellington_Grid_WGS84_v19p5p6_100_hybrid10.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+  - name: WaikatoHauraki_v19p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Boundaries/WaikatoHaurakiBasinEdge_WGS84.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: WaikatoHaurakiBasement
+        path: NI_BASINS/WaikatoHaurakiBasin_WGS84_500m_v2019v07v05.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: Wanaka_v20p6
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: USER20_BASINS/WanakaOutlineWGS84.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: WanakaBasement
+        path: USER20_BASINS/wanaka_basin_grid_WGS84_v2.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+
+
+  - name: MacKenzie_v20p6
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: USER20_BASINS/mackenzie_basin_outline_nzmg.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: MacKenzieBasement
+        path: USER20_BASINS/mackenzie_proj_grid_WGS84.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: Wakatipu_v20p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: USER20_BASINS/WakatipuBasinOutlineWGS84.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: WakatipuBasement
+        path: USER20_BASINS/WakatipuBasin_WGS84_500m_v2020v07v06.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+  - name: Alexandra_v20p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: USER20_BASINS/alexandra_outline.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: RanAlexBasement
+        path: USER20_BASINS/ran-alex_proj_WGS84.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: Ranfurly_v20p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: USER20_BASINS/ranfurly_outline.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: RanAlexBasement
+        path: USER20_BASINS/ran-alex_proj_WGS84.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: NE_OTAGO_A_v20p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: USER20_BASINS/NE_otago/NE_otago_A_outline.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: RanAlexBasement
+        path: USER20_BASINS/ran-alex_proj_WGS84.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: NE_OTAGO_B_v20p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: USER20_BASINS/NE_otago/NE_otago_B_outline.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: RanAlexBasement
+        path: USER20_BASINS/ran-alex_proj_WGS84.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: NE_OTAGO_C_v20p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: USER20_BASINS/NE_otago/NE_otago_C_outline.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: RanAlexBasement
+        path: USER20_BASINS/ran-alex_proj_WGS84.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: NE_OTAGO_D_v20p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: USER20_BASINS/NE_otago/NE_otago_D_outline.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: RanAlexBasement
+        path: USER20_BASINS/ran-alex_proj_WGS84.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: NE_OTAGO_E_v20p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: USER20_BASINS/NE_otago/NE_otago_E_outline.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: RanAlexBasement
+        path: USER20_BASINS/ran-alex_proj_WGS84.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: Mosgiel_v20p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: USER20_BASINS/mos_outline_WGS84.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: MosgielBasement
+        path: USER20_BASINS/mos_proj_WGS84.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: Balclutha_v20p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: USER20_BASINS/bal_outline_WGS84.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: BalcluthaBasement
+        path: USER20_BASINS/bal_proj_WGS84.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: Dunedin_v20p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: USER20_BASINS/dun_outline_WGS84.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: DunedinBasement
+        path: USER20_BASINS/dun_proj_WGS84.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+
+  - name: Murchison_v20p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: USER20_BASINS/Murchison_Basin_Outline_v1_WGS84.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: MosgielBasement
+        path: USER20_BASINS/MurchisonBasin_WGS84_500m_v2020v07v15.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: Waitaki_v20p8
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: USER20_BASINS/waitaki_outline_WGS84.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: WaitakiBasement
+        path: USER20_BASINS/wai-hak_WGS84.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: Hakataramea_v20p8
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: USER20_BASINS/hakataramea_outline_WGS84.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: HakatarameaBasement
+        path: USER20_BASINS/wai-hak_WGS84.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: Karamea_v20p11
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: USER20_BASINS/Karamea_basin_outline_v1_WGS84.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: KarameaBasement
+        path: USER20_BASINS/KarameaBasin_WGS84_500m_v12v11v2020.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: CollingwoodBasin1_v20p11
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: USER20_BASINS/CollingwoodBasinOutline_1_WGS84_v1.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: CollingwoodBasement
+        path: USER20_BASINS/CollTakBasin_WGS84_500m_v11v11v2020.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: CollingwoodBasin2_v20p11
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: USER20_BASINS/CollingwoodBasinOutline_2_WGS84_v1.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: CollingwoodBasement
+        path: USER20_BASINS/CollTakBasin_WGS84_500m_v11v11v2020.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: CollingwoodBasin3_v20p11
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: USER20_BASINS/CollingwoodBasinOutline_3_WGS84_v1.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: CollingwoodBasement
+        path: USER20_BASINS/CollTakBasin_WGS84_500m_v11v11v2020.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: SpringsJunction_v20p11
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: USER20_BASINS/SpringsJ_basin_outline_v1_WGS84.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: SpringsJunctionBasement
+        path: USER20_BASINS/SpringsJunctionBasin_WGS84_500m_v12v11v2020.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+
+  - name: HawkesBay1_v21p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/Napier_Hawkes_Bay/v21p7/HawkesBay1_Outline_WGS84_delim.dat
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: HawkesBay
+        path: Basins/Napier_Hawkes_Bay/v21p7/HawkesBay_Grid_WGS84_Export.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: HawkesBay2_v21p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/Napier_Hawkes_Bay/v21p7/HawkesBay2_Outline_WGS84_delim.dat
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: HawkesBay
+        path: Basins/Napier_Hawkes_Bay/v21p7/HawkesBay_Grid_WGS84_Export.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: HawkesBay3_v21p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/Napier_Hawkes_Bay/v21p7/HawkesBay3_Outline_WGS84_delim.dat
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: HawkesBay
+        path: Basins/Napier_Hawkes_Bay/v21p7/HawkesBay_Grid_WGS84_Export.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: HawkesBay4_v21p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/Napier_Hawkes_Bay/v21p7/HawkesBay4_Outline_WGS84_delim.dat
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: HawkesBay
+        path: Basins/Napier_Hawkes_Bay/v21p7/HawkesBay_Grid_WGS84_Export.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: Napier1_v21p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/Napier_Hawkes_Bay/v21p7/Napier1_Outline_WGS84_delim.dat
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: Napier
+        path: Basins/Napier_Hawkes_Bay/v21p7/Napier_Grid_WGS84_Export.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+  - name: Napier2_v21p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/Napier_Hawkes_Bay/v21p7/Napier2_Outline_WGS84_delim.dat
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: Napier
+        path: Basins/Napier_Hawkes_Bay/v21p7/Napier_Grid_WGS84_Export.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+  - name: Napier3_v21p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/Napier_Hawkes_Bay/v21p7/Napier3_Outline_WGS84_delim.dat
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: Napier
+        path: Basins/Napier_Hawkes_Bay/v21p7/Napier_Grid_WGS84_Export.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+  - name: Napier4_v21p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/Napier_Hawkes_Bay/v21p7/Napier4_Outline_WGS84_delim.dat
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: Napier
+        path: Basins/Napier_Hawkes_Bay/v21p7/Napier_Grid_WGS84_Export.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+  - name: Napier5_v21p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/Napier_Hawkes_Bay/v21p7/Napier5_Outline_WGS84_delim.dat
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: Napier
+        path: Basins/Napier_Hawkes_Bay/v21p7/Napier_Grid_WGS84_Export.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+  - name: Napier6_v21p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/Napier_Hawkes_Bay/v21p7/Napier6_Outline_WGS84_delim.dat
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: Napier
+        path: Basins/Napier_Hawkes_Bay/v21p7/Napier_Grid_WGS84_Export.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+  - name: GreaterWellington1_v21p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington1_Outline_WGS84.dat
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: GreaterWellingtonBasement
+        path: Basins/Greater_Wellington_and_Porirua/v21p7/Greater_Wellington_Elevation_WGS84.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: GreaterWellington2_v21p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington2_Outline_WGS84.dat
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: GreaterWellingtonBasement
+        path: Basins/Greater_Wellington_and_Porirua/v21p7/Greater_Wellington_Elevation_WGS84.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: GreaterWellington3_v21p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington3_Outline_WGS84.dat
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: GreaterWellingtonBasement
+        path: Basins/Greater_Wellington_and_Porirua/v21p7/Greater_Wellington_Elevation_WGS84.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: GreaterWellington4_v21p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington4_Outline_WGS84.dat
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: GreaterWellingtonBasement
+        path: Basins/Greater_Wellington_and_Porirua/v21p7/Greater_Wellington_Elevation_WGS84.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: GreaterWellington5_v21p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington5_Outline_WGS84.dat
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: GreaterWellingtonBasement
+        path: Basins/Greater_Wellington_and_Porirua/v21p7/Greater_Wellington_Elevation_WGS84.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: GreaterWellington6_v21p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington6_Outline_WGS84.dat
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: GreaterWellingtonBasement
+        path: Basins/Greater_Wellington_and_Porirua/v21p7/Greater_Wellington_Elevation_WGS84.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: Porirua1_v21p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/Greater_Wellington_and_Porirua/v21p7/Porirua1_Outline_WGS84.dat
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: PoriruaBasement
+        path: Basins/Greater_Wellington_and_Porirua/v21p7/Porirua_Elevation_WGS84.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: Porirua2_v21p7
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/Greater_Wellington_and_Porirua/v21p7/Porirua2_Outline_WGS84.dat
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: PoriruaBasement
+        path: Basins/Greater_Wellington_and_Porirua/v21p7/Porirua_Elevation_WGS84.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+  - name: Wellington_v21p8
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/Wellington/v21p8/Wellington_Polygon_Wainuiomata_WGS84.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+      - name: WellingtonBasement
+        path: Basins/Wellington/v21p8/Wellington_Grid_WGS84_Hill20210823_100_extracted_d.in
+
+
+  - name: Gisborne_v21p11
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/Gisborne/v21p11/Gisborne_Outline_WGS84_delim.dat
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: Gisborne
+        path: Basins/Gisborne/v21p11/Gisborne_Surface_Export.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+  - name: SouthernHawkesBay_v21p12
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/Southern_Hawkes_Bay/v21p12/SHB_Outline_WGS84_delim.dat
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: SouthernHawkesBay
+        path: Basins/Southern_Hawkes_Bay/v21p12/SHB_Surface_Export.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+  - name: Wairarapa_v21p12
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/Wairarapa/v21p12/Wairarapa_Outline_WGS84_delim.dat
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: Wairarapa
+        path: Basins/Wairarapa/v21p12/Wairarapa_Surface_Export.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+  - name: Motu_Bay1_v22p3
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/East_Cape/v22p3/Motu_bay1_Outline_WGS84.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: Motu_Bay1
+        path: Basins/East_Cape/v22p3/Motu_river_Surface_Export.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+  - name: Motu_Bay2_v22p3
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/East_Cape/v22p3/Motu_bay2_Outline_WGS84.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: Motu_Bay2
+        path: Basins/East_Cape/v22p3/Motu_river_Surface_Export.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+  - name: Motu_Bay3_v22p3
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: Basins/East_Cape/v22p3/Motu_bay3_Outline_WGS84.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: Motu_Bay3
+        path: Basins/East_Cape/v22p3/Motu_river_Surface_Export.in
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+  - name: Whangaparoa_v23p4
+    ignoreBasinForSmoothing: false
+    basinBoundaries:
+      - path: USER20_BASINS/Whangaparoa_outline_WGS84.txt
+    basinSurfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        basin_boundary_number: 0
+        basin_submodel_name: Cant1D_v2
+      - name: Whangaparoa
+        path: USER20_BASINS/Whangaparoa_surface_WGS84.txt
+        basin_boundary_number: 0
+        basin_submodel_name: null
+
+
+
+vm1d:
+  - name: v1DsubMod
+    path: 1D_Velocity_Model/Cant1D_v1.fd_modfile
+
+tomography:
+  - name: 2010_Full_South_Island
+    nElev: 20
+    elev: [ 15, 1, -3, -8, -15, -23, -30, -38, -48, -65, -85, -105, -130, -155, -185, -225, -275, -370, -620, -750 ]
+    vs30_path: null
+    special_offshore_tapering: false
+    path: Tomography/2010_Full_South_Island
+
+
+  - name: 2010_Full_North_Island
+    nElev: 20
+    elev: [ 15, 1, -3, -8, -15, -23, -30, -38, -48, -65, -85, -105, -130, -155, -185, -225, -275, -370, -620, -750 ]
+    vs30_path: null
+    special_offshore_tapering: false
+    path: Tomography/2010_Full_North_Island
+
+
+  - name: 2010_NZ
+    nElev: 20
+    elev: [ 15, 1, -3, -8, -15, -23, -30, -38, -48, -65, -85, -105, -130, -155, -185, -225, -275, -370, -620, -750 ]
+    vs30_path: Global_Surfaces/NZ_Vs30.in
+    special_offshore_tapering: false
+    path: Tomography/2010_NZ
+
+
+  - name: 2010_NZ_OFFSHORE
+    nElev: 20
+    elev: [ 15, 1, -3, -8, -15, -23, -30, -38, -48, -65, -85, -105, -130, -155, -185, -225, -275, -370, -620, -750 ]
+    vs30_path: Global_Surfaces/NZ_Vs30NZ_Vs30_HD_With_Offshore.in
+    special_offshore_tapering: true
+    path: Tomography/2010_NZ
+
+
+  - name: 2020_NZ_OFFSHORE
+    nElev: 20
+    elev: [ 15, 1, -3, -8, -15, -23, -30, -38, -48, -65, -85, -105, -130, -155, -185, -225, -275, -370, -620, -750 ]
+    vs30_path: Global_Surfaces/NZ_Vs30NZ_Vs30_HD_With_Offshore.in
+    special_offshore_tapering: true
+    path: Tomography/2020_NZ
+
+
+  - name: 2020_NZ_OFFSHORE_NO_BASIN
+    nElev: 20
+    elev: [ 15, 1, -3, -8, -15, -23, -30, -38, -48, -65, -85, -105, -130, -155, -185, -225, -275, -370, -620, -750 ]
+    vs30_path: Global_Surfaces/NZ_Vs30NZ_Vs30_HD_With_Offshore.in
+    special_offshore_tapering: false
+    path: Tomography/2020_NZ
+
+
+  - name: 2020_NZ_OFFSHORE_EXTENDED
+    nElev: 20
+    elev: [ 15, 1, -3, -8, -15, -23, -30, -38, -48, -65, -85, -105, -130, -155, -185, -225, -275, -370, -620, -750 ]
+    vs30_path: Global_Surfaces/NZ_Vs30_HD_With_Offshore_extended.in
+    special_offshore_tapering: true
+    path: Tomography/2020_NZ_EXTENDED
+
+  - name: 2023_Chow_NI
+    nElev: 175
+    elev: [ 15.0, 2.25, 2.0, 1.75, 1.5, 1.25, 1.0, 0.75, 0.5, 0.25, 0.0, -0.25, -0.5, -0.75, -1.0, -1.25, -1.5, -1.75, -2.0, -2.25, -2.5, -2.75, -3.0, -3.25, -3.5, -3.75, -4.0, -4.25, -4.5, -4.75, -5.0, -5.25, -5.5, -5.75, -6.0, -6.25, -6.5, -6.75, -7.0, -7.25, -7.5, -7.75, -8.0, -9.0, -10.0, -11.0, -12.0, -13.0, -14.0, -15.0, -16.0, -17.0, -18.0, -19.0, -20.0, -21.0, -22.0, -23.0, -24.0, -25.0, -26.0, -27.0, -28.0, -29.0, -30.0, -31.0, -32.0, -33.0, -34.0, -35.0, -36.0, -37.0, -38.0, -39.0, -40.0, -41.0, -42.0, -43.0, -44.0, -45.0, -46.0, -47.0, -48.0, -49.0, -50.0, -52.0, -56.0, -60.0, -64.0, -68.0, -72.0, -76.0, -80.0, -84.0, -88.0, -92.0, -96.0, -100.0, -104.0, -108.0, -112.0, -116.0, -120.0, -124.0, -128.0, -132.0, -136.0, -140.0, -144.0, -148.0, -152.0, -156.0, -160.0, -164.0, -168.0, -172.0, -176.0, -180.0, -184.0, -188.0, -192.0, -196.0, -200.0, -204.0, -208.0, -212.0, -216.0, -220.0, -224.0, -228.0, -232.0, -236.0, -240.0, -244.0, -248.0, -252.0, -256.0, -260.0, -264.0, -268.0, -272.0, -276.0, -280.0, -284.0, -288.0, -292.0, -296.0, -300.0, -304.0, -308.0, -312.0, -316.0, -320.0, -324.0, -328.0, -332.0, -336.0, -340.0, -344.0, -348.0, -352.0, -356.0, -360.0, -364.0, -368.0, -372.0, -376.0, -380.0, -384.0, -388.0, -392.0, -396.0, -400.0, -620.0, -750.0, ]
+    vs30_path: Global_Surfaces/NZ_Vs30_HD_With_Offshore.in
+    special_offshore_tapering: true
+    path: Tomography/2023_Chow_NI
+
+  - name: 2020_Korea
+    nElev: 19
+    elev: [ 5, -4, -8, -12, -16, -20, -24, -28, -32, -36, -40, -52, -56, -60, -64, -68, -680 ]
+    vs30_path: Global_Surfaces/NZ_Vs30_HD_With_Offshore.in
+    special_offshore_tapering: false
+    path: Tomography/2020_Korea
+
+
+
+surface:
+  - name: posInfSurf
+    path: Global_Surfaces/posInf.in
+
+  - name: negInfSurf
+    path: Global_Surfaces/negInf.in
+
+  - name: DEM
+    path: DEM/NZ_DEM_HD.in
+
+
+velo_submodel:
+  - name: NansubMod
+    type: null
+  - name: v1DsubMod
+    type: vm1d
+  - name: 2010_Full_South_Island
+    type: tomography
+  - name: 2010_Full_North_Island
+    type: tomography
+  - name: 2010_NZ
+    type: tomography
+  - name: 2010_NZ_OFFSHORE
+    type: tomography
+  - name: 2020_NZ_OFFSHORE
+    type: tomography
+  - name: 2020_NZ_OFFSHORE_NO_BASIN
+    type: tmography
+  - name: 2020_NZ_OFFSHORE_EXTENDED
+    type: tmography
+
+
+vm:
+  - version: 0.01
+    GTL: false
+    surfaces: [ posInfSurf, negInfSurf ]
+    velo_submodels: [ v1DsubMod ]
+
+  - version: 0.02
+    GTL: false
+    surfaces: [ posInfSurf, negInfSurf ]
+    velo_submodels: [ 2010_Full_South_Island ]
+
+  - version: 2.03
+    GTL: true
+    surfaces: [ posInfSurf, DEM, negInfSurf ]
+    velo_submodels: [ NaNsubMod, EPtomo2010subMod ]
+    tomography: 2010_NZ_OFFSHORE
+    basin_edge_smoothing: true
+    basins:
+      - Canterbury_Pre_Quaternary_v19p1
+      - Cantebury_North_v19p1
+      - Banks_Peninsula_Volcanics_v19p1
+      - Kaikoura_v19p1
+      - Cheviot_v19p1
+      - Hanmer_v19p1
+      - Marlborough_v19p1
+      - Nelson_v19p1
+      - Wellington_v21p8
+      - WaikatoHauraki_v19p7
+
+  - version: 2.07
+    GTL: true
+    surfaces: [ posInfSurf, DEM, negInfSurf ]
+    velo_submodels: [ NaNsubMod, EPtomo2010subMod ]
+    tomography: 2020_NZ_OFFSHORE
+    basin_edge_smoothing: true
+    basins:
+      - Canterbury_Pre_Quaternary_v19p1
+      - Cantebury_North_v19p1
+      - Banks_Peninsula_Volcanics_v19p1
+      - Kaikoura_v19p1
+      - Cheviot_v19p1
+      - Hanmer_v19p1
+      - Marlborough_v19p1
+      - Nelson_v19p1
+      - Wellington_v21p8
+      - WaikatoHauraki_v19p7
+      - Wanaka_v20p6
+      - MacKenzie_v20p6
+      - Wakatipu_v20p7
+      - Alexandra_v20p7
+      - Ranfurly_v20p7
+      - NE_Otago_A_v20p7
+      - NE_Otago_B_v20p7
+      - NE_Otago_C_v20p7
+      - NE_Otago_D_v20p7
+      - NE_Otago_E_v20p7
+      - Mosgiel_v20p7
+      - Balclutha_v20p7
+      - Dunedin_v20p7
+      - Murchison_v20p7
+      - Waitaki_v20p8
+      - Hakataramea_v20p8
+      - Karamea_v20p11
+      - CollingwoodBasin1_v20p11
+      - CollingwoodBasin2_v20p11
+      - CollingwoodBasin3_v20p11
+      - SpringsJunction_v20p11
+      - HawkesBay1_v21p7
+      - HawkesBay2_v21p7
+      - HawkesBay3_v21p7
+      - HawkesBay4_v21p7
+      - Napier1_v21p7
+      - Napier2_v21p7
+      - Napier3_v21p7
+      - Napier4_v21p7
+      - Napier5_v21p7
+      - Napier6_v21p7
+      - GreaterWellington1_v21p7
+      - GreaterWellington2_v21p7
+      - GreaterWellington3_v21p7
+      - GreaterWellington4_v21p7
+      - GreaterWellington5_v21p7
+      - GreaterWellington6_v21p7
+      - Porirua1_v21p7
+      - Porirua2_v21p7
+      - Gisborne_v21p11
+      - SouthernHawkesBay_v21p12
+      - Wairarapa_v21p12
+      - Motu_Bay1_v22p3
+      - Motu_Bay2_v22p3
+      - Motu_Bay3_v22p3
+      - Whangaparoa_v23p4
+
+  - version: 2.07_students2024
+    GTL: true
+    surfaces: [ posInfSurf, DEM, negInfSurf ]
+    velo_submodels: [ NaNsubMod, EPtomo2010subMod ]
+    tomography: 2020_NZ_OFFSHORE
+    basin_edge_smoothing: true
+    basins:
+      - Canterbury_Pre_Quaternary_v19p1
+      - Cantebury_North_v19p1
+      - Banks_Peninsula_Volcanics_v19p1
+      - Kaikoura_v19p1
+      - Cheviot_v19p1
+      - Hanmer_v19p1
+      - Marlborough_v19p1
+      - Nelson_v19p1
+      - Wellington_v21p8
+      - WaikatoHauraki_v19p7
+      - Wanaka_v20p6
+      - MacKenzie_v20p6
+      - Wakatipu_v20p7
+      - Alexandra_v20p7
+      - Ranfurly_v20p7
+      - NE_Otago_A_v20p7
+      - NE_Otago_B_v20p7
+      - NE_Otago_C_v20p7
+      - NE_Otago_D_v20p7
+      - NE_Otago_E_v20p7
+      - Mosgiel_v20p7
+      - Balclutha_v20p7
+      - Dunedin_v20p7
+      - Murchison_v20p7
+      - Waitaki_v20p8
+      - Hakataramea_v20p8
+      - Karamea_v20p11
+      - CollingwoodBasin1_v20p11
+      - CollingwoodBasin2_v20p11
+      - CollingwoodBasin3_v20p11
+      - SpringsJunction_v20p11
+      - HawkesBay1_v21p7
+      - HawkesBay2_v21p7
+      - HawkesBay3_v21p7
+      - HawkesBay4_v21p7
+      - Napier1_v21p7
+      - Napier2_v21p7
+      - Napier3_v21p7
+      - Napier4_v21p7
+      - Napier5_v21p7
+      - Napier6_v21p7
+      - GreaterWellington1_v21p7
+      - GreaterWellington2_v21p7
+      - GreaterWellington3_v21p7
+      - GreaterWellington4_v21p7
+      - GreaterWellington5_v21p7
+      - GreaterWellington6_v21p7
+      - Porirua1_v21p7
+      - Porirua2_v21p7
+      - Gisborne_v21p11
+      - SouthernHawkesBay_v21p12
+      - Wairarapa_v21p12
+      - Motu_Bay1_v22p3
+      - Motu_Bay2_v22p3
+      - Motu_Bay3_v22p3
+      - Whangaparoa_v23p4
+      - Westport_v24p9
+      - TeAnau_v24p9
+
