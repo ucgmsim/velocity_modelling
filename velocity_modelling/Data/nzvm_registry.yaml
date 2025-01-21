@@ -964,6 +964,9 @@ basin:
 vm1d:
   - name: v1DsubMod
     path: 1D_Velocity_Model/Cant1D_v1.fd_modfile
+  - name: v1DsubMod_v2
+    path: 1D_Velocity_Model/Cant1D_v2.fd_modfile
+
 
 tomography:
   - name: 2010_Full_South_Island
@@ -1047,6 +1050,9 @@ surface:
   - name: DEM
     path: DEM/NZ_DEM_HD.in
 
+  - name: offshore
+    path: Global_Surfaces/shoreline_distance_2k.in
+
 
 velo_submodel:
   - name: NansubMod
@@ -1078,7 +1084,8 @@ vm:
   - version: 0.02
     GTL: false
     surfaces: [ posInfSurf, negInfSurf ]
-    velo_submodels: [ 2010_Full_South_Island ]
+    velo_submodels: [ EPtomo2010subMod ]
+    tomography: 2010_Full_South_Island
 
   - version: 2.03
     GTL: true

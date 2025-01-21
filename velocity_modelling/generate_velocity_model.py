@@ -1,4 +1,5 @@
 import concurrent.futures
+from enum import Enum
 from logging import Logger
 import logging
 
@@ -24,6 +25,15 @@ from typing import List, Dict
 DATA_ROOT = Path(__file__).parent / "Data"
 
 nzvm_registry_path = DATA_ROOT/'nzvm_registry.yaml'
+
+DEFAULT_OFFSHORE_1D_MODEL = "v1DsubMod_v2" # vm1d name for offshore 1D model
+DEFAULT_OFFSHORE_DISTANCE = "offshore"  # surface name for offshore distance
+
+class VTYPE(Enum):
+    vp = 0
+    vs = 1
+    rho = 2
+
 
 class VeloMod1DData:
     def __init__(self):
@@ -86,6 +96,29 @@ class GlobalMesh:
         self.X = np.zeros(nX)
         self.Y = np.zeros(nY)
         self.Z = np.zeros(nZ)
+
+class TomographyData:
+    def __init__(self, elev: List[float], vs30_path: Path, special_offshore_tapering: bool, surf_tomo_path: Path, offshore_distance_path: Path, offshore_v1d_path: Path):
+        self.surfDeps = elev
+        self.vs30 = load_global_surface(vs30_path)
+        self.special_offshore_tapering = special_offshore_tapering
+        self.surf = []
+
+        for i in range(len(elev)):
+            self.surf.append({}) # self.surf[i] is an empty dictionary
+            if elev[i] == int(elev[i]): # if the elevation is an integer
+                elev_name = f"{elev[i]}"
+            else:
+                elev_name = f"{elev[i]:.2f}".replace(".", "p")
+
+            for vtype in VTYPE:
+                tomofile = surf_tomo_path / f"surf_tomography_{vtype.name}_elev{elev_name}.in"
+                self.surf[i][vtype.name]= load_global_surface(tomofile)
+
+        self.offshore_distance = load_global_surface(offshore_distance_path)
+        self.offshore_basin_model_1d = load_1d_velo_sub_model(offshore_v1d_path)
+        self.tomography_loaded = True
+
 
 def write_velo_mod_corners_text_file(global_mesh: GlobalMesh, output_dir: str,  logger: Logger) -> None:
     """
@@ -344,6 +377,13 @@ def load_1d_velo_sub_model(model_name: str) -> VeloMod1DData:
         exit(1)
 
     return velo_mod_1d_data
+
+def load_eptomo_surface_data(tomo_name: str) -> VeloMod1DData:
+    tomo = nzvm_registry_get_tomography(tomo_name)
+    offshore_distance = nzvm_registry_get_surface(DEFAULT_OFFSHORE_DISTANCE)
+    offshore_v1d = nzvm_registry_get_vm1d(DEFAULT_OFFSHORE_1D_MODEL)
+    return TomographyData(tomo['elev'], tomo['vs30_path'], tomo['special_offshore_tapering'], tomo['path'], offshore_distance, offshore_v1d)
+
 def load_all_global_data(global_model_params: dict, logger: Logger) : #-> (VeloMod1DData, NZTomographyData, GlobalSurfaces, BasinData):
 
     """
@@ -386,8 +426,9 @@ def load_all_global_data(global_model_params: dict, logger: Logger) : #-> (VeloM
         elif global_model_params['velo_submodels'][i] == "NaNsubMod":
             # no data required for NaN velocity sub model, leave as placeholder
             pass
-        else: # tomography sub model eg. 2020_NZ_OFFSHORE
-#            nz_tomography_data =load_eptomo_surface_data(global_model_params['velo_submodels'][i])
+        else: # tomography sub model EPtomo2010subMod eg. 2020_NZ_OFFSHORE
+
+            nz_tomography_data = load_eptomo_surface_data(global_model_params['tomography'])
             print("Loaded tomography data.")
 
     # load in vector containing basin 'wall-type' boundaries to apply smoothing near
@@ -426,60 +467,60 @@ def generate_velocity_model(output_dir: str, vm_params: Dict, logger: Logger) ->
 
     velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data = load_all_global_data(global_model_params, logger)
 
-    # for j in range(global_mesh.nY):
-    #
-    #     print(f"\rGenerating velocity model {j * 100 / global_mesh.nY:.2f}% complete.", end="")
-    #     partial_global_mesh = extract_partial_mesh(global_mesh, j)
-    #     partial_global_qualities = PartialGlobalQualities(partial_global_mesh.nX, partial_global_mesh.nZ)
-    #
-    #     for k in range(partial_global_mesh.nX):
-    #         in_basin = InBasin()
-    #         partial_global_surface_depths = PartialGlobalSurfaceDepths()
-    #         partial_basin_surface_depths = PartialBasinSurfaceDepths()
-    #         qualities_vector = QualitiesVector()
-    #         extended_qualities_vector = QualitiesVector()
-    #
-    #         if smoothing_required == 1:
-    #             extended_mesh_vector = extend_mesh_vector(partial_global_mesh, n_pts_smooth, model_extent.hDep * 1000,
-    #                                                       k)
-    #             assign_qualities(global_model_parameters, velo_mod_1d_data, nz_tomography_data, global_surfaces,
-    #                              basin_data, extended_mesh_vector, partial_global_surface_depths,
-    #                              partial_basin_surface_depths, in_basin, extended_qualities_vector, logger,
-    #                              gen_extract_velo_mod_call.topo_type)
-    #
-    #             for i in range(partial_global_mesh.nZ):
-    #                 mid_pt_count = i * (1 + 2 * n_pts_smooth) + 1
-    #                 mid_pt_count_plus = mid_pt_count + 1
-    #                 mid_pt_count_minus = mid_pt_count - 1
-    #
-    #                 A = one_third * extended_qualities_vector.Rho[mid_pt_count_minus]
-    #                 B = four_thirds * extended_qualities_vector.Rho[mid_pt_count]
-    #                 C = one_third * extended_qualities_vector.Rho[mid_pt_count_plus]
-    #                 partial_global_qualities.Rho[k][i] = half * (A + B + C)
-    #
-    #                 A = one_third * extended_qualities_vector.Vp[mid_pt_count_minus]
-    #                 B = four_thirds * extended_qualities_vector.Vp[mid_pt_count]
-    #                 C = one_third * extended_qualities_vector.Vp[mid_pt_count_plus]
-    #                 partial_global_qualities.Vp[k][i] = half * (A + B + C)
-    #
-    #                 A = one_third * extended_qualities_vector.Vs[mid_pt_count_minus]
-    #                 B = four_thirds * extended_qualities_vector.Vs[mid_pt_count]
-    #                 C = one_third * extended_qualities_vector.Vs[mid_pt_count_plus]
-    #                 partial_global_qualities.Vs[k][i] = half * (A + B + C)
-    #         else:
-    #             mesh_vector = extract_mesh_vector(partial_global_mesh, k)
-    #             assign_qualities(global_model_parameters, velo_mod_1d_data, nz_tomography_data, global_surfaces,
-    #                              basin_data, mesh_vector, partial_global_surface_depths, partial_basin_surface_depths,
-    #                              in_basin, qualities_vector, calculation_log, gen_extract_velo_mod_call.topo_type)
-    #
-    #             for i in range(partial_global_mesh.nZ):
-    #                 partial_global_qualities.Rho[k][i] = qualities_vector.Rho[i]
-    #                 partial_global_qualities.Vp[k][i] = qualities_vector.Vp[i]
-    #                 partial_global_qualities.Vs[k][i] = qualities_vector.Vs[i]
-    #                 partial_global_qualities.inbasin[k][i] = qualities_vector.inbasin[i]
-    #
-    #     write_global_qualities(output_dir, partial_global_mesh, partial_global_qualities, gen_extract_velo_mod_call,
-    #                            calculation_log, j)
+    for j in range(global_mesh.nY):
+
+        print(f"\rGenerating velocity model {j * 100 / global_mesh.nY:.2f}% complete.", end="")
+        partial_global_mesh = extract_partial_mesh(global_mesh, j)
+        partial_global_qualities = PartialGlobalQualities(partial_global_mesh.nX, partial_global_mesh.nZ)
+
+        for k in range(partial_global_mesh.nX):
+            in_basin = InBasin()
+            partial_global_surface_depths = PartialGlobalSurfaceDepths()
+            partial_basin_surface_depths = PartialBasinSurfaceDepths()
+            qualities_vector = QualitiesVector()
+            extended_qualities_vector = QualitiesVector()
+
+            if smoothing_required == 1:
+                extended_mesh_vector = extend_mesh_vector(partial_global_mesh, n_pts_smooth, model_extent.hDep * 1000,
+                                                          k)
+                assign_qualities(global_model_parameters, velo_mod_1d_data, nz_tomography_data, global_surfaces,
+                                 basin_data, extended_mesh_vector, partial_global_surface_depths,
+                                 partial_basin_surface_depths, in_basin, extended_qualities_vector, logger,
+                                 gen_extract_velo_mod_call.topo_type)
+
+                for i in range(partial_global_mesh.nZ):
+                    mid_pt_count = i * (1 + 2 * n_pts_smooth) + 1
+                    mid_pt_count_plus = mid_pt_count + 1
+                    mid_pt_count_minus = mid_pt_count - 1
+
+                    A = one_third * extended_qualities_vector.Rho[mid_pt_count_minus]
+                    B = four_thirds * extended_qualities_vector.Rho[mid_pt_count]
+                    C = one_third * extended_qualities_vector.Rho[mid_pt_count_plus]
+                    partial_global_qualities.Rho[k][i] = half * (A + B + C)
+
+                    A = one_third * extended_qualities_vector.Vp[mid_pt_count_minus]
+                    B = four_thirds * extended_qualities_vector.Vp[mid_pt_count]
+                    C = one_third * extended_qualities_vector.Vp[mid_pt_count_plus]
+                    partial_global_qualities.Vp[k][i] = half * (A + B + C)
+
+                    A = one_third * extended_qualities_vector.Vs[mid_pt_count_minus]
+                    B = four_thirds * extended_qualities_vector.Vs[mid_pt_count]
+                    C = one_third * extended_qualities_vector.Vs[mid_pt_count_plus]
+                    partial_global_qualities.Vs[k][i] = half * (A + B + C)
+            else:
+                mesh_vector = extract_mesh_vector(partial_global_mesh, k)
+                assign_qualities(global_model_parameters, velo_mod_1d_data, nz_tomography_data, global_surfaces,
+                                 basin_data, mesh_vector, partial_global_surface_depths, partial_basin_surface_depths,
+                                 in_basin, qualities_vector, calculation_log, gen_extract_velo_mod_call.topo_type)
+
+                for i in range(partial_global_mesh.nZ):
+                    partial_global_qualities.Rho[k][i] = qualities_vector.Rho[i]
+                    partial_global_qualities.Vp[k][i] = qualities_vector.Vp[i]
+                    partial_global_qualities.Vs[k][i] = qualities_vector.Vs[i]
+                    partial_global_qualities.inbasin[k][i] = qualities_vector.inbasin[i]
+
+        write_global_qualities(output_dir, partial_global_mesh, partial_global_qualities, gen_extract_velo_mod_call,
+                               calculation_log, j)
 
 
 
