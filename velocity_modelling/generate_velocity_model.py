@@ -29,19 +29,36 @@ nzvm_registry_path = DATA_ROOT/'nzvm_registry.yaml'
 DEFAULT_OFFSHORE_1D_MODEL = "v1DsubMod_v2" # vm1d name for offshore 1D model
 DEFAULT_OFFSHORE_DISTANCE = "offshore"  # surface name for offshore distance
 
-class VTYPE(Enum):
-    vp = 0
-    vs = 1
-    rho = 2
+
+class BasinSurfaceRead:
+    def __init__(self, nLat, nLon):
+        self.nLat = nLat
+        self.nLon = nLon
+        self.lati = np.zeros(nLat)
+        self.loni = np.zeros(nLon)
+        self.raster = np.zeros((nLon, nLat))
+        self.maxLat = None
+        self.minLat = None
+        self.maxLon = None
+        self.minLon = None
 
 
-class VeloMod1DData:
-    def __init__(self):
-        self.Vp = []
-        self.Vs = []
-        self.Rho = []
-        self.Dep = []
-        self.nDep = 0
+class GlobalMesh:
+    def __init__(self, nX, nY, nZ):
+
+        self.Lon = np.zeros((nX, nY))
+        self.Lat = np.zeros((nX, nY))
+        self.maxLat = 0.0
+        self.minLat = 0.0
+        self.maxLon = 0.0
+        self.minLon = 0.0
+        self.nX = nX
+        self.nY = nY
+        self.nZ = nZ
+        self.X = np.zeros(nX)
+        self.Y = np.zeros(nY)
+        self.Z = np.zeros(nZ)
+
 
 class GlobalModelParameters:
     def __init__(self):
@@ -64,6 +81,19 @@ class GlobalModelParameters:
         self.basinSubModelNames: List[List[str]] = []
         self.basin_edge_smoothing: bool = False
 
+
+class GlobalSurfaceRead:
+    def __init__(self, nLat, nLon):
+        self.nLat = nLat
+        self.nLon = nLon
+        self.lati = np.zeros(nLat)
+        self.loni = np.zeros(nLon)
+        self.raster = np.zeros((nLon, nLat))
+        self.maxLat = None
+        self.minLat = None
+        self.maxLon = None
+        self.minLon = None
+
 class ModelExtent:
     def __init__(self, vm_params: Dict):
         self.originLat = vm_params['MODEL_LAT']
@@ -80,22 +110,6 @@ class ModelExtent:
         self.nz = vm_params['nz']
 
 
-
-class GlobalMesh:
-    def __init__(self, nX, nY, nZ):
-
-        self.Lon = np.zeros((nX, nY))
-        self.Lat = np.zeros((nX, nY))
-        self.maxLat = 0.0
-        self.minLat = 0.0
-        self.maxLon = 0.0
-        self.minLon = 0.0
-        self.nX = nX
-        self.nY = nY
-        self.nZ = nZ
-        self.X = np.zeros(nX)
-        self.Y = np.zeros(nY)
-        self.Z = np.zeros(nZ)
 
 class TomographyData:
     def __init__(self, elev: List[float], vs30_path: Path, special_offshore_tapering: bool, surf_tomo_path: Path, offshore_distance_path: Path, offshore_v1d_path: Path):
@@ -118,6 +132,19 @@ class TomographyData:
         self.offshore_distance = load_global_surface(offshore_distance_path)
         self.offshore_basin_model_1d = load_1d_velo_sub_model(offshore_v1d_path)
         self.tomography_loaded = True
+
+class VeloMod1DData:
+    def __init__(self):
+        self.Vp = []
+        self.Vs = []
+        self.Rho = []
+        self.Dep = []
+        self.nDep = 0
+
+class VTYPE(Enum):
+    vp = 0
+    vs = 1
+    rho = 2
 
 
 def write_velo_mod_corners_text_file(global_mesh: GlobalMesh, output_dir: str,  logger: Logger) -> None:
@@ -378,6 +405,42 @@ def load_1d_velo_sub_model(model_name: str) -> VeloMod1DData:
 
     return velo_mod_1d_data
 
+def load_basin_surface(basin_path:Path):
+    try:
+        with open(basin_path, 'r') as f:
+            nLat, nLon = map(int, f.readline().split())
+            basin_surf_read = BasinSurfaceRead(nLat, nLon)
+
+            # Reading latitudes and longitudes in one go
+            latitudes = np.fromfile(f, dtype=float, count=nLat, sep=' ')
+            longitudes = np.fromfile(f, dtype=float, count=nLon, sep=' ')
+
+            basin_surf_read.lati = latitudes
+            basin_surf_read.loni = longitudes
+
+            # Reading raster data efficiently
+            raster_data = np.fromfile(f, dtype=float, count=nLat*nLon, sep=' ')
+            basin_surf_read.raster = raster_data.reshape((nLon, nLat)).T
+
+            firstLat = basin_surf_read.lati[0]
+            lastLat = basin_surf_read.lati[nLat - 1]
+            basin_surf_read.maxLat = max(firstLat, lastLat)
+            basin_surf_read.minLat = min(firstLat, lastLat)
+
+            firstLon = basin_surf_read.loni[0]
+            lastLon = basin_surf_read.loni[nLon - 1]
+            basin_surf_read.maxLon = max(firstLon, lastLon)
+            basin_surf_read.minLon = min(firstLon, lastLon)
+
+            return basin_surf_read
+
+    except FileNotFoundError:
+        print(f"Error basin surface file {basin_path} not found.")
+        exit(1)
+    except Exception as e:
+        print(f"Error: {e}")
+        exit(1)
+
 def load_eptomo_surface_data(tomo_name: str) -> VeloMod1DData:
     tomo = nzvm_registry_get_tomography(tomo_name)
     offshore_distance = nzvm_registry_get_surface(DEFAULT_OFFSHORE_DISTANCE)
@@ -448,6 +511,57 @@ def load_all_global_data(global_model_params: dict, logger: Logger) : #-> (VeloM
     # print("Completed loading basin data.")
     # print("All global data loaded.")
 
+def load_global_surface(surface_file: Path):
+    try:    
+        with open(surface_file, 'r') as f:
+            nLat, nLon = map(int, f.readline().split())
+            global_surf_read = GlobalSurfaceRead(nLat, nLon)
+            
+#            for i in range(nLat):
+#                global_surf_read.lati[i] = float(f.readline().strip())
+#                
+#            for i in range(nLon):
+#                global_surf_read.loni[i] = float(f.readline().strip())
+#                
+#            for i in range(nLat):
+#                for j in range(nLon):
+#                    global_surf_read.raster[j][i] = float(file.readline().strip())
+           
+            # Reading latitudes and longitudes in one go
+            latitudes = np.fromfile(f, dtype=float, count=nLat, sep=' ')
+            longitudes = np.fromfile(f, dtype=float, count=nLon, sep=' ')
+
+            global_surf_read.lati = latitudes
+            global_surf_read.loni = longitudes
+
+            # Reading raster data efficiently
+            raster_data = np.fromfile(f, dtype=float, count=nLat*nLon, sep=' ')
+            global_surf_read.raster = raster_data.reshape((nLon, nLat)).T
+
+            firstLat = global_surf_read.lati[0]
+            lastLat = global_surf_read.lati[nLat - 1]
+            global_surf_read.maxLat = max(firstLat, lastLat)
+            global_surf_read.minLat = min(firstLat, lastLat)
+            
+            firstLon = global_surf_read.loni[0]
+            lastLon = global_surf_read.loni[nLon - 1]
+            global_surf_read.maxLon = max(firstLon, lastLon)
+            global_surf_read.minLon = min(firstLon, lastLon)
+            
+            return global_surf_read
+        
+    except FileNotFoundError:
+        print(f"Error surface file {surface_file} not found.")
+        exit(1)
+    except Exception as e:
+        print(f"Error: {e}")
+        exit(1)
+
+def load_global_surface_data(global_surfaces: GlobalSurfaces, global_model_parameters: GlobalModelParameters):
+    global_surfaces.nSurf = global_model_parameters.nSurf
+    
+    for i in range(global_model_parameters.nSurf):
+        global_surfaces.surf[i] = load_global_surface(global_model_parameters.globalSurfFilenames[i])
 
 # def generate_velocity_model(global_mesh, model_extent, global_model_parameters, velo_mod_1d_data, nz_tomography_data,
 #                             global_surfaces, basin_data, calculation_log, gen_extract_velo_mod_call, output_dir,
