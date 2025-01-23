@@ -29,6 +29,20 @@ nzvm_registry_path = DATA_ROOT/'nzvm_registry.yaml'
 DEFAULT_OFFSHORE_1D_MODEL = "v1DsubMod_v2" # vm1d name for offshore 1D model
 DEFAULT_OFFSHORE_DISTANCE = "offshore"  # surface name for offshore distance
 
+class BasinData:
+    def __init__(self):
+        self.surf = [] # 2-D list of basin surfaces (nBasins x nBasinSurfaces)
+        self.boundary_num_points = [] # 2-D list of number of points in each basin boundary (nBasins x nBasinBoundaries)
+        self.boundary_lat = [] # 3-D list of basin boundary latitudes (nBasins x nBasinBoundaries x size of boundary)
+        self.boundary_lon = [] # 3-D list of basin boundary longitudes (nBasins x nBasinBoundaries x size of boundary)
+        self.min_lon_boundary = [] # 2-D list of minimum longitude of basin boundary (nBasins x nBasinBoundaries)
+        self.max_lon_boundary = [] # 2-D list of maximum longitude of basin boundary (nBasins x nBasinBoundaries)
+        self.min_lat_boundary = [] # 2-D list of minimum latitude of basin boundary (nBasins x nBasinBoundaries)
+        self.max_lat_boundary = [] # 2-D list of maximum latitude of basin boundary (nBasins x nBasinBoundaries)
+
+        self.basin_submodel_data = [] # 1-D list of basin submodel data (nBasins)
+        self.perturbation_data = [] # 1-D list of perturbation data (nBasins), each element is a TomographyData object
+
 
 class BasinSurfaceRead:
     def __init__(self, nLat, nLon):
@@ -423,17 +437,86 @@ def load_basin_data(basin_names: List[str]):
     Output variables:
     n.a.
     """
+    basins = [nzvm_registry_get_basin(name) for name in basin_names]
+
+    basin_data = BasinData()
+
     # loop over nBasins and load in surfaces, boundaries and sub-models
-    for i in range(global_model_parameters['nBasins']):
-        load_all_basin_surfaces(i, basin_data, global_model_parameters)
-        load_basin_boundaries(i, basin_data, global_model_parameters)
-        load_basin_sub_model_data(i, basin_data, global_model_parameters)
+    for i, basin in enumerate(basins):
+        basin_data.surf[i] = load_all_basin_surfaces(basin)
+        load_basin_boundaries(i, basin_data, basin)
+        load_basin_sub_model_data(i, basin_data, basin)
 
     print("All basin surfaces loaded.")
     print("All basin boundaries loaded.")
     print("All basin sub model data loaded.")
 
-def load_basin_surface(basin_path:Path):
+def load_all_basin_surfaces(basin: dict):
+    """
+    Purpose: load all basin surfaces into the basin_data structure
+
+    Input variables:
+    basin - dict containing basin data
+
+    Output variables:
+    n.a.
+    """
+    basin_surfaces = basin['surfaces']
+    surfs = []
+
+    for surface in basin_surfaces:
+        surf_path = DATA_ROOT / surface['path']
+        surfs.append(load_basin_surface(surf_path))
+    return surfs
+
+def load_basin_boundaries(basin_num: int, basin_data: BasinData, global_model_parameters: GlobalModelParameters) -> None:
+    """
+    Load all basin boundaries.
+
+    Parameters
+    ----------
+    basin_num : int
+        The basin number pertaining to the basin of interest.
+    basin_data : BasinData
+        Struct containing basin data (surfaces, submodels, etc).
+    global_model_parameters : GlobalModelParameters
+        Struct containing all model parameters (surface names, submodel names, basin names, etc).
+
+    Returns
+    -------
+    None
+    """
+    for i in range(global_model_parameters.nBasinBoundaries[basin_num]):
+        file_path = global_model_parameters.basinBoundaryFilenames[basin_num][i]
+        try:
+            with open(file_path, "r") as file:
+                count = 0
+                basin_data.minLonBoundary[basin_num][i] = 180
+                basin_data.maxLonBoundary[basin_num][i] = -180
+                basin_data.minLatBoundary[basin_num][i] = 180
+                basin_data.maxLatBoundary[basin_num][i] = -180
+
+                for line in file:
+                    lon, lat = map(float, line.split())
+                    basin_data.boundaryLon[basin_num][i][count] = lon
+                    basin_data.boundaryLat[basin_num][i][count] = lat
+
+                    basin_data.minLonBoundary[basin_num][i] = min(basin_data.minLonBoundary[basin_num][i], lon)
+                    basin_data.minLatBoundary[basin_num][i] = min(basin_data.minLatBoundary[basin_num][i], lat)
+                    basin_data.maxLonBoundary[basin_num][i] = max(basin_data.maxLonBoundary[basin_num][i], lon)
+                    basin_data.maxLatBoundary[basin_num][i] = max(basin_data.maxLatBoundary[basin_num][i], lat)
+
+                    count += 1
+
+                basin_data.boundaryNumPoints[basin_num][i] = count
+                assert count <= MAX_DIM_BOUNDARY_FILE
+                assert basin_data.boundaryLon[basin_num][i][count-1] == basin_data.boundaryLon[basin_num][i][0]
+                assert basin_data.boundaryLat[basin_num][i][count-1] == basin_data.boundaryLat[basin_num][i][0]
+        except FileNotFoundError:
+            print(f"Error basin boundary file {file_path} not found.")
+            exit(1)
+
+def load_basin_surface(basin_surface_path:Path):
     try:
         with open(basin_path, 'r') as f:
             nLat, nLon = map(int, f.readline().split())
@@ -469,7 +552,7 @@ def load_basin_surface(basin_path:Path):
         print(f"Error: {e}")
         exit(1)
 
-def load_eptomo_surface_data(tomo_name: str, offshore_surface_name: str = DEFAULT_OFFSHORE_DISTANCE, offshore_v1d_name: str = DEFAULT_OFFSHORE_1D_MODEL ) -> VeloMod1DData:
+def load_tomo_surface_data(tomo_name: str, offshore_surface_name: str = DEFAULT_OFFSHORE_DISTANCE, offshore_v1d_name: str = DEFAULT_OFFSHORE_1D_MODEL) -> VeloMod1DData:
 
     tomo = nzvm_registry_get_tomography(tomo_name)
     offshore_surface= nzvm_registry_get_surface(offshore_surface_name)
@@ -521,7 +604,7 @@ def load_all_global_data(global_model_params: dict, logger: Logger) : #-> (VeloM
             pass
         else: # tomography sub model EPtomo2010subMod eg. 2020_NZ_OFFSHORE
 
-            nz_tomography_data = load_eptomo_surface_data(global_model_params['tomography'])
+            nz_tomography_data = load_tomo_surface_data(global_model_params['tomography'])
             print("Loaded tomography data.")
 
     pass
