@@ -118,7 +118,7 @@ basin:
         basin_boundary_number: 0
         basin_submodel_name: null
     smoothing:
-      - path: Boundaries/Smoothing/Canterbury_Pre_Quaternary_v19p1.txt
+      path: Boundaries/Smoothing/Canterbury_Pre_Quaternary_v19p1.txt
 
 
 
@@ -168,7 +168,7 @@ basin:
         basin_boundary_number: 0
         basin_submodel_name: null
     smoothing:
-        - path: Boundaries/Smoothing/Kaikoura_v19p1.txt
+      path: Boundaries/Smoothing/Kaikoura_v19p1.txt
 
   - name: Cheviot_v19p1
     ignoreBasinForSmoothing: false
@@ -185,7 +185,7 @@ basin:
         basin_boundary_number: 0
         basin_submodel_name: null
     smoothing:
-      - path: Boundaries/Smoothing/Cheviot_v19p1.txt
+      path: Boundaries/Smoothing/Cheviot_v19p1.txt
 
   - name: Hanmer_v19p1
     ignoreBasinForSmoothing: false
@@ -216,7 +216,7 @@ basin:
         basin_boundary_number: 0
         basin_submodel_name: null
     smoothing:
-      - path: Boundaries/Smoothing/Marlborough_v19p1.txt
+      path: Boundaries/Smoothing/Marlborough_v19p1.txt
 
   - name: Nelson_v19p1
     ignoreBasinForSmoothing: false
@@ -232,7 +232,7 @@ basin:
         basin_boundary_number: 0
         basin_submodel_name: null
     smoothing:
-      - path: Boundaries/Smoothing/Nelson_v19p1.txt
+      path: Boundaries/Smoothing/Nelson_v19p1.txt
 
   - name: Wellington_v19p1
     ignoreBasinForSmoothing: false
@@ -248,7 +248,7 @@ basin:
         basin_boundary_number: 0
         basin_submodel_name: null
     smoothing:
-        - path: Boundaries/Smoothing/Wellington_v19p1.txt
+      path: Boundaries/Smoothing/Wellington_v19p1.txt
 
   - name: Wellington_v19p6
     ignoreBasinForSmoothing: false
@@ -264,7 +264,7 @@ basin:
         basin_boundary_number: 0
         basin_submodel_name: null
     smoothing:
-      - path: Boundaries/Smoothing/Wellington_v19p6.txt
+      path: Boundaries/Smoothing/Wellington_v19p6.txt
 
   - name: Wellington_v21p8
     ignoreBasinForSmoothing: false
@@ -280,7 +280,7 @@ basin:
         basin_boundary_number: 0
         basin_submodel_name: null
     smoothing:
-      - path: Boundaries/Smoothing/Wellington_v21p8.txt
+      path: Boundaries/Smoothing/Wellington_v21p8.txt
 
   - name: WaikatoHauraki_v19p7
     ignoreBasinForSmoothing: false
@@ -296,7 +296,7 @@ basin:
         basin_boundary_number: 0
         basin_submodel_name: null
     smoothing:
-      - path: Boundaries/Smoothing/WaikatoHauraki_v19p7.txt
+      path: Boundaries/Smoothing/WaikatoHauraki_v19p7.txt
 
   - name: Wanaka_v20p6
     ignoreBasinForSmoothing: false
@@ -476,7 +476,7 @@ basin:
         basin_boundary_number: 0
         basin_submodel_name: null
     smoothing:
-        -path: Boundaries/Smoothing/Balclutha_v20p7.txt
+      path: Boundaries/Smoothing/Balclutha_v20p7.txt
 
 
   - name: Dunedin_v20p7
@@ -493,7 +493,7 @@ basin:
         basin_boundary_number: 0
         basin_submodel_name: null
     smoothing:
-        - path: Boundaries/Smoothing/Dunedin_v20p7.txt
+      path: Boundaries/Smoothing/Dunedin_v20p7.txt
 
 
   - name: Murchison_v20p7
@@ -525,7 +525,7 @@ basin:
         basin_boundary_number: 0
         basin_submodel_name: null
     smoothing:
-      - path: Boundaries/Smoothing/Waitaki_v20p8.txt
+      path: Boundaries/Smoothing/Waitaki_v20p8.txt
 
   - name: Hakataramea_v20p8
     ignoreBasinForSmoothing: false
@@ -556,7 +556,7 @@ basin:
         basin_boundary_number: 0
         basin_submodel_name: null
     smoothing:
-        - path: Boundaries/Smoothing/Karamea_v20p11.txt
+      path: Boundaries/Smoothing/Karamea_v20p11.txt
 
   - name: CollingwoodBasin1_v20p11
     ignoreBasinForSmoothing: false
@@ -572,7 +572,7 @@ basin:
         basin_boundary_number: 0
         basin_submodel_name: null
     smoothing:
-        - path: Boundaries/Smoothing/CollingwoodBasin1_v20p11.txt
+      path: Boundaries/Smoothing/CollingwoodBasin1_v20p11.txt
 
   - name: CollingwoodBasin2_v20p11
     ignoreBasinForSmoothing: false
@@ -634,7 +634,7 @@ basin:
         basin_boundary_number: 0
         basin_submodel_name: null
     smoothing:
-        - path: Boundaries/Smoothing/HawkesBay1_v21p7.txt
+      path: Boundaries/Smoothing/HawkesBay1_v21p7.txt
 
   - name: HawkesBay2_v21p7
     ignoreBasinForSmoothing: false
@@ -695,7 +695,7 @@ basin:
         basin_boundary_number: 0
         basin_submodel_name: null
     smoothing:
-      - path: Boundaries/Smoothing/Napier1_v21p7.txt
+      path: Boundaries/Smoothing/Napier1_v21p7.txt
 
   - name: Napier2_v21p7
     ignoreBasinForSmoothing: false
@@ -781,7 +781,7 @@ basin:
         basin_boundary_number: 0
         basin_submodel_name: null
     smoothing:
-      - path: Boundaries/Smoothing/GreaterWellington1_v21p7.txt
+      path: Boundaries/Smoothing/GreaterWellington1_v21p7.txt
 
   - name: GreaterWellington2_v21p7
     ignoreBasinForSmoothing: false
@@ -872,7 +872,7 @@ basin:
         basin_boundary_number: 0
         basin_submodel_name: null
     smoothing:
-      - path: Boundaries/Smoothing/Porirua1_v21p7.txt
+      path: Boundaries/Smoothing/Porirua1_v21p7.txt
 
   - name: Porirua2_v21p7
     ignoreBasinForSmoothing: false
@@ -903,7 +903,7 @@ basin:
         basin_boundary_number: 0
         basin_submodel_name: null
     smoothing:
-        - path: Boundaries/Smoothing/Gisborne_v21p11.txt
+      path: Boundaries/Smoothing/Gisborne_v21p11.txt
 
   - name: SouthernHawkesBay_v21p12
     ignoreBasinForSmoothing: false
@@ -933,7 +933,7 @@ basin:
         basin_boundary_number: 0
         basin_submodel_name: null
     smoothing:
-        - path: Boundaries/Smoothing/Wairarapa_v21p12.txt
+      path: Boundaries/Smoothing/Wairarapa_v21p12.txt
 
   - name: Motu_Bay1_v22p3
     ignoreBasinForSmoothing: false
@@ -949,7 +949,7 @@ basin:
         basin_boundary_number: 0
         basin_submodel_name: null
     smoothing:
-      - path: Boundaries/Smoothing/Motu_Bay1_v22p3.txt
+      path: Boundaries/Smoothing/Motu_Bay1_v22p3.txt
 
   - name: Motu_Bay2_v22p3
     ignoreBasinForSmoothing: false

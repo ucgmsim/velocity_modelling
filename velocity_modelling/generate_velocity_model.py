@@ -83,9 +83,8 @@ class GlobalModelParameters:
 
 
 class GlobalSurfaces:
-    def __init__(self, n_surf):
-        self.n_surf = n_surf
-        self.surf = [None] * n_surf
+    def __init__(self):
+        self.surf = []
 
 class GlobalSurfaceRead:
     def __init__(self, nLat, nLon):
@@ -413,6 +412,27 @@ def load_1d_velo_sub_model(v1d_path: Path) -> VeloMod1DData:
 
     return velo_mod_1d_data
 
+def load_basin_data(basin_names: List[str]):
+    """
+    Purpose: load all basin data into the basin_data structure
+
+    Input variables:
+    basin_data - dict containing basin data (surfaces submodels etc)
+    global_model_parameters - dict containing all model parameters (surface names, submodel names, basin names etc)
+
+    Output variables:
+    n.a.
+    """
+    # loop over nBasins and load in surfaces, boundaries and sub-models
+    for i in range(global_model_parameters['nBasins']):
+        load_all_basin_surfaces(i, basin_data, global_model_parameters)
+        load_basin_boundaries(i, basin_data, global_model_parameters)
+        load_basin_sub_model_data(i, basin_data, global_model_parameters)
+
+    print("All basin surfaces loaded.")
+    print("All basin boundaries loaded.")
+    print("All basin sub model data loaded.")
+
 def load_basin_surface(basin_path:Path):
     try:
         with open(basin_path, 'r') as f:
@@ -509,20 +529,20 @@ def load_all_global_data(global_model_params: dict, logger: Logger) : #-> (VeloM
     # load in vector containing basin 'wall-type' boundaries to apply smoothing near
     if nz_tomography_data is not None:
         nz_tomography_data.smooth_boundary = SmoothingBoundary()
-        load_smooth_boundaries(nz_tomography_data, global_model_parameters)
+        load_smooth_boundaries(nz_tomography_data, global_model_params['basins'])
 
     print("Completed loading of global velocity submodel data.")
 
-    # # read in global surfaces
-    # global_surfaces = load_global_surface_data(global_model_parameters)
-    # print("Completed loading of global surfaces.")
+    # read in global surfaces
+    global_surfaces = load_global_surface_data(global_model_params['surfaces'])
+    print("Completed loading of global surfaces.")
     #
-    # # read in basin surfaces and boundaries
-    # print("Loading basin data.")
-    # basin_data = load_basin_data(global_model_parameters)
-    # print("Completed loading basin data.")
-    # print("All global data loaded.")
-    # return velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data
+    # read in basin surfaces and boundaries
+    print("Loading basin data.")
+    basin_data = load_basin_data(global_model_params['basins'])
+    print("Completed loading basin data.")
+    print("All global data loaded.")
+    return velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data
 
 def load_global_surface(surface_file: Path):
     try:    
@@ -573,40 +593,47 @@ def load_global_surface(surface_file: Path):
         print(f"Error: {e}")
         exit(1)
 
-def load_global_surface_data(global_surfaces: GlobalSurfaces, global_model_parameters: GlobalModelParameters):
-    global_surfaces.nSurf = global_model_parameters.nSurf
+def load_global_surface_data(global_surface_names: List[str]):
+    surfaces = [nzvm_registry_get_surface(name) for name in global_surface_names]
+    global_surfaces = GlobalSurfaces()
     
-    for i in range(global_model_parameters.nSurf):
-        global_surfaces.surf[i] = load_global_surface(global_model_parameters.globalSurfFilenames[i])
+    for surface in surfaces:
+        global_surfaces.surf.append(load_global_surface(DATA_ROOT/surface['path']))
 
+    return global_surfaces
 # def generate_velocity_model(global_mesh, model_extent, global_model_parameters, velo_mod_1d_data, nz_tomography_data,
 #                             global_surfaces, basin_data, calculation_log, gen_extract_velo_mod_call, output_dir,
 #                             smoothing_required, n_pts_smooth):
 
 
-def load_smooth_boundaries(nz_tomography_data: TomographyData, global_model_parameters: GlobalModelParameters):
+def load_smooth_boundaries(nz_tomography_data: TomographyData, basin_names: List[str]):
     smooth_bound = nz_tomography_data.smooth_boundary
     count = 0
 
-    for basin in global_model_parameters.basin:
-        boundary_vec_filename = DATA_ROOT / f"Boundaries/Smoothing/{basin}.txt"
+    for basin_name in basin_names:
+        basin = nzvm_registry_get_basin(basin_name)
+        if "smoothing" in basin:
+            boundary_vec_filename = DATA_ROOT / basin["smoothing"]["path"]
 
-        if os.path.exists(boundary_vec_filename):
-            print(f"Loading offshore smoothing file: {boundary_vec_filename}.")
-            with open(boundary_vec_filename, "r") as file:
-                for line in file:
-                    x, y = map(float, line.split())
-                    smooth_bound.xPts.append(x)
-                    smooth_bound.yPts.append(y)
-                    count += 1
+            if boundary_vec_filename.exists():
+                print(f"Loading offshore smoothing file: {boundary_vec_filename}.")
+                try:
+                    data = np.fromfile(boundary_vec_filename, dtype=float, sep=' ')
+                    x_pts = data[0::2]
+                    y_pts = data[1::2]
+                    smooth_bound.xPts.extend(x_pts)
+                    smooth_bound.yPts.extend(y_pts)
+                    count += len(x_pts)
+                except Exception as e:
+                    print(f"Error reading smoothing boundary vector file {boundary_vec_filename}: {e}")
+            else:
+                print(f"Error smoothing boundary vector file {boundary_vec_filename} not found.")
         else:
-            # print(f"Error smoothing boundary vector file {boundary_vec_filename} not found.")
-            # exit(1)
-            pass
-
+            print(f"Smoothing not required for basin {basin_name}.")
     # print(count)
-    assert count <= MAX_NUM_POINTS_SMOOTH_VEC
+    # assert count <= MAX_NUM_POINTS_SMOOTH_VEC
     smooth_bound.n = count
+
 
 def generate_velocity_model(output_dir: str, vm_params: Dict, logger: Logger) -> None:
     """
