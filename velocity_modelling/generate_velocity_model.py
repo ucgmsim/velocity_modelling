@@ -441,9 +441,11 @@ def load_basin_data(basin_names: List[str]):
 
     basin_data = BasinData()
 
+    basin_data.surf = [None] * len(basins) # 2-D list of basin surfaces (nBasins x nBasinSurfaces)
     # loop over nBasins and load in surfaces, boundaries and sub-models
     for i, basin in enumerate(basins):
-        basin_data.surf[i] = load_all_basin_surfaces(basin)
+        basin_data.surf[i] = [load_basin_surface( DATA_ROOT / surface['path']) for surface in basin['surfaces']]
+
         load_basin_boundaries(i, basin_data, basin)
         load_basin_sub_model_data(i, basin_data, basin)
 
@@ -469,7 +471,7 @@ def load_all_basin_surfaces(basin: dict):
         surfs.append(load_basin_surface(surf_path))
     return surfs
 
-def load_basin_boundaries(basin_num: int, basin_data: BasinData, global_model_parameters: GlobalModelParameters) -> None:
+def load_basin_boundaries(basin_num: int, basin_data: BasinData, basin: dict) -> None:
     """
     Load all basin boundaries.
 
@@ -486,39 +488,32 @@ def load_basin_boundaries(basin_num: int, basin_data: BasinData, global_model_pa
     -------
     None
     """
-    for i in range(global_model_parameters.nBasinBoundaries[basin_num]):
-        file_path = global_model_parameters.basinBoundaryFilenames[basin_num][i]
+    for i, boundary in enumerate(basin['boundaries']):
+        file_path = boundary['path']
         try:
-            with open(file_path, "r") as file:
-                count = 0
-                basin_data.minLonBoundary[basin_num][i] = 180
-                basin_data.maxLonBoundary[basin_num][i] = -180
-                basin_data.minLatBoundary[basin_num][i] = 180
-                basin_data.maxLatBoundary[basin_num][i] = -180
+            data = np.loadtxt(file_path)
+            lon = data[:, 0]
+            lat = data[:, 1]
+            basin_data.boundary_lon[basin_num][i][:len(lon)] = lon
+            basin_data.boundary_lat[basin_num][i][:len(lat)] = lat
+            basin_data.boundary_num_points[basin_num][i] = len(lon)
+            basin_data.min_lon_boundary[basin_num][i] = np.min(lon)
+            basin_data.max_lon_boundary[basin_num][i] = np.max(lon)
+            basin_data.min_lat_boundary[basin_num][i] = np.min(lat)
+            basin_data.max_lat_boundary[basin_num][i] = np.max(lat)
 
-                for line in file:
-                    lon, lat = map(float, line.split())
-                    basin_data.boundaryLon[basin_num][i][count] = lon
-                    basin_data.boundaryLat[basin_num][i][count] = lat
-
-                    basin_data.minLonBoundary[basin_num][i] = min(basin_data.minLonBoundary[basin_num][i], lon)
-                    basin_data.minLatBoundary[basin_num][i] = min(basin_data.minLatBoundary[basin_num][i], lat)
-                    basin_data.maxLonBoundary[basin_num][i] = max(basin_data.maxLonBoundary[basin_num][i], lon)
-                    basin_data.maxLatBoundary[basin_num][i] = max(basin_data.maxLatBoundary[basin_num][i], lat)
-
-                    count += 1
-
-                basin_data.boundaryNumPoints[basin_num][i] = count
-                assert count <= MAX_DIM_BOUNDARY_FILE
-                assert basin_data.boundaryLon[basin_num][i][count-1] == basin_data.boundaryLon[basin_num][i][0]
-                assert basin_data.boundaryLat[basin_num][i][count-1] == basin_data.boundaryLat[basin_num][i][0]
+            assert lon[-1] == lon[0]
+            assert lat[-1] == lat[0]
         except FileNotFoundError:
             print(f"Error basin boundary file {file_path} not found.")
+            exit(1)
+        except Exception as e:
+            print(f"Error reading basin boundary file {file_path}: {e}")
             exit(1)
 
 def load_basin_surface(basin_surface_path:Path):
     try:
-        with open(basin_path, 'r') as f:
+        with open(basin_surface_path, 'r') as f:
             nLat, nLon = map(int, f.readline().split())
             basin_surf_read = BasinSurfaceRead(nLat, nLon)
 
@@ -546,7 +541,7 @@ def load_basin_surface(basin_surface_path:Path):
             return basin_surf_read
 
     except FileNotFoundError:
-        print(f"Error basin surface file {basin_path} not found.")
+        print(f"Error basin surface file {basin_surface_path} not found.")
         exit(1)
     except Exception as e:
         print(f"Error: {e}")
