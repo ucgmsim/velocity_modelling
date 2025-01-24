@@ -26,22 +26,16 @@ DATA_ROOT = Path(__file__).parent / "Data"
 
 nzvm_registry_path = DATA_ROOT/'nzvm_registry.yaml'
 
-DEFAULT_OFFSHORE_1D_MODEL = "v1DsubMod_v2" # vm1d name for offshore 1D model
+DEFAULT_OFFSHORE_1D_MODEL = "Cant1D_v2" # vm1d name for offshore 1D model
 DEFAULT_OFFSHORE_DISTANCE = "offshore"  # surface name for offshore distance
 
 class BasinData:
-    def __init__(self):
-        self.surf = [] # 2-D list of basin surfaces (nBasins x nBasinSurfaces)
-        self.boundary_num_points = [] # 2-D list of number of points in each basin boundary (nBasins x nBasinBoundaries)
-        self.boundary_lat = [] # 3-D list of basin boundary latitudes (nBasins x nBasinBoundaries x size of boundary)
-        self.boundary_lon = [] # 3-D list of basin boundary longitudes (nBasins x nBasinBoundaries x size of boundary)
-        self.min_lon_boundary = [] # 2-D list of minimum longitude of basin boundary (nBasins x nBasinBoundaries)
-        self.max_lon_boundary = [] # 2-D list of maximum longitude of basin boundary (nBasins x nBasinBoundaries)
-        self.min_lat_boundary = [] # 2-D list of minimum latitude of basin boundary (nBasins x nBasinBoundaries)
-        self.max_lat_boundary = [] # 2-D list of maximum latitude of basin boundary (nBasins x nBasinBoundaries)
+    def __init__(self, nBasins: int):
+        self.surf = [None]*nBasins # 2-D list of basin surfaces (nBasins x nBasinSurfaces)
+        self.boundary = [None]*nBasins #  3-D list of basin boundaries (nBasins x nBasinBoundaries x 2 (lon, lat))
 
-        self.basin_submodel_data = [] # 1-D list of basin submodel data (nBasins)
-        self.perturbation_data = [] # 1-D list of perturbation data (nBasins), each element is a TomographyData object
+        self.basin_submodel_data = [None]*nBasins # 1-D list of basin submodel data (nBasins)
+        self.perturbation_data = [None]*nBasins # 1-D list of perturbation data (nBasins), each element is a TomographyData object
 
 
 class BasinSurfaceRead:
@@ -394,6 +388,13 @@ def nzvm_registry_get_vm1d(vm1d_name):
             return vm1d
     return None
 
+def nzvm_registry_get_submodel(submodel_name):
+    submodel_list = nzvm_registry.get('submodel')
+    for submodel in submodel_list:
+        if submodel['name'] == submodel_name:
+            return submodel
+    return None
+
 def load_1d_velo_sub_model(v1d_path: Path) -> VeloMod1DData:
     """
     Load a 1D velocity submodel into memory.
@@ -439,79 +440,74 @@ def load_basin_data(basin_names: List[str]):
     """
     basins = [nzvm_registry_get_basin(name) for name in basin_names]
 
-    basin_data = BasinData()
+    basin_data = BasinData(len(basins))
 
-    basin_data.surf = [None] * len(basins) # 2-D list of basin surfaces (nBasins x nBasinSurfaces)
     # loop over nBasins and load in surfaces, boundaries and sub-models
     for i, basin in enumerate(basins):
         basin_data.surf[i] = [load_basin_surface( DATA_ROOT / surface['path']) for surface in basin['surfaces']]
+        print("All basin surfaces loaded.")
+        basin_data.boundary[i] = [load_basin_boundary( DATA_ROOT / boundary['path']) for boundary in basin['boundaries']]
+        print("All basin boundaries loaded.")
+        basin_data.basin_submodel_data[i] = [load_basin_submodel(surface) for surface in basin['surfaces']]
+        print("All basin sub model data loaded.")
 
-        load_basin_boundaries(i, basin_data, basin)
-        load_basin_sub_model_data(i, basin_data, basin)
 
-    print("All basin surfaces loaded.")
-    print("All basin boundaries loaded.")
-    print("All basin sub model data loaded.")
+    return basin_data
 
-def load_all_basin_surfaces(basin: dict):
+
+def load_basin_boundary(basin_boundary_path: Path):
+    try:
+        data = np.loadtxt(DATA_ROOT / basin_boundary_path)
+        lon = data[:, 0]
+        lat = data[:, 1]
+        boundary_data = np.column_stack((lon, lat))
+
+        assert lon[-1] == lon[0]
+        assert lat[-1] == lat[0]
+    except FileNotFoundError:
+        print(f"Error basin boundary file {basin_boundary_path} not found.")
+        exit(1)
+    except Exception as e:
+        print(f"Error reading basin boundary file {basin_boundary_path}: {e}")
+        exit(1)
+    return boundary_data
+
+def load_basin_submodel(basin_surface: dict):
     """
-    Purpose: load all basin surfaces into the basin_data structure
+    Purpose: load a basin sub-model into the basin_data structure
 
     Input variables:
-    basin - dict containing basin data
+    basin_surface - dict containing basin surface data
 
     Output variables:
     n.a.
     """
-    basin_surfaces = basin['surfaces']
-    surfs = []
+    submodel_name = basin_surface['submodel']
+    if submodel_name == 'null':
+        return None
+    submodel=nzvm_registry_get_submodel(submodel_name)
+    if submodel is None:
+        print(f"Error: submodel {submodel_name} not found.")
+        exit(1)
 
-    for surface in basin_surfaces:
-        surf_path = DATA_ROOT / surface['path']
-        surfs.append(load_basin_surface(surf_path))
-    return surfs
-
-def load_basin_boundaries(basin_num: int, basin_data: BasinData, basin: dict) -> None:
-    """
-    Load all basin boundaries.
-
-    Parameters
-    ----------
-    basin_num : int
-        The basin number pertaining to the basin of interest.
-    basin_data : BasinData
-        Struct containing basin data (surfaces, submodels, etc).
-    global_model_parameters : GlobalModelParameters
-        Struct containing all model parameters (surface names, submodel names, basin names, etc).
-
-    Returns
-    -------
-    None
-    """
-    for i, boundary in enumerate(basin['boundaries']):
-        file_path = boundary['path']
-        try:
-            data = np.loadtxt(file_path)
-            lon = data[:, 0]
-            lat = data[:, 1]
-            basin_data.boundary_lon[basin_num][i][:len(lon)] = lon
-            basin_data.boundary_lat[basin_num][i][:len(lat)] = lat
-            basin_data.boundary_num_points[basin_num][i] = len(lon)
-            basin_data.min_lon_boundary[basin_num][i] = np.min(lon)
-            basin_data.max_lon_boundary[basin_num][i] = np.max(lon)
-            basin_data.min_lat_boundary[basin_num][i] = np.min(lat)
-            basin_data.max_lat_boundary[basin_num][i] = np.max(lat)
-
-            assert lon[-1] == lon[0]
-            assert lat[-1] == lat[0]
-        except FileNotFoundError:
-            print(f"Error basin boundary file {file_path} not found.")
+    if submodel['type'] == 'vm1d':
+        vm1d = nzvm_registry_get_vm1d(submodel['name'])
+        if vm1d is None:
+            print(f"Error: vm1d {submodel['name']} not found.")
             exit(1)
-        except Exception as e:
-            print(f"Error reading basin boundary file {file_path}: {e}")
-            exit(1)
+        return load_1d_velo_sub_model(DATA_ROOT/vm1d['path'])
+
+    elif submodel['type'] == 'relation':
+        #TODO: implement relation submodel loading
+        return VeloMod1DData()
+    elif submodel['type'] == 'perturbation':
+        #TODO: implement perturbation submodel loading
+        return VeloMod1DData()
+
 
 def load_basin_surface(basin_surface_path:Path):
+    print(f"Loading basin surface file {basin_surface_path}")
+
     try:
         with open(basin_surface_path, 'r') as f:
             nLat, nLon = map(int, f.readline().split())
@@ -526,6 +522,7 @@ def load_basin_surface(basin_surface_path:Path):
 
             # Reading raster data efficiently
             raster_data = np.fromfile(f, dtype=float, count=nLat*nLon, sep=' ')
+            assert len(raster_data) == nLat*nLon, f"Error: in {basin_surface_path} raster data length mismatch: {len(raster_data)} != {nLat*nLon}"
             basin_surf_read.raster = raster_data.reshape((nLon, nLat)).T
 
             firstLat = basin_surf_read.lati[0]
@@ -627,17 +624,7 @@ def load_global_surface(surface_file: Path):
         with open(surface_file, 'r') as f:
             nLat, nLon = map(int, f.readline().split())
             global_surf_read = GlobalSurfaceRead(nLat, nLon)
-            
-#            for i in range(nLat):
-#                global_surf_read.lati[i] = float(f.readline().strip())
-#                
-#            for i in range(nLon):
-#                global_surf_read.loni[i] = float(f.readline().strip())
-#                
-#            for i in range(nLat):
-#                for j in range(nLon):
-#                    global_surf_read.raster[j][i] = float(file.readline().strip())
-           
+
             # Reading latitudes and longitudes in one go
             latitudes = np.fromfile(f, dtype=float, count=nLat, sep=' ')
             longitudes = np.fromfile(f, dtype=float, count=nLon, sep=' ')
@@ -650,7 +637,7 @@ def load_global_surface(surface_file: Path):
             try:
                 global_surf_read.raster = raster_data.reshape((nLon, nLat)).T
             except:
-                sys.exit(f"Error: raster data shape {raster_data.shape} does not match lat/lon shape {nLat}x{nLon}")
+                sys.exit(f"Error: f{surface_file}  data shape {raster_data.shape} does not match lat/lon shape {nLat}x{nLon}={nLat*nLon}")
 
             firstLat = global_surf_read.lati[0]
             lastLat = global_surf_read.lati[nLat - 1]
