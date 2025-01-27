@@ -1,19 +1,18 @@
-import concurrent.futures
-from enum import Enum
+# import concurrent.futures
+
 from logging import Logger
 import logging
 
-import os
 from pathlib import Path
-from typing import List, Dict
 import argparse
+
 import yaml
 import numpy as np
-import sys
 
-from data_format import GlobalMesh, ModelExtent, GlobalModelParameters #, PartialGlobalMesh, PartialGlobalQualities, PartialGlobalSurfaceDepths, PartialBasinSurfaceDepths, InBasin, QualitiesVector,
-from load_data import load_all_global_data
+from typing import Any
 
+from cvm_registry import CVMRegistry, nzvm_registry_path, GlobalMesh, ModelExtent, \
+    PartialGlobalMesh
 
 LON_GRID_DIM_MAX = 10260
 LAT_GRID_DIM_MAX = 19010
@@ -21,22 +20,13 @@ DEP_GRID_DIM_MAX = 4500
 
 # constants for coord generation functions
 FLAT_CONST = 298.256
-ERAD  = 6378.139 # Earth's radius in km
+ERAD = 6378.139  # Earth's radius in km
 RPERD = 0.017453292
 
-from typing import List, Dict
+from typing import Dict
 
 
-
-
-
-DEFAULT_OFFSHORE_1D_MODEL = "Cant1D_v2" # vm1d name for offshore 1D model
-DEFAULT_OFFSHORE_DISTANCE = "offshore"  # surface name for offshore distance
-
-
-
-
-def write_velo_mod_corners_text_file(global_mesh: GlobalMesh, output_dir: str,  logger: Logger) -> None:
+def write_velo_mod_corners_text_file(global_mesh: GlobalMesh, output_dir: str, logger: Logger) -> None:
     """
     Write velocity model corners to a text file.
 
@@ -46,6 +36,8 @@ def write_velo_mod_corners_text_file(global_mesh: GlobalMesh, output_dir: str,  
         An object containing the global mesh data, including longitude and latitude arrays.
     output_dir : str
         Directory where the output log file will be saved.
+    logger : Logger
+        Logger for logging information.
 
     Returns
     -------
@@ -64,45 +56,45 @@ def write_velo_mod_corners_text_file(global_mesh: GlobalMesh, output_dir: str,  
             f"{global_mesh.Lon[global_mesh.nX - 1][global_mesh.nY - 1]}\t{global_mesh.Lat[global_mesh.nX - 1][global_mesh.nY - 1]}\n")
 
     logger.info("Velocity model corners file write complete.")
-def great_circle_projection(x: np.ndarray, y: np.ndarray,  amat: np.ndarray, erad: float=ERAD, g0: float=0, b0: float=0) -> tuple[float, float]:
+
+
+def great_circle_projection(x: np.ndarray, y: np.ndarray, amat: np.ndarray, erad: float = ERAD, g0: float = 0,
+                            b0: float = 0) -> tuple[np.ndarray, Any]:
     """
     Project x, y coordinates to geographic coordinates (longitude, latitude) using a great circle projection.
 
     Parameters
     ----------
-    x : float
-        X-coordinate.
-    y : float
-        Y-coordinate.
-
-    erad : float
-        Earth's radius.
-
+    x : np.ndarray
+        X-coordinates.
+    y : np.ndarray
+        Y-coordinates.
     amat : np.ndarray
         Transformation matrix.
-    ainv : np.ndarray
-        Inverse transformation matrix.
+    erad : float, optional
+        Earth's radius (default is ERAD).
+    g0 : float, optional
+        Initial longitude (default is 0).
+    b0 : float, optional
+        Initial latitude (default is 0).
 
     Returns
     -------
-    tuple[float, float]
-        Computed latitude and longitude.
+    tuple[np.ndarray, Any]
+        Computed latitude and longitude arrays.
     """
+    cosB = np.cos(x / erad - b0)
+    sinB = np.sin(x / erad - b0)
 
-    cosB = np.cos(x/erad - b0)
-    sinB = np.sin(x/erad - b0)
+    cosG = np.cos(y / erad - g0)
+    sinG = np.sin(y / erad - g0)
 
-    cosG = np.cos(y/erad - g0)
-    sinG = np.sin(y/erad - g0)
+    xp = sinG * cosB * np.sqrt(1 + sinB * sinB * sinG * sinG)
+    yp = sinB * cosG * np.sqrt(1 + sinB * sinB * sinG * sinG)
+    zp = np.sqrt(1 - xp * xp - yp * yp)
+    coords = np.stack((xp, yp, zp), axis=0)
 
-    xp = sinG*cosB*np.sqrt(1+sinB*sinB*sinG*sinG)
-    yp = sinB*cosG*np.sqrt(1+sinB*sinB*sinG*sinG)
-    zp = np.sqrt(1-xp*xp - yp*yp)
-    # Stack xp, yp, zp along the last axis to create a 3D array
-    coords = np.stack((xp, yp, zp), axis=0)  # Shape: (3, 723, 726)
-
-    # Perform matrix multiplication
-    xg, yg, zg = np.tensordot(amat, coords, axes=([1], [0]))  # Shape: (723, 726, 3)
+    xg, yg, zg = np.tensordot(amat, coords, axes=([1], [0]))
 
     lat = np.where(
         np.isclose(zg, 0),
@@ -118,6 +110,7 @@ def great_circle_projection(x: np.ndarray, y: np.ndarray,  amat: np.ndarray, era
     lon = lon % 360
     return lat, lon
 
+
 def gen_full_model_grid_great_circle(model_extent: ModelExtent, logger: Logger) -> GlobalMesh:
     """
     Generate the grid of latitude, longitude, and depth points using the point radial distance method.
@@ -126,19 +119,19 @@ def gen_full_model_grid_great_circle(model_extent: ModelExtent, logger: Logger) 
     ----------
     model_extent : ModelExtent
         Object containing the extent, spacing, and version of the model.
+    logger : Logger
+        Logger for logging information.
 
     Returns
     -------
-    global_mesh: GlobalMesh
+    GlobalMesh
         Object containing the generated grid of latitude, longitude, and depth points.
     """
-
-
-    nX = int (np.round(model_extent.Xmax / model_extent.hLatLon))
-    nY = int (np.round(model_extent.Ymax / model_extent.hLatLon))
+    nX = int(np.round(model_extent.Xmax / model_extent.hLatLon))
+    nY = int(np.round(model_extent.Ymax / model_extent.hLatLon))
     nZ = int(np.round((model_extent.Zmax - model_extent.Zmin) / model_extent.hDep))
 
-    global_mesh = GlobalMesh(nX,nY,nZ)
+    global_mesh = GlobalMesh(nX, nY, nZ)
 
     global_mesh.maxLat = -180
     global_mesh.minLat = 0
@@ -154,11 +147,11 @@ def gen_full_model_grid_great_circle(model_extent: ModelExtent, logger: Logger) 
         global_mesh.nY >= LAT_GRID_DIM_MAX,
         global_mesh.nZ >= DEP_GRID_DIM_MAX
     ]):
-        raise ValueError(f"Grid dimensions exceed maximum allowable values. X={LON_GRID_DIM_MAX}, Y={LAT_GRID_DIM_MAX}, Z={DEP_GRID_DIM_MAX}")
+        raise ValueError(
+            f"Grid dimensions exceed maximum allowable values. X={LON_GRID_DIM_MAX}, Y={LAT_GRID_DIM_MAX}, Z={DEP_GRID_DIM_MAX}")
 
     if global_mesh.nZ != 1:
         logger.info(f"Number of model points. nx: {global_mesh.nX}, ny: {global_mesh.nY}, nz: {global_mesh.nZ}.")
-
 
     for i in range(global_mesh.nX):
         global_mesh.X[i] = 0.5 * model_extent.hLatLon + model_extent.hLatLon * i - 0.5 * model_extent.Xmax
@@ -199,16 +192,8 @@ def gen_full_model_grid_great_circle(model_extent: ModelExtent, logger: Logger) 
     g0 = 0.0
     b0 = 0.0
 
-    # for iy in range(global_mesh.nY):
-    #     for ix in range(global_mesh.nX):
-    #         x = global_mesh.X[ix]
-    #         y = global_mesh.Y[iy]
-    #         lat, lon = great_circle_projection(x, y, ERAD, g0, b0, amat)
-    #         global_mesh.Lon[ix][iy] = lon
-    #         global_mesh.Lat[ix][iy] = lat
-
     X, Y = np.meshgrid(global_mesh.X[:global_mesh.nX], global_mesh.Y[:global_mesh.nY], indexing='ij')
-    lat_lon =  great_circle_projection(X, Y, amat)
+    lat_lon = great_circle_projection(X, Y, amat, ERAD, g0, b0)
     global_mesh.Lat[:global_mesh.nX, :global_mesh.nY], global_mesh.Lon[:global_mesh.nX, :global_mesh.nY] = lat_lon
 
     global_mesh.maxLat = np.max(global_mesh.Lat)
@@ -219,14 +204,8 @@ def gen_full_model_grid_great_circle(model_extent: ModelExtent, logger: Logger) 
     logger.info("Completed Generation of Model Grid.")
     return global_mesh
 
-#SAMPLE vm_params file
 
-#
-
-
-
-
-def extract_partial_mesh(global_mesh, lat_ind):
+def extract_partial_mesh(global_mesh: GlobalMesh, lat_ind: int) -> PartialGlobalMesh:
     """
     Extract one slice of values from the global mesh, i.e., nX x nY x nZ becomes nX x 1 x nZ.
 
@@ -252,23 +231,32 @@ def extract_partial_mesh(global_mesh, lat_ind):
 
     return partial_global_mesh
 
-def generate_velocity_model(output_dir: str, vm_params: Dict, logger: Logger) -> None:
+def generate_velocity_model(cvm_registry: CVMRegistry, out_dir: Path, vm_params: Dict, logger: Logger):
     """
-    print("Generating velocity model")
+    Generate the velocity model.
+
+    Parameters
+    ----------
+    cvm_registry : CVMRegistry
+        The CVMRegistry instance.
+    out_dir : Path
+        The output directory path.
+    vm_params : Dict
+        The velocity model parameters.
+    logger : Logger
+        Logger for logging information.
     """
+    # Implementation of the function
     model_extent = ModelExtent(vm_params)
-    global_mesh = gen_full_model_grid_great_circle(model_extent,logger)
-    write_velo_mod_corners_text_file(global_mesh, output_dir, logger)
+    global_mesh = gen_full_model_grid_great_circle(model_extent, logger)
+    write_velo_mod_corners_text_file(global_mesh, out_dir, logger)
 
-    global_model_params=nzvm_registry_get_vm(vm_params['model_version'])
-
-    velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data = load_all_global_data(global_model_params, logger)
+    velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data = cvm_registry.load_all_global_data(logger)
 
     for j in range(global_mesh.nY):
-
         print(f"\rGenerating velocity model {j * 100 / global_mesh.nY:.2f}% complete.", end="")
         partial_global_mesh = extract_partial_mesh(global_mesh, j)
-        partial_global_qualities = PartialGlobalQualities(partial_global_mesh.nX, partial_global_mesh.nZ)
+        # partial_global_qualities = PartialGlobalQualities(partial_global_mesh.nX, partial_global_mesh.nZ)
     #
     #     for k in range(partial_global_mesh.nX):
     #         in_basin = InBasin()
@@ -319,8 +307,6 @@ def generate_velocity_model(output_dir: str, vm_params: Dict, logger: Logger) ->
     #     write_global_qualities(output_dir, partial_global_mesh, partial_global_qualities, gen_extract_velo_mod_call,
     #                            calculation_log, j)
 
-
-
     # def process_j(j):
     #     # do something with j
     #
@@ -332,22 +318,28 @@ def generate_velocity_model(output_dir: str, vm_params: Dict, logger: Logger) ->
     #         print(f"\rGenerating velocity model {j * 100 / global_mesh.nY:.2f}% complete.", end="")
     #         sys.stdout.flush()
 
-
-
     print("\rGeneration of velocity model 100% complete.")
     print("Model generation complete.")
 
-def parse_arguments():
+
+def parse_arguments() -> argparse.Namespace:
+    """
+    Parse command-line arguments.
+
+    Returns
+    -------
+    argparse.Namespace
+        The parsed command-line arguments.
+    """
     parser = argparse.ArgumentParser(description='Generate velocity model')
     parser.add_argument('vm_params', type=Path, help='Path to the vm_params.yaml file')
     parser.add_argument('out_dir', type=Path, help='Path to the output directory')
-    parser.add_argument('--nzvm_registry', type=Path, help='Path to the nzvm_registry.yaml file', default=nzvm_registry_path)
+    parser.add_argument('--nzvm_registry', type=Path, help='Path to the nzvm_registry.yaml file',
+                        default=nzvm_registry_path)
     return parser.parse_args()
 
+
 if __name__ == '__main__':
-
-    global nzvm_registry
-
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
 
@@ -356,17 +348,13 @@ if __name__ == '__main__':
     assert vm_params_path.exists(), f"File is not present: {vm_params_path}"
     assert args.nzvm_registry.exists(), f"File is not present: {args.nzvm_registry}"
 
-    out_dir= args.out_dir.resolve()
+    out_dir = args.out_dir.resolve()
     out_dir.mkdir(exist_ok=True, parents=True)
 
     print(f'Using vm_params file: {vm_params_path}')
     with open(vm_params_path, 'r') as f:
         vm_params = yaml.safe_load(f)
 
+    cvm_registry = CVMRegistry(vm_params['model_version'])
 
-    with open(args.nzvm_registry) as f:
-        nzvm_registry = yaml.safe_load(f)
-
-    generate_velocity_model(out_dir, vm_params, logger)
-
-
+    generate_velocity_model(cvm_registry, out_dir, vm_params, logger)
