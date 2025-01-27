@@ -254,7 +254,7 @@ def generate_velocity_model(cvm_registry: CVMRegistry, out_dir: Path, vm_params:
     velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data = cvm_registry.load_all_global_data(logger)
 
     for j in range(global_mesh.nY):
-        logger.info(f"Generating velocity model {j * 100 / global_mesh.nY:.2f}% complete.", end="")
+        logger.info(f"Generating velocity model {j * 100 / global_mesh.nY:.2f}% complete.")
         partial_global_mesh = extract_partial_mesh(global_mesh, j)
         # partial_global_qualities = PartialGlobalQualities(partial_global_mesh.nX, partial_global_mesh.nZ)
     #
