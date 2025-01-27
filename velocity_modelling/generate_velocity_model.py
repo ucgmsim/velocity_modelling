@@ -254,7 +254,7 @@ def generate_velocity_model(cvm_registry: CVMRegistry, out_dir: Path, vm_params:
     velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data = cvm_registry.load_all_global_data(logger)
 
     for j in range(global_mesh.nY):
-        print(f"\rGenerating velocity model {j * 100 / global_mesh.nY:.2f}% complete.", end="")
+        logger.info(f"Generating velocity model {j * 100 / global_mesh.nY:.2f}% complete.", end="")
         partial_global_mesh = extract_partial_mesh(global_mesh, j)
         # partial_global_qualities = PartialGlobalQualities(partial_global_mesh.nX, partial_global_mesh.nZ)
     #
@@ -315,11 +315,11 @@ def generate_velocity_model(cvm_registry: CVMRegistry, out_dir: Path, vm_params:
     #     futures = [executor.submit(process_j, j) for j in range(global_mesh.nY)]
     #     for future in concurrent.futures.as_completed(futures):
     #         j = future.result()
-    #         print(f"\rGenerating velocity model {j * 100 / global_mesh.nY:.2f}% complete.", end="")
+    #          logger.info(f"Generating velocity model {j * 100 / global_mesh.nY:.2f}% complete.", end="")
     #         sys.stdout.flush()
 
-    print("\rGeneration of velocity model 100% complete.")
-    print("Model generation complete.")
+    logger.info("Generation of velocity model 100% complete.")
+    logger.info("Model generation complete.")
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -351,10 +351,10 @@ if __name__ == '__main__':
     out_dir = args.out_dir.resolve()
     out_dir.mkdir(exist_ok=True, parents=True)
 
-    print(f'Using vm_params file: {vm_params_path}')
+    logger.info(f'Using vm_params file: {vm_params_path}')
     with open(vm_params_path, 'r') as f:
         vm_params = yaml.safe_load(f)
 
-    cvm_registry = CVMRegistry(vm_params['model_version'])
+    cvm_registry = CVMRegistry(vm_params['model_version'], logger)
 
     generate_velocity_model(cvm_registry, out_dir, vm_params, logger)
