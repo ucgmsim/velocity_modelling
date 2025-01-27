@@ -11,8 +11,13 @@ import numpy as np
 
 from typing import Any
 
-from cvm_registry import CVMRegistry, nzvm_registry_path, GlobalMesh, ModelExtent, \
-    PartialGlobalMesh
+from cvm_registry import (
+    CVMRegistry,
+    nzvm_registry_path,
+    GlobalMesh,
+    ModelExtent,
+    PartialGlobalMesh,
+)
 
 LON_GRID_DIM_MAX = 10260
 LAT_GRID_DIM_MAX = 19010
@@ -26,7 +31,9 @@ RPERD = 0.017453292
 from typing import Dict
 
 
-def write_velo_mod_corners_text_file(global_mesh: GlobalMesh, output_dir: str, logger: Logger) -> None:
+def write_velo_mod_corners_text_file(
+    global_mesh: GlobalMesh, output_dir: str, logger: Logger
+) -> None:
     """
     Write velocity model corners to a text file.
 
@@ -43,23 +50,34 @@ def write_velo_mod_corners_text_file(global_mesh: GlobalMesh, output_dir: str, l
     -------
     None
     """
-    log_file_name = Path(output_dir) / 'Log' / 'VeloModCorners.txt'
+    log_file_name = Path(output_dir) / "Log" / "VeloModCorners.txt"
     log_file_name.parent.mkdir(parents=True, exist_ok=True)
 
-    with log_file_name.open('w') as fp:
+    with log_file_name.open("w") as fp:
         fp.write(">Velocity model corners.\n")
         fp.write(">Lon\tLat\n")
-        fp.write(f"{global_mesh.Lon[0][global_mesh.nY - 1]}\t{global_mesh.Lat[0][global_mesh.nY - 1]}\n")
-        fp.write(f"{global_mesh.Lon[0][0]}\t{global_mesh.Lat[0][0]}\n")
-        fp.write(f"{global_mesh.Lon[global_mesh.nX - 1][0]}\t{global_mesh.Lat[global_mesh.nX - 1][0]}\n")
         fp.write(
-            f"{global_mesh.Lon[global_mesh.nX - 1][global_mesh.nY - 1]}\t{global_mesh.Lat[global_mesh.nX - 1][global_mesh.nY - 1]}\n")
+            f"{global_mesh.Lon[0][global_mesh.nY - 1]}\t{global_mesh.Lat[0][global_mesh.nY - 1]}\n"
+        )
+        fp.write(f"{global_mesh.Lon[0][0]}\t{global_mesh.Lat[0][0]}\n")
+        fp.write(
+            f"{global_mesh.Lon[global_mesh.nX - 1][0]}\t{global_mesh.Lat[global_mesh.nX - 1][0]}\n"
+        )
+        fp.write(
+            f"{global_mesh.Lon[global_mesh.nX - 1][global_mesh.nY - 1]}\t{global_mesh.Lat[global_mesh.nX - 1][global_mesh.nY - 1]}\n"
+        )
 
     logger.info("Velocity model corners file write complete.")
 
 
-def great_circle_projection(x: np.ndarray, y: np.ndarray, amat: np.ndarray, erad: float = ERAD, g0: float = 0,
-                            b0: float = 0) -> tuple[np.ndarray, Any]:
+def great_circle_projection(
+    x: np.ndarray,
+    y: np.ndarray,
+    amat: np.ndarray,
+    erad: float = ERAD,
+    g0: float = 0,
+    b0: float = 0,
+) -> tuple[np.ndarray, Any]:
     """
     Project x, y coordinates to geographic coordinates (longitude, latitude) using a great circle projection.
 
@@ -99,19 +117,19 @@ def great_circle_projection(x: np.ndarray, y: np.ndarray, amat: np.ndarray, erad
     lat = np.where(
         np.isclose(zg, 0),
         0,
-        90 - np.arctan(np.sqrt(xg ** 2 + yg ** 2) / zg) / RPERD - np.where(zg < 0, 180, 0)
+        90 - np.arctan(np.sqrt(xg**2 + yg**2) / zg) / RPERD - np.where(zg < 0, 180, 0),
     )
 
     lon = np.where(
-        np.isclose(xg, 0),
-        0,
-        np.arctan(yg / xg) / RPERD - np.where(xg < 0, 180, 0)
+        np.isclose(xg, 0), 0, np.arctan(yg / xg) / RPERD - np.where(xg < 0, 180, 0)
     )
     lon = lon % 360
     return lat, lon
 
 
-def gen_full_model_grid_great_circle(model_extent: ModelExtent, logger: Logger) -> GlobalMesh:
+def gen_full_model_grid_great_circle(
+    model_extent: ModelExtent, logger: Logger
+) -> GlobalMesh:
     """
     Generate the grid of latitude, longitude, and depth points using the point radial distance method.
 
@@ -142,22 +160,35 @@ def gen_full_model_grid_great_circle(model_extent: ModelExtent, logger: Logger) 
     assert global_mesh.nY == model_extent.ny
     assert global_mesh.nZ == model_extent.nz
 
-    if any([
-        global_mesh.nX >= LON_GRID_DIM_MAX,
-        global_mesh.nY >= LAT_GRID_DIM_MAX,
-        global_mesh.nZ >= DEP_GRID_DIM_MAX
-    ]):
+    if any(
+        [
+            global_mesh.nX >= LON_GRID_DIM_MAX,
+            global_mesh.nY >= LAT_GRID_DIM_MAX,
+            global_mesh.nZ >= DEP_GRID_DIM_MAX,
+        ]
+    ):
         raise ValueError(
-            f"Grid dimensions exceed maximum allowable values. X={LON_GRID_DIM_MAX}, Y={LAT_GRID_DIM_MAX}, Z={DEP_GRID_DIM_MAX}")
+            f"Grid dimensions exceed maximum allowable values. X={LON_GRID_DIM_MAX}, Y={LAT_GRID_DIM_MAX}, Z={DEP_GRID_DIM_MAX}"
+        )
 
     if global_mesh.nZ != 1:
-        logger.info(f"Number of model points. nx: {global_mesh.nX}, ny: {global_mesh.nY}, nz: {global_mesh.nZ}.")
+        logger.info(
+            f"Number of model points. nx: {global_mesh.nX}, ny: {global_mesh.nY}, nz: {global_mesh.nZ}."
+        )
 
     for i in range(global_mesh.nX):
-        global_mesh.X[i] = 0.5 * model_extent.hLatLon + model_extent.hLatLon * i - 0.5 * model_extent.Xmax
+        global_mesh.X[i] = (
+            0.5 * model_extent.hLatLon
+            + model_extent.hLatLon * i
+            - 0.5 * model_extent.Xmax
+        )
 
     for i in range(global_mesh.nY):
-        global_mesh.Y[i] = 0.5 * model_extent.hLatLon + model_extent.hLatLon * i - 0.5 * model_extent.Ymax
+        global_mesh.Y[i] = (
+            0.5 * model_extent.hLatLon
+            + model_extent.hLatLon * i
+            - 0.5 * model_extent.Ymax
+        )
 
     for i in range(global_mesh.nZ):
         global_mesh.Z[i] = -1000 * (model_extent.Zmin + model_extent.hDep * (i + 0.5))
@@ -174,17 +205,19 @@ def gen_full_model_grid_great_circle(model_extent: ModelExtent, logger: Logger) 
     cosP = np.cos(arg)
     sinP = np.sin(arg)
 
-    amat = np.array([
-        cosA * cosT * cosP + sinA * sinP,
-        sinA * cosT * cosP - cosA * sinP,
-        sinT * cosP,
-        cosA * cosT * sinP - sinA * cosP,
-        sinA * cosT * sinP + cosA * cosP,
-        sinT * sinP,
-        -cosA * sinT,
-        -sinA * sinT,
-        cosT
-    ]).reshape((3, 3))
+    amat = np.array(
+        [
+            cosA * cosT * cosP + sinA * sinP,
+            sinA * cosT * cosP - cosA * sinP,
+            sinT * cosP,
+            cosA * cosT * sinP - sinA * cosP,
+            sinA * cosT * sinP + cosA * cosP,
+            sinT * sinP,
+            -cosA * sinT,
+            -sinA * sinT,
+            cosT,
+        ]
+    ).reshape((3, 3))
 
     det = np.linalg.det(amat)
     ainv = np.linalg.inv(amat) / det
@@ -192,9 +225,14 @@ def gen_full_model_grid_great_circle(model_extent: ModelExtent, logger: Logger) 
     g0 = 0.0
     b0 = 0.0
 
-    X, Y = np.meshgrid(global_mesh.X[:global_mesh.nX], global_mesh.Y[:global_mesh.nY], indexing='ij')
+    X, Y = np.meshgrid(
+        global_mesh.X[: global_mesh.nX], global_mesh.Y[: global_mesh.nY], indexing="ij"
+    )
     lat_lon = great_circle_projection(X, Y, amat, ERAD, g0, b0)
-    global_mesh.Lat[:global_mesh.nX, :global_mesh.nY], global_mesh.Lon[:global_mesh.nX, :global_mesh.nY] = lat_lon
+    (
+        global_mesh.Lat[: global_mesh.nX, : global_mesh.nY],
+        global_mesh.Lon[: global_mesh.nX, : global_mesh.nY],
+    ) = lat_lon
 
     global_mesh.maxLat = np.max(global_mesh.Lat)
     global_mesh.maxLon = np.max(global_mesh.Lon)
@@ -231,7 +269,10 @@ def extract_partial_mesh(global_mesh: GlobalMesh, lat_ind: int) -> PartialGlobal
 
     return partial_global_mesh
 
-def generate_velocity_model(cvm_registry: CVMRegistry, out_dir: Path, vm_params: Dict, logger: Logger):
+
+def generate_velocity_model(
+    cvm_registry: CVMRegistry, out_dir: Path, vm_params: Dict, logger: Logger
+):
     """
     Generate the velocity model.
 
@@ -251,10 +292,14 @@ def generate_velocity_model(cvm_registry: CVMRegistry, out_dir: Path, vm_params:
     global_mesh = gen_full_model_grid_great_circle(model_extent, logger)
     write_velo_mod_corners_text_file(global_mesh, out_dir, logger)
 
-    velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data = cvm_registry.load_all_global_data(logger)
+    velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data = (
+        cvm_registry.load_all_global_data(logger)
+    )
 
     for j in range(global_mesh.nY):
-        logger.info(f"Generating velocity model {j * 100 / global_mesh.nY:.2f}% complete.")
+        logger.info(
+            f"Generating velocity model {j * 100 / global_mesh.nY:.2f}% complete."
+        )
         partial_global_mesh = extract_partial_mesh(global_mesh, j)
         # partial_global_qualities = PartialGlobalQualities(partial_global_mesh.nX, partial_global_mesh.nZ)
     #
@@ -331,15 +376,19 @@ def parse_arguments() -> argparse.Namespace:
     argparse.Namespace
         The parsed command-line arguments.
     """
-    parser = argparse.ArgumentParser(description='Generate velocity model')
-    parser.add_argument('vm_params', type=Path, help='Path to the vm_params.yaml file')
-    parser.add_argument('out_dir', type=Path, help='Path to the output directory')
-    parser.add_argument('--nzvm_registry', type=Path, help='Path to the nzvm_registry.yaml file',
-                        default=nzvm_registry_path)
+    parser = argparse.ArgumentParser(description="Generate velocity model")
+    parser.add_argument("vm_params", type=Path, help="Path to the vm_params.yaml file")
+    parser.add_argument("out_dir", type=Path, help="Path to the output directory")
+    parser.add_argument(
+        "--nzvm_registry",
+        type=Path,
+        help="Path to the nzvm_registry.yaml file",
+        default=nzvm_registry_path,
+    )
     return parser.parse_args()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
 
@@ -351,10 +400,10 @@ if __name__ == '__main__':
     out_dir = args.out_dir.resolve()
     out_dir.mkdir(exist_ok=True, parents=True)
 
-    logger.info(f'Using vm_params file: {vm_params_path}')
-    with open(vm_params_path, 'r') as f:
+    logger.info(f"Using vm_params file: {vm_params_path}")
+    with open(vm_params_path, "r") as f:
         vm_params = yaml.safe_load(f)
 
-    cvm_registry = CVMRegistry(vm_params['model_version'], logger)
+    cvm_registry = CVMRegistry(vm_params["model_version"], logger)
 
     generate_velocity_model(cvm_registry, out_dir, vm_params, logger)
