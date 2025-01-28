@@ -799,6 +799,27 @@ basin:
         path: USER20_BASINS/Whangaparoa_surface_WGS84.txt
         submodel: null
 
+  - name: TeAnau_v24p9
+    boundaries:
+      - path: STUDENTS_BASINS/TeAnau_outline_WGS84.txt
+    surfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        submodel: Cant1D_v2
+      - name: TeAnau
+        path: STUDENTS_BASINS/TeAnau_surface_WGS84.txt
+        submodel: null
+
+  - name: Westport_v24p9
+    boundaries:
+      - path: STUDENTS_BASINS/Westport_outline_WGS84.txt
+    surfaces:
+      - name: DEM
+        path: DEM/NZ_DEM_HD.in
+        submodel: Cant1D_v2
+      - name: Westport
+        path: STUDENTS_BASINS/Westport_surface_WGS84.txt
+        submodel: null
 
 vm1d:
   - name: Cant1D_v1

@@ -1,0 +1,1 @@
+MAX_DIST_SMOOTH=10  # distance in KM to smooth tomography over

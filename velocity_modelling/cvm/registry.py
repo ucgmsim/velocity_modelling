@@ -9,6 +9,10 @@ from logging import Logger
 import logging
 import sys
 
+from qcore import point_in_polygon
+from qcore import coordinates
+
+
 DATA_ROOT = Path(__file__).parent / "Data"
 nzvm_registry_path = DATA_ROOT / "nzvm_registry.yaml"
 
@@ -16,8 +20,238 @@ DEFAULT_OFFSHORE_1D_MODEL = "Cant1D_v2"  # vm1d name for offshore 1D model
 DEFAULT_OFFSHORE_DISTANCE = "offshore"  # surface name for offshore distance
 
 
+
+
 class CVMRegistry:  # Forward declaration
     pass
+
+
+
+class BasinSurfaceRead:
+    def __init__(self, nLat: int, nLon: int):
+        """
+        Initialize the BasinSurfaceRead.
+
+        Parameters
+        ----------
+        nLat : int
+            The number of latitude points.
+        nLon : int
+            The number of longitude points.
+        """
+        self.nLat = nLat
+        self.nLon = nLon
+        self.lati = np.zeros(nLat)
+        self.loni = np.zeros(nLon)
+        self.raster = np.zeros((nLon, nLat))
+        self.maxLat = None
+        self.minLat = None
+        self.maxLon = None
+        self.minLon = None
+
+
+class GlobalMesh:
+    def __init__(self, nX: int, nY: int, nZ: int):
+        """
+        Initialize the GlobalMesh.
+
+        Parameters
+        ----------
+        nX : int
+            The number of points in the X direction.
+        nY : int
+            The number of points in the Y direction.
+        nZ : int
+            The number of points in the Z direction.
+        """
+        self.Lon = np.zeros((nX, nY))
+        self.Lat = np.zeros((nX, nY))
+        self.maxLat = 0.0
+        self.minLat = 0.0
+        self.maxLon = 0.0
+        self.minLon = 0.0
+        self.nX = nX
+        self.nY = nY
+        self.nZ = nZ
+        self.X = np.zeros(nX)
+        self.Y = np.zeros(nY)
+        self.Z = np.zeros(nZ)
+
+class PartialGlobalSurfaceDepths:
+    def __init__(self, nSurfDep: int):
+        """
+        Initialize the PartialGlobalSurfaceDepth.
+
+        Parameters
+        ----------
+        nSurfDep : int
+            The number of surface depths.
+        """
+        self.dep = np.zeros(nSurfDep, dtype=np.float64)
+        self.nSurfDep = nSurfDep
+
+class PartialBasinSurfaceDepths:
+    def __init__(self, num_basins : int, num_basin_surfaces: int):
+        self.dep = np.zeros((num_basins, num_basin_surfaces), dtype=np.float64)
+
+class PartialGlobalMesh:
+    def __init__(self, nX: int, nZ: int):
+        """
+        Initialize the PartialGlobalMesh.
+
+        Parameters
+        ----------
+        nX : int
+            The number of points in the X direction.
+        nZ : int
+            The number of points in the Z direction.
+        """
+        self.Lon = np.zeros(nX)
+        self.Lat = np.zeros(nX)
+        self.X = np.zeros(nX)
+        self.Z = np.zeros(nZ)
+        self.nX = nX
+        self.nY = 1
+        self.nZ = nZ
+        self.Y = 0.0
+
+class MeshVector:
+    def __init__(self, nZ):
+        self.Lat = None
+        self.Lon = None
+        self.Z = np.zeros(nZ)
+        self.nZ = nZ
+
+class PartialGlobalQualities:
+    def __init__(self, lon_grid_dim_max: int, dep_grid_dim_max: int):
+        self.Vp = np.zeros((lon_grid_dim_max, dep_grid_dim_max), dtype=np.float64)
+        self.Vs = np.zeros((lon_grid_dim_max, dep_grid_dim_max), dtype=np.float64)
+        self.Rho = np.zeros((lon_grid_dim_max, dep_grid_dim_max), dtype=np.float64)
+        self.inbasin = np.zeros((lon_grid_dim_max, dep_grid_dim_max), dtype=bool)
+
+class QualitiesVector:
+    def __init__(self, dep_grid_dim_max: int):
+        self.Vp = np.zeros(dep_grid_dim_max, dtype=np.float64)
+        self.Vs = np.zeros(dep_grid_dim_max, dtype=np.float64)
+        self.Rho = np.zeros(dep_grid_dim_max, dtype=np.float64)
+        self.inbasin = np.zeros(dep_grid_dim_max, dtype=bool)
+
+
+class GlobalSurfaces:
+    def __init__(self):
+        """
+        Initialize the GlobalSurfaces.
+        """
+        self.surf = []
+
+
+class GlobalSurfaceRead:
+    def __init__(self, nLat: int, nLon: int):
+        """
+        Initialize the GlobalSurfaceRead.
+
+        Parameters
+        ----------
+        nLat : int
+            The number of latitude points.
+        nLon : int
+            The number of longitude points.
+        """
+        self.nLat = nLat
+        self.nLon = nLon
+        self.lati = np.zeros(nLat)
+        self.loni = np.zeros(nLon)
+        self.raster = np.zeros((nLon, nLat))
+        self.maxLat = None
+        self.minLat = None
+        self.maxLon = None
+        self.minLon = None
+
+
+class ModelExtent:
+    def __init__(self, vm_params: Dict):
+        """
+        Initialize the ModelExtent.
+
+        Parameters
+        ----------
+        vm_params : Dict
+            The velocity model parameters.
+        """
+        self.originLat = vm_params["MODEL_LAT"]
+        self.originLon = vm_params["MODEL_LON"]
+        self.originRot = vm_params["MODEL_ROT"]  # in degrees
+        self.Xmax = vm_params["extent_x"]
+        self.Ymax = vm_params["extent_y"]
+        self.Zmax = vm_params["extent_zmax"]
+        self.Zmin = vm_params["extent_zmin"]
+        self.hDep = vm_params["hh"]
+        self.hLatLon = vm_params["hh"]
+        self.nx = vm_params["nx"]
+        self.ny = vm_params["ny"]
+        self.nz = vm_params["nz"]
+
+
+class SmoothingBoundary:
+    def __init__(self):
+        """
+        Initialize the SmoothingBoundary.
+        """
+        self.n = 0
+        self.xPts = []
+        self.yPts = []
+
+    def determine_if_lat_lon_within_smoothing_region(self, mesh_vector: MeshVector):
+        """
+         Determine the closest index within the smoothing boundary to the given mesh vector coordinates.
+
+         Parameters:
+         smoothing_boundary (SmoothingBoundary): Object containing smoothing boundary data.
+         mesh_vector (MeshVector): Object containing mesh vector data.
+
+         Returns:
+         int: Index of the closest point in the smoothing boundary.
+         """
+        closest_ind, distance = self.brute_force(mesh_vector)
+
+        return closest_ind, distance
+
+    def brute_force(self, mesh_vector: MeshVector):
+        """
+        Determine the closest index within the smoothing boundary to the given mesh vector coordinates.
+
+        Parameters:
+        smoothing_boundary (SmoothingBoundary): Object containing smoothing boundary data.
+        mesh_vector (MeshVector): Object containing mesh vector data.
+
+        Returns:
+        int: Index of the closest point in the smoothing boundary.
+        """
+        boundary_points = np.column_stack((self.yPts, self.xPts))
+        mesh_point = np.array([mesh_vector.Lat, mesh_vector.Lon])
+
+        distances = coordinates.distance_between_wgs_depth_coordinates(boundary_points, mesh_point)
+        closest_ind = np.argmin(distances)
+        return closest_ind, distances[closest_ind]
+
+
+
+class VeloMod1DData:
+    def __init__(self):
+        """
+        Initialize the VeloMod1DData.
+        """
+        self.Vp = []
+        self.Vs = []
+        self.Rho = []
+        self.Dep = []
+        self.nDep = 0
+
+
+class VTYPE(Enum):
+    vp = 0
+    vs = 1
+    rho = 2
 
 
 class TomographyData:
@@ -104,6 +338,11 @@ def check_boundary_index(func):
 
     return wrapper
 
+
+class InBasin:
+    def __init__(self, num_basins: int, num_basin_boundaries: int, dep_grid_dim: int):
+        self.inBasinLatLon = np.zeros((num_basins, num_basin_boundaries), dtype=int)
+        self.inBasinDep = np.zeros((num_basins, dep_grid_dim), dtype=int)
 
 class BasinData:
     def __init__(
@@ -249,161 +488,44 @@ class BasinData:
         """
         return np.max(self.boundary_lat(i))
 
-
-class BasinSurfaceRead:
-    def __init__(self, nLat: int, nLon: int):
+    def determine_if_within_any_basin_lat_lon(self, mesh_vector: MeshVector):
         """
-        Initialize the BasinSurfaceRead.
+        Determine if a point lies within the different basin boundaries.
 
-        Parameters
-        ----------
-        nLat : int
-            The number of latitude points.
-        nLon : int
-            The number of longitude points.
+        Parameters:
+        basin_data (BasinData): Struct containing basin data (surfaces, submodels, etc.)
+        global_model_parameters (GlobalModelParameters): Struct containing all model parameters (surface names, submodel names, basin names, etc.)
+        lat (float): Latitude value of point of concern
+        lon (float): Longitude value of point of concern
+
+        Returns:
+        int: 1 if inside a basin (any), 0 otherwise
         """
-        self.nLat = nLat
-        self.nLon = nLon
-        self.lati = np.zeros(nLat)
-        self.loni = np.zeros(nLon)
-        self.raster = np.zeros((nLon, nLat))
-        self.maxLat = None
-        self.minLat = None
-        self.maxLon = None
-        self.minLon = None
 
 
-class GlobalMesh:
-    def __init__(self, nX: int, nY: int, nZ: int):
-        """
-        Initialize the GlobalMesh.
+        # TODO: Only Perturbation basins are ignored for smoothing, which will be handled in the perturbation code.
+        #  We dropped ignoreBasinForSmoothing from Basin definition. By default we don't ignore any basins for smoothing.
 
-        Parameters
-        ----------
-        nX : int
-            The number of points in the X direction.
-        nY : int
-            The number of points in the Y direction.
-        nZ : int
-            The number of points in the Z direction.
-        """
-        self.Lon = np.zeros((nX, nY))
-        self.Lat = np.zeros((nX, nY))
-        self.maxLat = 0.0
-        self.minLat = 0.0
-        self.maxLon = 0.0
-        self.minLon = 0.0
-        self.nX = nX
-        self.nY = nY
-        self.nZ = nZ
-        self.X = np.zeros(nX)
-        self.Y = np.zeros(nY)
-        self.Z = np.zeros(nZ)
+        # See https://github.com/ucgmsim/mapping/blob/80b8e66222803d69e2f8f2182ccc1adc467b7cb1/mapbox/vs30/scripts/basin_z_values/gen_sites_in_basin.py#L119C2-L123C55
+        # and https://github.com/ucgmsim/qcore/blob/master/qcore/point_in_polygon.py
 
+        for j in range(len(self.boundary)):
+            boundary = self.boundary[j]
 
-class PartialGlobalMesh:
-    def __init__(self, nX: int, nZ: int):
-        """
-        Initialize the PartialGlobalMesh.
+            if not (np.min(boundary[:, 0]) <= mesh_vector.lon <= np.max(boundary[:, 0]) and
+                    np.min(boundary[:, 1]) <= mesh_vector.lat <= np.max(boundary[:, 1])):
+                continue # outside of basin
 
-        Parameters
-        ----------
-        nX : int
-            The number of points in the X direction.
-        nZ : int
-            The number of points in the Z direction.
-        """
-        self.Lon = np.zeros(nX)
-        self.Lat = np.zeros(nX)
-        self.X = np.zeros(nX)
-        self.Z = np.zeros(nZ)
-        self.nX = nX
-        self.nY = 1
-        self.nZ = nZ
-        self.Y = 0.0
+            else:
+                # possibly in basin
+                in_poly = point_in_polygon.is_inside_postgis(self.boundary[j], np.array([mesh_vector.lon, mesh_vector.lat]))# check if in poly
 
+                if in_poly:
+                    return True  # inside a basin (any)
+                else:
+                    continue # outside of basin
 
-class GlobalSurfaces:
-    def __init__(self):
-        """
-        Initialize the GlobalSurfaces.
-        """
-        self.surf = []
-
-
-class GlobalSurfaceRead:
-    def __init__(self, nLat: int, nLon: int):
-        """
-        Initialize the GlobalSurfaceRead.
-
-        Parameters
-        ----------
-        nLat : int
-            The number of latitude points.
-        nLon : int
-            The number of longitude points.
-        """
-        self.nLat = nLat
-        self.nLon = nLon
-        self.lati = np.zeros(nLat)
-        self.loni = np.zeros(nLon)
-        self.raster = np.zeros((nLon, nLat))
-        self.maxLat = None
-        self.minLat = None
-        self.maxLon = None
-        self.minLon = None
-
-
-class ModelExtent:
-    def __init__(self, vm_params: Dict):
-        """
-        Initialize the ModelExtent.
-
-        Parameters
-        ----------
-        vm_params : Dict
-            The velocity model parameters.
-        """
-        self.originLat = vm_params["MODEL_LAT"]
-        self.originLon = vm_params["MODEL_LON"]
-        self.originRot = vm_params["MODEL_ROT"]  # in degrees
-        self.Xmax = vm_params["extent_x"]
-        self.Ymax = vm_params["extent_y"]
-        self.Zmax = vm_params["extent_zmax"]
-        self.Zmin = vm_params["extent_zmin"]
-        self.hDep = vm_params["hh"]
-        self.hLatLon = vm_params["hh"]
-        self.nx = vm_params["nx"]
-        self.ny = vm_params["ny"]
-        self.nz = vm_params["nz"]
-
-
-class SmoothingBoundary:
-    def __init__(self):
-        """
-        Initialize the SmoothingBoundary.
-        """
-        self.n = 0
-        self.xPts = []
-        self.yPts = []
-
-
-class VeloMod1DData:
-    def __init__(self):
-        """
-        Initialize the VeloMod1DData.
-        """
-        self.Vp = []
-        self.Vs = []
-        self.Rho = []
-        self.Dep = []
-        self.nDep = 0
-
-
-class VTYPE(Enum):
-    vp = 0
-    vs = 1
-    rho = 2
+        return False  # not inside basin
 
 
 class CVMRegistry:
