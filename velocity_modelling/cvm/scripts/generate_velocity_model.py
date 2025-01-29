@@ -318,6 +318,8 @@ def assign_qualities(cvm_registry: CVMRegistry, velo_mod_1d_data: VeloMod1DData,
     """
     smooth_bound = nz_tomography_data.smooth_boundary
 
+    closest_ind = None
+
     if smooth_bound.n == 0:
         distance = 1e6  # if there are no points in the smoothing boundary, then skip
     else:
@@ -325,8 +327,8 @@ def assign_qualities(cvm_registry: CVMRegistry, velo_mod_1d_data: VeloMod1DData,
 
     # calculate vs30 (used as a proxy to determine if point is on- or off-shore, only if using tomography)
     if nz_tomography_data.tomography_loaded and cvm_registry.vm_global_params["GTL"]:
-        calculate_vs30_from_tomo_vs30_surface(mesh_vector, nz_tomography_data)
-        calculate_shoreline_dist(mesh_vector, nz_tomography_data)
+        nz_tomography_data.calculate_vs30_from_tomo_vs30_surface(mesh_vector) # mesh_vector.Vs30 updated
+        nz_tomography_data.calculate_distance_from_shoreline(mesh_vector) # mesh_vector.distance_from_shoreline updated
 
     in_any_basin = np.any([basin_data.determine_if_within_any_basin_lat_lon(mesh_vector) for basin_data in basin_data_list])
 
@@ -343,14 +345,15 @@ def assign_qualities(cvm_registry: CVMRegistry, velo_mod_1d_data: VeloMod1DData,
         original_lon = mesh_vector.Lon
 
         # overwrite the lat-lon with the location on the boundary
+        assert closest_ind is not None # closest_ind should not be None if distance < MAX_DIST_SMOOTH
         mesh_vector.Lat = smooth_bound.yPts[closest_ind]
         mesh_vector.Lon = smooth_bound.xPts[closest_ind]
 
         # velocity vector just inside the boundary
         on_boundary = 1
-        prescribe_velocities(cvm_registry, velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data,
+        qualities_vector_b.prescribe_velocities(velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data_list,
                              mesh_vector, partial_global_surface_depths_b, partial_basin_surface_depths_b, in_basin_b,
-                             qualities_vector_b, topo_type, on_boundary, logger)
+                             topo_type, on_boundary, logger)
 
         # overwrite the lat-lon with the original lat-lon point
         mesh_vector.Lat = original_lat
@@ -358,9 +361,9 @@ def assign_qualities(cvm_registry: CVMRegistry, velo_mod_1d_data: VeloMod1DData,
 
         # velocity vector at the point in question
         on_boundary = 0
-        prescribe_velocities(cvm_registry, velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data,
+        qualities_vector_a.prescribe_velocities(velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data_list,
                              mesh_vector, partial_global_surface_depths, partial_basin_surface_depths, in_basin,
-                             qualities_vector_a, topo_type, on_boundary, logger)
+                             topo_type, on_boundary, logger)
 
         # apply smoothing between the two generated velocity vectors
         smooth_dist_ratio = distance / MAX_DIST_SMOOTH
@@ -380,9 +383,9 @@ def assign_qualities(cvm_registry: CVMRegistry, velo_mod_1d_data: VeloMod1DData,
         qualities_vector.Rho[invalid_indices] = np.nan
     else:
         on_boundary = 0
-        prescribe_velocities(cvm_registry, velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data,
+        qualities_vector.prescribe_velocities(velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data_list,
                              mesh_vector, partial_global_surface_depths, partial_basin_surface_depths, in_basin,
-                             qualities_vector, topo_type, on_boundary, logger)
+                             topo_type, on_boundary, logger)
 
 
 def generate_velocity_model(
