@@ -657,21 +657,32 @@ class BasinData:
         """
         self.name = basin_name
 
-        self.boundaries = [] # List of basin boundaries
         basin_info = cvm_registry.get_info("basin", basin_name)
 
-        self.surf = [
-            cvm_registry.load_basin_surface(surface["path"])
-            for surface in basin_info["surfaces"]
-        ]
+
         self.boundary = [
             cvm_registry.load_basin_boundary(boundary["path"])
             for boundary in basin_info["boundaries"]
         ]
-        self.submodel = [
-            cvm_registry.load_basin_submodel(surface)
-            for surface in basin_info["surfaces"]
-        ]
+        self.surface = []
+        self.submodel = []
+        for boundary in basin_info["boundaries"]:
+            boundary_surfaces=[]
+            boundary_submodels=[]
+            for surface in boundary["surfaces"]:
+
+                boundary_surfaces.append(
+                    cvm_registry.load_basin_surface(surface)
+                )
+                boundary_submodels.append(
+                    cvm_registry.load_basin_submodel(surface)
+                )
+
+            self.surface.append(boundary_surfaces) # List of basin surfaces for each boundary
+            self.submodel.append(boundary_submodels)
+
+
+
         self.perturbation_data = None
         self.logger = logger
 
@@ -1196,7 +1207,8 @@ class CVMRegistry:
 
         Parameters
         ----------
-        basin_surface : dict
+        basin_surface : dict {'name': str, 'submodel': str}
+
             Dictionary containing basin surface data.
 
         Returns
@@ -1225,23 +1237,25 @@ class CVMRegistry:
         elif submodel["type"] == "perturbation":
             return VeloMod1DData()
 
-    def load_basin_surface(self, basin_surface_path: Path):
+    def load_basin_surface(self, basin_surface: str):
         """
         Load a basin surface from a file.
 
         Parameters
         ----------
-        basin_surface_path : Path
-            The path to the basin surface file.
+        basin_surface : dict {'name': str, 'submodel': str}
 
         Returns
         -------
         BasinSurfaceRead
             The loaded basin surface data.
         """
-        self.log(f"Loading basin surface file {basin_surface_path}")
 
-        basin_surface_path = self.get_full_path(basin_surface_path)
+        surface_info = self.get_info("surface", basin_surface["name"])
+
+        self.log(f"Loading basin surface file {surface_info['path']}")
+
+        basin_surface_path = self.get_full_path(surface_info['path'])
 
         try:
             with open(basin_surface_path, "r") as f:
