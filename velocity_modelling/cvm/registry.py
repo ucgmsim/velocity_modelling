@@ -12,9 +12,9 @@ import sys
 from qcore import point_in_polygon
 from qcore import coordinates
 
-from constants import MAX_LAT_SURFACE_EXTENSION, MAX_LON_SURFACE_EXTENSION
+from velocity_modelling.cvm.constants import MAX_LAT_SURFACE_EXTENSION, MAX_LON_SURFACE_EXTENSION
 
-DATA_ROOT = Path(__file__).parent / "Data"
+DATA_ROOT = Path(__file__).parent.parent / "Data"
 nzvm_registry_path = DATA_ROOT / "nzvm_registry.yaml"
 
 DEFAULT_OFFSHORE_1D_MODEL = "Cant1D_v2"  # vm1d name for offshore 1D model
@@ -165,9 +165,9 @@ class PartialGlobalMesh:
 
 
 class MeshVector:
-    def __init__(self, nZ):
-        self.Lat = None
-        self.Lon = None
+    def __init__(self, nZ, lat=None, lon=None):
+        self.Lat = lat
+        self.Lon = lon
         self.Z = np.zeros(nZ)
         self.nZ = nZ
         self.Vs30 = None
@@ -212,7 +212,7 @@ class GlobalSurfaceRead:
         self.maxLon = None
         self.minLon = None
 
-    def find_global_adjacent_points(self, mesh_vector):
+    def find_global_adjacent_points(self, mesh_vector: MeshVector):
         """
         Find the adjacent points to the mesh vector in the global surface.
 
@@ -635,8 +635,8 @@ def check_boundary_index(func):
 
 class InBasin:
     def __init__(self, num_basins: int, num_basin_boundaries: int, dep_grid_dim: int):
-        self.inBasinLatLon = np.zeros((num_basins, num_basin_boundaries), dtype=int)
-        self.inBasinDep = np.zeros((num_basins, dep_grid_dim), dtype=int)
+        self.inBasinLatLon = np.zeros((num_basins, num_basin_boundaries), dtype=bool)
+        self.inBasinDep = np.zeros((num_basins, dep_grid_dim), dtype=bool)
 
 
 class BasinData:
@@ -656,6 +656,8 @@ class BasinData:
             The logger instance.
         """
         self.name = basin_name
+
+        self.boundaries = [] # List of basin boundaries
         basin_info = cvm_registry.get_info("basin", basin_name)
 
         self.surf = [
@@ -783,7 +785,29 @@ class BasinData:
         """
         return np.max(self.boundary_lat(i))
 
-    def determine_if_within_any_basin_lat_lon(self, mesh_vector: MeshVector):
+    def point_on_vertex(self, i: int, mesh_vector: MeshVector) -> bool:
+        """
+        Check if a point lies on a vertex of a basin boundary.
+
+        Parameters
+        ----------
+        i : int
+            The index of the boundary.
+        mesh_vector : MeshVector
+            The mesh vector containing the point.
+
+        Returns
+        -------
+        bool
+            True if the point lies on a vertex of the boundary, False otherwise.
+        """
+        boundary_lats = self.boundary_lat(i)
+        boundary_lons = self.boundary_lon(i)
+        on_vertex = np.any(np.isclose(boundary_lats, mesh_vector.Lat) & np.isclose(boundary_lons,  mesh_vector.Lon))
+        return on_vertex
+
+
+    def determine_if_within_basin_lat_lon(self, mesh_vector: MeshVector, basin_num: int = -1, in_basin: InBasin = None):
         """
         Determine if a point lies within the different basin boundaries.
 
@@ -803,6 +827,10 @@ class BasinData:
         # See https://github.com/ucgmsim/mapping/blob/80b8e66222803d69e2f8f2182ccc1adc467b7cb1/mapbox/vs30/scripts/basin_z_values/gen_sites_in_basin.py#L119C2-L123C55
         # and https://github.com/ucgmsim/qcore/blob/master/qcore/point_in_polygon.py
 
+        on_vertex = False
+        if in_basin:
+            assert basin_num >= 0, "Basin number must be provided if in_basin is provided."
+
         for j in range(len(self.boundary)):
             boundary = self.boundary[j]
 
@@ -819,12 +847,55 @@ class BasinData:
                 )  # check if in poly
 
                 if in_poly:
+                    if in_basin:
+                        in_basin.inBasinLatLon[basin_num][j] = True
                     return True  # inside a basin (any)
-                else:
+                else: # outside poly
+                    if in_basin: #check if it is on vertex
+                        in_basin.inBasinLatLon[basin_num][j] = self.point_on_vertex(j, mesh_vector)
+
                     continue  # outside of basin
 
         return False  # not inside basin
 
+    # def determine_basin_surface_depths(self, basin_num: int, in_basin: InBasin, partial_basin_surface_depths: PartialBasinSurfaceDepths,
+    #                                    mesh_vector: MeshVector):
+    #     """
+    #     Determine the basin surface depths for a given latitude and longitude.
+    #
+    #     Parameters
+    #     ----------
+    #     in_basin : InBasin
+    #         Struct containing flags to indicate if lat-lon point - depths lie within the basin.
+    #     partial_basin_surface_depths : PartialBasinSurfaceDepths
+    #         Struct containing depths for all applicable basin surfaces at one lat-lon location.
+    #     lat : float
+    #         The latitude of the point.
+    #     lon : float
+    #         The longitude of the point.
+    #     """
+    #     for j in range(len(self.surf)):
+    #         boundary_num =
+    #         if in_basin.inBasinLatLon[basin_num][j]:
+    #             adjacent_points = self.surf[j].find_global_adjacent_points(mesh_vector)
+    #             partial_basin_surface_depths.dep[basin_num][j] = self.surf[j].interpolate_global_surface(mesh_vector,adjacent_points)
+
+    # def interpolate_basin_surface_depths(self, basin_num: int, in_basin: InBasin, partial_basin_surface_depths: PartialBasinSurfaceDepths, mesh_vector: MeshVector):
+    #     """
+    #     Determine if a lat-lon point is in a basin, if so interpolate the basin surface depths, enforce their hierarchy, then determine which depth points lie within the basin limits.
+    #
+    #     Parameters
+    #     ----------
+    #     in_basin : InBasin
+    #         Struct containing flags to indicate if lat-lon point - depths lie within the basin.
+    #     partial_basin_surface_depths : PartialBasinSurfaceDepths
+    #         Struct containing depths for all applicable basin surfaces at one lat-lon location.
+    #     mesh_vector : MeshVector
+    #         Struct containing a single lat-lon point with one or more depths.
+    #     """
+    #     self.determine_if_within_basin_lat_lon(mesh_vector, basin_num, in_basin)
+    #     self.determine_basin_surface_depths(in_basin, partial_basin_surface_depths, mesh_vector.Lat, mesh_vector.Lon)
+    #     self.enforce_basin_surface_depths(in_basin, partial_basin_surface_depths, mesh_vector)
 
 class QualitiesVector:
     def __init__(self, dep_grid_dim_max: int):
@@ -859,22 +930,31 @@ class QualitiesVector:
 
         in_any_basin_lat_lon = np.any(
             [
-                basin_data.determine_if_within_any_basin_lat_lon(mesh_vector)
+                basin_data.determine_if_within_basin_lat_lon(mesh_vector)
                 for basin_data in basin_data_list
             ]
         )
 
         if topo_type == "SQUASHED":
-            dZ = mesh_vector.z[0] - mesh_vector.z[1]
-            shifted_mesh_vector = self.create_shifted_mesh_vector(
-                mesh_vector, partial_global_surface_depths, dZ
-            )
+            shifted_mesh_vector = MeshVector(mesh_vector.nZ, lat=mesh_vector.Lat, lon=mesh_vector.Lon)
+
+            depth_change = -mesh_vector.Z  # is this correct????
+            shifted_mesh_vector.Z = partial_global_surface_depths.dep[1] - depth_change
 
         elif topo_type == "SQUASHED_TAPERED":
-            dZ = mesh_vector.z[0] - mesh_vector.z[1]
-            shifted_mesh_vector = self.create_shifted_mesh_vector_tapered(
-                mesh_vector, partial_global_surface_depths, dZ
+            dZ = mesh_vector.Z[0] - mesh_vector.Z[1]
+            TAPER_DIST = 1.0
+            shifted_mesh_vector = MeshVector(mesh_vector.nZ, lat=mesh_vector.Lat, lon=mesh_vector.Lon)
+
+            depth_change = -mesh_vector.Z
+            TAPER_VAL = np.where(
+                (depth_change == 0) | (partial_global_surface_depths.dep[1] == 0) | (
+                            partial_global_surface_depths.dep[1] < 0),
+                1.0,
+                1.0 - (depth_change / (partial_global_surface_depths.dep[1] * TAPER_DIST))
             )
+            TAPER_VAL = np.clip(TAPER_VAL, 0.0, None)
+            shifted_mesh_vector.Z = partial_global_surface_depths.dep[1] * TAPER_VAL - depth_change
 
         elif topo_type in ["BULLDOZED", "TRUE"]:
             shifted_mesh_vector = mesh_vector
@@ -882,8 +962,8 @@ class QualitiesVector:
         else:
             raise ValueError("User specified TOPO_TYPE not recognised, see readme.")
 
-        for basin_data in basin_data_list:
-            basin_data.interpolate_basin_surface_depths(
+        for basin_num, basin_data in enumerate(basin_data_list):
+            basin_data.interpolate_basin_surface_depths(basin_num,
                 in_basin, partial_basin_surface_depths, shifted_mesh_vector
             )
 

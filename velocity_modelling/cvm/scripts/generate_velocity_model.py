@@ -330,7 +330,7 @@ def assign_qualities(cvm_registry: CVMRegistry, velo_mod_1d_data: VeloMod1DData,
         nz_tomography_data.calculate_vs30_from_tomo_vs30_surface(mesh_vector) # mesh_vector.Vs30 updated
         nz_tomography_data.calculate_distance_from_shoreline(mesh_vector) # mesh_vector.distance_from_shoreline updated
 
-    in_any_basin = np.any([basin_data.determine_if_within_any_basin_lat_lon(mesh_vector) for basin_data in basin_data_list])
+    in_any_basin = np.any([basin_data.determine_if_within_basin_lat_lon(mesh_vector) for basin_data in basin_data_list])
 
     # point lies within smoothing zone, is offshore, and is not in any basin (i.e., outside any boundaries)
     if distance <= MAX_DIST_SMOOTH and in_any_basin == False and cvm_registry.vm_global_params["GTL"] and mesh_vector.Vs30 < 100:
