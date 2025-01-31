@@ -944,6 +944,246 @@ class BasinData:
         )
         self.enforce_basin_surface_depths(partial_basin_surface_depths, mesh_vector)
 
+    def assign_basin_qualities(
+        self,
+        partial_basin_surface_depths: PartialBasinSurfaceDepths,
+        partial_global_surface_depths: PartialGlobalSurfaceDepths,
+        nz_tomography_data: TomographyData,
+        mesh_vector: MeshVector,
+        in_any_basin_lat_lon: bool,
+        on_boundary: bool,
+        depth: float,
+        basin_num: int,
+        z_ind: int,
+    ):
+        """
+        Assign Vp, Vs, and Rho to the individual grid point.
+
+        Parameters
+        ----------
+        partial_basin_surface_depths : PartialBasinSurfaceDepths
+            Struct containing depths for all applicable basin surfaces at one lat-lon location.
+        partial_global_surface_depths : PartialGlobalSurfaceDepths
+            Struct containing global surface depths.
+        nz_tomography_data : TomographyData
+            Struct containing tomography data.
+        mesh_vector : MeshVector
+            Struct containing a single lat-lon point with one or more depths.
+        in_any_basin_lat_lon : bool
+            Flag indicating if the point is in any basin.
+        on_boundary : bool
+            Flag indicating if the point is on a boundary.
+        depth : float
+            The depth of the grid point to determine the properties at.
+        basin_num : int
+            The basin number pertaining to the basin of interest.
+        z_ind : int
+            The depth index of the single grid point.
+
+        Returns
+        -------
+        None
+        """
+        # Determine the indices of the basin surfaces above and below the given depth
+        ind_above = self.determine_basin_surface_above(
+            partial_basin_surface_depths, depth, basin_num
+        )
+        ind_below = self.determine_basin_surface_below(
+            partial_basin_surface_depths, depth, basin_num
+        )
+
+        # Call the sub-velocity models to assign the qualities
+        self.call_basin_sub_velocity_models(
+            partial_basin_surface_depths,
+            partial_global_surface_depths,
+            nz_tomography_data,
+            mesh_vector,
+            in_any_basin_lat_lon,
+            on_boundary,
+            depth,
+            ind_above,
+            basin_num,
+            z_ind,
+        )
+
+    def determine_basin_surface_above(
+        self, partial_basin_surface_depths, depth, basin_num
+    ):
+        """
+        Determine the index of the basin surface directly above the given depth.
+
+        Parameters
+        ----------
+        partial_basin_surface_depths : PartialBasinSurfaceDepths
+            Struct containing depths for all applicable basin surfaces at one lat-lon location.
+        depth : float
+            The depth of the grid point to determine the properties at.
+        basin_num : int
+            The basin number pertaining to the basin of interest.
+
+        Returns
+        -------
+        int
+            Index of the surface directly above the grid point.
+        """
+        upper_surf_ind = 0
+        for i in range(len(partial_basin_surface_depths.depth[basin_num]) - 1, -1, -1):
+            upper_surf = partial_basin_surface_depths.depth[basin_num][i]
+            if not np.isnan(upper_surf) and upper_surf >= depth:
+                upper_surf_ind = i
+                break
+        return upper_surf_ind
+
+    def determine_basin_surface_below(
+        self, partial_basin_surface_depths, depth, basin_num
+    ):
+        """
+        Determine the index of the basin surface directly below the given depth.
+
+        Parameters
+        ----------
+        partial_basin_surface_depths : PartialBasinSurfaceDepths
+            Struct containing depths for all applicable basin surfaces at one lat-lon location.
+        depth : float
+            The depth of the grid point to determine the properties at.
+        basin_num : int
+            The basin number pertaining to the basin of interest.
+
+        Returns
+        -------
+        int
+            Index of the surface directly below the grid point.
+        """
+        lower_surf_ind = 0
+        for i in range(len(partial_basin_surface_depths.depth[basin_num])):
+            lower_surf = partial_basin_surface_depths.depth[basin_num][i]
+            if not np.isnan(lower_surf) and lower_surf <= depth:
+                lower_surf_ind = i
+                break
+        return lower_surf_ind
+
+    def call_basin_sub_velocity_models(
+        self,
+        partial_basin_surface_depths,
+        partial_global_surface_depths,
+        nz_tomography_data,
+        mesh_vector,
+        in_any_basin_lat_lon,
+        on_boundary,
+        depth,
+        ind_above,
+        basin_num,
+        z_ind,
+    ):
+        """
+        Call the appropriate sub-velocity model based on the basin submodel name.
+
+        Parameters
+        ----------
+        partial_basin_surface_depths : PartialBasinSurfaceDepths
+            Struct containing depths for all applicable basin surfaces at one lat-lon location.
+        partial_global_surface_depths : PartialGlobalSurfaceDepths
+            Struct containing global surface depths.
+        nz_tomography_data : TomographyData
+            Struct containing tomography data.
+        mesh_vector : MeshVector
+            Struct containing a single lat-lon point with one or more depths.
+        in_any_basin_lat_lon : bool
+            Flag indicating if the point is in any basin.
+        on_boundary : bool
+            Flag indicating if the point is on a boundary.
+        depth : float
+            The depth of the grid point to determine the properties at.
+        ind_above : int
+            Index of the surface directly above the grid point.
+        basin_num : int
+            The basin number pertaining to the basin of interest.
+        z_ind : int
+            The depth index of the single grid point.
+
+        Returns
+        -------
+        None
+        """
+        submodel_name = self.cvm_registry.basin_submodel_names[basin_num][ind_above]
+        qualities_vector = mesh_vector.qualities_vector
+
+        # 1D sub models
+        if submodel_name in ["Cant1D_v1", "Cant1D_v2", "Cant1D_v2_Pliocene_Enforced"]:
+            self.v1d_sub_mod(
+                z_ind,
+                depth,
+                qualities_vector,
+                self.basin_submodel_data[basin_num].velo_mod_1d_data,
+            )
+        # Pre-quaternary models
+        elif submodel_name == "PaleogeneSubMod_v1":
+            self.paleogene_sub_model_v1(z_ind, qualities_vector)
+        elif submodel_name == "MioceneSubMod_v1":
+            self.miocene_sub_model_v1(z_ind, qualities_vector)
+        elif submodel_name == "PlioceneSubMod_v1":
+            self.pliocene_sub_model_v1(z_ind, qualities_vector)
+        # BPV models
+        elif submodel_name == "BPVSubMod_v1":
+            self.bpv_sub_model_v1(z_ind, qualities_vector)
+        elif submodel_name == "BPVSubMod_v2":
+            self.bpv_sub_model_v2(z_ind, qualities_vector)
+        elif submodel_name == "BPVSubMod_v3":
+            self.bpv_sub_model_v3(
+                z_ind, qualities_vector, partial_basin_surface_depths, basin_num, depth
+            )
+        elif submodel_name == "BPVSubMod_v4":
+            self.bpv_sub_model_v4(
+                z_ind,
+                qualities_vector,
+                partial_basin_surface_depths,
+                partial_global_surface_depths,
+                basin_num,
+                depth,
+            )
+        # Quaternary models
+        elif submodel_name in [
+            "ChristchurchSubMod_v1",
+            "BromleySubMod_v1",
+            "HeathcoteSubMod_v1",
+            "ShirleySubMod_v1",
+        ]:
+            self.marine_sub_model(
+                z_ind, qualities_vector, partial_basin_surface_depths, depth, basin_num
+            )
+        elif submodel_name in [
+            "RiccartonSubMod_v1",
+            "LinwoodSubMod_v1",
+            "BurwoodSubMod_v1",
+            "WainoniSubMod_v1",
+        ]:
+            self.gravel_sub_model(
+                z_ind, qualities_vector, partial_basin_surface_depths, depth, basin_num
+            )
+        # Perturbation models
+        elif submodel_name in [
+            "perturbation_v20p6",
+            "perturbation_v20p10",
+            "perturbation_v20p11",
+        ]:
+            self.perturbation_sub_mod(
+                z_ind,
+                depth,
+                mesh_vector,
+                qualities_vector,
+                nz_tomography_data,
+                self.perturbation_data[basin_num],
+                self.cvm_registry,
+                partial_global_surface_depths,
+                in_any_basin_lat_lon,
+                on_boundary,
+            )
+            qualities_vector.in_basin[z_ind] = (
+                0  # reassign as outside of a basin for the purpose of a in/out of basin mask binary used to incorporate graves stochastic velocity perturbations
+            )
+        else:
+            raise ValueError(f"Error, invalid basin sub model name: {submodel_name}")
+
 
 class QualitiesVector:
     def __init__(self, dep_grid_dim_max: int):
@@ -1025,19 +1265,20 @@ class QualitiesVector:
                 shifted_mesh_vector,
             )
 
-        basin_flag = 0
+        basin_flag = False
         Z = 0
-        for k in range(mesh_vector.nz):
+        for k in range(mesh_vector.nZ):
             if topo_type in ["BULLDOZED", "TRUE"]:
-                Z = mesh_vector.z[k]
+                Z = mesh_vector.Z[k]
             elif topo_type in ["SQUASHED", "SQUASHED_TAPERED"]:
-                Z = shifted_mesh_vector.z[k]
+                Z = shifted_mesh_vector.Z[k]
 
-            for i in range(len(basin_data_list)):
-                if in_basin.in_basin_dep[i][k] == 1:
-                    basin_flag = 1
+            for i, basin_data in enumerate(basin_data_list):
+                in_basin = in_basin_list[i]
+                if in_basin.inBasinDep[k]:
+                    basin_flag = True
                     self.inbasin[k] = True
-                    basin_data = basin_data_list[i]
+
                     basin_data.assign_basin_qualities(
                         partial_basin_surface_depths,
                         partial_global_surface_depths,

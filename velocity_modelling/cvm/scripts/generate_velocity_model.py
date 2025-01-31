@@ -316,7 +316,7 @@ def assign_qualities(
     partial_basin_surface_depths: PartialBasinSurfaceDepths,
     in_basin_list: List[InBasin],
     qualities_vector: QualitiesVector,
-    topo_type: TomographyData,
+    topo_type: str,
     logger: Logger,
 ):
     """
@@ -376,7 +376,7 @@ def assign_qualities(
         mesh_vector.Lon = smooth_bound.xPts[closest_ind]
 
         # velocity vector just inside the boundary
-        on_boundary = 1
+        on_boundary = True
         qualities_vector_b.prescribe_velocities(
             velo_mod_1d_data,
             nz_tomography_data,
@@ -396,7 +396,7 @@ def assign_qualities(
         mesh_vector.Lon = original_lon
 
         # velocity vector at the point in question
-        on_boundary = 0
+        on_boundary = False
         qualities_vector_a.prescribe_velocities(
             velo_mod_1d_data,
             nz_tomography_data,
@@ -405,7 +405,7 @@ def assign_qualities(
             mesh_vector,
             partial_global_surface_depths,
             partial_basin_surface_depths,
-            in_basin,
+            in_basin_list,
             topo_type,
             on_boundary,
             logger,
@@ -434,7 +434,7 @@ def assign_qualities(
         qualities_vector.Vs[invalid_indices] = np.nan
         qualities_vector.Rho[invalid_indices] = np.nan
     else:
-        on_boundary = 0
+        on_boundary = False
         qualities_vector.prescribe_velocities(
             velo_mod_1d_data,
             nz_tomography_data,
@@ -443,7 +443,7 @@ def assign_qualities(
             mesh_vector,
             partial_global_surface_depths,
             partial_basin_surface_depths,
-            in_basin,
+            in_basin_list,
             topo_type,
             on_boundary,
             logger,
