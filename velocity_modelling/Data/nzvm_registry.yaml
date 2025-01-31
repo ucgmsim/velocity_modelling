@@ -811,9 +811,9 @@ velo_submodel:
   - name: 2020_NZ_OFFSHORE
     type: tomography
   - name: 2020_NZ_OFFSHORE_NO_BASIN
-    type: tmography
+    type: tomography
   - name: 2020_NZ_OFFSHORE_EXTENDED
-    type: tmography
+    type: tomography
 
 
 submodel:

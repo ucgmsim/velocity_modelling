@@ -19,17 +19,14 @@ from velocity_modelling.cvm.registry import (
     ModelExtent,
     PartialGlobalMesh,
     PartialGlobalQualities,
-
     VeloMod1DData,
     TomographyData,
     GlobalSurfaces,
     BasinData,
-
     InBasin,
     PartialGlobalSurfaceDepths,
     PartialBasinSurfaceDepths,
     QualitiesVector,
-
 )
 
 from velocity_modelling.cvm.constants import MAX_DIST_SMOOTH
@@ -45,7 +42,7 @@ RPERD = 0.017453292
 
 
 def write_velo_mod_corners_text_file(
-        global_mesh: GlobalMesh, output_dir: str, logger: Logger
+    global_mesh: GlobalMesh, output_dir: str, logger: Logger
 ) -> None:
     """
     Write velocity model corners to a text file.
@@ -84,12 +81,12 @@ def write_velo_mod_corners_text_file(
 
 
 def great_circle_projection(
-        x: np.ndarray,
-        y: np.ndarray,
-        amat: np.ndarray,
-        erad: float = ERAD,
-        g0: float = 0,
-        b0: float = 0,
+    x: np.ndarray,
+    y: np.ndarray,
+    amat: np.ndarray,
+    erad: float = ERAD,
+    g0: float = 0,
+    b0: float = 0,
 ) -> tuple[np.ndarray, Any]:
     """
     Project x, y coordinates to geographic coordinates (longitude, latitude) using a great circle projection.
@@ -130,7 +127,7 @@ def great_circle_projection(
     lat = np.where(
         np.isclose(zg, 0),
         0,
-        90 - np.arctan(np.sqrt(xg ** 2 + yg ** 2) / zg) / RPERD - np.where(zg < 0, 180, 0),
+        90 - np.arctan(np.sqrt(xg**2 + yg**2) / zg) / RPERD - np.where(zg < 0, 180, 0),
     )
 
     lon = np.where(
@@ -141,7 +138,7 @@ def great_circle_projection(
 
 
 def gen_full_model_grid_great_circle(
-        model_extent: ModelExtent, logger: Logger
+    model_extent: ModelExtent, logger: Logger
 ) -> GlobalMesh:
     """
     Generate the grid of latitude, longitude, and depth points using the point radial distance method.
@@ -174,11 +171,11 @@ def gen_full_model_grid_great_circle(
     assert global_mesh.nZ == model_extent.nz
 
     if any(
-            [
-                global_mesh.nX >= LON_GRID_DIM_MAX,
-                global_mesh.nY >= LAT_GRID_DIM_MAX,
-                global_mesh.nZ >= DEP_GRID_DIM_MAX,
-            ]
+        [
+            global_mesh.nX >= LON_GRID_DIM_MAX,
+            global_mesh.nY >= LAT_GRID_DIM_MAX,
+            global_mesh.nZ >= DEP_GRID_DIM_MAX,
+        ]
     ):
         raise ValueError(
             f"Grid dimensions exceed maximum allowable values. X={LON_GRID_DIM_MAX}, Y={LAT_GRID_DIM_MAX}, Z={DEP_GRID_DIM_MAX}"
@@ -191,16 +188,16 @@ def gen_full_model_grid_great_circle(
 
     for i in range(global_mesh.nX):
         global_mesh.X[i] = (
-                0.5 * model_extent.hLatLon
-                + model_extent.hLatLon * i
-                - 0.5 * model_extent.Xmax
+            0.5 * model_extent.hLatLon
+            + model_extent.hLatLon * i
+            - 0.5 * model_extent.Xmax
         )
 
     for i in range(global_mesh.nY):
         global_mesh.Y[i] = (
-                0.5 * model_extent.hLatLon
-                + model_extent.hLatLon * i
-                - 0.5 * model_extent.Ymax
+            0.5 * model_extent.hLatLon
+            + model_extent.hLatLon * i
+            - 0.5 * model_extent.Ymax
         )
 
     for i in range(global_mesh.nZ):
@@ -308,11 +305,20 @@ def extract_mesh_vector(partial_global_mesh: PartialGlobalMesh, lon_ind: int):
     return mesh_vector
 
 
-def assign_qualities(cvm_registry: CVMRegistry, velo_mod_1d_data: VeloMod1DData, nz_tomography_data: TomographyData,
-                     global_surfaces: GlobalSurfaces, basin_data_list: List[BasinData],
-                     mesh_vector: MeshVector, partial_global_surface_depths: PartialGlobalSurfaceDepths,
-                     partial_basin_surface_depths: PartialBasinSurfaceDepths, in_basin: InBasin, qualities_vector: QualitiesVector,
-                     topo_type: TomographyData, logger: Logger):
+def assign_qualities(
+    cvm_registry: CVMRegistry,
+    velo_mod_1d_data: VeloMod1DData,
+    nz_tomography_data: TomographyData,
+    global_surfaces: GlobalSurfaces,
+    basin_data_list: List[BasinData],
+    mesh_vector: MeshVector,
+    partial_global_surface_depths: PartialGlobalSurfaceDepths,
+    partial_basin_surface_depths: PartialBasinSurfaceDepths,
+    in_basin_list: List[InBasin],
+    qualities_vector: QualitiesVector,
+    topo_type: TomographyData,
+    logger: Logger,
+):
     """
     Determine if lat-lon point lies within the smoothing zone and prescribe velocities accordingly.
     """
@@ -323,21 +329,39 @@ def assign_qualities(cvm_registry: CVMRegistry, velo_mod_1d_data: VeloMod1DData,
     if smooth_bound.n == 0:
         distance = 1e6  # if there are no points in the smoothing boundary, then skip
     else:
-        closest_ind, distance = smooth_bound.determine_if_lat_lon_within_smoothing_region(mesh_vector)
+        closest_ind, distance = (
+            smooth_bound.determine_if_lat_lon_within_smoothing_region(mesh_vector)
+        )
 
     # calculate vs30 (used as a proxy to determine if point is on- or off-shore, only if using tomography)
     if nz_tomography_data.tomography_loaded and cvm_registry.vm_global_params["GTL"]:
-        nz_tomography_data.calculate_vs30_from_tomo_vs30_surface(mesh_vector) # mesh_vector.Vs30 updated
-        nz_tomography_data.calculate_distance_from_shoreline(mesh_vector) # mesh_vector.distance_from_shoreline updated
+        nz_tomography_data.calculate_vs30_from_tomo_vs30_surface(
+            mesh_vector
+        )  # mesh_vector.Vs30 updated
+        nz_tomography_data.calculate_distance_from_shoreline(
+            mesh_vector
+        )  # mesh_vector.distance_from_shoreline updated
 
-    in_any_basin = np.any([basin_data.determine_if_within_basin_lat_lon(mesh_vector) for basin_data in basin_data_list])
+    in_any_basin = np.any(
+        [
+            basin_data.determine_if_within_basin_lat_lon(mesh_vector)
+            for basin_data in basin_data_list
+        ]
+    )
 
     # point lies within smoothing zone, is offshore, and is not in any basin (i.e., outside any boundaries)
-    if distance <= MAX_DIST_SMOOTH and in_any_basin == False and cvm_registry.vm_global_params["GTL"] and mesh_vector.Vs30 < 100:
+    if (
+        distance <= MAX_DIST_SMOOTH
+        and not in_any_basin
+        and cvm_registry.vm_global_params["GTL"]
+        and mesh_vector.Vs30 < 100
+    ):
         # point lies within smoothing zone and is not in any basin (i.e., outside any boundaries)
         qualities_vector_a = QualitiesVector(mesh_vector.nZ)
         qualities_vector_b = QualitiesVector(mesh_vector.nZ)
-        in_basin_b = InBasin(mesh_vector.nZ)
+        in_basin_b_list = [
+            InBasin(basin_data, mesh_vector.nZ) for basin_data in basin_data_list
+        ]
         partial_global_surface_depths_b = PartialGlobalSurfaceDepths(mesh_vector.nZ)
         partial_basin_surface_depths_b = PartialBasinSurfaceDepths(mesh_vector.nZ)
 
@@ -345,15 +369,27 @@ def assign_qualities(cvm_registry: CVMRegistry, velo_mod_1d_data: VeloMod1DData,
         original_lon = mesh_vector.Lon
 
         # overwrite the lat-lon with the location on the boundary
-        assert closest_ind is not None # closest_ind should not be None if distance < MAX_DIST_SMOOTH
+        assert (
+            closest_ind is not None
+        )  # closest_ind should not be None if distance < MAX_DIST_SMOOTH
         mesh_vector.Lat = smooth_bound.yPts[closest_ind]
         mesh_vector.Lon = smooth_bound.xPts[closest_ind]
 
         # velocity vector just inside the boundary
         on_boundary = 1
-        qualities_vector_b.prescribe_velocities(velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data_list,
-                             mesh_vector, partial_global_surface_depths_b, partial_basin_surface_depths_b, in_basin_b,
-                             topo_type, on_boundary, logger)
+        qualities_vector_b.prescribe_velocities(
+            velo_mod_1d_data,
+            nz_tomography_data,
+            global_surfaces,
+            basin_data_list,
+            mesh_vector,
+            partial_global_surface_depths_b,
+            partial_basin_surface_depths_b,
+            in_basin_b_list,
+            topo_type,
+            on_boundary,
+            logger,
+        )
 
         # overwrite the lat-lon with the original lat-lon point
         mesh_vector.Lat = original_lat
@@ -361,21 +397,37 @@ def assign_qualities(cvm_registry: CVMRegistry, velo_mod_1d_data: VeloMod1DData,
 
         # velocity vector at the point in question
         on_boundary = 0
-        qualities_vector_a.prescribe_velocities(velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data_list,
-                             mesh_vector, partial_global_surface_depths, partial_basin_surface_depths, in_basin,
-                             topo_type, on_boundary, logger)
+        qualities_vector_a.prescribe_velocities(
+            velo_mod_1d_data,
+            nz_tomography_data,
+            global_surfaces,
+            basin_data_list,
+            mesh_vector,
+            partial_global_surface_depths,
+            partial_basin_surface_depths,
+            in_basin,
+            topo_type,
+            on_boundary,
+            logger,
+        )
 
         # apply smoothing between the two generated velocity vectors
         smooth_dist_ratio = distance / MAX_DIST_SMOOTH
         inverse_ratio = 1 - smooth_dist_ratio
 
         valid_indices = ~np.isnan(qualities_vector_a.Vp)
-        qualities_vector.Vp[valid_indices] = smooth_dist_ratio * qualities_vector_a.Vp[valid_indices] + inverse_ratio * \
-                                             qualities_vector_b.Vp[valid_indices]
-        qualities_vector.Vs[valid_indices] = smooth_dist_ratio * qualities_vector_a.Vs[valid_indices] + inverse_ratio * \
-                                             qualities_vector_b.Vs[valid_indices]
-        qualities_vector.Rho[valid_indices] = smooth_dist_ratio * qualities_vector_a.Rho[
-            valid_indices] + inverse_ratio * qualities_vector_b.Rho[valid_indices]
+        qualities_vector.Vp[valid_indices] = (
+            smooth_dist_ratio * qualities_vector_a.Vp[valid_indices]
+            + inverse_ratio * qualities_vector_b.Vp[valid_indices]
+        )
+        qualities_vector.Vs[valid_indices] = (
+            smooth_dist_ratio * qualities_vector_a.Vs[valid_indices]
+            + inverse_ratio * qualities_vector_b.Vs[valid_indices]
+        )
+        qualities_vector.Rho[valid_indices] = (
+            smooth_dist_ratio * qualities_vector_a.Rho[valid_indices]
+            + inverse_ratio * qualities_vector_b.Rho[valid_indices]
+        )
 
         invalid_indices = np.isnan(qualities_vector_a.Vp)
         qualities_vector.Vp[invalid_indices] = np.nan
@@ -383,13 +435,27 @@ def assign_qualities(cvm_registry: CVMRegistry, velo_mod_1d_data: VeloMod1DData,
         qualities_vector.Rho[invalid_indices] = np.nan
     else:
         on_boundary = 0
-        qualities_vector.prescribe_velocities(velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data_list,
-                             mesh_vector, partial_global_surface_depths, partial_basin_surface_depths, in_basin,
-                             topo_type, on_boundary, logger)
+        qualities_vector.prescribe_velocities(
+            velo_mod_1d_data,
+            nz_tomography_data,
+            global_surfaces,
+            basin_data_list,
+            mesh_vector,
+            partial_global_surface_depths,
+            partial_basin_surface_depths,
+            in_basin,
+            topo_type,
+            on_boundary,
+            logger,
+        )
 
 
 def generate_velocity_model(
-        cvm_registry: CVMRegistry, out_dir: Path, vm_params: Dict, logger: Logger, smoothing: bool = False
+    cvm_registry: CVMRegistry,
+    out_dir: Path,
+    vm_params: Dict,
+    logger: Logger,
+    smoothing: bool = False,
 ):
     """
     Generate the velocity model.
@@ -412,7 +478,7 @@ def generate_velocity_model(
     global_mesh = gen_full_model_grid_great_circle(model_extent, logger)
     write_velo_mod_corners_text_file(global_mesh, out_dir, logger)
 
-    velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data = (
+    velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data_list = (
         cvm_registry.load_all_global_data(logger)
     )
 
@@ -421,10 +487,15 @@ def generate_velocity_model(
             f"Generating velocity model {j * 100 / global_mesh.nY:.2f}% complete."
         )
         partial_global_mesh = extract_partial_mesh(global_mesh, j)
-        partial_global_qualities = PartialGlobalQualities(partial_global_mesh.nX, partial_global_mesh.nZ)
+        partial_global_qualities = PartialGlobalQualities(
+            partial_global_mesh.nX, partial_global_mesh.nZ
+        )
 
         for k in range(partial_global_mesh.nX):
-            in_basin = InBasin()
+            in_basin_list = [
+                InBasin(basin_data, partial_global_mesh.nZ)
+                for basin_data in basin_data_list
+            ]
             partial_global_surface_depths = PartialGlobalSurfaceDepths()
             partial_basin_surface_depths = PartialBasinSurfaceDepths()
             qualities_vector = QualitiesVector()
@@ -460,18 +531,42 @@ def generate_velocity_model(
             #                 partial_global_qualities.Vs[k][i] = half * (A + B + C)
             else:
                 mesh_vector = extract_mesh_vector(partial_global_mesh, k)
-                assign_qualities(cvm_registry, velo_mod_1d_data, nz_tomography_data, global_surfaces,
-                                 basin_data, mesh_vector, partial_global_surface_depths, partial_basin_surface_depths,
-                                 in_basin, qualities_vector, vm_params['typo_type'], logger)
+                assign_qualities(
+                    cvm_registry,
+                    velo_mod_1d_data,
+                    nz_tomography_data,
+                    global_surfaces,
+                    basin_data_list,
+                    mesh_vector,
+                    partial_global_surface_depths,
+                    partial_basin_surface_depths,
+                    in_basin_list,
+                    qualities_vector,
+                    vm_params["typo_type"],
+                    logger,
+                )
 
-                partial_global_qualities.Rho[k, :partial_global_mesh.nZ] = qualities_vector.Rho[:partial_global_mesh.nZ]
-                partial_global_qualities.Vp[k, :partial_global_mesh.nZ] = qualities_vector.Vp[:partial_global_mesh.nZ]
-                partial_global_qualities.Vs[k, :partial_global_mesh.nZ] = qualities_vector.Vs[:partial_global_mesh.nZ]
-                partial_global_qualities.inbasin[k, :partial_global_mesh.nZ] = qualities_vector.inbasin[
-                                                                               :partial_global_mesh.nZ]
+                partial_global_qualities.Rho[k, : partial_global_mesh.nZ] = (
+                    qualities_vector.Rho[: partial_global_mesh.nZ]
+                )
+                partial_global_qualities.Vp[k, : partial_global_mesh.nZ] = (
+                    qualities_vector.Vp[: partial_global_mesh.nZ]
+                )
+                partial_global_qualities.Vs[k, : partial_global_mesh.nZ] = (
+                    qualities_vector.Vs[: partial_global_mesh.nZ]
+                )
+                partial_global_qualities.inbasin[k, : partial_global_mesh.nZ] = (
+                    qualities_vector.inbasin[: partial_global_mesh.nZ]
+                )
 
-        write_global_qualities(output_dir, partial_global_mesh, partial_global_qualities, gen_extract_velo_mod_call,
-                               calculation_log, j)
+        write_global_qualities(
+            output_dir,
+            partial_global_mesh,
+            partial_global_qualities,
+            gen_extract_velo_mod_call,
+            calculation_log,
+            j,
+        )
 
     # def process_j(j):
     #     # do something with j
