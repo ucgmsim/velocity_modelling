@@ -23,6 +23,7 @@ from velocity_modelling.cvm.interpolate import (
     interpolate_global_surface,
     interpolate_global_surface_depths,
     interpolate_basin_surface_depths,
+    bi_linear_interpolation,
 )
 
 DATA_ROOT = Path(__file__).parent.parent / "Data"
@@ -588,9 +589,10 @@ class InBasin:
 class PartialBasinSurfaceDepths:
     def __init__(self, basin_data: BasinData):
         # List of arrays of depths for each surface associated with each boundary
+        # self.depth[i][j] is the depth of the j-th surface for the i-th boundary
         self.depth = [
-            np.zeros(len(surface_list), dtype=np.float64)
-            for surface_list in basin_data.surface
+            np.zeros(len(surfaces_for_a_boundary), dtype=np.float64)
+            for surfaces_for_a_boundary in basin_data.surface  # List of basin surfaces for each boundary
         ]
 
 
@@ -841,10 +843,8 @@ class BasinData:
             Struct containing flags to indicate if lat-lon point - depths lie within the basin.
         partial_basin_surface_depths : PartialBasinSurfaceDepths
             Struct containing depths for all applicable basin surfaces at one lat-lon location.
-        lat : float
-            The latitude of the point.
-        lon : float
-            The longitude of the point.
+        mesh_vector : MeshVector
+            Struct containing a single lat-lon point with one or more depths.
         """
         for boundary_ind, boundary in enumerate(self.boundary):
             surfaces = self.surface[boundary_ind]
@@ -853,17 +853,79 @@ class BasinData:
                 for surface_ind, surface in enumerate(surfaces):
                     adjacent_points = surface.find_global_adjacent_points(mesh_vector)
 
-                    # TODO: surface?? It should be PartialGlobalSurfaceDepths object. surface is BainSurfaceRead object.
+                    x1 = surface.loni[adjacent_points.lon_ind[0]]
+                    x2 = surface.loni[adjacent_points.lon_ind[1]]
+                    y1 = surface.lati[adjacent_points.lat_ind[0]]
+                    y2 = surface.lati[adjacent_points.lat_ind[1]]
+                    q11 = surface.raster[adjacent_points.lon_ind[0]][
+                        adjacent_points.lat_ind[0]
+                    ]
+                    q12 = surface.raster[adjacent_points.lon_ind[0]][
+                        adjacent_points.lat_ind[1]
+                    ]
+                    q21 = surface.raster[adjacent_points.lon_ind[1]][
+                        adjacent_points.lat_ind[0]
+                    ]
+                    q22 = surface.raster[adjacent_points.lon_ind[1]][
+                        adjacent_points.lat_ind[1]
+                    ]
                     partial_basin_surface_depths.depth[boundary_ind][surface_ind] = (
-                        interpolate_global_surface(
-                            surface,
-                            mesh_vector,
-                            adjacent_points,  # surface??? PartialGlobalS
+                        bi_linear_interpolation(
+                            x1,
+                            x2,
+                            y1,
+                            y2,
+                            q11,
+                            q12,
+                            q21,
+                            q22,
+                            mesh_vector.Lon,
+                            mesh_vector.Lat,
                         )
                     )
             else:
                 for surface_ind, surface in enumerate(surfaces):
                     partial_basin_surface_depths.depth[boundary_ind][surface_ind] = None
+
+    def enforce_surface_depths(
+        self,
+        partial_basin_surface_depths: PartialBasinSurfaceDepths,
+    ):
+        """
+        Enforce the depths of the surfaces are consistent with stratigraphy.
+
+        Parameters
+        ----------
+
+        partial_basin_surface_depths : PartialBasinSurfaceDepths
+            Depths for all applicable basin surfaces at one lat - lon location.
+
+        Returns
+        -------
+        None
+        """
+        top_val, bot_val = None, None
+        nan_obtained = False
+        nan_ind = 0
+
+        for boundary_ind, surface in enumerate(self.surface):
+            for i in range(len(surface) - 1, 0, -1):
+                top_val = partial_basin_surface_depths.depth[boundary_ind][i - 1]
+                bot_val = partial_basin_surface_depths.depth[boundary_ind][i]
+
+                if np.isnan(top_val):
+                    nan_obtained = True
+                    nan_ind = i
+                    break
+                elif top_val < bot_val:
+                    partial_basin_surface_depths.depth[boundary_ind][i - 1] = bot_val
+
+            if nan_obtained:
+                for j in range(nan_ind - 1):
+                    top_val = partial_basin_surface_depths.depth[boundary_ind][j]
+                    bot_val = partial_basin_surface_depths.depth[boundary_ind][j + 1]
+                    if top_val < bot_val:
+                        partial_basin_surface_depths.depth[boundary_ind][j] = bot_val
 
     def assign_basin_qualities(
         self,
@@ -1173,10 +1235,12 @@ class QualitiesVector:
 
             if basin_flag == 0:
                 self.inbasin[k] = False
-                n_velo_mod_ind = self.find_global_sub_velo_model_ind(
-                    Z, partial_global_surface_depths
+                n_velo_mod_ind = (
+                    self.find_global_sub_velo_model_ind(  # TODO: implement this
+                        Z, partial_global_surface_depths
+                    )
                 )
-                self.call_sub_velocity_model(
+                self.call_sub_velocity_model(  # TODO: implement this
                     n_velo_mod_ind,
                     k,
                     Z,

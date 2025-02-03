@@ -1,3 +1,5 @@
+import numpy as np
+
 from registry import (
     BasinData,
     InBasin,
@@ -45,6 +47,44 @@ def interpolate_global_surface_depths(
             # calculation_log.nPointsGlobalSurfacesEnforced += 1
 
 
+def bi_linear_interpolation(
+    x1: np.float64,
+    x2: np.float64,
+    y1: np.float64,
+    y2: np.float64,
+    q11: np.float64,
+    q12: np.float64,
+    q21: np.float64,
+    q22: np.float64,
+    x: np.float64,
+    y: np.float64,
+):
+    """
+    Perform bilinear interpolation between four points.
+
+    Parameters
+    ----------
+    x1, x2, y1, y2 : float
+        Coordinates of the points.
+    q11, q12, q21, q22 : float
+        Values at the four points.
+    x, y : float
+        Coordinates of the point to interpolate.
+
+    Returns
+    -------
+    float
+        Interpolated value at the given x, y.
+    """
+    A = q11 * (x2 - x) * (y2 - y)
+    B = q21 * (x - x1) * (y2 - y)
+    C = q12 * (x2 - x) * (y - y1)
+    D = q22 * (x - x1) * (y - y1)
+    E = 1 / (x2 - x1) / (y2 - y1)
+
+    return (A + B + C + D) * E
+
+
 def interpolate_global_surface(
     global_surface_read: GlobalSurfaceRead, mesh_vector: MeshVector, adjacent_points
 ):
@@ -59,36 +99,29 @@ def interpolate_global_surface(
     Returns:
     float: Interpolated value at the given lat-lon.
     """
-    lat = mesh_vector.Lat
-    lon = mesh_vector.Lon
 
-    lat1 = global_surface_read.lati[adjacent_points.lat_ind[0]]
-    lat2 = global_surface_read.lati[adjacent_points.lat_ind[1]]
-    lon1 = global_surface_read.loni[adjacent_points.lon_ind[0]]
-    lon2 = global_surface_read.loni[adjacent_points.lon_ind[1]]
+    x1 = global_surface_read.loni[adjacent_points.lon_ind[0]]
+    x2 = global_surface_read.loni[adjacent_points.lon_ind[1]]
 
-    f11 = global_surface_read.raster[adjacent_points.lat_ind[0]][
-        adjacent_points.lon_ind[0]
+    y1 = global_surface_read.lati[adjacent_points.lat_ind[0]]
+    y2 = global_surface_read.lati[adjacent_points.lat_ind[1]]
+
+    q11 = global_surface_read.raster[adjacent_points.lon_ind[0]][
+        adjacent_points.lat_ind[0]
     ]
-    f12 = global_surface_read.raster[adjacent_points.lat_ind[0]][
-        adjacent_points.lon_ind[1]
+    q12 = global_surface_read.raster[adjacent_points.lon_ind[0]][
+        adjacent_points.lat_ind[1]
     ]
-    f21 = global_surface_read.raster[adjacent_points.lat_ind[1]][
-        adjacent_points.lon_ind[0]
+    q21 = global_surface_read.raster[adjacent_points.lon_ind[1]][
+        adjacent_points.lat_ind[0]
     ]
-    f22 = global_surface_read.raster[adjacent_points.lat_ind[1]][
-        adjacent_points.lon_ind[1]
+    q22 = global_surface_read.raster[adjacent_points.lon_ind[1]][
+        adjacent_points.lat_ind[1]
     ]
 
-    # bilinear interpolation between the four points
-    interpolated_value = (
-        f11 * (lat2 - lat) * (lon2 - lon)
-        + f21 * (lat - lat1) * (lon2 - lon)
-        + f12 * (lat2 - lat) * (lon - lon1)
-        + f22 * (lat - lat1) * (lon - lon1)
-    ) / ((lat2 - lat1) * (lon2 - lon1))
-
-    return interpolated_value
+    return bi_linear_interpolation(
+        x1, x2, y1, y2, q11, q12, q21, q22, mesh_vector.Lon, mesh_vector.Lat
+    )
 
 
 def interpolate_basin_surface_depths(
@@ -111,6 +144,6 @@ def interpolate_basin_surface_depths(
     """
     basin_data.determine_if_within_basin_lat_lon(mesh_vector, in_basin)
     basin_data.determine_basin_surface_depths(
-        partial_basin_surface_depths, mesh_vector.Lat, mesh_vector.Lon
+        in_basin, partial_basin_surface_depths, mesh_vector
     )
-    basin_data.enforce_basin_surface_depths(partial_basin_surface_depths, mesh_vector)
+    basin_data.enforce_basin_surface_depths(partial_basin_surface_depths)
