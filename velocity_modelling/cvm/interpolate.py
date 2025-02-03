@@ -1,7 +1,6 @@
 import numpy as np
 
-from registry import (
-    BasinData,
+from velocity_modelling.cvm.registry import (
     InBasin,
     PartialBasinSurfaceDepths,
     GlobalSurfaceRead,
@@ -122,28 +121,3 @@ def interpolate_global_surface(
     return bi_linear_interpolation(
         x1, x2, y1, y2, q11, q12, q21, q22, mesh_vector.Lon, mesh_vector.Lat
     )
-
-
-def interpolate_basin_surface_depths(
-    basin_data: BasinData,
-    in_basin: InBasin,
-    partial_basin_surface_depths: PartialBasinSurfaceDepths,
-    mesh_vector: MeshVector,
-):
-    """
-    Determine if a lat-lon point is in a basin, if so interpolate the basin surface depths, enforce their hierarchy, then determine which depth points lie within the basin limits.
-
-    Parameters
-    ----------
-    in_basin : InBasin
-        Struct containing flags to indicate if lat-lon point - depths lie within the basin.
-    partial_basin_surface_depths : PartialBasinSurfaceDepths
-        Struct containing depths for all applicable basin surfaces at one lat-lon location.
-    mesh_vector : MeshVector
-        Struct containing a single lat-lon point with one or more depths.
-    """
-    basin_data.determine_if_within_basin_lat_lon(mesh_vector, in_basin)
-    basin_data.determine_basin_surface_depths(
-        in_basin, partial_basin_surface_depths, mesh_vector
-    )
-    basin_data.enforce_basin_surface_depths(partial_basin_surface_depths)

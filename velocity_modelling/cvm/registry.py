@@ -582,8 +582,8 @@ class BasinData:  # forward declaration
 class InBasin:
     def __init__(self, basin_data: BasinData, dep_grid_dim: int):
         self.basin_data = basin_data
-        self.inBasinLatLon = np.zeros(len(basin_data.boundary), dtype=bool)
-        self.inBasinDep = np.zeros((dep_grid_dim), dtype=bool)
+        self.in_basin_lat_lon = np.zeros(len(basin_data.boundary), dtype=bool)
+        self.in_basin_depth = np.zeros((dep_grid_dim), dtype=bool)
 
 
 class PartialBasinSurfaceDepths:
@@ -594,6 +594,12 @@ class PartialBasinSurfaceDepths:
             np.zeros(len(surfaces_for_a_boundary), dtype=np.float64)
             for surfaces_for_a_boundary in basin_data.surface  # List of basin surfaces for each boundary
         ]
+
+
+class BasinSubModel:
+    def __init__(self, name: str, vm1d_data: VeloMod1DData):
+        self.name = name
+        self.vm1d_data = vm1d_data
 
 
 class BasinData:
@@ -887,6 +893,61 @@ class BasinData:
                 for surface_ind, surface in enumerate(surfaces):
                     partial_basin_surface_depths.depth[boundary_ind][surface_ind] = None
 
+    def interpolate_basin_surface_depths(
+        self,
+        in_basin: InBasin,
+        partial_basin_surface_depths: PartialBasinSurfaceDepths,
+        mesh_vector: MeshVector,
+    ):
+        """
+        Determine if a lat-lon point is in a basin, if so interpolate the basin surface depths, enforce their hierarchy, then determine which depth points lie within the basin limits.
+
+        Parameters
+        ----------
+        in_basin : InBasin
+            Struct containing flags to indicate if lat-lon point - depths lie within the basin.
+        partial_basin_surface_depths : PartialBasinSurfaceDepths
+            Struct containing depths for all applicable basin surfaces at one lat-lon location.
+        mesh_vector : MeshVector
+            Struct containing a single lat-lon point with one or more depths.
+        """
+        self.determine_if_within_basin_lat_lon(mesh_vector, in_basin)
+        self.determine_basin_surface_depths(
+            in_basin, partial_basin_surface_depths, mesh_vector
+        )
+        self.enforce_basin_surface_depths(
+            in_basin, partial_basin_surface_depths, mesh_vector
+        )
+
+    def enforce_basin_surface_depths(
+        self, in_basin: InBasin, partial_basin_surface_depths, mesh_vector: MeshVector
+    ):
+        """
+        Enforce the hierarchy of interpolated basin surface depths.
+
+        Parameters
+        ----------
+
+        in_basin : InBasin
+            Object containing flags to indicate if lat lon point - depths lie within the basin.
+        partial_basin_surface_depths : PartialBasinSurfaceDepths
+            Object containing depths for all applicable basin surfaces at one lat - lon location.
+        mesh_vector : MeshVector
+            Object containing a single lat lon point with one or more depths.
+        """
+
+        if in_basin.in_basin_lat_lon[0] == 1:
+            self.enforce_surface_depths(partial_basin_surface_depths)
+
+            top_lim = partial_basin_surface_depths.depth[0]
+            bot_lim = partial_basin_surface_depths.depth[-1]  # last surface depth
+
+            in_basin.in_basin_depth = np.where(
+                (mesh_vector.Z > top_lim) | (mesh_vector.Z < bot_lim), 0, 1
+            )
+            # in_basin_depth is initialized to 0, so no need to set it to 0 if mesh_vector.Z is outside the basin limits
+        # in_basin_depth is initialized to 0, so no need to set it to 0 if in_basin_lat_lon[0] == 0
+
     def enforce_surface_depths(
         self,
         partial_basin_surface_depths: PartialBasinSurfaceDepths,
@@ -985,7 +1046,6 @@ class BasinData:
             on_boundary,
             depth,
             ind_above,
-            basin_num,
             z_ind,
         )
 
@@ -1001,8 +1061,7 @@ class BasinData:
             Struct containing depths for all applicable basin surfaces at one lat-lon location.
         depth : float
             The depth of the grid point to determine the properties at.
-        basin_num : int
-            The basin number pertaining to the basin of interest.
+
 
         Returns
         -------
@@ -1010,13 +1069,11 @@ class BasinData:
             Index of the surface directly above the grid point.
         """
 
-        depths = partial_basin_surface_depths.depth[basin_num]
+        depths = partial_basin_surface_depths.depth
         valid_indices = np.where((~np.isnan(depths)) & (depths >= depth))[0]
         return valid_indices[0] if valid_indices.size > 0 else 0
 
-    def determine_basin_surface_below(
-        self, partial_basin_surface_depths, depth, basin_num
-    ):
+    def determine_basin_surface_below(self, partial_basin_surface_depths, depth):
         """
         Determine the index of the basin surface directly below the given depth.
 
@@ -1026,15 +1083,13 @@ class BasinData:
             Struct containing depths for all applicable basin surfaces at one lat-lon location.
         depth : float
             The depth of the grid point to determine the properties at.
-        basin_num : int
-            The basin number pertaining to the basin of interest.
 
         Returns
         -------
         int
             Index of the surface directly below the grid point.
         """
-        depths = partial_basin_surface_depths.depth[basin_num]
+        depths = partial_basin_surface_depths.depth
         valid_indices = np.where((~np.isnan(depths)) & (depths <= depth))[0]
         return valid_indices[0] if valid_indices.size > 0 else 0
 
@@ -1048,7 +1103,6 @@ class BasinData:
         on_boundary,
         depth,
         ind_above,
-        basin_num,
         z_ind,
     ):
         """
@@ -1072,8 +1126,6 @@ class BasinData:
             The depth of the grid point to determine the properties at.
         ind_above : int
             Index of the surface directly above the grid point.
-        basin_num : int
-            The basin number pertaining to the basin of interest.
         z_ind : int
             The depth index of the single grid point.
 
@@ -1081,7 +1133,7 @@ class BasinData:
         -------
         None
         """
-        submodel_name = self.cvm_registry.basin_submodel_names[basin_num][ind_above]
+        submodel_name = self.cvm_registry.basin_submodel_names[ind_above]
         qualities_vector = mesh_vector.qualities_vector
 
         # Construct the module path
@@ -1240,7 +1292,7 @@ class QualitiesVector:
                         Z, partial_global_surface_depths
                     )
                 )
-                self.call_sub_velocity_model(  # TODO: implement this
+                self.call_sub_velocity_model(  # TODO: global submodel
                     n_velo_mod_ind,
                     k,
                     Z,
@@ -1461,7 +1513,9 @@ class CVMRegistry:
             if vm1d is None:
                 self.log(f"Error: vm1d {submodel['name']} not found.")
                 exit(1)
-            return self.load_1d_velo_sub_model(vm1d["path"])
+            return BasinSubModel(
+                submodel_name, self.load_1d_velo_sub_model(vm1d["path"])
+            )
 
         elif submodel["type"] == "relation":
             return None  # TODO: Implement relation submodel
@@ -1505,15 +1559,15 @@ class CVMRegistry:
                 ), f"Error: in {basin_surface_path} raster data length mismatch: {len(raster_data)} != {nLat * nLon}"
                 basin_surf_read.raster = raster_data.reshape((nLon, nLat)).T
 
-                firstLat = basin_surf_read.lati[0]
-                lastLat = basin_surf_read.lati[nLat - 1]
-                basin_surf_read.maxLat = max(firstLat, lastLat)
-                basin_surf_read.minLat = min(firstLat, lastLat)
+                first_lat = basin_surf_read.lati[0]
+                last_lat = basin_surf_read.lati[nLat - 1]
+                basin_surf_read.maxLat = max(first_lat, last_lat)
+                basin_surf_read.minLat = min(first_lat, last_lat)
 
-                firstLon = basin_surf_read.loni[0]
-                lastLon = basin_surf_read.loni[nLon - 1]
-                basin_surf_read.maxLon = max(firstLon, lastLon)
-                basin_surf_read.minLon = min(firstLon, lastLon)
+                first_lon = basin_surf_read.loni[0]
+                last_lon = basin_surf_read.loni[nLon - 1]
+                basin_surf_read.maxLon = max(first_lon, last_lon)
+                basin_surf_read.minLon = min(first_lon, last_lon)
 
                 return basin_surf_read
 
@@ -1635,15 +1689,15 @@ class CVMRegistry:
                     )
                     exit(1)
 
-                firstLat = global_surf_read.lati[0]
-                lastLat = global_surf_read.lati[nLat - 1]
-                global_surf_read.maxLat = max(firstLat, lastLat)
-                global_surf_read.minLat = min(firstLat, lastLat)
+                first_lat = global_surf_read.lati[0]
+                last_lat = global_surf_read.lati[nLat - 1]
+                global_surf_read.maxLat = max(first_lat, last_lat)
+                global_surf_read.minLat = min(first_lat, last_lat)
 
-                firstLon = global_surf_read.loni[0]
-                lastLon = global_surf_read.loni[nLon - 1]
-                global_surf_read.maxLon = max(firstLon, lastLon)
-                global_surf_read.minLon = min(firstLon, lastLon)
+                first_lon = global_surf_read.loni[0]
+                last_lon = global_surf_read.loni[nLon - 1]
+                global_surf_read.maxLon = max(first_lon, last_lon)
+                global_surf_read.minLon = min(first_lon, last_lon)
 
                 return global_surf_read
 
