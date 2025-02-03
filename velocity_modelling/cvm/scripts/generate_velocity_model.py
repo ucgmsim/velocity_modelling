@@ -63,18 +63,17 @@ def write_velo_mod_corners_text_file(
     log_file_name = Path(output_dir) / "Log" / "VeloModCorners.txt"
     log_file_name.parent.mkdir(parents=True, exist_ok=True)
 
+    nx = len(global_mesh.x)
+    ny = len(global_mesh.y)
+
     with log_file_name.open("w") as fp:
         fp.write(">Velocity model corners.\n")
         fp.write(">Lon\tLat\n")
+        fp.write(f"{global_mesh.lon[0][ny - 1]}\t{global_mesh.lat[0][ny - 1]}\n")
+        fp.write(f"{global_mesh.lon[0][0]}\t{global_mesh.lat[0][0]}\n")
+        fp.write(f"{global_mesh.lon[nx - 1][0]}\t{global_mesh.lat[nx - 1][0]}\n")
         fp.write(
-            f"{global_mesh.Lon[0][global_mesh.nY - 1]}\t{global_mesh.Lat[0][global_mesh.nY - 1]}\n"
-        )
-        fp.write(f"{global_mesh.Lon[0][0]}\t{global_mesh.Lat[0][0]}\n")
-        fp.write(
-            f"{global_mesh.Lon[global_mesh.nX - 1][0]}\t{global_mesh.Lat[global_mesh.nX - 1][0]}\n"
-        )
-        fp.write(
-            f"{global_mesh.Lon[global_mesh.nX - 1][global_mesh.nY - 1]}\t{global_mesh.Lat[global_mesh.nX - 1][global_mesh.nY - 1]}\n"
+            f"{global_mesh.lon[nx - 1][ny - 1]}\t{global_mesh.lat[nx - 1][ny - 1]}\n"
         )
 
     logger.info("Velocity model corners file write complete.")
@@ -155,63 +154,63 @@ def gen_full_model_grid_great_circle(
     GlobalMesh
         Object containing the generated grid of latitude, longitude, and depth points.
     """
-    nX = int(np.round(model_extent.Xmax / model_extent.hLatLon))
-    nY = int(np.round(model_extent.Ymax / model_extent.hLatLon))
-    nZ = int(np.round((model_extent.Zmax - model_extent.Zmin) / model_extent.hDep))
+    nx = int(np.round(model_extent.xmax / model_extent.h_lat_lon))
+    ny = int(np.round(model_extent.ymax / model_extent.h_lat_lon))
+    nz = int(np.round((model_extent.zmax - model_extent.zmin) / model_extent.h_depth))
 
-    global_mesh = GlobalMesh(nX, nY, nZ)
+    global_mesh = GlobalMesh(nx, ny, nz)
 
-    global_mesh.maxLat = -180
-    global_mesh.minLat = 0
-    global_mesh.maxLon = 0
-    global_mesh.minLon = 180
+    global_mesh.max_lat = -180
+    global_mesh.min_lat = 0
+    global_mesh.max_lon = 0
+    global_mesh.min_lon = 180
 
-    assert global_mesh.nX == model_extent.nx
-    assert global_mesh.nY == model_extent.ny
-    assert global_mesh.nZ == model_extent.nz
+    assert nx == model_extent.nx
+    assert ny == model_extent.ny
+    assert nz == model_extent.nz
 
     if any(
         [
-            global_mesh.nX >= LON_GRID_DIM_MAX,
-            global_mesh.nY >= LAT_GRID_DIM_MAX,
-            global_mesh.nZ >= DEP_GRID_DIM_MAX,
+            nx >= LON_GRID_DIM_MAX,
+            ny >= LAT_GRID_DIM_MAX,
+            nz >= DEP_GRID_DIM_MAX,
         ]
     ):
         raise ValueError(
             f"Grid dimensions exceed maximum allowable values. X={LON_GRID_DIM_MAX}, Y={LAT_GRID_DIM_MAX}, Z={DEP_GRID_DIM_MAX}"
         )
 
-    if global_mesh.nZ != 1:
-        logger.info(
-            f"Number of model points. nx: {global_mesh.nX}, ny: {global_mesh.nY}, nz: {global_mesh.nZ}."
+    if nz != 1:
+        logger.info(f"Number of model points. nx: {nx}, ny: {ny}, nz: {nz}.")
+
+    for i in range(nx):
+        global_mesh.x[i] = (
+            0.5 * model_extent.h_lat_lon
+            + model_extent.h_lat_lon * i
+            - 0.5 * model_extent.xmax
         )
 
-    for i in range(global_mesh.nX):
-        global_mesh.X[i] = (
-            0.5 * model_extent.hLatLon
-            + model_extent.hLatLon * i
-            - 0.5 * model_extent.Xmax
+    for i in range(ny):
+        global_mesh.y[i] = (
+            0.5 * model_extent.h_lat_lon
+            + model_extent.h_lat_lon * i
+            - 0.5 * model_extent.ymax
         )
 
-    for i in range(global_mesh.nY):
-        global_mesh.Y[i] = (
-            0.5 * model_extent.hLatLon
-            + model_extent.hLatLon * i
-            - 0.5 * model_extent.Ymax
+    for i in range(nz):
+        global_mesh.z[i] = -1000 * (
+            model_extent.zmin + model_extent.h_depth * (i + 0.5)
         )
 
-    for i in range(global_mesh.nZ):
-        global_mesh.Z[i] = -1000 * (model_extent.Zmin + model_extent.hDep * (i + 0.5))
-
-    arg = model_extent.originRot * RPERD
+    arg = model_extent.origin_rot * RPERD
     cosA = np.cos(arg)
     sinA = np.sin(arg)
 
-    arg = (90.0 - model_extent.originLat) * RPERD
+    arg = (90.0 - model_extent.origin_lat) * RPERD
     cosT = np.cos(arg)
     sinT = np.sin(arg)
 
-    arg = model_extent.originLon * RPERD
+    arg = model_extent.origin_lon * RPERD
     cosP = np.cos(arg)
     sinP = np.sin(arg)
 
@@ -235,19 +234,17 @@ def gen_full_model_grid_great_circle(
     g0 = 0.0
     b0 = 0.0
 
-    X, Y = np.meshgrid(
-        global_mesh.X[: global_mesh.nX], global_mesh.Y[: global_mesh.nY], indexing="ij"
-    )
-    lat_lon = great_circle_projection(X, Y, amat, ERAD, g0, b0)
+    x, y = np.meshgrid(global_mesh.x[:nx], global_mesh.y[:ny], indexing="ij")
+    lat_lon = great_circle_projection(x, y, amat, ERAD, g0, b0)
     (
-        global_mesh.Lat[: global_mesh.nX, : global_mesh.nY],
-        global_mesh.Lon[: global_mesh.nX, : global_mesh.nY],
+        global_mesh.lat[:nx, :ny],
+        global_mesh.lon[:nx, :ny],
     ) = lat_lon
 
-    global_mesh.maxLat = np.max(global_mesh.Lat)
-    global_mesh.maxLon = np.max(global_mesh.Lon)
-    global_mesh.minLat = np.min(global_mesh.Lat)
-    global_mesh.minLon = np.min(global_mesh.Lon)
+    global_mesh.max_lat = np.max(global_mesh.lat)
+    global_mesh.max_lon = np.max(global_mesh.lon)
+    global_mesh.min_lat = np.min(global_mesh.lat)
+    global_mesh.min_lon = np.min(global_mesh.lon)
 
     logger.info("Completed Generation of Model Grid.")
     return global_mesh
@@ -255,7 +252,7 @@ def gen_full_model_grid_great_circle(
 
 def extract_partial_mesh(global_mesh: GlobalMesh, lat_ind: int) -> PartialGlobalMesh:
     """
-    Extract one slice of values from the global mesh, i.e., nX x nY x nZ becomes nX x 1 x nZ.
+    Extract one slice of values from the global mesh, i.e., nx x ny x nz becomes nx x 1 x nz.
 
     Parameters
     ----------
@@ -269,20 +266,20 @@ def extract_partial_mesh(global_mesh: GlobalMesh, lat_ind: int) -> PartialGlobal
     PartialGlobalMesh
         A struct containing a slice of the global mesh.
     """
-    partial_global_mesh = PartialGlobalMesh(global_mesh.nX, global_mesh.nZ)
-    partial_global_mesh.Y = global_mesh.Y[lat_ind]
+    partial_global_mesh = PartialGlobalMesh(global_mesh.nx, global_mesh.nz)
+    partial_global_mesh.y = global_mesh.y[lat_ind]
 
-    partial_global_mesh.Z = global_mesh.Z.copy()
-    partial_global_mesh.Lon = global_mesh.Lon[:, lat_ind].copy()
-    partial_global_mesh.Lat = global_mesh.Lat[:, lat_ind].copy()
-    partial_global_mesh.X = global_mesh.X.copy()
+    partial_global_mesh.z = global_mesh.z.copy()
+    partial_global_mesh.lon = global_mesh.lon[:, lat_ind].copy()
+    partial_global_mesh.lat = global_mesh.lat[:, lat_ind].copy()
+    partial_global_mesh.x = global_mesh.x.copy()
 
     return partial_global_mesh
 
 
 def extract_mesh_vector(partial_global_mesh: PartialGlobalMesh, lon_ind: int):
     """
-    Extract one vector of values from the global mesh, i.e., nX x 1 x nZ becomes 1 x 1 x nZ.
+    Extract one vector of values from the global mesh, i.e., nx x 1 x nz becomes 1 x 1 x nz.
 
     Parameters
     ----------
@@ -296,11 +293,11 @@ def extract_mesh_vector(partial_global_mesh: PartialGlobalMesh, lon_ind: int):
     MeshVector
         A struct containing one lat-lon point and the depths of all grid points at this location.
     """
-    mesh_vector = MeshVector(partial_global_mesh.nZ)
+    mesh_vector = MeshVector(len(partial_global_mesh.z))
 
-    mesh_vector.Lat = partial_global_mesh.Lat[lon_ind]
-    mesh_vector.Lon = partial_global_mesh.Lon[lon_ind]
-    mesh_vector.Z = partial_global_mesh.Z.copy()
+    mesh_vector.lat = partial_global_mesh.lat[lon_ind]
+    mesh_vector.lon = partial_global_mesh.lon[lon_ind]
+    mesh_vector.z = partial_global_mesh.z.copy()
 
     return mesh_vector
 
@@ -313,7 +310,7 @@ def assign_qualities(
     basin_data_list: List[BasinData],
     mesh_vector: MeshVector,
     partial_global_surface_depths: PartialGlobalSurfaceDepths,
-    partial_basin_surface_depths: PartialBasinSurfaceDepths,
+    partial_basin_surface_depths_list: List[PartialBasinSurfaceDepths],
     in_basin_list: List[InBasin],
     qualities_vector: QualitiesVector,
     topo_type: str,
@@ -337,7 +334,7 @@ def assign_qualities(
     if nz_tomography_data.tomography_loaded and cvm_registry.vm_global_params["GTL"]:
         nz_tomography_data.calculate_vs30_from_tomo_vs30_surface(
             mesh_vector
-        )  # mesh_vector.Vs30 updated
+        )  # mesh_vector.vs30 updated
         nz_tomography_data.calculate_distance_from_shoreline(
             mesh_vector
         )  # mesh_vector.distance_from_shoreline updated
@@ -354,26 +351,28 @@ def assign_qualities(
         distance <= MAX_DIST_SMOOTH
         and not in_any_basin
         and cvm_registry.vm_global_params["GTL"]
-        and mesh_vector.Vs30 < 100
+        and mesh_vector.vs30 < 100
     ):
         # point lies within smoothing zone and is not in any basin (i.e., outside any boundaries)
-        qualities_vector_a = QualitiesVector(mesh_vector.nZ)
-        qualities_vector_b = QualitiesVector(mesh_vector.nZ)
+        qualities_vector_a = QualitiesVector(mesh_vector.nz)
+        qualities_vector_b = QualitiesVector(mesh_vector.nz)
         in_basin_b_list = [
-            InBasin(basin_data, mesh_vector.nZ) for basin_data in basin_data_list
+            InBasin(basin_data, mesh_vector.nz) for basin_data in basin_data_list
         ]
-        partial_global_surface_depths_b = PartialGlobalSurfaceDepths(mesh_vector.nZ)
-        partial_basin_surface_depths_b = PartialBasinSurfaceDepths(mesh_vector.nZ)
+        partial_global_surface_depths_b = PartialGlobalSurfaceDepths(mesh_vector.nz)
+        partial_basin_surface_depths_list_b = [
+            PartialBasinSurfaceDepths(mesh_vector.nz) for basin_data in basin_data_list
+        ]
 
-        original_lat = mesh_vector.Lat
-        original_lon = mesh_vector.Lon
+        original_lat = mesh_vector.lat
+        original_lon = mesh_vector.lon
 
         # overwrite the lat-lon with the location on the boundary
         assert (
             closest_ind is not None
         )  # closest_ind should not be None if distance < MAX_DIST_SMOOTH
-        mesh_vector.Lat = smooth_bound.yPts[closest_ind]
-        mesh_vector.Lon = smooth_bound.xPts[closest_ind]
+        mesh_vector.lat = smooth_bound.yPts[closest_ind]
+        mesh_vector.lon = smooth_bound.xPts[closest_ind]
 
         # velocity vector just inside the boundary
         on_boundary = True
@@ -384,7 +383,7 @@ def assign_qualities(
             basin_data_list,
             mesh_vector,
             partial_global_surface_depths_b,
-            partial_basin_surface_depths_b,
+            partial_basin_surface_depths_list_b,
             in_basin_b_list,
             topo_type,
             on_boundary,
@@ -392,8 +391,8 @@ def assign_qualities(
         )
 
         # overwrite the lat-lon with the original lat-lon point
-        mesh_vector.Lat = original_lat
-        mesh_vector.Lon = original_lon
+        mesh_vector.lat = original_lat
+        mesh_vector.lon = original_lon
 
         # velocity vector at the point in question
         on_boundary = False
@@ -404,7 +403,7 @@ def assign_qualities(
             basin_data_list,
             mesh_vector,
             partial_global_surface_depths,
-            partial_basin_surface_depths,
+            partial_basin_surface_depths_list,
             in_basin_list,
             topo_type,
             on_boundary,
@@ -415,24 +414,24 @@ def assign_qualities(
         smooth_dist_ratio = distance / MAX_DIST_SMOOTH
         inverse_ratio = 1 - smooth_dist_ratio
 
-        valid_indices = ~np.isnan(qualities_vector_a.Vp)
-        qualities_vector.Vp[valid_indices] = (
-            smooth_dist_ratio * qualities_vector_a.Vp[valid_indices]
-            + inverse_ratio * qualities_vector_b.Vp[valid_indices]
+        valid_indices = ~np.isnan(qualities_vector_a.vp)
+        qualities_vector.vp[valid_indices] = (
+            smooth_dist_ratio * qualities_vector_a.vp[valid_indices]
+            + inverse_ratio * qualities_vector_b.vp[valid_indices]
         )
-        qualities_vector.Vs[valid_indices] = (
-            smooth_dist_ratio * qualities_vector_a.Vs[valid_indices]
-            + inverse_ratio * qualities_vector_b.Vs[valid_indices]
+        qualities_vector.vs[valid_indices] = (
+            smooth_dist_ratio * qualities_vector_a.vs[valid_indices]
+            + inverse_ratio * qualities_vector_b.vs[valid_indices]
         )
-        qualities_vector.Rho[valid_indices] = (
-            smooth_dist_ratio * qualities_vector_a.Rho[valid_indices]
-            + inverse_ratio * qualities_vector_b.Rho[valid_indices]
+        qualities_vector.rho[valid_indices] = (
+            smooth_dist_ratio * qualities_vector_a.rho[valid_indices]
+            + inverse_ratio * qualities_vector_b.rho[valid_indices]
         )
 
-        invalid_indices = np.isnan(qualities_vector_a.Vp)
-        qualities_vector.Vp[invalid_indices] = np.nan
-        qualities_vector.Vs[invalid_indices] = np.nan
-        qualities_vector.Rho[invalid_indices] = np.nan
+        invalid_indices = np.isnan(qualities_vector_a.vp)
+        qualities_vector.vp[invalid_indices] = np.nan
+        qualities_vector.vs[invalid_indices] = np.nan
+        qualities_vector.rho[invalid_indices] = np.nan
     else:
         on_boundary = False
         qualities_vector.prescribe_velocities(
@@ -442,7 +441,7 @@ def assign_qualities(
             basin_data_list,
             mesh_vector,
             partial_global_surface_depths,
-            partial_basin_surface_depths,
+            partial_basin_surface_depths_list,
             in_basin_list,
             topo_type,
             on_boundary,
@@ -482,24 +481,29 @@ def generate_velocity_model(
         cvm_registry.load_all_global_data(logger)
     )
 
-    for j in range(global_mesh.nY):
+    for j in range(len(global_mesh.y)):
         logger.info(
-            f"Generating velocity model {j * 100 / global_mesh.nY:.2f}% complete."
+            f"Generating velocity model {j * 100 / len(global_mesh.y):.2f}% complete."
         )
         partial_global_mesh = extract_partial_mesh(global_mesh, j)
         partial_global_qualities = PartialGlobalQualities(
-            partial_global_mesh.nX, partial_global_mesh.nZ
+            partial_global_mesh.nx, partial_global_mesh.nz
         )
 
-        for k in range(partial_global_mesh.nX):
+        for k in range(len(partial_global_mesh.x)):
             in_basin_list = [
-                InBasin(basin_data, partial_global_mesh.nZ)
+                InBasin(basin_data, partial_global_mesh.nz)
                 for basin_data in basin_data_list
             ]
-            partial_global_surface_depths = PartialGlobalSurfaceDepths()
-            partial_basin_surface_depths = PartialBasinSurfaceDepths()
-            qualities_vector = QualitiesVector()
-            extended_qualities_vector = QualitiesVector()
+            partial_global_surface_depths = PartialGlobalSurfaceDepths(
+                partial_global_mesh.nz
+            )
+
+            partial_basin_surface_depths_list = [
+                PartialBasinSurfaceDepths(basin_data) for basin_data in basin_data_list
+            ]
+            qualities_vector = QualitiesVector(partial_global_mesh.nz)
+            extended_qualities_vector = QualitiesVector(partial_global_mesh.nz)
             #
             if smoothing:
                 pass
@@ -510,25 +514,25 @@ def generate_velocity_model(
             #                              partial_basin_surface_depths, in_basin, extended_qualities_vector, logger,
             #                              gen_extract_velo_mod_call.topo_type)
             #
-            #             for i in range(partial_global_mesh.nZ):
+            #             for i in range(partial_global_mesh.nz):
             #                 mid_pt_count = i * (1 + 2 * n_pts_smooth) + 1
             #                 mid_pt_count_plus = mid_pt_count + 1
             #                 mid_pt_count_minus = mid_pt_count - 1
             #
-            #                 A = one_third * extended_qualities_vector.Rho[mid_pt_count_minus]
-            #                 B = four_thirds * extended_qualities_vector.Rho[mid_pt_count]
-            #                 C = one_third * extended_qualities_vector.Rho[mid_pt_count_plus]
-            #                 partial_global_qualities.Rho[k][i] = half * (A + B + C)
+            #                 A = one_third * extended_qualities_vector.rho[mid_pt_count_minus]
+            #                 B = four_thirds * extended_qualities_vector.rho[mid_pt_count]
+            #                 C = one_third * extended_qualities_vector.rho[mid_pt_count_plus]
+            #                 partial_global_qualities.rho[k][i] = half * (A + B + C)
             #
-            #                 A = one_third * extended_qualities_vector.Vp[mid_pt_count_minus]
-            #                 B = four_thirds * extended_qualities_vector.Vp[mid_pt_count]
-            #                 C = one_third * extended_qualities_vector.Vp[mid_pt_count_plus]
-            #                 partial_global_qualities.Vp[k][i] = half * (A + B + C)
+            #                 A = one_third * extended_qualities_vector.vp[mid_pt_count_minus]
+            #                 B = four_thirds * extended_qualities_vector.vp[mid_pt_count]
+            #                 C = one_third * extended_qualities_vector.vp[mid_pt_count_plus]
+            #                 partial_global_qualities.vp[k][i] = half * (A + B + C)
             #
-            #                 A = one_third * extended_qualities_vector.Vs[mid_pt_count_minus]
-            #                 B = four_thirds * extended_qualities_vector.Vs[mid_pt_count]
-            #                 C = one_third * extended_qualities_vector.Vs[mid_pt_count_plus]
-            #                 partial_global_qualities.Vs[k][i] = half * (A + B + C)
+            #                 A = one_third * extended_qualities_vector.vs[mid_pt_count_minus]
+            #                 B = four_thirds * extended_qualities_vector.vs[mid_pt_count]
+            #                 C = one_third * extended_qualities_vector.vs[mid_pt_count_plus]
+            #                 partial_global_qualities.vs[k][i] = half * (A + B + C)
             else:
                 mesh_vector = extract_mesh_vector(partial_global_mesh, k)
                 assign_qualities(
@@ -539,44 +543,36 @@ def generate_velocity_model(
                     basin_data_list,
                     mesh_vector,
                     partial_global_surface_depths,
-                    partial_basin_surface_depths,
+                    partial_basin_surface_depths_list,
                     in_basin_list,
                     qualities_vector,
-                    vm_params["typo_type"],
+                    vm_params["topo_type"],
                     logger,
                 )
+                nz = partial_global_mesh.nz
+                partial_global_qualities.rho[k, :nz] = qualities_vector.rho[:nz]
+                partial_global_qualities.vp[k, :nz] = qualities_vector.vp[:nz]
+                partial_global_qualities.vs[k, :nz] = qualities_vector.vs[:nz]
+                partial_global_qualities.inbasin[k, :nz] = qualities_vector.inbasin[:nz]
 
-                partial_global_qualities.Rho[k, : partial_global_mesh.nZ] = (
-                    qualities_vector.Rho[: partial_global_mesh.nZ]
-                )
-                partial_global_qualities.Vp[k, : partial_global_mesh.nZ] = (
-                    qualities_vector.Vp[: partial_global_mesh.nZ]
-                )
-                partial_global_qualities.Vs[k, : partial_global_mesh.nZ] = (
-                    qualities_vector.Vs[: partial_global_mesh.nZ]
-                )
-                partial_global_qualities.inbasin[k, : partial_global_mesh.nZ] = (
-                    qualities_vector.inbasin[: partial_global_mesh.nZ]
-                )
-
-        write_global_qualities(
-            output_dir,
-            partial_global_mesh,
-            partial_global_qualities,
-            gen_extract_velo_mod_call,
-            calculation_log,
-            j,
-        )
+        # write_global_qualities(
+        #     output_dir,
+        #     partial_global_mesh,
+        #     partial_global_qualities,
+        #     gen_extract_velo_mod_call,
+        #     calculation_log,
+        #     j,
+        # )
 
     # def process_j(j):
     #     # do something with j
     #
     #     return j
     # with concurrent.futures.ThreadPoolExecutor() as executor:
-    #     futures = [executor.submit(process_j, j) for j in range(global_mesh.nY)]
+    #     futures = [executor.submit(process_j, j) for j in range(global_mesh.ny)]
     #     for future in concurrent.futures.as_completed(futures):
     #         j = future.result()
-    #          logger.info(f"Generating velocity model {j * 100 / global_mesh.nY:.2f}% complete.", end="")
+    #          logger.info(f"Generating velocity model {j * 100 / global_mesh.ny:.2f}% complete.", end="")
     #         sys.stdout.flush()
 
     logger.info("Generation of velocity model 100% complete.")

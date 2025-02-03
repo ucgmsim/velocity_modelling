@@ -19,12 +19,11 @@ from velocity_modelling.cvm.constants import (
     MAX_LON_SURFACE_EXTENSION,
 )
 
-from velocity_modelling.cvm.interpolate import (
-    interpolate_global_surface,
-    interpolate_global_surface_depths,
-    interpolate_basin_surface_depths,
-    bi_linear_interpolation,
-)
+# from velocity_modelling.cvm.interpolate import (
+#     interpolate_global_surface,
+#     interpolate_global_surface_depths,
+#     bi_linear_interpolation,
+# )
 
 DATA_ROOT = Path(__file__).parent.parent / "Data"
 nzvm_registry_path = DATA_ROOT / "nzvm_registry.yaml"
@@ -35,6 +34,133 @@ DEFAULT_OFFSHORE_DISTANCE = "offshore"  # surface name for offshore distance
 
 class CVMRegistry:  # Forward declaration
     pass
+
+
+class PartialGlobalSurfaceDepths:
+    pass
+
+
+class GlobalSurfaces:
+    pass
+
+
+class MeshVector:
+    pass
+
+
+class GlobalSurfaceRead:
+    pass
+
+
+def interpolate_global_surface_depths(
+    partial_global_surface_depth: PartialGlobalSurfaceDepths,
+    global_surfaces: GlobalSurfaces,
+    mesh_vector: MeshVector,
+    calculation_log,
+):
+    """
+    Interpolate the surface depths at the lat lon location given in mesh_vector.
+
+    Parameters
+    ----------
+    global_surfaces : GlobalSurfaces
+        Object containing pointers to global surfaces.
+    mesh_vector : MeshVector
+        Object containing a single lat lon point with one or more depths.
+    calculation_log : CalculationLog
+        Object containing calculation data and output directory.
+    """
+    for i in range(len(global_surfaces.surface)):
+        global_surf_read = global_surfaces.surface[i]
+        adjacent_points = global_surf_read.find_global_adjacent_points(mesh_vector)
+        partial_global_surface_depth.depth[i] = (
+            global_surf_read.interpolate_global_surface(mesh_vector, adjacent_points)
+        )
+
+    partial_global_surface_depth.nSurfDep = len(global_surfaces.surface)
+    for i in range(len(global_surfaces.surface) - 1, 0, -1):
+        top_val = partial_global_surface_depth.depth[i - 1]
+        bot_val = partial_global_surface_depth.depth[i]
+        if top_val < bot_val:
+            partial_global_surface_depth.depth[i] = top_val
+            # calculation_log.nPointsGlobalSurfacesEnforced += 1
+
+
+def bi_linear_interpolation(
+    x1: np.float64,
+    x2: np.float64,
+    y1: np.float64,
+    y2: np.float64,
+    q11: np.float64,
+    q12: np.float64,
+    q21: np.float64,
+    q22: np.float64,
+    x: np.float64,
+    y: np.float64,
+):
+    """
+    Perform bilinear interpolation between four points.
+
+    Parameters
+    ----------
+    x1, x2, y1, y2 : float
+        Coordinates of the points.
+    q11, q12, q21, q22 : float
+        Values at the four points.
+    x, y : float
+        Coordinates of the point to interpolate.
+
+    Returns
+    -------
+    float
+        Interpolated value at the given x, y.
+    """
+    A = q11 * (x2 - x) * (y2 - y)
+    B = q21 * (x - x1) * (y2 - y)
+    C = q12 * (x2 - x) * (y - y1)
+    D = q22 * (x - x1) * (y - y1)
+    E = 1 / (x2 - x1) / (y2 - y1)
+
+    return (A + B + C + D) * E
+
+
+def interpolate_global_surface(
+    global_surface_read: GlobalSurfaceRead, mesh_vector: MeshVector, adjacent_points
+):
+    """
+    Interpolate the global surface value at a given latitude and longitude.
+
+    Parameters:
+    lat (float): Latitude of the point for interpolation.
+    lon (float): Longitude of the point for interpolation.
+    adjacent_points (AdjacentPoints): Object containing indices of points adjacent to the lat-lon for interpolation.
+
+    Returns:
+    float: Interpolated value at the given lat-lon.
+    """
+
+    x1 = global_surface_read.loni[adjacent_points.lon_ind[0]]
+    x2 = global_surface_read.loni[adjacent_points.lon_ind[1]]
+
+    y1 = global_surface_read.lati[adjacent_points.lat_ind[0]]
+    y2 = global_surface_read.lati[adjacent_points.lat_ind[1]]
+
+    q11 = global_surface_read.raster[adjacent_points.lon_ind[0]][
+        adjacent_points.lat_ind[0]
+    ]
+    q12 = global_surface_read.raster[adjacent_points.lon_ind[0]][
+        adjacent_points.lat_ind[1]
+    ]
+    q21 = global_surface_read.raster[adjacent_points.lon_ind[1]][
+        adjacent_points.lat_ind[0]
+    ]
+    q22 = global_surface_read.raster[adjacent_points.lon_ind[1]][
+        adjacent_points.lat_ind[1]
+    ]
+
+    return bi_linear_interpolation(
+        x1, x2, y1, y2, q11, q12, q21, q22, mesh_vector.lon, mesh_vector.lat
+    )
 
 
 class AdjacentPoints:
@@ -54,107 +180,129 @@ class AdjacentPoints:
 
 
 class BasinSurfaceRead:
-    def __init__(self, nLat: int, nLon: int):
+    def __init__(self, nlat: int, nlon: int):
         """
         Initialize the BasinSurfaceRead.
 
         Parameters
         ----------
-        nLat : int
+        nlat : int
             The number of latitude points.
-        nLon : int
+        nlon : int
             The number of longitude points.
         """
-        self.nLat = nLat
-        self.nLon = nLon
-        self.lati = np.zeros(nLat)
-        self.loni = np.zeros(nLon)
-        self.raster = np.zeros((nLon, nLat))
-        self.maxLat = None
-        self.minLat = None
-        self.maxLon = None
-        self.minLon = None
+        self.lati = np.zeros(nlat)
+        self.loni = np.zeros(nlon)
+        self.raster = np.zeros((nlon, nlat))
+        self.max_lat = None
+        self.min_lat = None
+        self.max_lon = None
+        self.min_lon = None
 
 
 class GlobalMesh:
-    def __init__(self, nX: int, nY: int, nZ: int):
+    def __init__(self, nx: int, ny: int, nz: int):
         """
         Initialize the GlobalMesh.
 
         Parameters
         ----------
-        nX : int
+        nx : int
             The number of points in the X direction.
-        nY : int
+        ny : int
             The number of points in the Y direction.
-        nZ : int
+        nz : int
             The number of points in the Z direction.
         """
-        self.Lon = np.zeros((nX, nY))
-        self.Lat = np.zeros((nX, nY))
-        self.maxLat = 0.0
-        self.minLat = 0.0
-        self.maxLon = 0.0
-        self.minLon = 0.0
-        self.nX = nX
-        self.nY = nY
-        self.nZ = nZ
-        self.X = np.zeros(nX)
-        self.Y = np.zeros(nY)
-        self.Z = np.zeros(nZ)
+        self.lon = np.zeros((nx, ny))
+        self.lat = np.zeros((nx, ny))
+        self.max_lat = 0.0
+        self.min_lat = 0.0
+        self.max_lon = 0.0
+        self.min_lon = 0.0
+        self.x = np.zeros(nx)
+        self.y = np.zeros(ny)
+        self.z = np.zeros(nz)
+
+    @property
+    def nx(self):
+        return len(self.x)
+
+    @property
+    def ny(self):
+        return len(self.y)
+
+    @property
+    def nz(self):
+        return len(self.z)
 
 
 class PartialGlobalSurfaceDepths:
-    def __init__(self, nSurfDep: int):
+    def __init__(self, n_surf_depths: int):
         """
         Initialize the PartialGlobalSurfaceDepth.
 
         Parameters
         ----------
-        nSurfDep : int
+        n_surf_dep : int
             The number of surface depths.
         """
-        self.dep = np.zeros(nSurfDep, dtype=np.float64)
-        self.nSurfDep = nSurfDep
+        self.depth = np.zeros(n_surf_depths, dtype=np.float64)
 
 
 class PartialGlobalMesh:
-    def __init__(self, nX: int, nZ: int):
+    def __init__(self, nx: int, nz: int):
         """
         Initialize the PartialGlobalMesh.
 
         Parameters
         ----------
-        nX : int
+        nx : int
             The number of points in the X direction.
-        nZ : int
+        nz : int
             The number of points in the Z direction.
         """
-        self.Lon = np.zeros(nX)
-        self.Lat = np.zeros(nX)
-        self.X = np.zeros(nX)
-        self.Z = np.zeros(nZ)
-        self.nX = nX
-        self.nY = 1
-        self.nZ = nZ
-        self.Y = 0.0
+        self.lon = np.zeros(nx)
+        self.lat = np.zeros(nx)
+        self.x = np.zeros(nx)
+        self.z = np.zeros(nz)
+        # self.nx = nx
+        # self.ny = 1
+        # self.nz = nz
+        self.y = 0.0
+
+    @property
+    def nx(self):
+        return len(self.x)
+
+    @property
+    def ny(self):
+        return len(self.y)
+
+    @property
+    def nz(self):
+        return len(self.z)
 
 
 class MeshVector:
-    def __init__(self, nZ, lat=None, lon=None):
-        self.Lat = lat
-        self.Lon = lon
-        self.Z = np.zeros(nZ)
-        self.nZ = nZ
-        self.Vs30 = None
+    def __init__(self, nz, lat=None, lon=None):
+        self.lat = lat
+        self.lon = lon
+        self.z = np.zeros(nz)
+        # self.nz = nz
+        self.vs30 = None
         self.distance_from_shoreline = None
+
+    @property
+    def nz(self):
+        return len(self.z)
 
 
 class PartialGlobalQualities:
     def __init__(self, lon_grid_dim_max: int, dep_grid_dim_max: int):
-        self.Vp = np.zeros((lon_grid_dim_max, dep_grid_dim_max), dtype=np.float64)
-        self.Vs = np.zeros((lon_grid_dim_max, dep_grid_dim_max), dtype=np.float64)
-        self.Rho = np.zeros((lon_grid_dim_max, dep_grid_dim_max), dtype=np.float64)
+        self.vp = np.zeros((lon_grid_dim_max, dep_grid_dim_max), dtype=np.float64)
+        self.vs = np.zeros((lon_grid_dim_max, dep_grid_dim_max), dtype=np.float64)
+        self.rho = np.zeros((lon_grid_dim_max, dep_grid_dim_max), dtype=np.float64)
         self.inbasin = np.zeros((lon_grid_dim_max, dep_grid_dim_max), dtype=bool)
 
 
@@ -163,30 +311,38 @@ class GlobalSurfaces:
         """
         Initialize the GlobalSurfaces.
         """
-        self.surf = []
+        self.surface = []
 
 
 class GlobalSurfaceRead:
-    def __init__(self, nLat: int, nLon: int):
+    def __init__(self, nlat: int, nlon: int):
         """
         Initialize the GlobalSurfaceRead.
 
         Parameters
         ----------
-        nLat : int
+        nlat : int
             The number of latitude points.
-        nLon : int
+        nlon : int
             The number of longitude points.
         """
-        self.nLat = nLat
-        self.nLon = nLon
-        self.lati = np.zeros(nLat)
-        self.loni = np.zeros(nLon)
-        self.raster = np.zeros((nLon, nLat))
-        self.maxLat = None
-        self.minLat = None
-        self.maxLon = None
-        self.minLon = None
+        #    self.nlat = nlat
+        #    self.nlon = nlon
+        self.lati = np.zeros(nlat)
+        self.loni = np.zeros(nlon)
+        self.raster = np.zeros((nlon, nlat))
+        self.max_lat = None
+        self.min_lat = None
+        self.max_lon = None
+        self.min_lon = None
+
+    @property
+    def nlat(self):
+        return len(self.lati)
+
+    @property
+    def nlon(self):
+        return len(self.loni)
 
     def find_global_adjacent_points(self, mesh_vector: MeshVector):
         """
@@ -205,8 +361,8 @@ class GlobalSurfaceRead:
 
         import bisect
 
-        lat = mesh_vector.Lat
-        lon = mesh_vector.Lon
+        lat = mesh_vector.lat
+        lon = mesh_vector.lon
 
         lat_assigned_flag = False
         lon_assigned_flag = False
@@ -219,22 +375,22 @@ class GlobalSurfaceRead:
 
         # Binary search for latitude
         lat_index = bisect.bisect_left(self.lati, lat)
-        if lat_index < len(self.lati) and self.lati[lat_index] == lat:
+        if lat_index < self.nlat and self.lati[lat_index] == lat:
             adjacent_points.lat_ind[0] = lat_index
             adjacent_points.lat_ind[1] = lat_index
             lat_assigned_flag = True
-        elif 0 < lat_index < len(self.lati):
+        elif 0 < lat_index < self.nlat:
             adjacent_points.lat_ind[0] = lat_index - 1
             adjacent_points.lat_ind[1] = lat_index
             lat_assigned_flag = True
 
         # Binary search for longitude
         lon_index = bisect.bisect_left(self.loni, lon)
-        if lon_index < len(self.loni) and self.loni[lon_index] == lon:
+        if lon_index < self.nlon and self.loni[lon_index] == lon:
             adjacent_points.lon_ind[0] = lon_index
             adjacent_points.lon_ind[1] = lon_index
             lon_assigned_flag = True
-        elif 0 < lon_index < len(self.loni):
+        elif 0 < lon_index < self.nlon:
             adjacent_points.lon_ind[0] = lon_index - 1
             adjacent_points.lon_ind[1] = lon_index
             lon_assigned_flag = True
@@ -242,56 +398,56 @@ class GlobalSurfaceRead:
         if not lat_assigned_flag or not lon_assigned_flag:
             if lon_assigned_flag and not lat_assigned_flag:
                 if (
-                    lat - self.maxLat
-                ) <= MAX_LAT_SURFACE_EXTENSION and lat >= self.maxLat:
+                    lat - self.max_lat
+                ) <= MAX_LAT_SURFACE_EXTENSION and lat >= self.max_lat:
                     adjacent_points.in_lat_extension_zone = True
                     self.find_edge_inds(adjacent_points, 1)
                 elif (
-                    self.minLat - lat
-                ) <= MAX_LAT_SURFACE_EXTENSION and lat <= self.minLat:
+                    self.min_lat - lat
+                ) <= MAX_LAT_SURFACE_EXTENSION and lat <= self.min_lat:
                     adjacent_points.in_lat_extension_zone = True
                     self.find_edge_inds(adjacent_points, 3)
 
             if lat_assigned_flag and not lon_assigned_flag:
                 if (
-                    self.minLon - lon
-                ) <= MAX_LON_SURFACE_EXTENSION and lon <= self.minLon:
+                    self.min_lon - lon
+                ) <= MAX_LON_SURFACE_EXTENSION and lon <= self.min_lon:
                     adjacent_points.in_lon_extension_zone = True
                     self.find_edge_inds(adjacent_points, 4)
                 elif (
-                    lon - self.maxLon
-                ) <= MAX_LON_SURFACE_EXTENSION and lon >= self.maxLon:
+                    lon - self.max_lon
+                ) <= MAX_LON_SURFACE_EXTENSION and lon >= self.max_lon:
                     adjacent_points.in_lon_extension_zone = True
                     self.find_edge_inds(adjacent_points, 2)
 
             if (
-                (lat - self.maxLat) <= MAX_LAT_SURFACE_EXTENSION
-                and (self.minLon - lon) <= MAX_LON_SURFACE_EXTENSION
-                and lon <= self.minLon
-                and lat >= self.maxLat
+                (lat - self.max_lat) <= MAX_LAT_SURFACE_EXTENSION
+                and (self.min_lon - lon) <= MAX_LON_SURFACE_EXTENSION
+                and lon <= self.min_lon
+                and lat >= self.max_lat
             ):
-                self.find_corner_inds(self.maxLat, self.minLon, adjacent_points)
+                self.find_corner_inds(self.max_lat, self.min_lon, adjacent_points)
             elif (
-                (lat - self.maxLat) <= MAX_LAT_SURFACE_EXTENSION
-                and (lon - self.maxLon) <= MAX_LON_SURFACE_EXTENSION
-                and lon >= self.maxLon
-                and lat >= self.maxLat
+                (lat - self.max_lat) <= MAX_LAT_SURFACE_EXTENSION
+                and (lon - self.max_lon) <= MAX_LON_SURFACE_EXTENSION
+                and lon >= self.max_lon
+                and lat >= self.max_lat
             ):
-                self.find_corner_inds(self.maxLat, self.maxLon, adjacent_points)
+                self.find_corner_inds(self.max_lat, self.max_lon, adjacent_points)
             elif (
-                (self.minLat - lat) <= MAX_LAT_SURFACE_EXTENSION
-                and (self.minLon - lon) <= MAX_LON_SURFACE_EXTENSION
-                and lon <= self.minLon
-                and lat <= self.minLat
+                (self.min_lat - lat) <= MAX_LAT_SURFACE_EXTENSION
+                and (self.min_lon - lon) <= MAX_LON_SURFACE_EXTENSION
+                and lon <= self.min_lon
+                and lat <= self.min_lat
             ):
-                self.find_corner_inds(self.minLat, self.minLon, adjacent_points)
+                self.find_corner_inds(self.min_lat, self.min_lon, adjacent_points)
             elif (
-                (self.minLat - lat) <= MAX_LAT_SURFACE_EXTENSION
-                and (lon - self.maxLon) <= MAX_LON_SURFACE_EXTENSION
-                and lon >= self.maxLon
-                and lat <= self.minLat
+                (self.min_lat - lat) <= MAX_LAT_SURFACE_EXTENSION
+                and (lon - self.max_lon) <= MAX_LON_SURFACE_EXTENSION
+                and lon >= self.max_lon
+                and lat <= self.min_lat
             ):
-                self.find_corner_inds(self.minLat, self.maxLon, adjacent_points)
+                self.find_corner_inds(self.min_lat, self.max_lon, adjacent_points)
 
             if (
                 not adjacent_points.in_lat_extension_zone
@@ -312,32 +468,35 @@ class GlobalSurfaceRead:
         adjacent_points (AdjacentPoints): Object containing indices of points adjacent to the lat-lon for interpolation.
         edge_type (int): Indicating whether the point lies to the north, east, south, or west of the global surface.
         """
+        nlat = self.nlat
+        nlon = self.nlon
+
         if edge_type == 1:
-            if self.maxLat == self.lati[0]:
+            if self.max_lat == self.lati[0]:
                 adjacent_points.lat_edge_ind = 0
-            elif self.maxLat == self.lati[self.nLat - 1]:
-                adjacent_points.lat_edge_ind = self.nLat - 1
+            elif self.max_lat == self.lati[-1]:
+                adjacent_points.lat_edge_ind = nlat - 1
             else:
                 raise ValueError("Point lies outside of surface bounds.")
         elif edge_type == 3:
-            if self.minLat == self.lati[0]:
+            if self.min_lat == self.lati[0]:
                 adjacent_points.lat_edge_ind = 0
-            elif self.minLat == self.lati[self.nLat - 1]:
-                adjacent_points.lat_edge_ind = self.nLat - 1
+            elif self.min_lat == self.lati[-1]:
+                adjacent_points.lat_edge_ind = nlat - 1
             else:
                 raise ValueError("Point lies outside of surface bounds.")
         elif edge_type == 2:
-            if self.maxLon == self.loni[0]:
+            if self.max_lon == self.loni[0]:
                 adjacent_points.lon_edge_ind = 0
-            elif self.maxLon == self.loni[self.nLon - 1]:
-                adjacent_points.lon_edge_ind = self.nLon - 1
+            elif self.max_lon == self.loni[-1]:
+                adjacent_points.lon_edge_ind = nlon - 1
             else:
                 raise ValueError("Point lies outside of surface bounds.")
         elif edge_type == 4:
-            if self.minLon == self.loni[0]:
+            if self.min_lon == self.loni[0]:
                 adjacent_points.lon_edge_ind = 0
-            elif self.minLon == self.loni[self.nLon - 1]:
-                adjacent_points.lon_edge_ind = self.nLon - 1
+            elif self.min_lon == self.loni[-1]:
+                adjacent_points.lon_edge_ind = nlon - 1
             else:
                 raise ValueError("Point lies outside of surface bounds.")
         else:
@@ -352,17 +511,20 @@ class GlobalSurfaceRead:
         lon_pt (float): Longitude of point for eventual interpolation.
         adjacent_points (AdjacentPoints): Object containing indices of points adjacent to the lat-lon for interpolation.
         """
+        nlat = len(self.lat)
+        nlon = len(self.lon)
+
         if lat_pt == self.lati[0]:
             adjacent_points.corner_lat_ind = 0
-        elif lat_pt == self.lati[self.nLat - 1]:
-            adjacent_points.corner_lat_ind = self.nLat - 1
+        elif lat_pt == self.lati[-1]:
+            adjacent_points.corner_lat_ind = nlat - 1
         else:
             raise ValueError("Point lies outside of surface bounds.")
 
         if lon_pt == self.loni[0]:
             adjacent_points.corner_lon_ind = 0
-        elif lon_pt == self.loni[self.nLon - 1]:
-            adjacent_points.corner_lon_ind = self.nLon - 1
+        elif lon_pt == self.loni[-1]:
+            adjacent_points.corner_lon_ind = nlon - 1
         else:
             raise ValueError("Point lies outside of surface bounds.")
 
@@ -379,15 +541,15 @@ class ModelExtent:
         vm_params : Dict
             The velocity model parameters.
         """
-        self.originLat = vm_params["MODEL_LAT"]
-        self.originLon = vm_params["MODEL_LON"]
-        self.originRot = vm_params["MODEL_ROT"]  # in degrees
-        self.Xmax = vm_params["extent_x"]
-        self.Ymax = vm_params["extent_y"]
-        self.Zmax = vm_params["extent_zmax"]
-        self.Zmin = vm_params["extent_zmin"]
-        self.hDep = vm_params["hh"]
-        self.hLatLon = vm_params["hh"]
+        self.origin_lat = vm_params["MODEL_LAT"]
+        self.origin_lon = vm_params["MODEL_LON"]
+        self.origin_rot = vm_params["MODEL_ROT"]  # in degrees
+        self.xmax = vm_params["extent_x"]
+        self.ymax = vm_params["extent_y"]
+        self.zmax = vm_params["extent_zmax"]
+        self.zmin = vm_params["extent_zmin"]
+        self.h_depth = vm_params["hh"]
+        self.h_lat_lon = vm_params["hh"]
         self.nx = vm_params["nx"]
         self.ny = vm_params["ny"]
         self.nz = vm_params["nz"]
@@ -399,8 +561,8 @@ class SmoothingBoundary:
         Initialize the SmoothingBoundary.
         """
         self.n = 0
-        self.xPts = []
-        self.yPts = []
+        self.xpts = []
+        self.ypts = []
 
     def determine_if_lat_lon_within_smoothing_region(self, mesh_vector: MeshVector):
         """
@@ -428,8 +590,8 @@ class SmoothingBoundary:
         Returns:
         int: Index of the closest point in the smoothing boundary.
         """
-        boundary_points = np.column_stack((self.yPts, self.xPts))
-        mesh_point = np.array([mesh_vector.Lat, mesh_vector.Lon])
+        boundary_points = np.column_stack((self.ypts, self.xpts))
+        mesh_point = np.array([mesh_vector.lat, mesh_vector.lon])
 
         distances = coordinates.distance_between_wgs_depth_coordinates(
             boundary_points, mesh_point
@@ -445,11 +607,11 @@ class VeloMod1DData:
         """
         Initialize the VeloMod1DData.
         """
-        self.Vp = vp
-        self.Vs = vs
-        self.Rho = rho
-        self.Dep = dep
-        self.nDep = len(vp)
+        self.vp = vp
+        self.vs = vs
+        self.rho = rho
+        self.dep = dep
+        self.n_dep = len(vp)  # maybe should be len(dep) but I'm not sure
         assert len(vp) == len(vs) == len(rho) == len(dep)
 
 
@@ -487,8 +649,8 @@ class TomographyData:
         tomo = cvm_registry.get_info("tomography", tomo_name)
         self.name = tomo_name
 
-        self.surfDeps = tomo["elev"]
-        self.surf = []
+        self.surf_depth = tomo["elev"]
+        self.surface = []
 
         self.tomography_loaded = False
         self.special_offshore_tapering = tomo["special_offshore_tapering"]
@@ -504,9 +666,9 @@ class TomographyData:
             tomo["vs30_path"]
         )  # GlobalSurfaceRead
 
-        for i in range(len(self.surfDeps)):
-            self.surf.append({})  # self.surf[i] is an empty dictionary
-            elev = self.surfDeps[i]
+        for i in range(len(self.surf_depth)):
+            self.surface.append({})  # self.surface[i] is an empty dictionary
+            elev = self.surf_depth[i]
             if elev == int(elev):  # if the elevation is an integer
                 elev_name = f"{elev}"
             else:
@@ -516,7 +678,7 @@ class TomographyData:
                 tomofile = (
                     surf_tomo_path / f"surf_tomography_{vtype.name}_elev{elev_name}.in"
                 )
-                self.surf[i][vtype.name] = cvm_registry.load_global_surface(tomofile)
+                self.surface[i][vtype.name] = cvm_registry.load_global_surface(tomofile)
 
         self.offshore_distance_surface = cvm_registry.load_global_surface(
             offshore_surface_path
@@ -594,12 +756,6 @@ class PartialBasinSurfaceDepths:
             np.zeros(len(surfaces_for_a_boundary), dtype=np.float64)
             for surfaces_for_a_boundary in basin_data.surface  # List of basin surfaces for each boundary
         ]
-
-
-class BasinSubModel:
-    def __init__(self, name: str, vm1d_data: VeloMod1DData):
-        self.name = name
-        self.vm1d_data = vm1d_data
 
 
 class BasinData:
@@ -775,8 +931,8 @@ class BasinData:
         boundary_lats = self.boundary_lat(boundary_ind)
         boundary_lons = self.boundary_lon(boundary_ind)
         on_vertex = np.any(
-            np.isclose(boundary_lats, mesh_vector.Lat)
-            & np.isclose(boundary_lons, mesh_vector.Lon)
+            np.isclose(boundary_lats, mesh_vector.lat)
+            & np.isclose(boundary_lons, mesh_vector.lon)
         )
         return on_vertex
 
@@ -807,26 +963,26 @@ class BasinData:
         for ind, boundary in enumerate(self.boundary):
 
             if not (
-                np.min(boundary[:, 0]) <= mesh_vector.Lon <= np.max(boundary[:, 0])
-                and np.min(boundary[:, 1]) <= mesh_vector.Lon <= np.max(boundary[:, 1])
+                np.min(boundary[:, 0]) <= mesh_vector.lon <= np.max(boundary[:, 0])
+                and np.min(boundary[:, 1]) <= mesh_vector.lon <= np.max(boundary[:, 1])
             ):
                 continue  # outside of basin
 
             else:
                 # possibly in basin
                 in_poly = point_in_polygon.is_inside_postgis(
-                    boundary, np.array([mesh_vector.Lon, mesh_vector.Lat])
+                    boundary, np.array([mesh_vector.lon, mesh_vector.lat])
                 )  # check if in poly
 
                 if in_poly:
                     if in_basin and type(in_basin) == InBasin:
-                        in_basin.inBasinLatLon[ind] = True
+                        in_basin.in_basin_lat_lon[ind] = True
                     return True  # inside a basin (any)
                 else:  # outside poly
                     if (
                         in_basin and type(in_basin) == InBasin
                     ):  # check if it is on vertex
-                        in_basin.inBasinLatLon[ind] = self.point_on_vertex(
+                        in_basin.in_basin_lat_lon[ind] = self.point_on_vertex(
                             ind, mesh_vector
                         )
 
@@ -855,7 +1011,7 @@ class BasinData:
         for boundary_ind, boundary in enumerate(self.boundary):
             surfaces = self.surface[boundary_ind]
 
-            if in_basin.inBasinLatLon[boundary_ind]:
+            if in_basin.in_basin_lat_lon[boundary_ind]:
                 for surface_ind, surface in enumerate(surfaces):
                     adjacent_points = surface.find_global_adjacent_points(mesh_vector)
 
@@ -885,68 +1041,13 @@ class BasinData:
                             q12,
                             q21,
                             q22,
-                            mesh_vector.Lon,
-                            mesh_vector.Lat,
+                            mesh_vector.lon,
+                            mesh_vector.lat,
                         )
                     )
             else:
                 for surface_ind, surface in enumerate(surfaces):
                     partial_basin_surface_depths.depth[boundary_ind][surface_ind] = None
-
-    def interpolate_basin_surface_depths(
-        self,
-        in_basin: InBasin,
-        partial_basin_surface_depths: PartialBasinSurfaceDepths,
-        mesh_vector: MeshVector,
-    ):
-        """
-        Determine if a lat-lon point is in a basin, if so interpolate the basin surface depths, enforce their hierarchy, then determine which depth points lie within the basin limits.
-
-        Parameters
-        ----------
-        in_basin : InBasin
-            Struct containing flags to indicate if lat-lon point - depths lie within the basin.
-        partial_basin_surface_depths : PartialBasinSurfaceDepths
-            Struct containing depths for all applicable basin surfaces at one lat-lon location.
-        mesh_vector : MeshVector
-            Struct containing a single lat-lon point with one or more depths.
-        """
-        self.determine_if_within_basin_lat_lon(mesh_vector, in_basin)
-        self.determine_basin_surface_depths(
-            in_basin, partial_basin_surface_depths, mesh_vector
-        )
-        self.enforce_basin_surface_depths(
-            in_basin, partial_basin_surface_depths, mesh_vector
-        )
-
-    def enforce_basin_surface_depths(
-        self, in_basin: InBasin, partial_basin_surface_depths, mesh_vector: MeshVector
-    ):
-        """
-        Enforce the hierarchy of interpolated basin surface depths.
-
-        Parameters
-        ----------
-
-        in_basin : InBasin
-            Object containing flags to indicate if lat lon point - depths lie within the basin.
-        partial_basin_surface_depths : PartialBasinSurfaceDepths
-            Object containing depths for all applicable basin surfaces at one lat - lon location.
-        mesh_vector : MeshVector
-            Object containing a single lat lon point with one or more depths.
-        """
-
-        if in_basin.in_basin_lat_lon[0] == 1:
-            self.enforce_surface_depths(partial_basin_surface_depths)
-
-            top_lim = partial_basin_surface_depths.depth[0]
-            bot_lim = partial_basin_surface_depths.depth[-1]  # last surface depth
-
-            in_basin.in_basin_depth = np.where(
-                (mesh_vector.Z > top_lim) | (mesh_vector.Z < bot_lim), 0, 1
-            )
-            # in_basin_depth is initialized to 0, so no need to set it to 0 if mesh_vector.Z is outside the basin limits
-        # in_basin_depth is initialized to 0, so no need to set it to 0 if in_basin_lat_lon[0] == 0
 
     def enforce_surface_depths(
         self,
@@ -1046,6 +1147,7 @@ class BasinData:
             on_boundary,
             depth,
             ind_above,
+            basin_num,
             z_ind,
         )
 
@@ -1061,7 +1163,8 @@ class BasinData:
             Struct containing depths for all applicable basin surfaces at one lat-lon location.
         depth : float
             The depth of the grid point to determine the properties at.
-
+        basin_num : int
+            The basin number pertaining to the basin of interest.
 
         Returns
         -------
@@ -1069,11 +1172,13 @@ class BasinData:
             Index of the surface directly above the grid point.
         """
 
-        depths = partial_basin_surface_depths.depth
+        depths = partial_basin_surface_depths.depth[basin_num]
         valid_indices = np.where((~np.isnan(depths)) & (depths >= depth))[0]
         return valid_indices[0] if valid_indices.size > 0 else 0
 
-    def determine_basin_surface_below(self, partial_basin_surface_depths, depth):
+    def determine_basin_surface_below(
+        self, partial_basin_surface_depths, depth, basin_num
+    ):
         """
         Determine the index of the basin surface directly below the given depth.
 
@@ -1083,13 +1188,15 @@ class BasinData:
             Struct containing depths for all applicable basin surfaces at one lat-lon location.
         depth : float
             The depth of the grid point to determine the properties at.
+        basin_num : int
+            The basin number pertaining to the basin of interest.
 
         Returns
         -------
         int
             Index of the surface directly below the grid point.
         """
-        depths = partial_basin_surface_depths.depth
+        depths = partial_basin_surface_depths.depth[basin_num]
         valid_indices = np.where((~np.isnan(depths)) & (depths <= depth))[0]
         return valid_indices[0] if valid_indices.size > 0 else 0
 
@@ -1103,6 +1210,7 @@ class BasinData:
         on_boundary,
         depth,
         ind_above,
+        basin_num,
         z_ind,
     ):
         """
@@ -1126,6 +1234,8 @@ class BasinData:
             The depth of the grid point to determine the properties at.
         ind_above : int
             Index of the surface directly above the grid point.
+        basin_num : int
+            The basin number pertaining to the basin of interest.
         z_ind : int
             The depth index of the single grid point.
 
@@ -1133,7 +1243,7 @@ class BasinData:
         -------
         None
         """
-        submodel_name = self.cvm_registry.basin_submodel_names[ind_above]
+        submodel_name = self.cvm_registry.basin_submodel_names[basin_num][ind_above]
         qualities_vector = mesh_vector.qualities_vector
 
         # Construct the module path
@@ -1193,7 +1303,7 @@ class QualitiesVector:
         basin_data_list: List[BasinData],
         mesh_vector: MeshVector,
         partial_global_surface_depths: PartialGlobalSurfaceDepths,
-        partial_basin_surface_depths: PartialBasinSurfaceDepths,
+        partial_basin_surface_depths_list: List[PartialBasinSurfaceDepths],
         in_basin_list: List[InBasin],
         topo_type: str,
         on_boundary: bool,
@@ -1218,7 +1328,7 @@ class QualitiesVector:
 
         if topo_type == "SQUASHED":
             shifted_mesh_vector = MeshVector(
-                mesh_vector.nZ, lat=mesh_vector.Lat, lon=mesh_vector.Lon
+                mesh_vector.nz, lat=mesh_vector.lat, lon=mesh_vector.lon
             )
 
             depth_change = -mesh_vector.Z  # is this correct????
@@ -1228,7 +1338,7 @@ class QualitiesVector:
             dZ = mesh_vector.Z[0] - mesh_vector.Z[1]
             TAPER_DIST = 1.0
             shifted_mesh_vector = MeshVector(
-                mesh_vector.nZ, lat=mesh_vector.Lat, lon=mesh_vector.Lon
+                mesh_vector.nz, lat=mesh_vector.lat, lon=mesh_vector.lon
             )
 
             depth_change = -mesh_vector.Z
@@ -1255,13 +1365,13 @@ class QualitiesVector:
             interpolate_basin_surface_depths(
                 basin_data,
                 in_basin_list[basin_ind],
-                partial_basin_surface_depths,
+                partial_basin_surface_depths_list[basin_ind],
                 shifted_mesh_vector,
             )
 
         basin_flag = False
         Z = 0
-        for k in range(mesh_vector.nZ):
+        for k in range(mesh_vector.nz):
             if topo_type in ["BULLDOZED", "TRUE"]:
                 Z = mesh_vector.Z[k]
             elif topo_type in ["SQUASHED", "SQUASHED_TAPERED"]:
@@ -1269,12 +1379,12 @@ class QualitiesVector:
 
             for i, basin_data in enumerate(basin_data_list):
                 in_basin = in_basin_list[i]
-                if in_basin.inBasinDep[k]:
+                if in_basin.in_basin_depth[k]:
                     basin_flag = True
                     self.inbasin[k] = True
 
                     basin_data.assign_basin_qualities(
-                        partial_basin_surface_depths,
+                        partial_basin_surface_depths_list[i],
                         partial_global_surface_depths,
                         nz_tomography_data,
                         mesh_vector,
@@ -1292,7 +1402,7 @@ class QualitiesVector:
                         Z, partial_global_surface_depths
                     )
                 )
-                self.call_sub_velocity_model(  # TODO: global submodel
+                self.call_sub_velocity_model(  # TODO: implement this
                     n_velo_mod_ind,
                     k,
                     Z,
@@ -1513,9 +1623,7 @@ class CVMRegistry:
             if vm1d is None:
                 self.log(f"Error: vm1d {submodel['name']} not found.")
                 exit(1)
-            return BasinSubModel(
-                submodel_name, self.load_1d_velo_sub_model(vm1d["path"])
-            )
+            return self.load_1d_velo_sub_model(vm1d["path"])
 
         elif submodel["type"] == "relation":
             return None  # TODO: Implement relation submodel
@@ -1544,30 +1652,30 @@ class CVMRegistry:
 
         try:
             with open(basin_surface_path, "r") as f:
-                nLat, nLon = map(int, f.readline().split())
-                basin_surf_read = BasinSurfaceRead(nLat, nLon)
+                nlat, nlon = map(int, f.readline().split())
+                basin_surf_read = BasinSurfaceRead(nlat, nlon)
 
-                latitudes = np.fromfile(f, dtype=float, count=nLat, sep=" ")
-                longitudes = np.fromfile(f, dtype=float, count=nLon, sep=" ")
+                latitudes = np.fromfile(f, dtype=float, count=nlat, sep=" ")
+                longitudes = np.fromfile(f, dtype=float, count=nlon, sep=" ")
 
                 basin_surf_read.lati = latitudes
                 basin_surf_read.loni = longitudes
 
-                raster_data = np.fromfile(f, dtype=float, count=nLat * nLon, sep=" ")
+                raster_data = np.fromfile(f, dtype=float, count=nlat * nlon, sep=" ")
                 assert (
-                    len(raster_data) == nLat * nLon
-                ), f"Error: in {basin_surface_path} raster data length mismatch: {len(raster_data)} != {nLat * nLon}"
-                basin_surf_read.raster = raster_data.reshape((nLon, nLat)).T
+                    len(raster_data) == nlat * nlon
+                ), f"Error: in {basin_surface_path} raster data length mismatch: {len(raster_data)} != {nlat * nlon}"
+                basin_surf_read.raster = raster_data.reshape((nlon, nlat)).T
 
                 first_lat = basin_surf_read.lati[0]
-                last_lat = basin_surf_read.lati[nLat - 1]
-                basin_surf_read.maxLat = max(first_lat, last_lat)
-                basin_surf_read.minLat = min(first_lat, last_lat)
+                last_lat = basin_surf_read.lati[nlat - 1]
+                basin_surf_read.max_lat = max(first_lat, last_lat)
+                basin_surf_read.min_lat = min(first_lat, last_lat)
 
                 first_lon = basin_surf_read.loni[0]
-                last_lon = basin_surf_read.loni[nLon - 1]
-                basin_surf_read.maxLon = max(first_lon, last_lon)
-                basin_surf_read.minLon = min(first_lon, last_lon)
+                last_lon = basin_surf_read.loni[nlon - 1]
+                basin_surf_read.max_lon = max(first_lon, last_lon)
+                basin_surf_read.min_lon = min(first_lon, last_lon)
 
                 return basin_surf_read
 
@@ -1671,33 +1779,33 @@ class CVMRegistry:
 
         try:
             with open(surface_file, "r") as f:
-                nLat, nLon = map(int, f.readline().split())
-                global_surf_read = GlobalSurfaceRead(nLat, nLon)
+                nlat, nlon = map(int, f.readline().split())
+                global_surf_read = GlobalSurfaceRead(nlat, nlon)
 
-                latitudes = np.fromfile(f, dtype=float, count=nLat, sep=" ")
-                longitudes = np.fromfile(f, dtype=float, count=nLon, sep=" ")
+                latitudes = np.fromfile(f, dtype=float, count=nlat, sep=" ")
+                longitudes = np.fromfile(f, dtype=float, count=nlon, sep=" ")
 
                 global_surf_read.lati = latitudes
                 global_surf_read.loni = longitudes
 
-                raster_data = np.fromfile(f, dtype=float, count=nLat * nLon, sep=" ")
+                raster_data = np.fromfile(f, dtype=float, count=nlat * nlon, sep=" ")
                 try:
-                    global_surf_read.raster = raster_data.reshape((nLon, nLat)).T
+                    global_surf_read.raster = raster_data.reshape((nlon, nlat)).T
                 except:
                     self.log(
-                        f"Error: in {surface_file} raster data length mismatch: {len(raster_data)} != {nLat * nLon}"
+                        f"Error: in {surface_file} raster data length mismatch: {len(raster_data)} != {nlat * nlon}"
                     )
                     exit(1)
 
                 first_lat = global_surf_read.lati[0]
-                last_lat = global_surf_read.lati[nLat - 1]
-                global_surf_read.maxLat = max(first_lat, last_lat)
-                global_surf_read.minLat = min(first_lat, last_lat)
+                last_lat = global_surf_read.lati[nlat - 1]
+                global_surf_read.max_lat = max(first_lat, last_lat)
+                global_surf_read.min_lat = min(first_lat, last_lat)
 
                 first_lon = global_surf_read.loni[0]
-                last_lon = global_surf_read.loni[nLon - 1]
-                global_surf_read.maxLon = max(first_lon, last_lon)
-                global_surf_read.minLon = min(first_lon, last_lon)
+                last_lon = global_surf_read.loni[nlon - 1]
+                global_surf_read.max_lon = max(first_lon, last_lon)
+                global_surf_read.min_lon = min(first_lon, last_lon)
 
                 return global_surf_read
 
@@ -1726,7 +1834,7 @@ class CVMRegistry:
         global_surfaces = GlobalSurfaces()
 
         for surface in surfaces:
-            global_surfaces.surf.append(self.load_global_surface(surface["path"]))
+            global_surfaces.surface.append(self.load_global_surface(surface["path"]))
 
         return global_surfaces
 
@@ -1759,8 +1867,8 @@ class CVMRegistry:
                         data = np.fromfile(boundary_vec_filename, dtype=float, sep=" ")
                         x_pts = data[0::2]
                         y_pts = data[1::2]
-                        smooth_bound.xPts.extend(x_pts)
-                        smooth_bound.yPts.extend(y_pts)
+                        smooth_bound.xpts.extend(x_pts)
+                        smooth_bound.ypts.extend(y_pts)
                         count += len(x_pts)
                     except Exception as e:
                         self.log(
