@@ -359,7 +359,9 @@ def assign_qualities(
         in_basin_b_list = [
             InBasin(basin_data, mesh_vector.nz) for basin_data in basin_data_list
         ]
-        partial_global_surface_depths_b = PartialGlobalSurfaceDepths(mesh_vector.nz)
+        partial_global_surface_depths_b = PartialGlobalSurfaceDepths(
+            len(global_surfaces.surface)
+        )
         partial_basin_surface_depths_list_b = [
             PartialBasinSurfaceDepths(mesh_vector.nz) for basin_data in basin_data_list
         ]
@@ -499,7 +501,7 @@ def generate_velocity_model(
                 for basin_data in basin_data_list
             ]
             partial_global_surface_depths = PartialGlobalSurfaceDepths(
-                partial_global_mesh.nz
+                len(global_surfaces.surface)
             )
 
             partial_basin_surface_depths_list = [

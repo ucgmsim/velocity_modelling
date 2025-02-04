@@ -75,11 +75,13 @@ def interpolate_global_surface_depths(
             global_surf_read, mesh_vector, adjacent_points
         )
 
-    for i in range(len(global_surfaces.surface) - 1, 0, -1):
+    for i in range(reversed(len(global_surfaces.surface))):
         top_val = partial_global_surface_depth.depth[i - 1]
         bot_val = partial_global_surface_depth.depth[i]
         if top_val < bot_val:
-            partial_global_surface_depth.depth[i] = top_val
+            partial_global_surface_depth.depth[i] = partial_global_surface_depth.depth[
+                i - 1
+            ]
             # calculation_log.nPointsGlobalSurfacesEnforced += 1
 
 
@@ -122,6 +124,9 @@ def interpolate_global_surface(
     q22 = global_surface_read.raster[adjacent_points.lon_ind[1]][
         adjacent_points.lat_ind[1]
     ]
+
+    assert x1 != x2
+    assert y1 != y2
 
     return bi_linear_interpolation(
         x1, x2, y1, y2, q11, q12, q21, q22, mesh_vector.lon, mesh_vector.lat
@@ -203,16 +208,16 @@ class GlobalMesh:
 
 
 class PartialGlobalSurfaceDepths:
-    def __init__(self, n_surf_depths: int):
+    def __init__(self, n_surface: int):
         """
         Initialize the PartialGlobalSurfaceDepth.
 
         Parameters
         ----------
-        n_surf_dep : int
-            The number of surface depths.
+        n_surface : int
+            The number of global surfaces.
         """
-        self.depth = np.zeros(n_surf_depths, dtype=np.float64)
+        self.depth = np.zeros(n_surface, dtype=np.float64)
 
 
 class PartialGlobalMesh:
@@ -492,19 +497,23 @@ class GlobalSurfaceRead:
         nlat = self.nlat
         nlon = self.nlon
 
-        if lat_pt == self.lati[0]:
+        if np.isclose(lat_pt, self.lati[0]):
             adjacent_points.corner_lat_ind = 0
-        elif lat_pt == self.lati[-1]:
+        elif np.isclose(lat_pt, self.lati[-1]):
             adjacent_points.corner_lat_ind = nlat - 1
         else:
-            raise ValueError("Point lies outside of surface bounds.")
+            raise ValueError(
+                f"Point lies outside of surface bounds. Lat {lat_pt} outside [{self.lati[0]} {self.lati[-1]}]"
+            )
 
-        if lon_pt == self.loni[0]:
+        if np.isclose(lon_pt, self.loni[0]):
             adjacent_points.corner_lon_ind = 0
-        elif lon_pt == self.loni[-1]:
+        elif np.isclose(lon_pt, self.loni[-1]):
             adjacent_points.corner_lon_ind = nlon - 1
         else:
-            raise ValueError("Point lies outside of surface bounds.")
+            raise ValueError(
+                f"Point lies outside of surface bounds. Lon {lon_pt} outside [{self.loni[0]} {self.loni[-1]}]"
+            )
 
         adjacent_points.in_corner_zone = True
 
@@ -1382,28 +1391,32 @@ class QualitiesVector:
                 mesh_vector.nz, lat=mesh_vector.lat, lon=mesh_vector.lon
             )
 
-            depth_change = -mesh_vector.Z  # is this correct????
-            shifted_mesh_vector.Z = partial_global_surface_depths.dep[1] - depth_change
+            depth_change = -mesh_vector.z  # is this correct????
+            shifted_mesh_vector.z = (
+                partial_global_surface_depths.depth[1] - depth_change
+            )
 
         elif topo_type == "SQUASHED_TAPERED":
-            dZ = mesh_vector.Z[0] - mesh_vector.Z[1]
+            dZ = mesh_vector.z[0] - mesh_vector.z[1]
             TAPER_DIST = 1.0
             shifted_mesh_vector = MeshVector(
                 mesh_vector.nz, lat=mesh_vector.lat, lon=mesh_vector.lon
             )
 
-            depth_change = -mesh_vector.Z
+            depth_change = -mesh_vector.z
             TAPER_VAL = np.where(
                 (depth_change == 0)
-                | (partial_global_surface_depths.dep[1] == 0)
-                | (partial_global_surface_depths.dep[1] < 0),
+                | (partial_global_surface_depths.depth[1] == 0)
+                | (partial_global_surface_depths.depth[1] < 0),
                 1.0,
                 1.0
-                - (depth_change / (partial_global_surface_depths.dep[1] * TAPER_DIST)),
+                - (
+                    depth_change / (partial_global_surface_depths.depth[1] * TAPER_DIST)
+                ),
             )
             TAPER_VAL = np.clip(TAPER_VAL, 0.0, None)
-            shifted_mesh_vector.Z = (
-                partial_global_surface_depths.dep[1] * TAPER_VAL - depth_change
+            shifted_mesh_vector.z = (
+                partial_global_surface_depths.depth[1] * TAPER_VAL - depth_change
             )
 
         elif topo_type in ["BULLDOZED", "TRUE"]:
