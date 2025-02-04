@@ -19,11 +19,9 @@ from velocity_modelling.cvm.constants import (
     MAX_LON_SURFACE_EXTENSION,
 )
 
-# from velocity_modelling.cvm.interpolate import (
-#     interpolate_global_surface,
-#     interpolate_global_surface_depths,
-#     bi_linear_interpolation,
-# )
+from velocity_modelling.cvm.interpolate import (
+    bi_linear_interpolation,
+)
 
 DATA_ROOT = Path(__file__).parent.parent / "Data"
 nzvm_registry_path = DATA_ROOT / "nzvm_registry.yaml"
@@ -73,11 +71,10 @@ def interpolate_global_surface_depths(
     for i in range(len(global_surfaces.surface)):
         global_surf_read = global_surfaces.surface[i]
         adjacent_points = global_surf_read.find_global_adjacent_points(mesh_vector)
-        partial_global_surface_depth.depth[i] = (
-            global_surf_read.interpolate_global_surface(mesh_vector, adjacent_points)
+        partial_global_surface_depth.depth[i] = interpolate_global_surface(
+            global_surf_read, mesh_vector, adjacent_points
         )
 
-    partial_global_surface_depth.nSurfDep = len(global_surfaces.surface)
     for i in range(len(global_surfaces.surface) - 1, 0, -1):
         top_val = partial_global_surface_depth.depth[i - 1]
         bot_val = partial_global_surface_depth.depth[i]
@@ -86,46 +83,14 @@ def interpolate_global_surface_depths(
             # calculation_log.nPointsGlobalSurfacesEnforced += 1
 
 
-def bi_linear_interpolation(
-    x1: np.float64,
-    x2: np.float64,
-    y1: np.float64,
-    y2: np.float64,
-    q11: np.float64,
-    q12: np.float64,
-    q21: np.float64,
-    q22: np.float64,
-    x: np.float64,
-    y: np.float64,
-):
-    """
-    Perform bilinear interpolation between four points.
-
-    Parameters
-    ----------
-    x1, x2, y1, y2 : float
-        Coordinates of the points.
-    q11, q12, q21, q22 : float
-        Values at the four points.
-    x, y : float
-        Coordinates of the point to interpolate.
-
-    Returns
-    -------
-    float
-        Interpolated value at the given x, y.
-    """
-    A = q11 * (x2 - x) * (y2 - y)
-    B = q21 * (x - x1) * (y2 - y)
-    C = q12 * (x2 - x) * (y - y1)
-    D = q22 * (x - x1) * (y - y1)
-    E = 1 / (x2 - x1) / (y2 - y1)
-
-    return (A + B + C + D) * E
+class AdjacentPoints:
+    pass
 
 
 def interpolate_global_surface(
-    global_surface_read: GlobalSurfaceRead, mesh_vector: MeshVector, adjacent_points
+    global_surface_read: GlobalSurfaceRead,
+    mesh_vector: MeshVector,
+    adjacent_points: AdjacentPoints,
 ):
     """
     Interpolate the global surface value at a given latitude and longitude.
@@ -359,41 +324,50 @@ class GlobalSurfaceRead:
             The indices of the adjacent points.
         """
 
-        import bisect
-
         lat = mesh_vector.lat
         lon = mesh_vector.lon
 
         lat_assigned_flag = False
         lon_assigned_flag = False
-
         adjacent_points = AdjacentPoints()
-        adjacent_points.in_surface_bounds = False
-        adjacent_points.in_lat_extension_zone = False
-        adjacent_points.in_lon_extension_zone = False
-        adjacent_points.in_corner_zone = False
 
-        # Binary search for latitude
-        lat_index = bisect.bisect_left(self.lati, lat)
-        if lat_index < self.nlat and self.lati[lat_index] == lat:
-            adjacent_points.lat_ind[0] = lat_index
-            adjacent_points.lat_ind[1] = lat_index
-            lat_assigned_flag = True
-        elif 0 < lat_index < self.nlat:
-            adjacent_points.lat_ind[0] = lat_index - 1
-            adjacent_points.lat_ind[1] = lat_index
-            lat_assigned_flag = True
+        for i in range(self.nlat):
+            if self.lati[i] >= lat:
+                if i == 0:
+                    break
+                adjacent_points.lat_ind[0] = i - 1
+                adjacent_points.lat_ind[1] = i
+                lat_assigned_flag = True
+                break
 
-        # Binary search for longitude
-        lon_index = bisect.bisect_left(self.loni, lon)
-        if lon_index < self.nlon and self.loni[lon_index] == lon:
-            adjacent_points.lon_ind[0] = lon_index
-            adjacent_points.lon_ind[1] = lon_index
-            lon_assigned_flag = True
-        elif 0 < lon_index < self.nlon:
-            adjacent_points.lon_ind[0] = lon_index - 1
-            adjacent_points.lon_ind[1] = lon_index
-            lon_assigned_flag = True
+        if not lat_assigned_flag:
+            for i in reversed(range(self.nlat)):
+                if self.lati[i] >= lat:
+                    if i == self.nlat - 1:
+                        break
+                    adjacent_points.lat_ind[0] = i
+                    adjacent_points.lat_ind[1] = i + 1
+                    lat_assigned_flag = True
+                    break
+
+        for j in range(self.nlon):
+            if self.loni[j] >= lon:
+                if j == 0:
+                    break
+                adjacent_points.lon_ind[0] = j - 1
+                adjacent_points.lon_ind[1] = j
+                lon_assigned_flag = True
+                break
+
+        if not lon_assigned_flag:
+            for j in reversed(range(self.nlon)):
+                if self.loni[j] >= lon:
+                    if j == self.nlon - 1:
+                        break
+                    adjacent_points.lon_ind[0] = j
+                    adjacent_points.lon_ind[1] = j + 1
+                    lon_assigned_flag = True
+                    break
 
         if not lat_assigned_flag or not lon_assigned_flag:
             if lon_assigned_flag and not lat_assigned_flag:
@@ -420,6 +394,7 @@ class GlobalSurfaceRead:
                     adjacent_points.in_lon_extension_zone = True
                     self.find_edge_inds(adjacent_points, 2)
 
+            # four cases for corner zones
             if (
                 (lat - self.max_lat) <= MAX_LAT_SURFACE_EXTENSION
                 and (self.min_lon - lon) <= MAX_LON_SURFACE_EXTENSION
@@ -428,22 +403,22 @@ class GlobalSurfaceRead:
             ):
                 self.find_corner_inds(self.max_lat, self.min_lon, adjacent_points)
             elif (
-                (lat - self.max_lat) <= MAX_LAT_SURFACE_EXTENSION
-                and (lon - self.max_lon) <= MAX_LON_SURFACE_EXTENSION
+                lat - self.max_lat <= MAX_LAT_SURFACE_EXTENSION
+                and lon - self.max_lon <= MAX_LON_SURFACE_EXTENSION
                 and lon >= self.max_lon
                 and lat >= self.max_lat
             ):
                 self.find_corner_inds(self.max_lat, self.max_lon, adjacent_points)
             elif (
-                (self.min_lat - lat) <= MAX_LAT_SURFACE_EXTENSION
-                and (self.min_lon - lon) <= MAX_LON_SURFACE_EXTENSION
+                self.min_lat - lat <= MAX_LAT_SURFACE_EXTENSION
+                and self.min_lon - lon <= MAX_LON_SURFACE_EXTENSION
                 and lon <= self.min_lon
                 and lat <= self.min_lat
             ):
                 self.find_corner_inds(self.min_lat, self.min_lon, adjacent_points)
             elif (
-                (self.min_lat - lat) <= MAX_LAT_SURFACE_EXTENSION
-                and (lon - self.max_lon) <= MAX_LON_SURFACE_EXTENSION
+                self.min_lat - lat <= MAX_LAT_SURFACE_EXTENSION
+                and lon - self.max_lon <= MAX_LON_SURFACE_EXTENSION
                 and lon >= self.max_lon
                 and lat <= self.min_lat
             ):
@@ -454,9 +429,12 @@ class GlobalSurfaceRead:
                 and not adjacent_points.in_lon_extension_zone
                 and not adjacent_points.in_corner_zone
             ):
-                raise ValueError("Point does not lie in any global surface extension.")
-        else:
-            adjacent_points.in_surface_bounds = True
+
+                raise ValueError(
+                    f"Point does not lie in any global surface extension. {lon} {lat}"
+                )
+            else:
+                adjacent_points.in_surface_bounds = True
 
         return adjacent_points
 
@@ -502,7 +480,7 @@ class GlobalSurfaceRead:
         else:
             raise ValueError("Point lies outside of surface bounds.")
 
-    def find_corner_inds(self, lat_pt, lon_pt, adjacent_points):
+    def find_corner_inds(self, lat_pt, lon_pt, adjacent_points: AdjacentPoints):
         """
         Find the indices of the corner of the global surface closest to the lat-lon point.
 
@@ -511,8 +489,8 @@ class GlobalSurfaceRead:
         lon_pt (float): Longitude of point for eventual interpolation.
         adjacent_points (AdjacentPoints): Object containing indices of points adjacent to the lat-lon for interpolation.
         """
-        nlat = len(self.lat)
-        nlon = len(self.lon)
+        nlat = self.nlat
+        nlon = self.nlon
 
         if lat_pt == self.lati[0]:
             adjacent_points.corner_lat_ind = 0
@@ -528,7 +506,7 @@ class GlobalSurfaceRead:
         else:
             raise ValueError("Point lies outside of surface bounds.")
 
-        adjacent_points.in_corner_zone = 1
+        adjacent_points.in_corner_zone = True
 
 
 class ModelExtent:
@@ -699,7 +677,7 @@ class TomographyData:
 
         adjacent_points = self.vs30.find_global_adjacent_points(mesh_vector)
 
-        mesh_vector.Vs30 = interpolate_global_surface(
+        mesh_vector.vs30 = interpolate_global_surface(
             self.vs30, mesh_vector, adjacent_points
         )
 
@@ -1200,6 +1178,78 @@ class BasinData:
         valid_indices = np.where((~np.isnan(depths)) & (depths <= depth))[0]
         return valid_indices[0] if valid_indices.size > 0 else 0
 
+    def enforce_basin_surface_depths(
+        self,
+        in_basin: InBasin,
+        partial_basin_surface_depths: PartialBasinSurfaceDepths,
+        mesh_vector: MeshVector,
+    ):
+        """
+        Enforce the depths of the surfaces are consistent with stratigraphy.
+
+        Parameters
+        ----------
+        in_basin : InBasin
+            Struct containing flags to indicate if lat-lon point - depths lie within the basin.
+        partial_basin_surface_depths : PartialBasinSurfaceDepths
+            Struct containing depths for all applicable basin surfaces at one lat-lon location.
+        mesh_vector : MeshVector
+            Struct containing a single lat-lon point with one or more depths.
+
+
+        Returns
+        -------
+        None
+        """
+
+        # assume boundary zero is the largest, boundary one needs to be fully enclosed within this boundary
+        if in_basin.in_basin_lat_lon[0]:
+            self.enforce_surface_depths(partial_basin_surface_depths)
+            # TODO: check if this is correct
+            top_lim = partial_basin_surface_depths.depth[0][
+                0
+            ]  # the first surface of the first boundary
+            bot_lim = partial_basin_surface_depths.depth[-1][
+                -1
+            ]  # the last surface of the last boundary
+
+            for k in range(mesh_vector.nz):
+                if mesh_vector.z[k] > top_lim:
+                    in_basin.in_basin_depth[k] = False
+                elif mesh_vector.z[k] < bot_lim:
+                    in_basin.in_basin_depth[k] = False
+                else:
+                    in_basin.in_basin_depth[k] = True  # in basin z limits
+        else:
+            for k in range(mesh_vector.nz):
+                in_basin.in_basin_depth[k] = False
+
+    def interpolate_basin_surface_depths(
+        self,
+        in_basin: InBasin,
+        partial_basin_surface_depths: PartialBasinSurfaceDepths,
+        mesh_vector: MeshVector,
+    ):
+        """
+        Determine if a lat-lon point is in a basin, if so interpolate the basin surface depths, enforce their hierarchy, then determine which depth points lie within the basin limits.
+
+        Parameters
+        ----------
+        in_basin : InBasin
+            Struct containing flags to indicate if lat-lon point - depths lie within the basin.
+        partial_basin_surface_depths : PartialBasinSurfaceDepths
+            Struct containing depths for all applicable basin surfaces at one lat-lon location.
+        mesh_vector : MeshVector
+            Struct containing a single lat-lon point with one or more depths.
+        """
+        self.determine_if_within_basin_lat_lon(mesh_vector, in_basin)
+        self.determine_basin_surface_depths(
+            in_basin, partial_basin_surface_depths, mesh_vector
+        )
+        self.enforce_basin_surface_depths(
+            in_basin, partial_basin_surface_depths, mesh_vector
+        )
+
     def call_basin_sub_velocity_models(
         self,
         partial_basin_surface_depths,
@@ -1290,13 +1340,14 @@ class BasinData:
 
 class QualitiesVector:
     def __init__(self, dep_grid_dim_max: int):
-        self.Vp = np.zeros(dep_grid_dim_max, dtype=np.float64)
-        self.Vs = np.zeros(dep_grid_dim_max, dtype=np.float64)
-        self.Rho = np.zeros(dep_grid_dim_max, dtype=np.float64)
+        self.vp = np.zeros(dep_grid_dim_max, dtype=np.float64)
+        self.vs = np.zeros(dep_grid_dim_max, dtype=np.float64)
+        self.rho = np.zeros(dep_grid_dim_max, dtype=np.float64)
         self.inbasin = np.zeros(dep_grid_dim_max, dtype=bool)
 
     def prescribe_velocities(
         self,
+        global_model_parameters: dict,
         velo_mod_1d_data: VeloMod1DData,
         nz_tomography_data: TomographyData,
         global_surfaces: GlobalSurfaces,
@@ -1362,20 +1413,19 @@ class QualitiesVector:
             raise ValueError("User specified TOPO_TYPE not recognised, see readme.")
 
         for basin_ind, basin_data in enumerate(basin_data_list):
-            interpolate_basin_surface_depths(
-                basin_data,
+            basin_data.interpolate_basin_surface_depths(
                 in_basin_list[basin_ind],
                 partial_basin_surface_depths_list[basin_ind],
                 shifted_mesh_vector,
             )
 
         basin_flag = False
-        Z = 0
+        z = 0
         for k in range(mesh_vector.nz):
             if topo_type in ["BULLDOZED", "TRUE"]:
-                Z = mesh_vector.Z[k]
+                z = mesh_vector.z[k]
             elif topo_type in ["SQUASHED", "SQUASHED_TAPERED"]:
-                Z = shifted_mesh_vector.Z[k]
+                z = shifted_mesh_vector.z[k]
 
             for i, basin_data in enumerate(basin_data_list):
                 in_basin = in_basin_list[i]
@@ -1390,41 +1440,146 @@ class QualitiesVector:
                         mesh_vector,
                         in_any_basin_lat_lon,
                         on_boundary,
-                        Z,
+                        z,
                         i,
                         k,
                     )
 
-            if basin_flag == 0:
+            if not basin_flag:
                 self.inbasin[k] = False
-                n_velo_mod_ind = (
-                    self.find_global_sub_velo_model_ind(  # TODO: implement this
-                        Z, partial_global_surface_depths
-                    )
+                velo_mod_ind = self.find_global_sub_velo_model_ind(
+                    z, partial_global_surface_depths
                 )
-                self.call_sub_velocity_model(  # TODO: implement this
-                    n_velo_mod_ind,
+
+                velo_mod_name = global_model_parameters["velo_submodels"][velo_mod_ind]
+                self.call_sub_velocity_model(
+                    velo_mod_name,
+                    z,
                     k,
-                    Z,
-                    mesh_vector,
-                    nz_tomography_data,
+                    global_model_parameters,
                     partial_global_surface_depths,
+                    velo_mod_1d_data,
+                    nz_tomography_data,
+                    mesh_vector,
                     in_any_basin_lat_lon,
                     on_boundary,
                 )
 
-            if Z > partial_global_surface_depths.dep[1]:
+            if z > partial_global_surface_depths.depth[1]:
                 self.nan_sub_mod(k)
 
-            basin_flag = 0
+            basin_flag = False
 
         if topo_type == "BULLDOZED":
             for k in range(mesh_vector.nz):
                 if mesh_vector.z[k] > 0:
                     self.nan_sub_mod(k)
 
-        if shifted_mesh_vector:
-            del shifted_mesh_vector
+        # if shifted_mesh_vector:
+        #     del shifted_mesh_vector
+
+    def nan_sub_mod(self, k):
+        self.vp[k] = np.nan
+        self.vs[k] = np.nan
+        self.rho[k] = np.nan
+
+    def find_global_sub_velo_model_ind(
+        self,
+        depth: np.float64,
+        partial_global_surface_depths: PartialGlobalSurfaceDepths,
+    ):
+        """
+        Find the index of the global sub-velocity model at the given depth.
+
+        Parameters
+        ----------
+        depth : float
+            The depth (in m) to find the sub-velocity model index at.
+        partial_global_surface_depths : PartialGlobalSurfaceDepths
+            Struct containing global surface depths.
+
+        Returns
+        -------
+        int
+            The index of the global sub-velocity model.
+        """
+        try:
+            n_velo_ind = np.where(partial_global_surface_depths.depth >= depth)[0][-1]
+            if n_velo_ind == len(partial_global_surface_depths.depth):
+                raise ValueError("Error: depth not found in global sub-velocity model.")
+        except IndexError:
+            raise ValueError("Error: depth not found in global sub-velocity model.")
+
+        return n_velo_ind
+
+    def call_sub_velocity_model(
+        self,
+        submodel_name: str,
+        z: float,
+        k: int,
+        global_model_parameters: dict,
+        partial_global_surface_depths: PartialGlobalSurfaceDepths,
+        velo_mod_1d_data: VeloMod1DData,
+        nz_tomography_data: TomographyData,
+        mesh_vector: MeshVector,
+        in_any_basin_lat_lon: bool,
+        on_boundary: bool,
+    ):
+        """
+        Call the appropriate sub-velocity model based on the global sub-velocity model index.
+
+        Parameters
+        ----------
+        submodel_name : str
+            The name of the global submodel.
+        z : float
+            The depth of the grid point to determine the properties at.
+        k : int
+            The depth index of the single grid point.
+        global_model_parameters : dict
+            Struct containing all model parameters (surface names, submodel names, basin names, etc.)
+        partial_global_surface_depths : PartialGlobalSurfaceDepths
+            Struct containing global surface depths.
+        velo_mod_1d_data : VeloMod1DData
+            Struct containing the 1D velocity model data.
+        nz_tomography_data : TomographyData
+            Struct containing tomography data.
+        mesh_vector : MeshVector
+            Struct containing a single lat-lon point with one or more depths.
+        in_any_basin_lat_lon : bool
+            Flag indicating if the point is in any basin.
+        on_boundary : bool
+            Flag indicating if the point is on a boundary.
+
+        Returns
+        -------
+        None
+        """
+
+        if submodel_name == "NaNsubMod":
+            self.nan_sub_mod(k)
+
+        elif submodel_name == "EPtomo2010subMod":
+            import submodel.Eptomo2010 as eptomo2010
+
+            eptomo2010.main(
+                k,
+                z,
+                self,
+                mesh_vector,
+                nz_tomography_data,
+                partial_global_surface_depths,
+                global_model_parameters["GTL"],
+                in_any_basin_lat_lon,
+                on_boundary,
+            )
+
+        elif submodel_name == "Cant1D_v1":
+            import submodel.Cant1D_v1 as Cant1D_v1
+
+            Cant1D_v1.main(k, z, self, velo_mod_1d_data)
+        else:
+            raise ValueError(f"Error: Submodel {submodel_name} not found in registry.")
 
 
 class CVMRegistry:
@@ -1623,12 +1778,12 @@ class CVMRegistry:
             if vm1d is None:
                 self.log(f"Error: vm1d {submodel['name']} not found.")
                 exit(1)
-            return self.load_1d_velo_sub_model(vm1d["path"])
+            return (submodel_name, self.load_1d_velo_sub_model(vm1d["path"]))
 
         elif submodel["type"] == "relation":
-            return None  # TODO: Implement relation submodel
+            return (submodel_name, None)  # TODO: Implement relation submodel
         elif submodel["type"] == "perturbation":
-            return None  # TODO: Implement perturbation submodel
+            return (submodel_name, None)  # TODO: Implement perturbation submodel
 
     def load_basin_surface(self, basin_surface: str):
         """

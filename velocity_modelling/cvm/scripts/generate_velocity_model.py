@@ -377,6 +377,7 @@ def assign_qualities(
         # velocity vector just inside the boundary
         on_boundary = True
         qualities_vector_b.prescribe_velocities(
+            cvm_registry.vm_global_params,
             velo_mod_1d_data,
             nz_tomography_data,
             global_surfaces,
@@ -397,6 +398,7 @@ def assign_qualities(
         # velocity vector at the point in question
         on_boundary = False
         qualities_vector_a.prescribe_velocities(
+            cvm_registry.vm_global_params,
             velo_mod_1d_data,
             nz_tomography_data,
             global_surfaces,
@@ -435,6 +437,7 @@ def assign_qualities(
     else:
         on_boundary = False
         qualities_vector.prescribe_velocities(
+            cvm_registry.vm_global_params,
             velo_mod_1d_data,
             nz_tomography_data,
             global_surfaces,

@@ -1,11 +1,69 @@
 import numpy as np
 
-from velocity_modelling.cvm.registry import (
-    InBasin,
-    PartialBasinSurfaceDepths,
-    GlobalSurfaceRead,
-    AdjacentPoints,
-    PartialGlobalSurfaceDepths,
-    GlobalSurfaces,
-    MeshVector,
-)  # , CalculationLog
+
+def linear_interpolation(
+    p1: np.float64, p2: np.float64, v1: np.float64, v2: np.float64, p3: np.float64
+):
+    """
+    Perform linear interpolation between two points.
+
+    Parameters
+    ----------
+    p1 : np.float64
+        The first point.
+    p2 : np.float64
+        The second point.
+    v1 : np.float64
+        The value at the first point.
+    v2 : np.float64
+        The value at the second point.
+    p3 : np.float64
+        The point at which to interpolate.
+
+    Returns
+    -------
+    np.float64
+        The interpolated value at point p3.
+    """
+    return v1 + (v2 - v1) * (p3 - p1) / (p2 - p1)
+
+
+def bi_linear_interpolation(
+    x1: np.float64,
+    x2: np.float64,
+    y1: np.float64,
+    y2: np.float64,
+    q11: np.float64,
+    q12: np.float64,
+    q21: np.float64,
+    q22: np.float64,
+    x: np.float64,
+    y: np.float64,
+):
+    """
+    Perform bilinear interpolation between four points.
+
+    Parameters
+    ----------
+    x1, x2, y1, y2 : float
+        Coordinates of the points.
+    q11, q12, q21, q22 : float
+        Values at the four points.
+    x, y : float
+        Coordinates of the point to interpolate.
+
+    Returns
+    -------
+    float
+        Interpolated value at the given x, y.
+    """
+    A = q11 * (x2 - x) * (y2 - y)
+    B = q21 * (x - x1) * (y2 - y)
+    C = q12 * (x2 - x) * (y - y1)
+    D = q22 * (x - x1) * (y - y1)
+    try:
+        E = 1 / (x2 - x1) / (y2 - y1)
+    except ZeroDivisionError:
+        raise ValueError("Error: Zero division in bi-linear interpolation.")
+
+    return (A + B + C + D) * E
