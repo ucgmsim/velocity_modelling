@@ -31,6 +31,8 @@ from velocity_modelling.cvm.registry import (
 
 from velocity_modelling.cvm.constants import MAX_DIST_SMOOTH
 
+from velocity_modelling.cvm.output.emod3d import write_global_qualities
+
 LON_GRID_DIM_MAX = 10260
 LAT_GRID_DIM_MAX = 19010
 DEP_GRID_DIM_MAX = 4500
@@ -183,24 +185,39 @@ def gen_full_model_grid_great_circle(
     if nz != 1:
         logger.info(f"Number of model points. nx: {nx}, ny: {ny}, nz: {nz}.")
 
-    for i in range(nx):
-        global_mesh.x[i] = (
-            0.5 * model_extent.h_lat_lon
-            + model_extent.h_lat_lon * i
-            - 0.5 * model_extent.xmax
-        )
+    # for i in range(nx):
+    #     global_mesh.x[i] = (
+    #         0.5 * model_extent.h_lat_lon
+    #         + model_extent.h_lat_lon * i
+    #         - 0.5 * model_extent.xmax
+    #     )
+    global_mesh.x = (
+        0.5 * model_extent.h_lat_lon
+        + model_extent.h_lat_lon * np.arange(nx)
+        - 0.5 * model_extent.xmax
+    )
 
-    for i in range(ny):
-        global_mesh.y[i] = (
-            0.5 * model_extent.h_lat_lon
-            + model_extent.h_lat_lon * i
-            - 0.5 * model_extent.ymax
-        )
+    # for i in range(ny):
+    #     global_mesh.y[i] = (
+    #         0.5 * model_extent.h_lat_lon
+    #         + model_extent.h_lat_lon * i
+    #         - 0.5 * model_extent.ymax
+    #     )
+    global_mesh.x = (
+        0.5 * model_extent.h_lat_lon
+        + model_extent.h_lat_lon * np.arange(nx)
+        - 0.5 * model_extent.xmax
+    )
 
-    for i in range(nz):
-        global_mesh.z[i] = -1000 * (
-            model_extent.zmin + model_extent.h_depth * (i + 0.5)
-        )
+    # for i in range(nz):
+    #     global_mesh.z[i] = -1000 * (
+    #         model_extent.zmin + model_extent.h_depth * (i + 0.5)
+    #     )
+    global_mesh.z = -1000 * (
+        0.5 * model_extent.h_depth
+        + model_extent.h_depth * np.arange(nz)
+        + model_extent.zmin
+    )
 
     arg = model_extent.origin_rot * RPERD
     cosA = np.cos(arg)
@@ -555,21 +572,23 @@ def generate_velocity_model(
                     logger,
                 )
                 nz = partial_global_mesh.nz
-                partial_global_qualities.rho[k, :nz] = qualities_vector.rho[:nz]
-                partial_global_qualities.vp[k, :nz] = qualities_vector.vp[:nz]
-                partial_global_qualities.vs[k, :nz] = qualities_vector.vs[:nz]
-                partial_global_qualities.inbasin[k, :nz] = qualities_vector.inbasin[:nz]
-                pass
+                # partial_global_qualities.rho[k, :nz] = qualities_vector.rho[:nz]
+                # partial_global_qualities.vp[k, :nz] = qualities_vector.vp[:nz]
+                # partial_global_qualities.vs[k, :nz] = qualities_vector.vs[:nz]
+                # partial_global_qualities.inbasin[k, :nz] = qualities_vector.inbasin[:nz]
+                partial_global_qualities.rho[k] = qualities_vector.rho
+                partial_global_qualities.vp[k] = qualities_vector.vp
+                partial_global_qualities.vs[k] = qualities_vector.vs
+                partial_global_qualities.inbasin[k] = qualities_vector.inbasin
 
-        pass
-        # write_global_qualities(
-        #     output_dir,
-        #     partial_global_mesh,
-        #     partial_global_qualities,
-        #     gen_extract_velo_mod_call,
-        #     calculation_log,
-        #     j,
-        # )
+        write_global_qualities(
+            out_dir,
+            partial_global_mesh,
+            partial_global_qualities,
+            vm_params,
+            logger,
+            j,
+        )
 
     # def process_j(j):
     #     # do something with j

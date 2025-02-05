@@ -1,0 +1,78 @@
+import struct
+import numpy as np
+
+from pathlib import Path
+from velocity_modelling.cvm.registry import (
+    PartialGlobalMesh,
+    PartialGlobalQualities,
+    PartialGlobalQualities,
+    Logger,
+)
+
+
+def write_global_qualities(
+    output_dir: Path,
+    partial_global_mesh: PartialGlobalMesh,
+    partial_global_qualities,
+    vm_params: dict,
+    lat_ind: int,
+    logger: Logger,
+):
+    """
+    Purpose: write the full velocity model to file
+
+    Input variables:
+    partial_global_mesh        - pointer to structure containing lat lon grid
+    partial_global_qualities   - pointer to structure containing vp vs and rho for all gridpoints
+
+    Output variables:
+    N/A.
+    """
+
+    # perform endian check
+    endian_int = struct.unpack("<I", struct.pack("=I", 1))[0] == 1
+
+    vp3dfile = output_dir / "vp3dfile.p"
+    vs3dfile = output_dir / "vs3dfile.s"
+    rho3dfile = output_dir / "rho3dfile.d"
+    in_basin_mask_file = output_dir / "in_basin_mask.b"
+
+    mode = "wb" if lat_ind == 0 else "ab"
+
+    # bsize = partial_global_mesh.nx * partial_global_mesh.nz
+    # vp = np.zeros(bsize, dtype=np.float32)
+    # vs = np.zeros(bsize, dtype=np.float32)
+    # rho = np.zeros(bsize, dtype=np.float32)
+    # inbasin = np.zeros(bsize, dtype=np.float32)
+
+    with (
+        open(vp3dfile, mode) as fvp,
+        open(vs3dfile, mode) as fvs,
+        open(rho3dfile, mode) as frho,
+        open(in_basin_mask_file, mode) as fmask,
+    ):
+
+        for iz in range(partial_global_mesh.nz):
+            for ix in range(partial_global_mesh.nx):
+                vs_temp = np.max(
+                    [partial_global_qualities.vs[ix][iz], vm_params["min_vs"]]
+                )
+                vp_temp = partial_global_qualities.vp[ix][iz]
+                rho_temp = partial_global_qualities.rho[ix][iz]
+                inbasin_temp = partial_global_qualities.inbasin[ix][iz]
+
+                if endian_int:  # big endian
+                    vs_write = struct.pack(">f", vs_temp)
+                    vp_write = struct.pack(">f", vp_temp)
+                    rho_write = struct.pack(">f", rho_temp)
+                    inbasin_write = struct.pack(">f", inbasin_temp)
+                else:  # little endian
+                    vs_write = struct.pack("<f", vs_temp)
+                    vp_write = struct.pack("<f", vp_temp)
+                    rho_write = struct.pack("<f", rho_temp)
+                    inbasin_write = struct.pack("<f", inbasin_temp)
+
+                fvp.write(vp_write)
+                fvs.write(vs_write)
+                frho.write(rho_write)
+                fmask.write(inbasin_write)
