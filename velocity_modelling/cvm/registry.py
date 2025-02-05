@@ -21,6 +21,7 @@ from velocity_modelling.cvm.constants import (
 
 from velocity_modelling.cvm.interpolate import (
     bi_linear_interpolation,
+    linear_interpolation,
 )
 
 DATA_ROOT = Path(__file__).parent.parent / "Data"
@@ -75,7 +76,7 @@ def interpolate_global_surface_depths(
             global_surf_read, mesh_vector, adjacent_points
         )
 
-    for i in range(reversed(len(global_surfaces.surface))):
+    for i in reversed(range(len(global_surfaces.surface))):
         top_val = partial_global_surface_depth.depth[i - 1]
         bot_val = partial_global_surface_depth.depth[i]
         if top_val < bot_val:
@@ -105,32 +106,64 @@ def interpolate_global_surface(
     Returns:
     float: Interpolated value at the given lat-lon.
     """
+    # if point lies within the surface bounds, perform bilinear interpolation
+    if adjacent_points.in_surface_bounds:
 
-    x1 = global_surface_read.loni[adjacent_points.lon_ind[0]]
-    x2 = global_surface_read.loni[adjacent_points.lon_ind[1]]
+        x1 = global_surface_read.loni[adjacent_points.lon_ind[0]]
+        x2 = global_surface_read.loni[adjacent_points.lon_ind[1]]
 
-    y1 = global_surface_read.lati[adjacent_points.lat_ind[0]]
-    y2 = global_surface_read.lati[adjacent_points.lat_ind[1]]
+        y1 = global_surface_read.lati[adjacent_points.lat_ind[0]]
+        y2 = global_surface_read.lati[adjacent_points.lat_ind[1]]
 
-    q11 = global_surface_read.raster[adjacent_points.lon_ind[0]][
-        adjacent_points.lat_ind[0]
-    ]
-    q12 = global_surface_read.raster[adjacent_points.lon_ind[0]][
-        adjacent_points.lat_ind[1]
-    ]
-    q21 = global_surface_read.raster[adjacent_points.lon_ind[1]][
-        adjacent_points.lat_ind[0]
-    ]
-    q22 = global_surface_read.raster[adjacent_points.lon_ind[1]][
-        adjacent_points.lat_ind[1]
-    ]
+        q11 = global_surface_read.raster[adjacent_points.lon_ind[0]][
+            adjacent_points.lat_ind[0]
+        ]
+        q12 = global_surface_read.raster[adjacent_points.lon_ind[0]][
+            adjacent_points.lat_ind[1]
+        ]
+        q21 = global_surface_read.raster[adjacent_points.lon_ind[1]][
+            adjacent_points.lat_ind[0]
+        ]
+        q22 = global_surface_read.raster[adjacent_points.lon_ind[1]][
+            adjacent_points.lat_ind[1]
+        ]
 
-    assert x1 != x2
-    assert y1 != y2
+        assert x1 != x2
+        assert y1 != y2
 
-    return bi_linear_interpolation(
-        x1, x2, y1, y2, q11, q12, q21, q22, mesh_vector.lon, mesh_vector.lat
-    )
+        return bi_linear_interpolation(
+            x1, x2, y1, y2, q11, q12, q21, q22, mesh_vector.lon, mesh_vector.lat
+        )
+
+    # if point lies within the extension zone, take on the value of the closest point
+    elif adjacent_points.in_lat_extension_zone:
+        p1 = global_surface_read.loni[adjacent_points.lon_ind[0]]
+        p2 = global_surface_read.loni[adjacent_points.lon_ind[1]]
+        v1 = global_surface_read.raster[adjacent_points.lon_ind[0]][
+            adjacent_points.lat_edge_ind
+        ]
+        v2 = global_surface_read.raster[adjacent_points.lon_ind[1]][
+            adjacent_points.lat_edge_ind
+        ]
+        p3 = mesh_vector.lon
+        return linear_interpolation(p1, p2, v1, v2, p3)
+    elif adjacent_points.in_lon_extension_zone:
+        p1 = global_surface_read.lati[adjacent_points.lat_ind[0]]
+        p2 = global_surface_read.lati[adjacent_points.lat_ind[1]]
+        v1 = global_surface_read.raster[adjacent_points.lon_edge_ind][
+            adjacent_points.lat_ind[0]
+        ]
+        v2 = global_surface_read.raster[adjacent_points.lon_edge_ind][
+            adjacent_points.lat_ind[1]
+        ]
+        p3 = mesh_vector.lat
+        return linear_interpolation(p1, p2, v1, v2, p3)
+    elif adjacent_points.in_corner_zone:
+        return global_surface_read.raster[adjacent_points.corner_lon_ind][
+            adjacent_points.corner_lat_ind
+        ]
+
+    raise ValueError("Calculation of Global surface value failed.")
 
 
 class AdjacentPoints:
@@ -374,7 +407,9 @@ class GlobalSurfaceRead:
                     lon_assigned_flag = True
                     break
 
-        if not lat_assigned_flag or not lon_assigned_flag:
+        if lat_assigned_flag and lon_assigned_flag:
+            adjacent_points.in_surface_bounds = True
+        else:
             if lon_assigned_flag and not lat_assigned_flag:
                 if (
                     lat - self.max_lat
@@ -438,8 +473,6 @@ class GlobalSurfaceRead:
                 raise ValueError(
                     f"Point does not lie in any global surface extension. {lon} {lat}"
                 )
-            else:
-                adjacent_points.in_surface_bounds = True
 
         return adjacent_points
 
@@ -1385,7 +1418,7 @@ class QualitiesVector:
                 for basin_data in basin_data_list
             ]
         )
-
+        # TODO: test this
         if topo_type == "SQUASHED":
             shifted_mesh_vector = MeshVector(
                 mesh_vector.nz, lat=mesh_vector.lat, lon=mesh_vector.lon
@@ -1395,7 +1428,7 @@ class QualitiesVector:
             shifted_mesh_vector.z = (
                 partial_global_surface_depths.depth[1] - depth_change
             )
-
+        # TODO: test this
         elif topo_type == "SQUASHED_TAPERED":
             dZ = mesh_vector.z[0] - mesh_vector.z[1]
             TAPER_DIST = 1.0
@@ -1573,7 +1606,7 @@ class QualitiesVector:
             self.nan_sub_mod(k)
 
         elif submodel_name == "EPtomo2010subMod":
-            import submodel.Eptomo2010 as eptomo2010
+            from velocity_modelling.cvm.submodel import EPtomo2010 as eptomo2010
 
             eptomo2010.main(
                 k,
@@ -1588,7 +1621,7 @@ class QualitiesVector:
             )
 
         elif submodel_name == "Cant1D_v1":
-            import submodel.Cant1D_v1 as Cant1D_v1
+            from velocity_modelling.cvm.submodel import Cant1D_v1 as Cant1D_v1
 
             Cant1D_v1.main(k, z, self, velo_mod_1d_data)
         else:
@@ -1958,7 +1991,7 @@ class CVMRegistry:
 
                 raster_data = np.fromfile(f, dtype=float, count=nlat * nlon, sep=" ")
                 try:
-                    global_surf_read.raster = raster_data.reshape((nlon, nlat)).T
+                    global_surf_read.raster = raster_data.reshape((nlat, nlon)).T
                 except:
                     self.log(
                         f"Error: in {surface_file} raster data length mismatch: {len(raster_data)} != {nlat * nlon}"

@@ -559,7 +559,9 @@ def generate_velocity_model(
                 partial_global_qualities.vp[k, :nz] = qualities_vector.vp[:nz]
                 partial_global_qualities.vs[k, :nz] = qualities_vector.vs[:nz]
                 partial_global_qualities.inbasin[k, :nz] = qualities_vector.inbasin[:nz]
+                pass
 
+        pass
         # write_global_qualities(
         #     output_dir,
         #     partial_global_mesh,

@@ -857,7 +857,7 @@ vm:
 
   - version: 2.03
     GTL: true
-    surfaces: [ posInfSurf, DEM, negInfSurf ]
+    surfaces: [ posInfSurf, NZ_DEM, negInfSurf ]
     velo_submodels: [ NaNsubMod, EPtomo2010subMod ]
     tomography: 2010_NZ_OFFSHORE
     basin_edge_smoothing: true
@@ -875,7 +875,7 @@ vm:
 
   - version: 2.07
     GTL: true
-    surfaces: [ posInfSurf, DEM, negInfSurf ]
+    surfaces: [ posInfSurf, NZ_DEM, negInfSurf ]
     velo_submodels: [ NaNsubMod, EPtomo2010subMod ]
     tomography: 2020_NZ_OFFSHORE
     basin_edge_smoothing: true
