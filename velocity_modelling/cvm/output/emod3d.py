@@ -31,6 +31,7 @@ def write_global_qualities(
 
     # perform endian check
     endian_int = struct.unpack("<I", struct.pack("=I", 1))[0] == 1
+    endian_format = "<" if endian_int else ">"
 
     vp3dfile = output_dir / "vp3dfile.p"
     vs3dfile = output_dir / "vs3dfile.s"
@@ -61,18 +62,95 @@ def write_global_qualities(
                 rho_temp = partial_global_qualities.rho[ix][iz]
                 inbasin_temp = partial_global_qualities.inbasin[ix][iz]
 
-                if endian_int:  # big endian
-                    vs_write = struct.pack(">f", vs_temp)
-                    vp_write = struct.pack(">f", vp_temp)
-                    rho_write = struct.pack(">f", rho_temp)
-                    inbasin_write = struct.pack(">f", inbasin_temp)
-                else:  # little endian
-                    vs_write = struct.pack("<f", vs_temp)
-                    vp_write = struct.pack("<f", vp_temp)
-                    rho_write = struct.pack("<f", rho_temp)
-                    inbasin_write = struct.pack("<f", inbasin_temp)
+                vs_write = struct.pack(f"{endian_format}f", vs_temp)
+                vp_write = struct.pack(f"{endian_format}f", vp_temp)
+                rho_write = struct.pack(f"{endian_format}f", rho_temp)
+                inbasin_write = struct.pack(f"{endian_format}f", inbasin_temp)
 
                 fvp.write(vp_write)
                 fvs.write(vs_write)
                 frho.write(rho_write)
                 fmask.write(inbasin_write)
+
+
+def read_output_files(output_dir: Path):
+    """
+    Read the output files into NumPy arrays.
+
+    Parameters
+    ----------
+    output_dir : Path
+        Directory containing the output files.
+
+    Returns
+    -------
+    dict
+        Dictionary containing the data from the output files.
+    """
+    files = {
+        "vp": output_dir / "vp3dfile.p",
+        "vs": output_dir / "vs3dfile.s",
+        "rho": output_dir / "rho3dfile.d",
+        "inbasin": output_dir / "in_basin_mask.b",
+    }
+
+    # Check endianness
+    endian_int = struct.unpack("<I", struct.pack("=I", 1))[0] == 1
+    endian_format = "<" if endian_int else ">"
+
+    data = {}
+    for key, file in files.items():
+        with open(file, "rb") as f:
+            file_content = f.read()
+            num_elements = len(file_content) // 4
+
+            data[key] = np.array(
+                struct.unpack(f"{endian_format}{num_elements}f", file_content),
+                dtype=np.float32,
+            )
+
+    return data
+
+
+def compare_output_files(dir1: Path, dir2: Path):
+    """
+    Compare the output files from two directories.
+
+    Parameters
+    ----------
+    dir1 : Path
+        First directory containing the output files.
+    dir2 : Path
+        Second directory containing the output files.
+
+    Returns
+    -------
+    dict
+        Dictionary containing the comparison results.
+    """
+    data1 = read_output_files(dir1)
+    data2 = read_output_files(dir2)
+
+    comparison = {}
+    for key in data1:
+        difference = data1[key] - data2[key]
+        comparison[key] = {
+            "allclose": np.allclose(data1[key], data2[key]),
+            "difference": np.abs(difference),
+            "max_difference": np.max(np.abs(difference)),
+            "average_difference": np.mean(np.abs(difference)),
+            "std_difference": np.std(difference),
+        }
+
+    return comparison
+
+
+if __name__ == "__main__":
+    output_dir1 = Path(
+        "/home/seb56/velocity_modelling/velocity_modelling/benchmark/RangipoS/tmp"
+    )  # Python
+    output_dir2 = Path(
+        "/home/seb56/velocity_modelling/velocity_modelling/benchmark/RangipoS/tmp/output/Velocity_Model"
+    )  # C
+    comparison_results = compare_output_files(output_dir1, output_dir2)
+    print(comparison_results)

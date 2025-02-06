@@ -203,10 +203,10 @@ def gen_full_model_grid_great_circle(
     #         + model_extent.h_lat_lon * i
     #         - 0.5 * model_extent.ymax
     #     )
-    global_mesh.x = (
+    global_mesh.y = (
         0.5 * model_extent.h_lat_lon
-        + model_extent.h_lat_lon * np.arange(nx)
-        - 0.5 * model_extent.xmax
+        + model_extent.h_lat_lon * np.arange(ny)
+        - 0.5 * model_extent.ymax
     )
 
     # for i in range(nz):
