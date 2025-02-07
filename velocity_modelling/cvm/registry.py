@@ -1467,6 +1467,8 @@ class QualitiesVector:
 
         basin_flag = False
         z = 0
+
+        # TODO: maybe a place to do some parallelization
         for k in range(mesh_vector.nz):
             if topo_type in ["BULLDOZED", "TRUE"]:
                 z = mesh_vector.z[k]
@@ -1517,12 +1519,13 @@ class QualitiesVector:
             basin_flag = False
 
         if topo_type == "BULLDOZED":
-            for k in range(mesh_vector.nz):
-                if mesh_vector.z[k] > 0:
-                    self.nan_sub_mod(k)
-
-        # if shifted_mesh_vector:
-        #     del shifted_mesh_vector
+            # for k in range(mesh_vector.nz):
+            #     if mesh_vector.z[k] > 0:
+            #         self.nan_sub_mod(k)
+            mask = mesh_vector.z > 0
+            self.vp[mask] = np.nan
+            self.vs[mask] = np.nan
+            self.rho[mask] = np.nan
 
     def nan_sub_mod(self, k):
         self.vp[k] = np.nan

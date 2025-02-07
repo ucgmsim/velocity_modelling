@@ -1,4 +1,6 @@
+import argparse
 import struct
+import sys
 import numpy as np
 
 from pathlib import Path
@@ -30,8 +32,9 @@ def write_global_qualities(
     """
 
     # perform endian check
-    endian_int = struct.unpack("<I", struct.pack("=I", 1))[0] == 1
-    endian_format = "<" if endian_int else ">"
+    endianness = sys.byteorder
+
+    endian_format = "<" if endianness == "little" else ">"
 
     vp3dfile = output_dir / "vp3dfile.p"
     vs3dfile = output_dir / "vs3dfile.s"
@@ -40,37 +43,33 @@ def write_global_qualities(
 
     mode = "wb" if lat_ind == 0 else "ab"
 
-    # bsize = partial_global_mesh.nx * partial_global_mesh.nz
-    # vp = np.zeros(bsize, dtype=np.float32)
-    # vs = np.zeros(bsize, dtype=np.float32)
-    # rho = np.zeros(bsize, dtype=np.float32)
-    # inbasin = np.zeros(bsize, dtype=np.float32)
+    # Flatten the arrays along the x and z dimensions
+    vp = partial_global_qualities.vp.T.flatten()
+    vs = partial_global_qualities.vs.T.flatten()
+    rho = partial_global_qualities.rho.T.flatten()
+    inbasin = partial_global_qualities.inbasin.T.flatten()
 
-    with (
-        open(vp3dfile, mode) as fvp,
-        open(vs3dfile, mode) as fvs,
-        open(rho3dfile, mode) as frho,
-        open(in_basin_mask_file, mode) as fmask,
-    ):
+    # Apply the minimum vs constraint
+    vs = np.maximum(vs, vm_params["min_vs"])
 
-        for iz in range(partial_global_mesh.nz):
-            for ix in range(partial_global_mesh.nx):
-                vs_temp = np.max(
-                    [partial_global_qualities.vs[ix][iz], vm_params["min_vs"]]
-                )
-                vp_temp = partial_global_qualities.vp[ix][iz]
-                rho_temp = partial_global_qualities.rho[ix][iz]
-                inbasin_temp = partial_global_qualities.inbasin[ix][iz]
+    # Pack the data using the appropriate endianness
+    vp_data = struct.pack(f"{endian_format}{len(vp)}f", *vp)
+    vs_data = struct.pack(f"{endian_format}{len(vs)}f", *vs)
+    rho_data = struct.pack(f"{endian_format}{len(rho)}f", *rho)
+    inbasin_data = struct.pack(f"{endian_format}{len(inbasin)}f", *inbasin)
 
-                vs_write = struct.pack(f"{endian_format}f", vs_temp)
-                vp_write = struct.pack(f"{endian_format}f", vp_temp)
-                rho_write = struct.pack(f"{endian_format}f", rho_temp)
-                inbasin_write = struct.pack(f"{endian_format}f", inbasin_temp)
+    # Write the binary data to files
+    with open(vp3dfile, mode) as fvp:
+        fvp.write(vp_data)
 
-                fvp.write(vp_write)
-                fvs.write(vs_write)
-                frho.write(rho_write)
-                fmask.write(inbasin_write)
+    with open(vs3dfile, mode) as fvs:
+        fvs.write(vs_data)
+
+    with open(rho3dfile, mode) as frho:
+        frho.write(rho_data)
+
+    with open(in_basin_mask_file, mode) as fmask:
+        fmask.write(inbasin_data)
 
 
 def read_output_files(output_dir: Path):
@@ -95,19 +94,23 @@ def read_output_files(output_dir: Path):
     }
 
     # Check endianness
-    endian_int = struct.unpack("<I", struct.pack("=I", 1))[0] == 1
-    endian_format = "<" if endian_int else ">"
+
+    endianness = sys.byteorder
+    endian_format = "<" if endianness == "little" else ">"
 
     data = {}
     for key, file in files.items():
         with open(file, "rb") as f:
             file_content = f.read()
-            num_elements = len(file_content) // 4
+            num_elements = len(file_content) // 4  # 4 bytes per float
 
-            data[key] = np.array(
+            raw_data = np.array(
                 struct.unpack(f"{endian_format}{num_elements}f", file_content),
                 dtype=np.float32,
             )
+            # Identify completed parts (assuming NaNs indicate incomplete parts)
+            completed_mask = ~np.isnan(raw_data)
+            data[key] = raw_data[completed_mask]
 
     return data
 
@@ -133,24 +136,50 @@ def compare_output_files(dir1: Path, dir2: Path):
 
     comparison = {}
     for key in data1:
-        difference = data1[key] - data2[key]
-        comparison[key] = {
-            "allclose": np.allclose(data1[key], data2[key]),
-            "difference": np.abs(difference),
-            "max_difference": np.max(np.abs(difference)),
-            "average_difference": np.mean(np.abs(difference)),
-            "std_difference": np.std(difference),
-        }
+        if key in data2:
+            min_length = min(len(data1[key]), len(data2[key]))
+            print(f"Comparing {key} with length {min_length}")
+            data1_trimmed = data1[key][:min_length]
+            data2_trimmed = data2[key][:min_length]
+            print(
+                f"Data1: max={np.max(data1_trimmed)}, min={np.min(data1_trimmed)} mean={np.mean(data1_trimmed)} std={np.std(data1_trimmed)}"
+            )
+            print(
+                f"Data2: max={np.max(data2_trimmed)}, min={np.min(data2_trimmed)} mean={np.mean(data2_trimmed)} std={np.std(data2_trimmed)}"
+            )
+
+            difference = data1_trimmed - data2_trimmed
+            comparison[key] = {
+                "allclose": np.allclose(data1_trimmed, data2_trimmed),
+                "difference": np.abs(difference),
+                "max_diff": np.max(np.abs(difference)),
+                "min_diff": np.min(np.abs(difference)),
+                "mean_diff": np.mean(np.abs(difference)),
+                "std_diff": np.std(np.abs(difference)),
+            }
+        else:
+            comparison[key] = "File missing in second directory"
 
     return comparison
 
 
 if __name__ == "__main__":
-    output_dir1 = Path(
-        "/home/seb56/velocity_modelling/velocity_modelling/benchmark/RangipoS/tmp"
-    )  # Python
-    output_dir2 = Path(
-        "/home/seb56/velocity_modelling/velocity_modelling/benchmark/RangipoS/tmp/output/Velocity_Model"
-    )  # C
+
+    parser = argparse.ArgumentParser(
+        description="Compare output files from two directories."
+    )
+    parser.add_argument(
+        "output_dir1", type=Path, help="First directory containing the output files."
+    )
+    parser.add_argument(
+        "output_dir2", type=Path, help="Second directory containing the output files."
+    )
+    args = parser.parse_args()
+
+    output_dir1 = args.output_dir1
+    output_dir2 = args.output_dir2
+
     comparison_results = compare_output_files(output_dir1, output_dir2)
-    print(comparison_results)
+    for key in comparison_results:
+        print(f"Results for {key}:")
+        print(comparison_results[key])
