@@ -2,8 +2,9 @@ import argparse
 import struct
 import sys
 import numpy as np
-
+import yaml
 from pathlib import Path
+
 from velocity_modelling.cvm.registry import (
     PartialGlobalMesh,
     PartialGlobalQualities,
@@ -36,6 +37,8 @@ def write_global_qualities(
 
     endian_format = "<" if endianness == "little" else ">"
 
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     vp3dfile = output_dir / "vp3dfile.p"
     vs3dfile = output_dir / "vs3dfile.s"
     rho3dfile = output_dir / "rho3dfile.d"
@@ -43,7 +46,14 @@ def write_global_qualities(
 
     mode = "wb" if lat_ind == 0 else "ab"
 
-    # Flatten the arrays along the x and z dimensions
+    # If this is the first lat index, remove any existing files
+    if lat_ind == 0:
+        vp3dfile.unlink(missing_ok=True)
+        vs3dfile.unlink(missing_ok=True)
+        rho3dfile.unlink(missing_ok=True)
+        in_basin_mask_file.unlink(missing_ok=True)
+
+    # Flatten the arrays along the x and z dimensions. Write along x-axis first
     vp = partial_global_qualities.vp.T.flatten()
     vs = partial_global_qualities.vs.T.flatten()
     rho = partial_global_qualities.rho.T.flatten()
@@ -93,8 +103,6 @@ def read_output_files(output_dir: Path):
         "inbasin": output_dir / "in_basin_mask.b",
     }
 
-    # Check endianness
-
     endianness = sys.byteorder
     endian_format = "<" if endianness == "little" else ">"
 
@@ -102,35 +110,20 @@ def read_output_files(output_dir: Path):
     for key, file in files.items():
         with open(file, "rb") as f:
             file_content = f.read()
-            num_elements = len(file_content) // 4  # 4 bytes per float
-
+            num_elements = len(file_content) // 4
             raw_data = np.array(
                 struct.unpack(f"{endian_format}{num_elements}f", file_content),
                 dtype=np.float32,
             )
-            # Identify completed parts (assuming NaNs indicate incomplete parts)
             completed_mask = ~np.isnan(raw_data)
             data[key] = raw_data[completed_mask]
 
     return data
 
 
-def compare_output_files(dir1: Path, dir2: Path):
-    """
-    Compare the output files from two directories.
-
-    Parameters
-    ----------
-    dir1 : Path
-        First directory containing the output files.
-    dir2 : Path
-        Second directory containing the output files.
-
-    Returns
-    -------
-    dict
-        Dictionary containing the comparison results.
-    """
+def compare_output_files(
+    dir1: Path, dir2: Path, nx: int, ny: int, nz: int, threshold=1e-5
+):
     data1 = read_output_files(dir1)
     data2 = read_output_files(dir2)
 
@@ -149,14 +142,38 @@ def compare_output_files(dir1: Path, dir2: Path):
             )
 
             difference = data1_trimmed - data2_trimmed
-            comparison[key] = {
-                "allclose": np.allclose(data1_trimmed, data2_trimmed),
-                "difference": np.abs(difference),
-                "max_diff": np.max(np.abs(difference)),
-                "min_diff": np.min(np.abs(difference)),
-                "mean_diff": np.mean(np.abs(difference)),
-                "std_diff": np.std(np.abs(difference)),
-            }
+
+            significant_diff_indices = np.where(np.abs(difference) > threshold)[0]
+            if significant_diff_indices.size > 0:
+                first_significant_index = significant_diff_indices[0]
+                x_index = first_significant_index % nx
+                z_index = (first_significant_index // nx) % nz
+                y_index = first_significant_index // (nx * nz)
+                comparison[key] = {
+                    "allclose": np.allclose(data1_trimmed, data2_trimmed),
+                    "difference": np.abs(difference),
+                    "max_diff": np.max(np.abs(difference)),
+                    "min_diff": np.min(np.abs(difference)),
+                    "mean_diff": np.mean(np.abs(difference)),
+                    "std_diff": np.std(np.abs(difference)),
+                    "first_significant_index": first_significant_index,
+                    "x_index": x_index,
+                    "y_index": y_index,
+                    "z_index": z_index,
+                }
+            else:
+                comparison[key] = {
+                    "allclose": np.allclose(data1_trimmed, data2_trimmed),
+                    "difference": np.abs(difference),
+                    "max_diff": np.max(np.abs(difference)),
+                    "min_diff": np.min(np.abs(difference)),
+                    "mean_diff": np.mean(np.abs(difference)),
+                    "std_diff": np.std(np.abs(difference)),
+                    "first_significant_index": None,
+                    "x_index": None,
+                    "y_index": None,
+                    "z_index": None,
+                }
         else:
             comparison[key] = "File missing in second directory"
 
@@ -174,12 +191,21 @@ if __name__ == "__main__":
     parser.add_argument(
         "output_dir2", type=Path, help="Second directory containing the output files."
     )
+    parser.add_argument("vm_params", type=Path, help="Path to the vm_params.yaml file")
     args = parser.parse_args()
 
     output_dir1 = args.output_dir1
     output_dir2 = args.output_dir2
+    vm_params_path = args.vm_params
 
-    comparison_results = compare_output_files(output_dir1, output_dir2)
+    with open(vm_params_path, "r") as f:
+        vm_params = yaml.safe_load(f)
+
+    nx = vm_params["nx"]
+    ny = vm_params["ny"]
+    nz = vm_params["nz"]
+
+    comparison_results = compare_output_files(output_dir1, output_dir2, nx, ny, nz)
     for key in comparison_results:
         print(f"Results for {key}:")
         print(comparison_results[key])

@@ -586,8 +586,8 @@ def generate_velocity_model(
             partial_global_mesh,
             partial_global_qualities,
             vm_params,
-            logger,
             j,
+            logger,
         )
 
     # def process_j(j):
