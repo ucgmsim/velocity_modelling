@@ -1,5 +1,6 @@
 import yaml
 
+import bisect
 from enum import Enum
 import importlib
 import inspect
@@ -358,54 +359,48 @@ class GlobalSurfaceRead:
 
         Returns
         -------
-        Tuple[int, int, int, int]
+        AdjacentPoints
             The indices of the adjacent points.
         """
-
         lat = mesh_vector.lat
         lon = mesh_vector.lon
 
         lat_assigned_flag = False
         lon_assigned_flag = False
+
         adjacent_points = AdjacentPoints()
 
-        for i in range(self.nlat):
-            if self.lati[i] >= lat:
-                if i == 0:
-                    break
-                adjacent_points.lat_ind[0] = i - 1
-                adjacent_points.lat_ind[1] = i
+        if self.lati[0] < lat <= self.lati[-1] or self.lati[0] > lat >= self.lati[-1]:
+            is_ascending = self.lati[0] < self.lati[-1]
+            lati = (
+                self.lati if is_ascending else self.lati[::-1]
+            )  # reverse the array if sorted in descending order
+
+            index = bisect.bisect_left(lati, lat)
+            index = (
+                self.nlat - index if not is_ascending else index
+            )  # reverse the index if sorted in descending order
+
+            if 0 < index < self.nlat:
+                adjacent_points.lat_ind[0] = index - 1
+                adjacent_points.lat_ind[1] = index
                 lat_assigned_flag = True
-                break
 
-        if not lat_assigned_flag:
-            for i in reversed(range(self.nlat)):
-                if self.lati[i] >= lat:
-                    if i == self.nlat - 1:
-                        break
-                    adjacent_points.lat_ind[0] = i
-                    adjacent_points.lat_ind[1] = i + 1
-                    lat_assigned_flag = True
-                    break
+        if self.loni[0] < lon <= self.loni[-1] or self.loni[0] > lon >= self.loni[-1]:
+            is_ascending = self.loni[0] < self.loni[-1]
+            loni = (
+                self.loni if is_ascending else self.loni[::-1]
+            )  # reverse the array if sorted in descending order
 
-        for j in range(self.nlon):
-            if self.loni[j] >= lon:
-                if j == 0:
-                    break
-                adjacent_points.lon_ind[0] = j - 1
-                adjacent_points.lon_ind[1] = j
+            index = bisect.bisect_left(loni, lon)
+            index = (
+                self.nlon - index if not is_ascending else index
+            )  # reverse the index if sorted in descending order
+
+            if 0 < index < self.nlon:
+                adjacent_points.lon_ind[0] = index - 1
+                adjacent_points.lon_ind[1] = index
                 lon_assigned_flag = True
-                break
-
-        if not lon_assigned_flag:
-            for j in reversed(range(self.nlon)):
-                if self.loni[j] >= lon:
-                    if j == self.nlon - 1:
-                        break
-                    adjacent_points.lon_ind[0] = j
-                    adjacent_points.lon_ind[1] = j + 1
-                    lon_assigned_flag = True
-                    break
 
         if lat_assigned_flag and lon_assigned_flag:
             adjacent_points.in_surface_bounds = True
@@ -421,7 +416,6 @@ class GlobalSurfaceRead:
                 ) <= MAX_LAT_SURFACE_EXTENSION and lat <= self.min_lat:
                     adjacent_points.in_lat_extension_zone = True
                     self.find_edge_inds(adjacent_points, 3)
-
             if lat_assigned_flag and not lon_assigned_flag:
                 if (
                     self.min_lon - lon
@@ -433,7 +427,6 @@ class GlobalSurfaceRead:
                 ) <= MAX_LON_SURFACE_EXTENSION and lon >= self.max_lon:
                     adjacent_points.in_lon_extension_zone = True
                     self.find_edge_inds(adjacent_points, 2)
-
             # four cases for corner zones
             if (
                 (lat - self.max_lat) <= MAX_LAT_SURFACE_EXTENSION
@@ -597,7 +590,7 @@ class SmoothingBoundary:
         """
         closest_ind, distance = self.brute_force(mesh_vector)
 
-        return closest_ind, distance
+        return closest_ind, distance / 1000  # return distance in km
 
     def brute_force(self, mesh_vector: MeshVector):
         """
@@ -686,18 +679,17 @@ class TomographyData:
             tomo["vs30_path"]
         )  # GlobalSurfaceRead
 
-        for i in range(len(self.surf_depth)):
-            self.surface.append({})  # self.surface[i] is an empty dictionary
-            elev = self.surf_depth[i]
-            if elev == int(elev):  # if the elevation is an integer
-                elev_name = f"{elev}"
-            else:
-                elev_name = f"{elev:.2f}".replace(".", "p")
+        for i, elev in enumerate(self.surf_depth):
+            self.surface.append({})
+            elev_name = (
+                f"{elev}" if elev == int(elev) else f"{elev:.2f}".replace(".", "p")
+            )
 
             for vtype in VTYPE:
                 tomofile = (
                     surf_tomo_path / f"surf_tomography_{vtype.name}_elev{elev_name}.in"
                 )
+                assert tomofile.exists()
                 self.surface[i][vtype.name] = cvm_registry.load_global_surface(tomofile)
 
         self.offshore_distance_surface = cvm_registry.load_global_surface(
@@ -1090,24 +1082,40 @@ class BasinData:
         nan_obtained = False
         nan_ind = 0
 
+        # for boundary_ind, surface in enumerate(self.surface):
+        #     for i in range(len(surface) - 1, 0, -1):
+        #         top_val = partial_basin_surface_depths.depth[boundary_ind][i - 1]
+        #         bot_val = partial_basin_surface_depths.depth[boundary_ind][i]
+        #
+        #         if np.isnan(top_val):
+        #             nan_obtained = True
+        #             nan_ind = i
+        #             break
+        #         elif top_val < bot_val:
+        #             partial_basin_surface_depths.depth[boundary_ind][i - 1] = bot_val
+        #
+        #     if nan_obtained:
+        #         for j in range(nan_ind - 1):
+        #             top_val = partial_basin_surface_depths.depth[boundary_ind][j]
+        #             bot_val = partial_basin_surface_depths.depth[boundary_ind][j + 1]
+        #             if top_val < bot_val:
+        #                 partial_basin_surface_depths.depth[boundary_ind][j] = bot_val
         for boundary_ind, surface in enumerate(self.surface):
-            for i in range(len(surface) - 1, 0, -1):
-                top_val = partial_basin_surface_depths.depth[boundary_ind][i - 1]
-                bot_val = partial_basin_surface_depths.depth[boundary_ind][i]
-
-                if np.isnan(top_val):
-                    nan_obtained = True
-                    nan_ind = i
-                    break
-                elif top_val < bot_val:
-                    partial_basin_surface_depths.depth[boundary_ind][i - 1] = bot_val
-
-            if nan_obtained:
-                for j in range(nan_ind - 1):
-                    top_val = partial_basin_surface_depths.depth[boundary_ind][j]
-                    bot_val = partial_basin_surface_depths.depth[boundary_ind][j + 1]
-                    if top_val < bot_val:
-                        partial_basin_surface_depths.depth[boundary_ind][j] = bot_val
+            depths = partial_basin_surface_depths.depth[boundary_ind]
+            # Find the first NaN value
+            nan_indices = np.where(np.isnan(depths))[0]
+            if nan_indices.size > 0:
+                nan_ind = nan_indices[0]
+            else:
+                nan_ind = len(depths)
+            # Enforce stratigraphy for depths before the first NaN
+            for i in range(nan_ind - 1, 0, -1):
+                if depths[i - 1] < depths[i]:
+                    depths[i - 1] = depths[i]
+            # Enforce stratigraphy for depths after the first NaN
+            for i in range(nan_ind - 1):
+                if depths[i] < depths[i + 1]:
+                    depths[i] = depths[i + 1]
 
     def assign_basin_qualities(
         self,
@@ -1255,16 +1263,11 @@ class BasinData:
                 -1
             ]  # the last surface of the last boundary
 
-            for k in range(mesh_vector.nz):
-                if mesh_vector.z[k] > top_lim:
-                    in_basin.in_basin_depth[k] = False
-                elif mesh_vector.z[k] < bot_lim:
-                    in_basin.in_basin_depth[k] = False
-                else:
-                    in_basin.in_basin_depth[k] = True  # in basin z limits
+            in_basin.in_basin_depth = (bot_lim <= mesh_vector.z) & (
+                mesh_vector.z <= top_lim
+            )  # check if the point is within the basin
         else:
-            for k in range(mesh_vector.nz):
-                in_basin.in_basin_depth[k] = False
+            in_basin.in_basin_depth.fill(False)
 
     def interpolate_basin_surface_depths(
         self,

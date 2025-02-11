@@ -131,7 +131,9 @@ def compare_output_files(
     for key in data1:
         if key in data2:
             min_length = min(len(data1[key]), len(data2[key]))
-            print(f"Comparing {key} with length {min_length}")
+            print(
+                f"Comparing {key} with length {min_length} Data1 len={len(data1[key])} Data2 len={len(data2[key])}"
+            )
             data1_trimmed = data1[key][:min_length]
             data2_trimmed = data2[key][:min_length]
             print(
