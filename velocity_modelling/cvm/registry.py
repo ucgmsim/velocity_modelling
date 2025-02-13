@@ -1,5 +1,6 @@
 import yaml
 
+import bisect
 from enum import Enum
 import importlib
 import inspect
@@ -361,64 +362,101 @@ class GlobalSurfaceRead:
         AdjacentPoints
             The indices of the adjacent points.
         """
-        lat, lon = mesh_vector.lat, mesh_vector.lon
+
+        lat = mesh_vector.lat
+        lon = mesh_vector.lon
+
+        lat_assigned_flag = False
+        lon_assigned_flag = False
+
         adjacent_points = AdjacentPoints()
 
-        # Vectorized search for latitude indices
-        lat_diff = self.lati - lat
-        lat_inds = np.where(lat_diff >= 0)[0]
-        if len(lat_inds) > 0:
-            adjacent_points.lat_ind = [max(0, lat_inds[0] - 1), lat_inds[0]]
+        if self.lati[0] < lat <= self.lati[-1] or self.lati[0] > lat >= self.lati[-1]:
+            is_ascending = self.lati[0] < self.lati[-1]
+            lati = (
+                self.lati if is_ascending else self.lati[::-1]
+            )  # reverse the array if sorted in descending order
+
+            index = bisect.bisect_left(lati, lat)
+            index = (
+                self.nlat - index if not is_ascending else index
+            )  # reverse the index if sorted in descending order
+
+            if 0 < index < self.nlat:
+                adjacent_points.lat_ind[0] = index - 1
+                adjacent_points.lat_ind[1] = index
+                lat_assigned_flag = True
+
+        if self.loni[0] < lon <= self.loni[-1] or self.loni[0] > lon >= self.loni[-1]:
+            is_ascending = self.loni[0] < self.loni[-1]
+            loni = (
+                self.loni if is_ascending else self.loni[::-1]
+            )  # reverse the array if sorted in descending order
+
+            index = bisect.bisect_left(loni, lon)
+            index = (
+                self.nlon - index if not is_ascending else index
+            )  # reverse the index if sorted in descending order
+
+            if 0 < index < self.nlon:
+                adjacent_points.lon_ind[0] = index - 1
+                adjacent_points.lon_ind[1] = index
+                lon_assigned_flag = True
+
+        if lat_assigned_flag and lon_assigned_flag:
+            adjacent_points.in_surface_bounds = True
         else:
-            adjacent_points.lat_ind = [len(self.lati) - 2, len(self.lati) - 1]
-
-        # Vectorized search for longitude indices
-        lon_diff = self.loni - lon
-        lon_inds = np.where(lon_diff >= 0)[0]
-        if len(lon_inds) > 0:
-            adjacent_points.lon_ind = [max(0, lon_inds[0] - 1), lon_inds[0]]
-        else:
-            adjacent_points.lon_ind = [len(self.loni) - 2, len(self.loni) - 1]
-
-        adjacent_points.in_surface_bounds = (
-            self.lati[adjacent_points.lat_ind[0]]
-            <= lat
-            <= self.lati[adjacent_points.lat_ind[1]]
-            and self.loni[adjacent_points.lon_ind[0]]
-            <= lon
-            <= self.loni[adjacent_points.lon_ind[1]]
-        )
-
-        if not adjacent_points.in_surface_bounds:
-
-            def check_extension_zone(val, min_val, max_val, max_extension):
-                if min_val - val <= max_extension and val <= min_val:
-                    return True, 3
-                elif val - max_val <= max_extension and val >= max_val:
-                    return True, 1
-                return False, 0
-
-            adjacent_points.in_lat_extension_zone, lat_edge_type = check_extension_zone(
-                lat, self.min_lat, self.max_lat, MAX_LAT_SURFACE_EXTENSION
-            )
-            adjacent_points.in_lon_extension_zone, lon_edge_type = check_extension_zone(
-                lon, self.min_lon, self.max_lon, MAX_LON_SURFACE_EXTENSION
-            )
-            adjacent_points.in_corner_zone = (
-                adjacent_points.in_lat_extension_zone
-                and adjacent_points.in_lon_extension_zone
-            )
-
-            if adjacent_points.in_lat_extension_zone:
-                self.find_edge_inds(adjacent_points, lat_edge_type)
-            if adjacent_points.in_lon_extension_zone:
-                self.find_edge_inds(adjacent_points, lon_edge_type)
-            if adjacent_points.in_corner_zone:
-                self.find_corner_inds(
-                    self.max_lat if lat >= self.max_lat else self.min_lat,
-                    self.max_lon if lon >= self.max_lon else self.min_lon,
-                    adjacent_points,
-                )
+            if lon_assigned_flag and not lat_assigned_flag:
+                if (
+                    lat - self.max_lat
+                ) <= MAX_LAT_SURFACE_EXTENSION and lat >= self.max_lat:
+                    adjacent_points.in_lat_extension_zone = True
+                    self.find_edge_inds(adjacent_points, 1)
+                elif (
+                    self.min_lat - lat
+                ) <= MAX_LAT_SURFACE_EXTENSION and lat <= self.min_lat:
+                    adjacent_points.in_lat_extension_zone = True
+                    self.find_edge_inds(adjacent_points, 3)
+            if lat_assigned_flag and not lon_assigned_flag:
+                if (
+                    self.min_lon - lon
+                ) <= MAX_LON_SURFACE_EXTENSION and lon <= self.min_lon:
+                    adjacent_points.in_lon_extension_zone = True
+                    self.find_edge_inds(adjacent_points, 4)
+                elif (
+                    lon - self.max_lon
+                ) <= MAX_LON_SURFACE_EXTENSION and lon >= self.max_lon:
+                    adjacent_points.in_lon_extension_zone = True
+                    self.find_edge_inds(adjacent_points, 2)
+            # four cases for corner zones
+            if (
+                (lat - self.max_lat) <= MAX_LAT_SURFACE_EXTENSION
+                and (self.min_lon - lon) <= MAX_LON_SURFACE_EXTENSION
+                and lon <= self.min_lon
+                and lat >= self.max_lat
+            ):
+                self.find_corner_inds(self.max_lat, self.min_lon, adjacent_points)
+            elif (
+                lat - self.max_lat <= MAX_LAT_SURFACE_EXTENSION
+                and lon - self.max_lon <= MAX_LON_SURFACE_EXTENSION
+                and lon >= self.max_lon
+                and lat >= self.max_lat
+            ):
+                self.find_corner_inds(self.max_lat, self.max_lon, adjacent_points)
+            elif (
+                self.min_lat - lat <= MAX_LAT_SURFACE_EXTENSION
+                and self.min_lon - lon <= MAX_LON_SURFACE_EXTENSION
+                and lon <= self.min_lon
+                and lat <= self.min_lat
+            ):
+                self.find_corner_inds(self.min_lat, self.min_lon, adjacent_points)
+            elif (
+                self.min_lat - lat <= MAX_LAT_SURFACE_EXTENSION
+                and lon - self.max_lon <= MAX_LON_SURFACE_EXTENSION
+                and lon >= self.max_lon
+                and lat <= self.min_lat
+            ):
+                self.find_corner_inds(self.min_lat, self.max_lon, adjacent_points)
 
             if not (
                 adjacent_points.in_lat_extension_zone
@@ -552,7 +590,7 @@ class SmoothingBoundary:
         """
         closest_ind, distance = self.brute_force(mesh_vector)
 
-        return closest_ind, distance
+        return closest_ind, distance / 1000  # return distance in km
 
     def brute_force(self, mesh_vector: MeshVector):
         """
@@ -650,6 +688,7 @@ class TomographyData:
                 tomofile = (
                     surf_tomo_path / f"surf_tomography_{vtype.name}_elev{elev_name}.in"
                 )
+                assert tomofile.exists()
                 self.surface[i][vtype.name] = cvm_registry.load_global_surface(tomofile)
 
         self.offshore_distance_surface = cvm_registry.load_global_surface(
@@ -1038,10 +1077,10 @@ class BasinData:
         -------
         None
         """
-        # top_val, bot_val = None, None
-        # nan_obtained = False
-        # nan_ind = 0
-        #
+        top_val, bot_val = None, None
+        nan_obtained = False
+        nan_ind = 0
+
         # for boundary_ind, surface in enumerate(self.surface):
         #     for i in range(len(surface) - 1, 0, -1):
         #         top_val = partial_basin_surface_depths.depth[boundary_ind][i - 1]
@@ -1062,19 +1101,16 @@ class BasinData:
         #                 partial_basin_surface_depths.depth[boundary_ind][j] = bot_val
         for boundary_ind, surface in enumerate(self.surface):
             depths = partial_basin_surface_depths.depth[boundary_ind]
-
             # Find the first NaN value
             nan_indices = np.where(np.isnan(depths))[0]
             if nan_indices.size > 0:
                 nan_ind = nan_indices[0]
             else:
                 nan_ind = len(depths)
-
             # Enforce stratigraphy for depths before the first NaN
             for i in range(nan_ind - 1, 0, -1):
                 if depths[i - 1] < depths[i]:
                     depths[i - 1] = depths[i]
-
             # Enforce stratigraphy for depths after the first NaN
             for i in range(nan_ind - 1):
                 if depths[i] < depths[i + 1]:

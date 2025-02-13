@@ -358,7 +358,9 @@ def assign_qualities(
 
     in_any_basin = np.any(
         [
-            basin_data.determine_if_within_basin_lat_lon(mesh_vector)
+            basin_data.determine_if_within_basin_lat_lon(
+                mesh_vector
+            )  # this can be preprocessed in bulk
             for basin_data in basin_data_list
         ]
     )
@@ -367,7 +369,9 @@ def assign_qualities(
     if (
         distance <= MAX_DIST_SMOOTH
         and not in_any_basin
-        and cvm_registry.vm_global_params["GTL"]
+        and cvm_registry.vm_global_params[
+            "GTL"
+        ]  # Ely et al. 2010: Geotechnical Layer. If True, then apply the offshore basin depth
         and mesh_vector.vs30 < 100
     ):
         # point lies within smoothing zone and is not in any basin (i.e., outside any boundaries)
@@ -586,8 +590,8 @@ def generate_velocity_model(
             partial_global_mesh,
             partial_global_qualities,
             vm_params,
-            logger,
             j,
+            logger,
         )
 
     # def process_j(j):
