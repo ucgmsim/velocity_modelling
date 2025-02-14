@@ -5,7 +5,8 @@ from velocity_modelling.cvm.registry import (
     TomographyData,
     PartialGlobalSurfaceDepths,
     VTYPE,
-    interpolate_global_surface,
+    find_global_adjacent_points_vectorized,
+    interpolate_global_surface_vectorized,
 )
 from velocity_modelling.cvm.interpolate import (
     linear_interpolation,
@@ -185,56 +186,53 @@ def main(
         Flag indicating if the point is on the boundary.
     """
 
+    # Convert surf_depth to a NumPy array for fast indexing
     surf_depth_ascending = (
         np.array(nz_tomography_data.surf_depth)[::-1] * 1000
     )  # convert to meters
-    # Find the index of the first "surface" above the data point in question
     count = len(surf_depth_ascending) - np.searchsorted(
         surf_depth_ascending, dep, side="right"
-    )  #
-
-    # count = 0
-    # # Find the index of the first "surface" above the data point in question
-    # while dep < nz_tomography_data.surf_depth[count] * 1000: # convert to meters
-    #     count += 1
-    #
-    # if count != count2:
-    #     print(count, count2)
-    #     print("Error: Depth point below the extent represented in the 1D velocity model file.")
-    #     return
-
-    ind_above = count - 1
-    ind_below = count
-
-    ind_above, ind_below = count - 1, count
-
-    # Find the adjacent points for interpolation from the first surface
-    adjacent_points = nz_tomography_data.surface[0]["vp"].find_global_adjacent_points(
-        mesh_vector
     )
 
-    # Loop over the depth points and obtain the vp, vs, and rho values using interpolation between "surfaces"
-    for vtype in VTYPE:  # vp, vs, rho
-        surface_pointer_above = nz_tomography_data.surface[ind_above][vtype.name]
-        surface_pointer_below = nz_tomography_data.surface[ind_below][vtype.name]
+    # # Find the index of the first "surface" above the data point in question
+    # while dep < nz_tomography_data.surf_depth[count] * 1000:
+    #     count += 1
 
-        val_above = interpolate_global_surface(
-            surface_pointer_above, mesh_vector, adjacent_points
-        )
-        val_below = interpolate_global_surface(
-            surface_pointer_below, mesh_vector, adjacent_points
-        )
+    # Indices for above and below
+    ind_above, ind_below = count - 1, count
 
-        dep_above = nz_tomography_data.surf_depth[ind_above] * 1000
-        dep_below = nz_tomography_data.surf_depth[ind_below] * 1000
-        val = linear_interpolation(dep_above, dep_below, val_above, val_below, dep)
+    # Vectorized search for adjacent points
+    adjacent_points = find_global_adjacent_points_vectorized(
+        nz_tomography_data.surface[0]["vp"], mesh_vector
+    )
 
-        if vtype.name == "vp":
-            qualities_vector.vp[zInd] = val
-        elif vtype.name == "vs":
-            qualities_vector.vs[zInd] = val
-        elif vtype.name == "rho":
-            qualities_vector.rho[zInd] = val
+    # Extract surfaces and depths as NumPy arrays
+    surfaces_above = np.array(
+        [nz_tomography_data.surface[ind_above][vtype.name] for vtype in VTYPE]
+    )
+    surfaces_below = np.array(
+        [nz_tomography_data.surface[ind_below][vtype.name] for vtype in VTYPE]
+    )
+
+    # Perform vectorized interpolation for all velocity types at once
+    vals_above = interpolate_global_surface_vectorized(
+        surfaces_above, mesh_vector, adjacent_points
+    )
+    vals_below = interpolate_global_surface_vectorized(
+        surfaces_below, mesh_vector, adjacent_points
+    )
+
+    # Convert depth values once
+    dep_above = nz_tomography_data.surf_depth[ind_above] * 1000
+    dep_below = nz_tomography_data.surf_depth[ind_below] * 1000
+
+    # Perform vectorized linear interpolation
+    vals = linear_interpolation(dep_above, dep_below, vals_above, vals_below, dep)
+
+    # Assign values in one step
+    qualities_vector.vp[zInd], qualities_vector.vs[zInd], qualities_vector.rho[zInd] = (
+        vals
+    )
 
     # Calculate relative depth
     relative_depth = partial_global_surface_depths.depth[1] - dep
