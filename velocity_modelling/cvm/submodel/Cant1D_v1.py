@@ -23,7 +23,9 @@ def main(
     depths = (
         np.array(velo_mod_1d_data.dep) * -1000
     )  # convert to meters. negative being downwards
-    idx = np.searchsorted(depths, dep, side="right") - 1
+    idx = len(depths) - np.searchsorted(
+        depths[::-1], dep, side="right"
+    )  # depths are in decending order, so reverse the array
 
     if idx >= 0:
         qualities_vector.rho[zInd] = velo_mod_1d_data.rho[idx]

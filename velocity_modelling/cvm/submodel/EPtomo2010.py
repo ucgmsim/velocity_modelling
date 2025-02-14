@@ -185,12 +185,28 @@ def main(
         Flag indicating if the point is on the boundary.
     """
 
-    count = 0
+    surf_depth_ascending = (
+        np.array(nz_tomography_data.surf_depth)[::-1] * 1000
+    )  # convert to meters
     # Find the index of the first "surface" above the data point in question
-    while dep < nz_tomography_data.surf_depth[count] * 1000:
-        count += 1
+    count = len(surf_depth_ascending) - np.searchsorted(
+        surf_depth_ascending, dep, side="right"
+    )  #
+
+    # count = 0
+    # # Find the index of the first "surface" above the data point in question
+    # while dep < nz_tomography_data.surf_depth[count] * 1000: # convert to meters
+    #     count += 1
+    #
+    # if count != count2:
+    #     print(count, count2)
+    #     print("Error: Depth point below the extent represented in the 1D velocity model file.")
+    #     return
+
     ind_above = count - 1
     ind_below = count
+
+    ind_above, ind_below = count - 1, count
 
     # Find the adjacent points for interpolation from the first surface
     adjacent_points = nz_tomography_data.surface[0]["vp"].find_global_adjacent_points(
@@ -226,12 +242,11 @@ def main(
     # Apply GTL and special offshore smoothing if necessary
     if gtl and not nz_tomography_data.special_offshore_tapering:
         if relative_depth <= 350:
-            ely_taper_depth = 350
             v30gtl(
                 mesh_vector.vs30,
                 qualities_vector.vs[zInd],
                 relative_depth,
-                ely_taper_depth,
+                350,  # Ely (2010) GTL taper depth
                 qualities_vector,
                 zInd,
             )
@@ -250,12 +265,11 @@ def main(
                 nz_tomography_data.offshore_basin_model_1d,
             )
         elif relative_depth <= 350:
-            ely_taper_depth = 350
             v30gtl(
                 mesh_vector.vs30,
                 qualities_vector.vs[zInd],
                 relative_depth,
-                ely_taper_depth,
+                350,  # Ely (2010) GTL taper depth
                 qualities_vector,
                 zInd,
             )

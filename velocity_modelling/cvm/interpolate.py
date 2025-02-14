@@ -1,6 +1,8 @@
 import numpy as np
+import numba
 
 
+@numba.jit(nopython=True)
 def linear_interpolation(
     p1: np.float64, p2: np.float64, v1: np.float64, v2: np.float64, p3: np.float64
 ):
@@ -28,6 +30,7 @@ def linear_interpolation(
     return v1 + (v2 - v1) * (p3 - p1) / (p2 - p1)
 
 
+@numba.jit(nopython=True)
 def bi_linear_interpolation(
     x1: np.float64,
     x2: np.float64,
@@ -57,13 +60,16 @@ def bi_linear_interpolation(
     float
         Interpolated value at the given x, y.
     """
+    dx = x2 - x1
+    dy = y2 - y1
+    if dx == 0 or dy == 0:
+        raise ValueError("Error: Zero division in bi-linear interpolation.")
+
     A = q11 * (x2 - x) * (y2 - y)
     B = q21 * (x - x1) * (y2 - y)
     C = q12 * (x2 - x) * (y - y1)
     D = q22 * (x - x1) * (y - y1)
-    try:
-        E = 1 / (x2 - x1) / (y2 - y1)
-    except ZeroDivisionError:
-        raise ValueError("Error: Zero division in bi-linear interpolation.")
+
+    E = 1 / (dx * dy)
 
     return (A + B + C + D) * E

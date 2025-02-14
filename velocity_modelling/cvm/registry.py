@@ -70,6 +70,7 @@ def interpolate_global_surface_depths(
     calculation_log : CalculationLog
         Object containing calculation data and output directory.
     """
+    # TODO: Vectorize this!!!
     for i in range(len(global_surfaces.surface)):
         global_surf_read = global_surfaces.surface[i]
         adjacent_points = global_surf_read.find_global_adjacent_points(mesh_vector)
@@ -77,6 +78,13 @@ def interpolate_global_surface_depths(
             global_surf_read, mesh_vector, adjacent_points
         )
 
+    # Enforce surface depth constraints from bottom-up
+    # enforced_mask = np.diff(partial_global_surface_depth.depth) < 0  # Identify where depth needs correction
+    # if np.any(enforced_mask):
+    #     partial_global_surface_depth.depth[1:][enforced_mask] = partial_global_surface_depth.depth[:-1][enforced_mask]
+    #     #calculation_log.nPointsGlobalSurfacesEnforced += np.count_nonzero(enforced_mask)
+
+    # The below is replaced by above numpy code
     for i in reversed(range(len(global_surfaces.surface))):
         top_val = partial_global_surface_depth.depth[i - 1]
         bot_val = partial_global_surface_depth.depth[i]
@@ -304,7 +312,9 @@ class MeshVector:
 
 class PartialGlobalQualities:
     def __init__(self, lon_grid_dim_max: int, dep_grid_dim_max: int):
-        self.vp = np.zeros((lon_grid_dim_max, dep_grid_dim_max), dtype=np.float64)
+        self.vp = np.zeros(
+            (lon_grid_dim_max, dep_grid_dim_max), dtype=np.float64
+        )  # TODO: why dim max??
         self.vs = np.zeros((lon_grid_dim_max, dep_grid_dim_max), dtype=np.float64)
         self.rho = np.zeros((lon_grid_dim_max, dep_grid_dim_max), dtype=np.float64)
         self.inbasin = np.zeros((lon_grid_dim_max, dep_grid_dim_max), dtype=bool)
