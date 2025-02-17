@@ -349,10 +349,10 @@ def assign_qualities(
 
     # calculate vs30 (used as a proxy to determine if point is on- or off-shore, only if using tomography)
     if nz_tomography_data.tomography_loaded and cvm_registry.vm_global_params["GTL"]:
-        nz_tomography_data.calculate_vs30_from_tomo_vs30_surface_vectorized(
+        nz_tomography_data.calculate_vs30_from_tomo_vs30_surface(
             mesh_vector
         )  # mesh_vector.vs30 updated
-        nz_tomography_data.calculate_distance_from_shoreline_vectorized(
+        nz_tomography_data.calculate_distance_from_shoreline(
             mesh_vector
         )  # mesh_vector.distance_from_shoreline updated
 
@@ -384,7 +384,7 @@ def assign_qualities(
             len(global_surfaces.surface)
         )
         partial_basin_surface_depths_list_b = [
-            PartialBasinSurfaceDepths(mesh_vector.nz) for basin_data in basin_data_list
+            PartialBasinSurfaceDepths(basin_data) for basin_data in basin_data_list
         ]
 
         original_lat = mesh_vector.lat

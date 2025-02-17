@@ -55,84 +55,6 @@ class GlobalSurfaceRead:
 import numpy as np
 
 
-def find_global_adjacent_points_vectorized(global_surfaces, mesh_vector):
-    """
-    Vectorized function to find adjacent points for all global surfaces.
-    Returns a structured NumPy array instead of a list.
-    """
-
-    lat = mesh_vector.lat
-    lon = mesh_vector.lon
-
-    num_surfaces = len(global_surfaces.surface)
-
-    # Define a structured array with fields
-    adjacent_points_dtype = np.dtype(
-        [
-            ("lat_ind", int, (2,)),  # Two indices for bilinear interpolation
-            ("lon_ind", int, (2,)),
-            ("in_surface_bounds", bool),
-        ]
-    )
-
-    adjacent_points = np.zeros(num_surfaces, dtype=adjacent_points_dtype)
-
-    lats = np.array([s.lati for s in global_surfaces.surface])
-    lons = np.array([s.loni for s in global_surfaces.surface])
-
-    lat_idx = np.searchsorted(lats, lat, side="left")
-    lon_idx = np.searchsorted(lons, lon, side="left")
-
-    valid_lat = (lat_idx > 0) & (lat_idx < lats.shape[1])
-    valid_lon = (lon_idx > 0) & (lon_idx < lons.shape[1])
-
-    adjacent_points["lat_ind"][valid_lat] = np.column_stack(
-        (lat_idx[valid_lat] - 1, lat_idx[valid_lat])
-    )
-    adjacent_points["lon_ind"][valid_lon] = np.column_stack(
-        (lon_idx[valid_lon] - 1, lon_idx[valid_lon])
-    )
-
-    adjacent_points["in_surface_bounds"] = valid_lat & valid_lon
-
-    return adjacent_points
-
-
-def interpolate_global_surface_vectorized(
-    global_surfaces, mesh_vector, adjacent_points
-):
-    """
-    Vectorized interpolation using the structured NumPy array from adjacent_points.
-    """
-
-    lons = np.array([s.loni for s in global_surfaces.surface])
-    lats = np.array([s.lati for s in global_surfaces.surface])
-    rasters = np.array([s.raster for s in global_surfaces.surface])
-
-    lon_inds = adjacent_points["lon_ind"]
-    lat_inds = adjacent_points["lat_ind"]
-
-    x1, x2 = lons[:, lon_inds[:, 0]], lons[:, lon_inds[:, 1]]
-    y1, y2 = lats[:, lat_inds[:, 0]], lats[:, lat_inds[:, 1]]
-
-    q11 = rasters[:, lon_inds[:, 0], lat_inds[:, 0]]
-    q12 = rasters[:, lon_inds[:, 0], lat_inds[:, 1]]
-    q21 = rasters[:, lon_inds[:, 1], lat_inds[:, 0]]
-    q22 = rasters[:, lon_inds[:, 1], lat_inds[:, 1]]
-
-    denom = (x2 - x1) * (y2 - y1)
-    weights = ((x2 - mesh_vector.lon) * (y2 - mesh_vector.lat)) / denom
-
-    interp_values = (
-        weights * q11
-        + ((x2 - mesh_vector.lon) * (mesh_vector.lat - y1)) / denom * q12
-        + ((mesh_vector.lon - x1) * (y2 - mesh_vector.lat)) / denom * q21
-        + ((mesh_vector.lon - x1) * (mesh_vector.lat - y1)) / denom * q22
-    )
-
-    return interp_values
-
-
 def interpolate_global_surface_depths(
     partial_global_surface_depth: PartialGlobalSurfaceDepths,
     global_surfaces: GlobalSurfaces,
@@ -151,32 +73,13 @@ def interpolate_global_surface_depths(
     calculation_log : CalculationLog
         Object containing calculation data and output directory.
     """
-    # for i in range(len(global_surfaces.surface)):
-    #     global_surf_read = global_surfaces.surface[i]
-    #     adjacent_points = global_surf_read.find_global_adjacent_points(mesh_vector)
-    #     partial_global_surface_depth.depth[i] = interpolate_global_surface(
-    #         global_surf_read, mesh_vector, adjacent_points
-    #     )
-    #
+    for i in range(len(global_surfaces.surface)):
+        global_surf_read = global_surfaces.surface[i]
+        adjacent_points = global_surf_read.find_global_adjacent_points(mesh_vector)
+        partial_global_surface_depth.depth[i] = interpolate_global_surface(
+            global_surf_read, mesh_vector, adjacent_points
+        )
 
-    # Step 1: Vectorized computation of adjacent points
-    adjacent_points = find_global_adjacent_points_vectorized(
-        global_surfaces, mesh_vector
-    )
-
-    # Step 2: Vectorized interpolation
-    partial_global_surface_depth.depth = interpolate_global_surface_vectorized(
-        global_surfaces, mesh_vector, adjacent_points
-    )
-
-    # for i in reversed(range(len(global_surfaces.surface))):
-    #     top_val = partial_global_surface_depth.depth[i - 1]
-    #     bot_val = partial_global_surface_depth.depth[i]
-    #     if top_val < bot_val:
-    #         partial_global_surface_depth.depth[i] = partial_global_surface_depth.depth[
-    #             i - 1
-    #         ]
-    # calculation_log.nPointsGlobalSurfacesEnforced += 1
     depths = partial_global_surface_depth.depth
 
     # Find indices where top_val < bot_val
@@ -815,17 +718,6 @@ class TomographyData:
             self.vs30, mesh_vector, adjacent_points
         )
 
-    def calculate_vs30_from_tomo_vs30_surface_vectorized(self, mesh_vector: MeshVector):
-        """
-        Optimized version of calculate_vs30_from_tomo_vs30_surface using vectorization.
-        """
-
-        adjacent_points = find_global_adjacent_points_vectorized(self.vs30, mesh_vector)
-
-        mesh_vector.vs30 = interpolate_global_surface_vectorized(
-            self.vs30, mesh_vector, adjacent_points
-        )
-
     def calculate_distance_from_shoreline(self, mesh_vector: MeshVector):
         """
         Calculate the distance from the shoreline for a given mesh vector.
@@ -844,21 +736,6 @@ class TomographyData:
 
         # Interpolate the global surface value at the given latitude and longitude
         mesh_vector.distance_from_shoreline = interpolate_global_surface(
-            self.offshore_distance_surface, mesh_vector, adjacent_points
-        )
-
-    def calculate_distance_from_shoreline_vectorized(self, mesh_vector: MeshVector):
-        """
-        Optimized version of calculate_distance_from_shoreline using vectorization.
-        """
-
-        # Find adjacent points using a vectorized approach
-        adjacent_points = find_global_adjacent_points_vectorized(
-            self.offshore_distance_surface, mesh_vector
-        )
-
-        # Perform vectorized interpolation
-        mesh_vector.distance_from_shoreline = interpolate_global_surface_vectorized(
             self.offshore_distance_surface, mesh_vector, adjacent_points
         )
 
