@@ -134,9 +134,10 @@ def interpolate_global_surface(
         assert x1 != x2
         assert y1 != y2
 
-        return bi_linear_interpolation(
+        q = bi_linear_interpolation(
             x1, x2, y1, y2, q11, q12, q21, q22, mesh_vector.lon, mesh_vector.lat
         )
+        return q
 
     # if point lies within the extension zone, take on the value of the closest point
     elif adjacent_points.in_lat_extension_zone:
@@ -204,6 +205,65 @@ class BasinSurfaceRead:
         self.min_lat = None
         self.max_lon = None
         self.min_lon = None
+
+    def find_basin_adjacent_points(self, mesh_vector: MeshVector):
+        """
+        Find the adjacent point to the mesh vector in the basin surface.
+
+        Parameters
+        ----------
+        mesh_vector : MeshVector
+            The mesh vector.
+
+        Returns
+        -------
+        AdjacentPoints
+            The indices of the adjacent points.
+        """
+        lat = mesh_vector.lat
+        lon = mesh_vector.lon
+
+        lat_assigned_flag = False
+        lon_assigned_flag = False
+
+        adjacent_points = AdjacentPoints()
+
+        # Handle latitude
+        if self.lati[0] > self.lati[-1]:  # descending order
+            lat_idx = np.searchsorted(self.lati[::-1], lat)
+            lat_idx = len(self.lati) - lat_idx - 1
+        else:  # ascending order
+            lat_idx = np.searchsorted(self.lati, lat)
+
+        if 0 < lat_idx < len(self.lati):
+            adjacent_points.lat_ind = [lat_idx - 1, lat_idx]
+        elif lat_idx == 0 and self.lati[0] == lat:
+            adjacent_points.lat_ind = [0, 1]
+        elif lat_idx == len(self.lati) and self.lati[-1] == lat:
+            adjacent_points.lat_ind = [len(self.lati) - 1, len(self.lati)]
+
+        # Handle longitude
+        if self.loni[0] > self.loni[-1]:  # descending order
+            lon_idx = np.searchsorted(self.loni[::-1], lon)
+            lon_idx = len(self.loni) - lon_idx - 1
+        else:  # ascending order
+            lon_idx = np.searchsorted(self.loni, lon)
+
+        if 0 < lon_idx < len(self.loni):
+            adjacent_points.lon_ind = [lon_idx - 1, lon_idx]
+        elif lon_idx == 0 and self.loni[0] == lon:
+            adjacent_points.lon_ind = [0, 1]
+        elif lon_idx == len(self.loni) and self.loni[-1] == lon:
+            adjacent_points.lon_ind = [len(self.loni) - 1, len(self.loni)]
+
+        if adjacent_points.lat_ind != [0, 0] and adjacent_points.lon_ind != [0, 0]:
+            adjacent_points.in_surface_bounds = True
+        else:
+            print(
+                f"Error, basin point lies outside of the extent of the basin surface ({lon}, {lat})."
+            )
+
+        return adjacent_points
 
 
 class GlobalMesh:
@@ -381,7 +441,7 @@ class GlobalSurfaceRead:
                 self.lati if is_ascending else self.lati[::-1]
             )  # reverse the array if sorted in descending order
 
-            index = bisect.bisect_left(lati, lat)
+            index = np.searchsorted(lati, lat)
             index = (
                 self.nlat - index if not is_ascending else index
             )  # reverse the index if sorted in descending order
@@ -397,7 +457,7 @@ class GlobalSurfaceRead:
                 self.loni if is_ascending else self.loni[::-1]
             )  # reverse the array if sorted in descending order
 
-            index = bisect.bisect_left(loni, lon)
+            index = np.searchsorted(loni, lon)
             index = (
                 self.nlon - index if not is_ascending else index
             )  # reverse the index if sorted in descending order
@@ -765,12 +825,13 @@ class InBasin:
 
 class PartialBasinSurfaceDepths:
     def __init__(self, basin_data: BasinData):
-        # List of arrays of depths for each surface associated with each boundary
-        # self.depth[i][j] is the depth of the j-th surface for the i-th boundary
-        self.depth = [
-            np.zeros(len(surfaces_for_a_boundary), dtype=np.float64)
-            for surfaces_for_a_boundary in basin_data.surface  # List of basin surfaces for each boundary
-        ]
+        # List of arrays of depths for each surface of the basin
+        # self.depth[i] is the depth of the i-th surface
+        self.depth = np.zeros(len(basin_data.surface), dtype=np.float64)
+
+
+class QualitiesVector:
+    pass
 
 
 class BasinData:
@@ -794,25 +855,17 @@ class BasinData:
         basin_info = cvm_registry.get_info("basin", basin_name)
 
         self.boundary = [
-            cvm_registry.load_basin_boundary(boundary["path"])
-            for boundary in basin_info["boundaries"]
+            cvm_registry.load_basin_boundary(boundary_path)
+            for boundary_path in basin_info["boundaries"]
         ]
-        self.surface = []
-        self.submodel = []
-        for boundary in basin_info["boundaries"]:
-            # if this basin has N boundaries,  self.surface[i] and self.submodel[i]  (where i=0...N-1)
-            # are lists of surfaces and submodels for each boundary i.
-            boundary_surfaces = []
-            boundary_submodels = []
-            for surface in boundary["surfaces"]:
-
-                boundary_surfaces.append(cvm_registry.load_basin_surface(surface))
-                boundary_submodels.append(cvm_registry.load_basin_submodel(surface))
-
-            self.surface.append(
-                boundary_surfaces
-            )  # List of basin surfaces for each boundary
-            self.submodel.append(boundary_submodels)
+        self.surface = [
+            cvm_registry.load_basin_surface(surface)
+            for surface in basin_info["surfaces"]
+        ]
+        self.submodel = [
+            cvm_registry.load_basin_submodel(surface)
+            for surface in basin_info["surfaces"]
+        ]
 
         self.perturbation_data = None
         self.logger = logger
@@ -979,7 +1032,7 @@ class BasinData:
 
             if not (
                 np.min(boundary[:, 0]) <= mesh_vector.lon <= np.max(boundary[:, 0])
-                and np.min(boundary[:, 1]) <= mesh_vector.lon <= np.max(boundary[:, 1])
+                and np.min(boundary[:, 1]) <= mesh_vector.lat <= np.max(boundary[:, 1])
             ):
                 continue  # outside of basin
 
@@ -1023,46 +1076,47 @@ class BasinData:
         mesh_vector : MeshVector
             Struct containing a single lat-lon point with one or more depths.
         """
-        for boundary_ind, boundary in enumerate(self.boundary):
-            surfaces = self.surface[boundary_ind]
+        for surface_ind, surface in enumerate(self.surface):
 
-            if in_basin.in_basin_lat_lon[boundary_ind]:
-                for surface_ind, surface in enumerate(surfaces):
-                    adjacent_points = surface.find_global_adjacent_points(mesh_vector)
+            if np.any(
+                in_basin.in_basin_lat_lon
+            ):  # see if this is in any boundary of this basin
+                adjacent_points = surface.find_basin_adjacent_points(mesh_vector)
 
-                    x1 = surface.loni[adjacent_points.lon_ind[0]]
-                    x2 = surface.loni[adjacent_points.lon_ind[1]]
-                    y1 = surface.lati[adjacent_points.lat_ind[0]]
-                    y2 = surface.lati[adjacent_points.lat_ind[1]]
-                    q11 = surface.raster[adjacent_points.lon_ind[0]][
-                        adjacent_points.lat_ind[0]
-                    ]
-                    q12 = surface.raster[adjacent_points.lon_ind[0]][
-                        adjacent_points.lat_ind[1]
-                    ]
-                    q21 = surface.raster[adjacent_points.lon_ind[1]][
-                        adjacent_points.lat_ind[0]
-                    ]
-                    q22 = surface.raster[adjacent_points.lon_ind[1]][
-                        adjacent_points.lat_ind[1]
-                    ]
-                    partial_basin_surface_depths.depth[boundary_ind][surface_ind] = (
-                        bi_linear_interpolation(
-                            x1,
-                            x2,
-                            y1,
-                            y2,
-                            q11,
-                            q12,
-                            q21,
-                            q22,
-                            mesh_vector.lon,
-                            mesh_vector.lat,
-                        )
+                x1 = surface.loni[adjacent_points.lon_ind[0]]
+                x2 = surface.loni[adjacent_points.lon_ind[1]]
+                y1 = surface.lati[adjacent_points.lat_ind[0]]
+                y2 = surface.lati[adjacent_points.lat_ind[1]]
+                q11 = surface.raster[adjacent_points.lon_ind[0]][
+                    adjacent_points.lat_ind[0]
+                ]
+                q12 = surface.raster[adjacent_points.lon_ind[0]][
+                    adjacent_points.lat_ind[1]
+                ]
+
+                q21 = surface.raster[adjacent_points.lon_ind[1]][
+                    adjacent_points.lat_ind[0]
+                ]
+
+                q22 = surface.raster[adjacent_points.lon_ind[1]][
+                    adjacent_points.lat_ind[1]
+                ]
+                partial_basin_surface_depths.depth[surface_ind] = (
+                    bi_linear_interpolation(
+                        x1,
+                        x2,
+                        y1,
+                        y2,
+                        q11,
+                        q12,
+                        q21,
+                        q22,
+                        mesh_vector.lon,
+                        mesh_vector.lat,
                     )
+                )
             else:
-                for surface_ind, surface in enumerate(surfaces):
-                    partial_basin_surface_depths.depth[boundary_ind][surface_ind] = None
+                partial_basin_surface_depths.depth[surface_ind] = None
 
     def enforce_surface_depths(
         self,
@@ -1103,27 +1157,28 @@ class BasinData:
         #             bot_val = partial_basin_surface_depths.depth[boundary_ind][j + 1]
         #             if top_val < bot_val:
         #                 partial_basin_surface_depths.depth[boundary_ind][j] = bot_val
-        for boundary_ind, surface in enumerate(self.surface):
-            depths = partial_basin_surface_depths.depth[boundary_ind]
-            # Find the first NaN value
-            nan_indices = np.where(np.isnan(depths))[0]
-            if nan_indices.size > 0:
-                nan_ind = nan_indices[0]
-            else:
-                nan_ind = len(depths)
-            # Enforce stratigraphy for depths before the first NaN
-            for i in range(nan_ind - 1, 0, -1):
-                if depths[i - 1] < depths[i]:
-                    depths[i - 1] = depths[i]
-            # Enforce stratigraphy for depths after the first NaN
-            for i in range(nan_ind - 1):
-                if depths[i] < depths[i + 1]:
-                    depths[i] = depths[i + 1]
+
+        depths = partial_basin_surface_depths.depth
+        # Find the first NaN value
+        nan_indices = np.where(np.isnan(depths))[0]
+        if nan_indices.size > 0:
+            nan_ind = nan_indices[0]
+        else:
+            nan_ind = len(depths)
+        # Enforce stratigraphy for depths before the first NaN
+        for i in range(nan_ind - 1, 0, -1):
+            if depths[i - 1] < depths[i]:
+                depths[i - 1] = depths[i]
+        # Enforce stratigraphy for depths after the first NaN
+        for i in range(nan_ind - 1):
+            if depths[i] < depths[i + 1]:
+                depths[i] = depths[i + 1]
 
     def assign_basin_qualities(
         self,
         partial_basin_surface_depths: PartialBasinSurfaceDepths,
         partial_global_surface_depths: PartialGlobalSurfaceDepths,
+        qualities_vector: QualitiesVector,
         nz_tomography_data: TomographyData,
         mesh_vector: MeshVector,
         in_any_basin_lat_lon: bool,
@@ -1162,16 +1217,17 @@ class BasinData:
         """
         # Determine the indices of the basin surfaces above and below the given depth
         ind_above = self.determine_basin_surface_above(
-            partial_basin_surface_depths, depth, basin_num
+            partial_basin_surface_depths, depth
         )
         ind_below = self.determine_basin_surface_below(
-            partial_basin_surface_depths, depth, basin_num
+            partial_basin_surface_depths, depth
         )
 
         # Call the sub-velocity models to assign the qualities
         self.call_basin_sub_velocity_models(
             partial_basin_surface_depths,
             partial_global_surface_depths,
+            qualities_vector,
             nz_tomography_data,
             mesh_vector,
             in_any_basin_lat_lon,
@@ -1183,7 +1239,7 @@ class BasinData:
         )
 
     def determine_basin_surface_above(
-        self, partial_basin_surface_depths: PartialBasinSurfaceDepths, depth, basin_num
+        self, partial_basin_surface_depths: PartialBasinSurfaceDepths, depth
     ):
         """
         Determine the index of the basin surface directly above the given depth.
@@ -1194,22 +1250,21 @@ class BasinData:
             Struct containing depths for all applicable basin surfaces at one lat-lon location.
         depth : float
             The depth of the grid point to determine the properties at.
-        basin_num : int
-            The basin number pertaining to the basin of interest.
 
         Returns
         -------
         int
             Index of the surface directly above the grid point.
         """
+        # partial_basin_surface_depths.depth is a list of arrays of depths for each surface associated with each boundary
+        #        for i in range(len(partial_basin_surface_depths.depth)-1,-1,-1):
 
-        depths = partial_basin_surface_depths.depth[basin_num]
+        depths = partial_basin_surface_depths.depth  # should test surface number
+
         valid_indices = np.where((~np.isnan(depths)) & (depths >= depth))[0]
         return valid_indices[0] if valid_indices.size > 0 else 0
 
-    def determine_basin_surface_below(
-        self, partial_basin_surface_depths, depth, basin_num
-    ):
+    def determine_basin_surface_below(self, partial_basin_surface_depths, depth):
         """
         Determine the index of the basin surface directly below the given depth.
 
@@ -1219,15 +1274,13 @@ class BasinData:
             Struct containing depths for all applicable basin surfaces at one lat-lon location.
         depth : float
             The depth of the grid point to determine the properties at.
-        basin_num : int
-            The basin number pertaining to the basin of interest.
 
         Returns
         -------
         int
             Index of the surface directly below the grid point.
         """
-        depths = partial_basin_surface_depths.depth[basin_num]
+        depths = partial_basin_surface_depths.depth
         valid_indices = np.where((~np.isnan(depths)) & (depths <= depth))[0]
         return valid_indices[0] if valid_indices.size > 0 else 0
 
@@ -1255,16 +1308,16 @@ class BasinData:
         None
         """
 
-        # assume boundary zero is the largest, boundary one needs to be fully enclosed within this boundary
-        if in_basin.in_basin_lat_lon[0]:
+        if np.any(in_basin.in_basin_lat_lon):
+
             self.enforce_surface_depths(partial_basin_surface_depths)
             # TODO: check if this is correct
-            top_lim = partial_basin_surface_depths.depth[0][
+            top_lim = partial_basin_surface_depths.depth[
                 0
-            ]  # the first surface of the first boundary
-            bot_lim = partial_basin_surface_depths.depth[-1][
+            ]  # the depth of the first surface
+            bot_lim = partial_basin_surface_depths.depth[
                 -1
-            ]  # the last surface of the last boundary
+            ]  # the depth of the last surface
 
             in_basin.in_basin_depth = (bot_lim <= mesh_vector.z) & (
                 mesh_vector.z <= top_lim
@@ -1300,8 +1353,9 @@ class BasinData:
 
     def call_basin_sub_velocity_models(
         self,
-        partial_basin_surface_depths,
-        partial_global_surface_depths,
+        partial_basin_surface_depths: PartialBasinSurfaceDepths,
+        partial_global_surface_depths: PartialGlobalSurfaceDepths,
+        qualities_vector: QualitiesVector,
         nz_tomography_data,
         mesh_vector: MeshVector,
         in_any_basin_lat_lon,
@@ -1341,49 +1395,17 @@ class BasinData:
         -------
         None
         """
-        submodel_name = self.cvm_registry.basin_submodel_names[basin_num][ind_above]
-        qualities_vector = mesh_vector.qualities_vector
+        submodel_name, submodel_data = self.submodel[ind_above]
 
-        # Construct the module path
-        module_path = f"submodel.{submodel_name}"
+        if submodel_name == "NaNsubMod":
+            self.nan_sub_mod(z_ind)
 
-        try:
-            # Dynamically import the module
-            submodel_module = importlib.import_module(module_path)
-            # Retrieve the main function
-            if hasattr(submodel_module, "main"):
-                main_func = submodel_module.main
-                sig = inspect.signature(main_func)
+        elif submodel_name in ["Cant1D_v1", "Cant1D_v2", "Cant1D_v2_Pliocene_Enforced"]:
+            from velocity_modelling.cvm.submodel import Cant1D_v1 as Cant1D_v1
 
-                # Create a dictionary of available arguments
-                available_args = {
-                    "z_ind": z_ind,
-                    "qualities_vector": qualities_vector,
-                    "partial_basin_surface_depths": partial_basin_surface_depths,
-                    "basin_num": basin_num,
-                    "depth": depth,
-                    "partial_global_surface_depths": partial_global_surface_depths,
-                    "nz_tomography_data": nz_tomography_data,
-                    "mesh_vector": mesh_vector,
-                    "in_any_basin_lat_lon": in_any_basin_lat_lon,
-                    "on_boundary": on_boundary,
-                }
-
-                # Filter the available arguments to match the main function's parameters
-                filtered_args = {
-                    k: v for k, v in available_args.items() if k in sig.parameters
-                }
-
-                # Call the main function with the filtered arguments
-                main_func(**filtered_args)
-            else:
-                raise AttributeError(
-                    f"The module '{module_path}' does not have a 'main' function."
-                )
-        except ModuleNotFoundError:
-            raise ImportError(f"Submodel module '{module_path}' not found.")
-        except AttributeError as e:
-            raise e
+            Cant1D_v1.main(z_ind, depth, qualities_vector, submodel_data)
+        else:
+            raise ValueError(f"Error: Submodel {submodel_name} not found in registry.")
 
 
 class QualitiesVector:
@@ -1490,13 +1512,14 @@ class QualitiesVector:
                     basin_data.assign_basin_qualities(
                         partial_basin_surface_depths_list[i],
                         partial_global_surface_depths,
+                        self,
                         nz_tomography_data,
                         mesh_vector,
                         in_any_basin_lat_lon,
                         on_boundary,
                         z,
-                        i,
-                        k,
+                        i,  # basin_num
+                        k,  # z_ind
                     )
 
             if not basin_flag:
@@ -1505,7 +1528,7 @@ class QualitiesVector:
                     z, partial_global_surface_depths
                 )
 
-                velo_mod_name = global_model_parameters["velo_submodels"][velo_mod_ind]
+                velo_mod_name = global_model_parameters["submodels"][velo_mod_ind]
                 self.call_sub_velocity_model(
                     velo_mod_name,
                     z,
@@ -1520,7 +1543,9 @@ class QualitiesVector:
                 )
 
             if z > partial_global_surface_depths.depth[1]:
-                self.nan_sub_mod(k)
+                self.rho[k] = np.nan
+                self.vp[k] = np.nan
+                self.vs[k] = np.nan
 
             basin_flag = False
 
@@ -1529,14 +1554,10 @@ class QualitiesVector:
             #     if mesh_vector.z[k] > 0:
             #         self.nan_sub_mod(k)
             mask = mesh_vector.z > 0
+
+            self.rho[mask] = np.nan
             self.vp[mask] = np.nan
             self.vs[mask] = np.nan
-            self.rho[mask] = np.nan
-
-    def nan_sub_mod(self, k):
-        self.vp[k] = np.nan
-        self.vs[k] = np.nan
-        self.rho[k] = np.nan
 
     def find_global_sub_velo_model_ind(
         self,
@@ -1635,6 +1656,19 @@ class QualitiesVector:
             Cant1D_v1.main(k, z, self, velo_mod_1d_data)
         else:
             raise ValueError(f"Error: Submodel {submodel_name} not found in registry.")
+
+    def nan_sub_mod(self, k: int):
+        """
+        Assign NaN values to the velocities and density at the given depth index.
+
+        Parameters
+        ----------
+        k : int
+            The depth index to assign NaN values to.
+        """
+        self.rho[k] = np.nan
+        self.vp[k] = np.nan
+        self.vs[k] = np.nan
 
 
 class CVMRegistry:
@@ -1875,7 +1909,8 @@ class CVMRegistry:
                 assert (
                     len(raster_data) == nlat * nlon
                 ), f"Error: in {basin_surface_path} raster data length mismatch: {len(raster_data)} != {nlat * nlon}"
-                basin_surf_read.raster = raster_data.reshape((nlon, nlat)).T
+                #                basin_surf_read.raster = raster_data.reshape((nlon, nlat)).T
+                basin_surf_read.raster = raster_data.reshape((nlat, nlon)).T
 
                 first_lat = basin_surf_read.lati[0]
                 last_lat = basin_surf_read.lati[nlat - 1]
@@ -1941,13 +1976,13 @@ class CVMRegistry:
         global_model_params = self.vm_global_params
 
         self.log("Loading global velocity submodel data.")
-        for i in range(len(global_model_params["velo_submodels"])):
-            if global_model_params["velo_submodels"][i] == "v1DsubMod":
+        for i in range(len(global_model_params["submodels"])):
+            if global_model_params["submodels"][i] == "v1DsubMod":
                 velo_mod_1d_data = self.load_1d_velo_sub_model(
-                    global_model_params["velo_submodels"][i]
+                    global_model_params["submodels"][i]
                 )
                 self.log("Loaded 1D velocity model data.")
-            elif global_model_params["velo_submodels"][i] == "NaNsubMod":
+            elif global_model_params["submodels"][i] == "NaNsubMod":
                 pass
             else:
                 nz_tomography_data = self.load_tomo_surface_data(
@@ -2067,7 +2102,8 @@ class CVMRegistry:
         for basin_name in basin_names:
             basin = self.get_info("basin", basin_name)
             if "smoothing" in basin:
-                boundary_vec_filename = self.get_full_path(basin["smoothing"]["path"])
+                # Assumed a single smoothing file defined for a basin
+                boundary_vec_filename = self.get_full_path(basin["smoothing"])
 
                 if boundary_vec_filename.exists():
                     self.log(

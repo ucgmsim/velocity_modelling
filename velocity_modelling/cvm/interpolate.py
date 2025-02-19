@@ -30,7 +30,7 @@ def linear_interpolation(
     return v1 + (v2 - v1) * (p3 - p1) / (p2 - p1)
 
 
-@numba.jit(nopython=True)
+# @numba.jit(nopython=True)
 def bi_linear_interpolation(
     x1: np.float64,
     x2: np.float64,
