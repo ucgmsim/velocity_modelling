@@ -4,7 +4,7 @@ from velocity_modelling.cvm.registry import QualitiesVector, VeloMod1DData
 
 def main(
     zInd: int,
-    dep: float,
+    depth: float,
     qualities_vector: QualitiesVector,
     velo_mod_1d_data: VeloMod1DData,
 ):
@@ -21,10 +21,10 @@ def main(
     n.a.
     """
     depths = (
-        np.array(velo_mod_1d_data.dep) * -1000
+        np.array(velo_mod_1d_data.depth) * -1000
     )  # convert to meters. negative being downwards
     idx = len(depths) - np.searchsorted(
-        depths[::-1], dep, side="right"
+        depths[::-1], depth, side="right"
     )  # depths are in decending order, so reverse the array
 
     if idx >= 0:

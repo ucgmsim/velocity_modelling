@@ -679,7 +679,7 @@ class SmoothingBoundary:
 
 class VeloMod1DData:
     def __init__(
-        self, vp: np.ndarray, vs: np.ndarray, rho: np.ndarray, dep: np.ndarray
+        self, vp: np.ndarray, vs: np.ndarray, rho: np.ndarray, depth: np.ndarray
     ):
         """
         Initialize the VeloMod1DData.
@@ -687,9 +687,9 @@ class VeloMod1DData:
         self.vp = vp
         self.vs = vs
         self.rho = rho
-        self.dep = dep
-        self.n_dep = len(vp)  # maybe should be len(dep) but I'm not sure
-        assert len(vp) == len(vs) == len(rho) == len(dep)
+        self.depth = depth
+        self.n_depth = len(vp)  # maybe should be len(dep) but I'm not sure
+        assert len(vp) == len(vs) == len(rho) == len(depth)
 
 
 class VTYPE(Enum):
@@ -1404,6 +1404,48 @@ class BasinData:
             from velocity_modelling.cvm.submodel import Cant1D_v1 as Cant1D_v1
 
             Cant1D_v1.main(z_ind, depth, qualities_vector, submodel_data)
+        elif submodel_name == "PaleogeneSubMod_v1":
+            from velocity_modelling.cvm.submodel import (
+                PaleogeneSubMod_v1 as PaleogeneSubMod_v1,
+            )
+
+            PaleogeneSubMod_v1.main(z_ind, qualities_vector)
+        elif submodel_name == "PlioceneSubMod_v1":
+            from velocity_modelling.cvm.submodel import (
+                PlioceneSubMod_v1 as PlioceneSubMod_v1,
+            )
+
+            PlioceneSubMod_v1.main(z_ind, qualities_vector)
+        elif submodel_name == "MioceneSubMod_v1":
+            from velocity_modelling.cvm.submodel import (
+                MioceneSubMod_v1 as MioceneSubMod_v1,
+            )
+
+            MioceneSubMod_v1.main(z_ind, qualities_vector)
+        elif submodel_name == "BPVSubMod_v1":
+            from velocity_modelling.cvm.submodel import BPVSubMod_v1 as BPVSubMod_v1
+
+            BPVSubMod_v1.main(z_ind, qualities_vector)
+        elif submodel_name == "BPVSubMod_v2":
+            from velocity_modelling.cvm.submodel import BPVSubMod_v2 as BPVSubMod_v2
+
+            BPVSubMod_v2.main(z_ind, qualities_vector)
+        elif submodel_name == "BPVSubMod_v3":
+            from velocity_modelling.cvm.submodel import BPVSubMod_v3 as BPVSubMod_v3
+
+            BPVSubMod_v3.main(
+                z_ind, depth, qualities_vector, partial_basin_surface_depths
+            )
+        elif submodel_name == "BPVSubMod_v4":
+            from velocity_modelling.cvm.submodel import BPVSubMod_v4 as BPVSubMod_v4
+
+            BPVSubMod_v4.main(
+                z_ind,
+                depth,
+                qualities_vector,
+                partial_basin_surface_depths,
+                partial_global_surface_depths,
+            )
         else:
             raise ValueError(f"Error: Submodel {submodel_name} not found in registry.")
 
