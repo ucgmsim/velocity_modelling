@@ -16,7 +16,7 @@ from velocity_modelling.cvm.registry import (
 def write_global_qualities(
     output_dir: Path,
     partial_global_mesh: PartialGlobalMesh,
-    partial_global_qualities,
+    partial_global_qualities: PartialGlobalQualities,
     vm_params: dict,
     lat_ind: int,
     logger: Logger,
@@ -66,7 +66,7 @@ def write_global_qualities(
     vp_data = struct.pack(f"{endian_format}{len(vp)}f", *vp)
     vs_data = struct.pack(f"{endian_format}{len(vs)}f", *vs)
     rho_data = struct.pack(f"{endian_format}{len(rho)}f", *rho)
-    inbasin_data = struct.pack(f"{endian_format}{len(inbasin)}f", *inbasin)
+    inbasin_data = struct.pack(f"{endian_format}{len(inbasin)}B", *inbasin.astype(np.uint8))
 
     # Write the binary data to files
     with open(vp3dfile, mode) as fvp:
@@ -110,13 +110,21 @@ def read_output_files(output_dir: Path):
     for key, file in files.items():
         with open(file, "rb") as f:
             file_content = f.read()
-            num_elements = len(file_content) // 4
-            raw_data = np.array(
-                struct.unpack(f"{endian_format}{num_elements}f", file_content),
-                dtype=np.float32,
-            )
-            completed_mask = ~np.isnan(raw_data)
-            data[key] = raw_data[completed_mask]
+            if key == "inbasin":
+                num_elements = len(file_content)
+                raw_data = np.array(
+                    struct.unpack(f"{endian_format}{num_elements}B", file_content),
+                    dtype=np.uint8,
+                )
+                data[key] = raw_data.astype(bool)
+            else:
+                num_elements = len(file_content) // 4
+                raw_data = np.array(
+                    struct.unpack(f"{endian_format}{num_elements}f", file_content),
+                    dtype=np.float32,
+                )
+                completed_mask = ~np.isnan(raw_data)
+                data[key] = raw_data[completed_mask]
 
     return data
 
@@ -143,7 +151,10 @@ def compare_output_files(
                 f"Data2: max={np.max(data2_trimmed)}, min={np.min(data2_trimmed)} mean={np.mean(data2_trimmed)} std={np.std(data2_trimmed)}"
             )
 
-            difference = data1_trimmed - data2_trimmed
+            if data1_trimmed.dtype == bool:
+                difference = np.logical_xor(data1_trimmed, data2_trimmed)
+            else:
+                difference = data1_trimmed - data2_trimmed
 
             significant_diff_indices = np.where(np.abs(difference) > threshold)[0]
             if significant_diff_indices.size > 0:
