@@ -402,7 +402,7 @@ basin:
         submodel: null
 
 
-  - name: Ranfurly_v20p7s
+  - name: Ranfurly_v20p7
     boundaries:
       - USER20_BASINS/ranfurly_outline.txt
     surfaces:
@@ -412,7 +412,7 @@ basin:
         submodel: null
 
 
-  - name: NE_OTAGO_v20p7
+  - name: NE_Otago_v20p7
     boundaries:
       - USER20_BASINS/NE_otago/NE_otago_A_outline.txt
       - USER20_BASINS/NE_otago/NE_otago_B_outline.txt
@@ -767,11 +767,7 @@ vm:
       - Wakatipu_v20p7
       - Alexandra_v20p7
       - Ranfurly_v20p7
-      - NE_Otago_A_v20p7
-      - NE_Otago_B_v20p7
-      - NE_Otago_C_v20p7
-      - NE_Otago_D_v20p7
-      - NE_Otago_E_v20p7
+      - NE_Otago_v20p7
       - Mosgiel_v20p7
       - Balclutha_v20p7
       - Dunedin_v20p7
@@ -779,34 +775,16 @@ vm:
       - Waitaki_v20p8
       - Hakataramea_v20p8
       - Karamea_v20p11
-      - CollingwoodBasin1_v20p11
-      - CollingwoodBasin2_v20p11
-      - CollingwoodBasin3_v20p11
+      - CollingwoodBasin_v20p11
       - SpringsJunction_v20p11
-      - HawkesBay1_v21p7
-      - HawkesBay2_v21p7
-      - HawkesBay3_v21p7
-      - HawkesBay4_v21p7
-      - Napier1_v21p7
-      - Napier2_v21p7
-      - Napier3_v21p7
-      - Napier4_v21p7
-      - Napier5_v21p7
-      - Napier6_v21p7
-      - GreaterWellington1_v21p7
-      - GreaterWellington2_v21p7
-      - GreaterWellington3_v21p7
-      - GreaterWellington4_v21p7
-      - GreaterWellington5_v21p7
-      - GreaterWellington6_v21p7
-      - Porirua1_v21p7
-      - Porirua2_v21p7
+      - HawkesBay_v21p7
+      - Napier_v21p7
+      - GreaterWellington_v21p7
+      - Porirua_v21p7
       - Gisborne_v21p11
       - SouthernHawkesBay_v21p12
       - Wairarapa_v21p12
-      - Motu_Bay1_v22p3
-      - Motu_Bay2_v22p3
-      - Motu_Bay3_v22p3
+      - Motu_Bay_v22p3
       - Whangaparoa_v23p4
 
   - version: 2.07_students2024

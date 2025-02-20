@@ -371,7 +371,7 @@ class PartialGlobalQualities:
         )  # TODO: why dim max??
         self.vs = np.zeros((lon_grid_dim_max, dep_grid_dim_max), dtype=np.float64)
         self.rho = np.zeros((lon_grid_dim_max, dep_grid_dim_max), dtype=np.float64)
-        self.inbasin = np.zeros((lon_grid_dim_max, dep_grid_dim_max), dtype=bool)
+        self.inbasin = np.zeros((lon_grid_dim_max, dep_grid_dim_max), dtype=np.int8)
 
 
 class GlobalSurfaces:
@@ -1395,6 +1395,8 @@ class BasinData:
         -------
         None
         """
+
+        qualities_vector.inbasin[z_ind] = basin_num
         submodel_name, submodel_data = self.submodel[ind_above]
 
         if submodel_name == "NaNsubMod":
@@ -1455,7 +1457,7 @@ class QualitiesVector:
         self.vp = np.zeros(dep_grid_dim_max, dtype=np.float64)
         self.vs = np.zeros(dep_grid_dim_max, dtype=np.float64)
         self.rho = np.zeros(dep_grid_dim_max, dtype=np.float64)
-        self.inbasin = np.zeros(dep_grid_dim_max, dtype=bool)
+        self.inbasin = np.zeros(dep_grid_dim_max, dtype=np.int8)
 
     def prescribe_velocities(
         self,
@@ -1549,7 +1551,7 @@ class QualitiesVector:
                 in_basin = in_basin_list[i]
                 if in_basin.in_basin_depth[k]:
                     basin_flag = True
-                    self.inbasin[k] = True
+                    self.inbasin[k] = i  # basin number
 
                     basin_data.assign_basin_qualities(
                         partial_basin_surface_depths_list[i],
@@ -1565,7 +1567,9 @@ class QualitiesVector:
                     )
 
             if not basin_flag:
-                self.inbasin[k] = False
+                self.inbasin[k] = (
+                    0  # This is incorrect in the original code. It should be -1. 0 indicates this is inside the 0th basin
+                )
                 velo_mod_ind = self.find_global_sub_velo_model_ind(
                     z, partial_global_surface_depths
                 )
@@ -2143,6 +2147,9 @@ class CVMRegistry:
 
         for basin_name in basin_names:
             basin = self.get_info("basin", basin_name)
+            if basin is None:
+                self.log(f"Error: Basin {basin_name} not found in registry.")
+                exit(1)
             if "smoothing" in basin:
                 # Assumed a single smoothing file defined for a basin
                 boundary_vec_filename = self.get_full_path(basin["smoothing"])

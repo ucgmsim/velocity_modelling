@@ -120,7 +120,7 @@ def read_output_files(output_dir: Path):
             )
             completed_mask = ~np.isnan(raw_data)
             if key == "inbasin":
-                data[key] = raw_data.astype(bool)
+                data[key] = raw_data.astype(np.int8)
             else:
                 data[key] = raw_data[completed_mask]
 
@@ -149,43 +149,32 @@ def compare_output_files(
                 f"Data2: max={np.max(data2_trimmed)}, min={np.min(data2_trimmed)} mean={np.mean(data2_trimmed)} std={np.std(data2_trimmed)}"
             )
 
-            if data1_trimmed.dtype == bool:
-                difference = np.logical_xor(data1_trimmed, data2_trimmed)
-
-            else:
-                difference = data1_trimmed - data2_trimmed
+            difference = data1_trimmed - data2_trimmed
 
             significant_diff_indices = np.where(np.abs(difference) > threshold)[0]
+
             if significant_diff_indices.size > 0:
                 first_significant_index = significant_diff_indices[0]
                 x_index = first_significant_index % nx
                 z_index = (first_significant_index // nx) % nz
                 y_index = first_significant_index // (nx * nz)
-                comparison[key] = {
-                    "allclose": np.allclose(data1_trimmed, data2_trimmed),
-                    "difference": np.abs(difference),
-                    "max_diff": np.max(np.abs(difference)),
-                    "min_diff": np.min(np.abs(difference)),
-                    "mean_diff": np.mean(np.abs(difference)),
-                    "std_diff": np.std(np.abs(difference)),
-                    "first_significant_index": first_significant_index,
-                    "x_index": x_index,
-                    "y_index": y_index,
-                    "z_index": z_index,
-                }
+
             else:
-                comparison[key] = {
-                    "allclose": np.allclose(data1_trimmed, data2_trimmed),
-                    "difference": np.abs(difference),
-                    "max_diff": np.max(np.abs(difference)),
-                    "min_diff": np.min(np.abs(difference)),
-                    "mean_diff": np.mean(np.abs(difference)),
-                    "std_diff": np.std(np.abs(difference)),
-                    "first_significant_index": None,
-                    "x_index": None,
-                    "y_index": None,
-                    "z_index": None,
-                }
+                x_index = y_index = z_index = first_significant_index = None
+
+            comparison[key] = {
+                "allclose": np.allclose(data1_trimmed, data2_trimmed),
+                "difference": np.abs(difference),
+                "max_diff": np.max(np.abs(difference)),
+                "min_diff": np.min(np.abs(difference)),
+                "mean_diff": np.mean(np.abs(difference)),
+                "std_diff": np.std(np.abs(difference)),
+                "first_significant_index": first_significant_index,
+                "x_index": x_index,
+                "y_index": y_index,
+                "z_index": z_index,
+            }
+
         else:
             comparison[key] = "File missing in second directory"
 
