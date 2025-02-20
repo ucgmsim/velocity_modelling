@@ -1259,10 +1259,10 @@ class BasinData:
         # partial_basin_surface_depths.depth is a list of arrays of depths for each surface associated with each boundary
         #        for i in range(len(partial_basin_surface_depths.depth)-1,-1,-1):
 
-        depths = partial_basin_surface_depths.depth  # should test surface number
+        depths = partial_basin_surface_depths.depth  # depth is decreasing order
 
         valid_indices = np.where((~np.isnan(depths)) & (depths >= depth))[0]
-        return valid_indices[0] if valid_indices.size > 0 else 0
+        return valid_indices[-1] if valid_indices.size > 0 else 0  # the last one
 
     def determine_basin_surface_below(self, partial_basin_surface_depths, depth):
         """
@@ -1282,7 +1282,7 @@ class BasinData:
         """
         depths = partial_basin_surface_depths.depth
         valid_indices = np.where((~np.isnan(depths)) & (depths <= depth))[0]
-        return valid_indices[0] if valid_indices.size > 0 else 0
+        return valid_indices[-1] if valid_indices.size > 0 else 0  # the last index
 
     def enforce_basin_surface_depths(
         self,
@@ -1482,7 +1482,7 @@ class QualitiesVector:
 
         shifted_mesh_vector = None
 
-        in_any_basin_lat_lon = np.any(
+        in_any_basin_lat_lon = any(
             [
                 basin_data.determine_if_within_basin_lat_lon(mesh_vector)
                 for basin_data in basin_data_list

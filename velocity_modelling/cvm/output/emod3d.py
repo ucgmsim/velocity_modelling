@@ -66,7 +66,9 @@ def write_global_qualities(
     vp_data = struct.pack(f"{endian_format}{len(vp)}f", *vp)
     vs_data = struct.pack(f"{endian_format}{len(vs)}f", *vs)
     rho_data = struct.pack(f"{endian_format}{len(rho)}f", *rho)
-    inbasin_data = struct.pack(f"{endian_format}{len(inbasin)}B", *inbasin.astype(np.uint8))
+    inbasin_data = struct.pack(
+        f"{endian_format}{len(inbasin)}f", *inbasin.astype(vp.dtype)
+    )
 
     # Write the binary data to files
     with open(vp3dfile, mode) as fvp:
@@ -110,20 +112,16 @@ def read_output_files(output_dir: Path):
     for key, file in files.items():
         with open(file, "rb") as f:
             file_content = f.read()
+
+            num_elements = len(file_content) // 4
+            raw_data = np.array(
+                struct.unpack(f"{endian_format}{num_elements}f", file_content),
+                dtype=np.float32,
+            )
+            completed_mask = ~np.isnan(raw_data)
             if key == "inbasin":
-                num_elements = len(file_content)
-                raw_data = np.array(
-                    struct.unpack(f"{endian_format}{num_elements}B", file_content),
-                    dtype=np.uint8,
-                )
                 data[key] = raw_data.astype(bool)
             else:
-                num_elements = len(file_content) // 4
-                raw_data = np.array(
-                    struct.unpack(f"{endian_format}{num_elements}f", file_content),
-                    dtype=np.float32,
-                )
-                completed_mask = ~np.isnan(raw_data)
                 data[key] = raw_data[completed_mask]
 
     return data
@@ -153,6 +151,7 @@ def compare_output_files(
 
             if data1_trimmed.dtype == bool:
                 difference = np.logical_xor(data1_trimmed, data2_trimmed)
+
             else:
                 difference = data1_trimmed - data2_trimmed
 

@@ -356,7 +356,7 @@ def assign_qualities(
             mesh_vector
         )  # mesh_vector.distance_from_shoreline updated
 
-    in_any_basin = np.any(
+    in_any_basin = any(
         [
             basin_data.determine_if_within_basin_lat_lon(
                 mesh_vector
