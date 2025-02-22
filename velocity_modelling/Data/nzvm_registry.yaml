@@ -236,7 +236,7 @@ basin:
       - name: CantDEM
         submodel: Cant1D_v2_Pliocene_Enforced
 
-      - name: PlioceneTop
+      - name: PlioceneTop_46_v8p9p18
         submodel: PlioceneSubMod_v1
 
       - name: MioceneTop

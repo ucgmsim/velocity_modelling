@@ -1003,8 +1003,8 @@ class BasinData:
         boundary_lons = self.boundary_lon(boundary_ind)
 
         # Vectorized comparison using NumPy with tolerance
-        lat_matches = np.isclose(boundary_lats, mesh_vector.lat, rtol=1e-05, atol=1e-07)
-        lon_matches = np.isclose(boundary_lons, mesh_vector.lon, rtol=1e-05, atol=1e-07)
+        lat_matches = np.isclose(boundary_lats, mesh_vector.lat, rtol=1e-07, atol=1e-07)
+        lon_matches = np.isclose(boundary_lons, mesh_vector.lon, rtol=1e-07, atol=1e-07)
         matches = np.logical_and(lat_matches, lon_matches)
 
         return np.any(matches)
