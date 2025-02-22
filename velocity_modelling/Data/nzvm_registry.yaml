@@ -737,7 +737,7 @@ vm:
       - Hanmer_v19p1
       - Marlborough_v19p1
       - Nelson_v19p1
-      - Wellington_v21p8
+      - Wellington_v19p6
       - WaikatoHauraki_v19p7
 
   - version: 2.07

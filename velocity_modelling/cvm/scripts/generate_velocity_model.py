@@ -394,8 +394,8 @@ def assign_qualities(
         assert (
             closest_ind is not None
         )  # closest_ind should not be None if distance < MAX_DIST_SMOOTH
-        mesh_vector.lat = smooth_bound.yPts[closest_ind]
-        mesh_vector.lon = smooth_bound.xPts[closest_ind]
+        mesh_vector.lat = smooth_bound.ypts[closest_ind]
+        mesh_vector.lon = smooth_bound.xpts[closest_ind]
 
         # velocity vector just inside the boundary
         on_boundary = True

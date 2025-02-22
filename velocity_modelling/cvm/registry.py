@@ -19,7 +19,7 @@ from velocity_modelling.cvm.constants import (
     MAX_LAT_SURFACE_EXTENSION,
     MAX_LON_SURFACE_EXTENSION,
 )
-
+from velocity_modelling.cvm.coordinates import lat_lon_to_distance
 from velocity_modelling.cvm.interpolate import (
     bi_linear_interpolation,
     linear_interpolation,
@@ -668,11 +668,14 @@ class SmoothingBoundary:
         int: Index of the closest point in the smoothing boundary.
         """
         boundary_points = np.column_stack((self.ypts, self.xpts))
-        mesh_point = np.array([mesh_vector.lat, mesh_vector.lon])
-
-        distances = coordinates.distance_between_wgs_depth_coordinates(
-            boundary_points, mesh_point
+        # the below wasn't giving the exact same results as the original code
+        distances1 = coordinates.distance_between_wgs_depth_coordinates(
+            boundary_points, np.array([mesh_vector.lat, mesh_vector.lon])
         )
+        distances = (
+            lat_lon_to_distance(boundary_points, mesh_vector.lat, mesh_vector.lon)
+            * 1000
+        )  # convert to meters
         closest_ind = np.argmin(distances)
         return closest_ind, distances[closest_ind]
 
@@ -1042,14 +1045,14 @@ class BasinData:
                     boundary, np.array([mesh_vector.lon, mesh_vector.lat])
                 )  # check if in poly
 
-                if in_poly:
+                if in_poly:  # in_poly == 1 (inside) ==2 (on edge)
                     if in_basin and type(in_basin) == InBasin:
                         in_basin.in_basin_lat_lon[ind] = True
                     return True  # inside a basin (any)
                 else:  # outside poly
                     if (
                         in_basin and type(in_basin) == InBasin
-                    ):  # check if it is on vertex
+                    ):  # check if it is on vertex. if in_poly
                         in_basin.in_basin_lat_lon[ind] = self.point_on_vertex(
                             ind, mesh_vector
                         )
@@ -1082,7 +1085,7 @@ class BasinData:
                 in_basin.in_basin_lat_lon
             ):  # see if this is in any boundary of this basin
                 adjacent_points = surface.find_basin_adjacent_points(mesh_vector)
-
+                # TODO: check if in_surface_bounds is True
                 x1 = surface.loni[adjacent_points.lon_ind[0]]
                 x2 = surface.loni[adjacent_points.lon_ind[1]]
                 y1 = surface.lati[adjacent_points.lat_ind[0]]
@@ -1952,10 +1955,14 @@ class CVMRegistry:
                 basin_surf_read.loni = longitudes
 
                 raster_data = np.fromfile(f, dtype=float, count=nlat * nlon, sep=" ")
-                assert (
-                    len(raster_data) == nlat * nlon
-                ), f"Error: in {basin_surface_path} raster data length mismatch: {len(raster_data)} != {nlat * nlon}"
-                #                basin_surf_read.raster = raster_data.reshape((nlon, nlat)).T
+                if len(raster_data) != nlat * nlon:
+                    print(
+                        f"Error: in {basin_surface_path} raster data length mismatch: {len(raster_data)} != {nlat * nlon}"
+                    )
+                    raster_data = np.pad(
+                        raster_data, (0, nlat * nlon - len(raster_data)), "constant"
+                    )
+
                 basin_surf_read.raster = raster_data.reshape((nlat, nlon)).T
 
                 first_lat = basin_surf_read.lati[0]
@@ -2080,13 +2087,14 @@ class CVMRegistry:
                 global_surf_read.loni = longitudes
 
                 raster_data = np.fromfile(f, dtype=float, count=nlat * nlon, sep=" ")
-                try:
-                    global_surf_read.raster = raster_data.reshape((nlat, nlon)).T
-                except:
+                if len(raster_data) != nlat * nlon:
                     self.log(
                         f"Error: in {surface_file} raster data length mismatch: {len(raster_data)} != {nlat * nlon}"
                     )
-                    exit(1)
+                    raster_data = np.pad(
+                        raster_data, (0, nlat * nlon - len(raster_data)), "constant"
+                    )
+                global_surf_read.raster = raster_data.reshape((nlat, nlon)).T
 
                 first_lat = global_surf_read.lati[0]
                 last_lat = global_surf_read.lati[nlat - 1]
