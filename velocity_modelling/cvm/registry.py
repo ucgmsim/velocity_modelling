@@ -1001,11 +1001,15 @@ class BasinData:
         """
         boundary_lats = self.boundary_lat(boundary_ind)
         boundary_lons = self.boundary_lon(boundary_ind)
-        on_vertex = np.any(
-            np.isclose(boundary_lats, mesh_vector.lat)
-            & np.isclose(boundary_lons, mesh_vector.lon)
-        )
-        return on_vertex
+
+        # Vectorized comparison using NumPy with tolerance
+        lat_matches = np.isclose(boundary_lats, mesh_vector.lat, rtol=1e-05, atol=1e-07)
+        lon_matches = np.isclose(boundary_lons, mesh_vector.lon, rtol=1e-05, atol=1e-07)
+        matches = np.logical_and(lat_matches, lon_matches)
+
+        return np.any(matches)
+
+
 
     def determine_if_within_basin_lat_lon(
         self, mesh_vector: MeshVector, in_basin: InBasin = None
@@ -1550,7 +1554,7 @@ class QualitiesVector:
             elif topo_type in ["SQUASHED", "SQUASHED_TAPERED"]:
                 z = shifted_mesh_vector.z[k]
 
-            for i, basin_data in enumerate(basin_data_list):
+            for i, basin_data in enumerate(basin_data_list): # TODO: we already know the basin with valid basin surface depth..no need to loop through all basins
                 in_basin = in_basin_list[i]
                 if in_basin.in_basin_depth[k]:
                     basin_flag = True
