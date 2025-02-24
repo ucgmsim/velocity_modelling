@@ -1,4 +1,5 @@
-from velocity_modelling.cvm.registry import QualitiesVector, PartialBasinSurfaceDepths
+from velocity_modelling.cvm.registry import PartialBasinSurfaceDepths
+from velocity_modelling.cvm.velocity import QualitiesVector
 from velocity_modelling.cvm.interpolate import linear_interpolation
 from velocity_modelling.cvm.submodel.BPVSubMod_v1 import vs_full, vp_full, rho_full
 

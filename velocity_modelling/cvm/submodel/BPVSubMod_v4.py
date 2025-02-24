@@ -1,8 +1,8 @@
 from velocity_modelling.cvm.registry import (
-    QualitiesVector,
     PartialBasinSurfaceDepths,
     PartialGlobalSurfaceDepths,
 )
+from velocity_modelling.cvm.velocity import QualitiesVector
 from velocity_modelling.cvm.gtl import v30gtl
 from velocity_modelling.cvm.submodel.BPVSubMod_v1 import vs_full, vp_full, rho_full
 

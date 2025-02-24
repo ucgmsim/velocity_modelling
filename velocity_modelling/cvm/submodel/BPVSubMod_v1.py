@@ -1,4 +1,4 @@
-from velocity_modelling.cvm.registry import QualitiesVector
+from velocity_modelling.cvm.velocity import QualitiesVector
 
 vs_full = 2.2818  # vs at the full
 vp_full = 4.0  # vp at the full

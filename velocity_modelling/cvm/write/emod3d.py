@@ -1,16 +1,15 @@
 import argparse
 import struct
 import sys
+from logging import Logger
+import logging
+
 import numpy as np
 import yaml
 from pathlib import Path
 
-from velocity_modelling.cvm.registry import (
-    PartialGlobalMesh,
-    PartialGlobalQualities,
-    PartialGlobalQualities,
-    Logger,
-)
+from velocity_modelling.cvm.geometry import PartialGlobalMesh
+from velocity_modelling.cvm.velocity import PartialGlobalQualities
 
 
 def write_global_qualities(
@@ -86,17 +85,17 @@ def write_global_qualities(
 
 def read_output_files(output_dir: Path):
     """
-    Read the output files into NumPy arrays.
+    Read the write files into NumPy arrays.
 
     Parameters
     ----------
     output_dir : Path
-        Directory containing the output files.
+        Directory containing the write files.
 
     Returns
     -------
     dict
-        Dictionary containing the data from the output files.
+        Dictionary containing the data from the write files.
     """
     files = {
         "vp": output_dir / "vp3dfile.p",
@@ -184,13 +183,13 @@ def compare_output_files(
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-        description="Compare output files from two directories."
+        description="Compare write files from two directories."
     )
     parser.add_argument(
-        "output_dir1", type=Path, help="First directory containing the output files."
+        "output_dir1", type=Path, help="First directory containing the write files."
     )
     parser.add_argument(
-        "output_dir2", type=Path, help="Second directory containing the output files."
+        "output_dir2", type=Path, help="Second directory containing the write files."
     )
     parser.add_argument("vm_params", type=Path, help="Path to the vm_params.yaml file")
     args = parser.parse_args()

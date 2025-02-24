@@ -1,15 +1,14 @@
 import numpy as np
-from velocity_modelling.cvm.registry import (
-    QualitiesVector,
-    MeshVector,
-    TomographyData,
+
+from velocity_modelling.cvm.geometry import AdjacentPoints
+from velocity_modelling.cvm.registry import TomographyData
+from velocity_modelling.cvm.velocity import MeshVector, QualitiesVector
+from velocity_modelling.cvm.global_model import (
     PartialGlobalSurfaceDepths,
-    VTYPE,
     interpolate_global_surface,
 )
-from velocity_modelling.cvm.interpolate import (
-    linear_interpolation,
-)
+from velocity_modelling.cvm.constants import VTYPE
+from velocity_modelling.cvm.interpolate import linear_interpolation
 from velocity_modelling.cvm.gtl import v30gtl
 from velocity_modelling.cvm.submodel import Cant1D_v1
 
@@ -114,8 +113,9 @@ def main(
     ind_above, ind_below = count - 1, count
 
     # Vectorized search for adjacent points
-    adjacent_points = nz_tomography_data.surface[0]["vp"].find_global_adjacent_points(
-        mesh_vector
+    global_surf_read = nz_tomography_data.surface[0]["vp"]
+    adjacent_points = AdjacentPoints.find_global_adjacent_points(
+        global_surf_read.lati, global_surf_read.loni, mesh_vector.lat, mesh_vector.lon
     )
 
     # Loop over the depth points and obtain the vp, vs, and rho values using interpolation between "surfaces"
