@@ -156,6 +156,83 @@ def point_on_vertex(
     return np.any(matches)
 
 
+@njit
+def find_edge_inds(
+    lati: np.ndarray,
+    loni: np.ndarray,
+    edge_type: int,
+    max_lat: float,
+    min_lat: float,
+    max_lon: float,
+    min_lon: float,
+):
+    nlat = len(lati)
+    nlon = len(loni)
+    lat_edge_ind = 0
+    lon_edge_ind = 0
+
+    if edge_type == 1:  # north edge
+        if max_lat == lati[0]:
+            lat_edge_ind = 0
+        elif max_lat == lati[-1]:
+            lat_edge_ind = nlat - 1
+        else:
+            raise ValueError("Point lies outside of surface bounds.")
+    elif edge_type == 3:  # south edge
+        if min_lat == lati[0]:
+            lat_edge_ind = 0
+        elif min_lat == lati[-1]:
+            lat_edge_ind = nlat - 1
+        else:
+            raise ValueError("Point lies outside of surface bounds.")
+    elif edge_type == 2:  # east edge
+        if max_lon == loni[0]:
+            lon_edge_ind = 0
+        elif max_lon == loni[-1]:
+            lon_edge_ind = nlon - 1
+        else:
+            raise ValueError("Point lies outside of surface bounds.")
+    elif edge_type == 4:  # west edge
+        if min_lon == loni[0]:
+            lon_edge_ind = 0
+        elif min_lon == loni[-1]:
+            lon_edge_ind = nlon - 1
+        else:
+            raise ValueError("Point lies outside of surface bounds.")
+    else:
+        raise ValueError("Point lies outside of surface bounds.")
+
+    return lat_edge_ind, lon_edge_ind
+
+
+@njit
+def find_corner_inds(lati: np.ndarray, loni: np.ndarray, lat: float, lon: float):
+    nlat = len(lati)
+    nlon = len(loni)
+    corner_lat_ind = 0
+    corner_lon_ind = 0
+
+    if np.abs(lat - lati[0]) <= 1e-07:
+        corner_lat_ind = 0
+    elif np.abs(lat - lati[-1]) <= 1e-07:
+        corner_lat_ind = nlat - 1
+    else:
+        raise ValueError(
+            f"Point lies outside of surface bounds. Lat {lat} outside [{lati[0]} {lati[-1]}]"
+        )
+
+    if np.abs(lon - loni[0]) <= 1e-07:
+        corner_lon_ind = 0
+    elif np.abs(lon - loni[-1]) <= 1e-07:
+        corner_lon_ind = nlon - 1
+    else:
+        raise ValueError(
+            f"Point lies outside of surface bounds. Lon {lon} outside [{loni[0]} {loni[-1]}]"
+        )
+
+    return corner_lat_ind, corner_lon_ind
+
+
 class AdjacentPoints:
     def __init__(self):
         self.in_surface_bounds = False
@@ -303,17 +380,37 @@ class AdjacentPoints:
             if lon_assigned_flag and not lat_assigned_flag:
                 if (lat - max_lat) <= MAX_LAT_SURFACE_EXTENSION and lat >= max_lat:
                     adjacent_points.in_lat_extension_zone = True
-                    adjacent_points.find_edge_inds(lati, loni, 1)
+                    adjacent_points.lat_edge_ind, adjacent_points.lon_edge_ind = (
+                        find_edge_inds(
+                            lati, loni, 1, max_lat, min_lat, max_lon, min_lon
+                        )
+                    )
+
                 elif (min_lat - lat) <= MAX_LAT_SURFACE_EXTENSION and lat <= min_lat:
                     adjacent_points.in_lat_extension_zone = True
-                    adjacent_points.find_edge_inds(lati, loni, 3)
+                    adjacent_points.lat_edge_ind, adjacent_points.lon_edge_ind = (
+                        find_edge_inds(
+                            lati, loni, 3, max_lat, min_lat, max_lon, min_lon
+                        )
+                    )
+
             if lat_assigned_flag and not lon_assigned_flag:
                 if (min_lon - lon) <= MAX_LON_SURFACE_EXTENSION and lon <= min_lon:
                     adjacent_points.in_lon_extension_zone = True
-                    adjacent_points.find_edge_inds(lati, loni, 4)
+                    adjacent_points.lat_edge_ind, adjacent_points.lon_edge_ind = (
+                        find_edge_inds(
+                            lati, loni, 4, max_lat, min_lat, max_lon, min_lon
+                        )
+                    )
+
                 elif (lon - max_lon) <= MAX_LON_SURFACE_EXTENSION and lon >= max_lon:
                     adjacent_points.in_lon_extension_zone = True
-                    adjacent_points.find_edge_inds(lati, loni, 2)
+                    adjacent_points.lat_edge_ind, adjacent_points.lon_edge_ind = (
+                        find_edge_inds(
+                            lati, loni, 2, max_lat, min_lat, max_lon, min_lon
+                        )
+                    )
+
             # four cases for corner zones
             if (
                 (lat - max_lat) <= MAX_LAT_SURFACE_EXTENSION
@@ -321,28 +418,41 @@ class AdjacentPoints:
                 and lon <= min_lon
                 and lat >= max_lat
             ):
-                adjacent_points.find_corner_inds(lati, loni, max_lat, min_lon)
+                adjacent_points.corner_lat_ind, adjacent_points.corner_lon_ind = (
+                    find_corner_inds(lati, loni, max_lat, min_lon)
+                )
             elif (
                 lat - max_lat <= MAX_LAT_SURFACE_EXTENSION
                 and lon - max_lon <= MAX_LON_SURFACE_EXTENSION
                 and lon >= max_lon
                 and lat >= max_lat
             ):
-                adjacent_points.find_corner_inds(lati, loni, max_lat, max_lon)
+                adjacent_points.corner_lat_ind, adjacent_points.corner_lon_ind = (
+                    find_corner_inds(lati, loni, max_lat, max_lon)
+                )
+
             elif (
                 min_lat - lat <= MAX_LAT_SURFACE_EXTENSION
                 and min_lon - lon <= MAX_LON_SURFACE_EXTENSION
                 and lon <= min_lon
                 and lat <= min_lat
             ):
-                adjacent_points.find_corner_inds(lati, loni, min_lat, min_lon)
+                adjacent_points.corner_lat_ind, adjacent_points.corner_lon_ind = (
+                    find_corner_inds(lati, loni, min_lat, min_lon)
+                )
             elif (
                 min_lat - lat <= MAX_LAT_SURFACE_EXTENSION
                 and lon - max_lon <= MAX_LON_SURFACE_EXTENSION
                 and lon >= max_lon
                 and lat <= min_lat
             ):
-                adjacent_points.find_corner_inds(lati, loni, min_lat, max_lon)
+                adjacent_points.corner_lat_ind, adjacent_points.corner_lon_ind = (
+                    find_corner_inds(lati, loni, min_lat, max_lon)
+                )
+
+            adjacent_points.in_corner_zone = (
+                True  # TODO: this is always True, so why have it?
+            )
 
             if not (
                 adjacent_points.in_lat_extension_zone
@@ -354,105 +464,6 @@ class AdjacentPoints:
                 )
 
         return adjacent_points
-
-    def find_edge_inds(self, lati: np.ndarray, loni: np.ndarray, edge_type: int):
-        """
-        Find the indices of the edge of the global surface closest to the lat-lon point.
-
-        Parameters
-        ----------
-        lati : np.ndarray
-            Array of latitudes of the global surface.
-        loni : np.ndarray
-            Array of longitudes of the global surface.
-        edge_type : int
-            Indicating whether the point lies to the north (1), east (2), south (3), or west (4) of the global surface.
-        """
-        max_lat = np.max(lati)
-        min_lat = np.min(lati)
-        max_lon = np.max(loni)
-        min_lon = np.min(loni)
-        nlat = len(lati)
-        nlon = len(loni)
-
-        if edge_type == 1:  # what does each edge_type mean?
-            if max_lat == lati[0]:
-                self.lat_edge_ind = 0
-            elif max_lat == lati[-1]:
-                self.lat_edge_ind = nlat - 1
-            else:
-                raise ValueError("Point lies outside of surface bounds.")
-        elif edge_type == 3:
-            if min_lat == lati[0]:
-                self.lat_edge_ind = 0
-            elif min_lat == lati[-1]:
-                self.lat_edge_ind = nlat - 1
-            else:
-                raise ValueError("Point lies outside of surface bounds.")
-        elif edge_type == 2:
-            if max_lon == loni[0]:
-                self.lon_edge_ind = 0
-            elif max_lon == loni[-1]:
-                self.lon_edge_ind = nlon - 1
-            else:
-                raise ValueError("Point lies outside of surface bounds.")
-        elif edge_type == 4:
-            if min_lon == loni[0]:
-                self.lon_edge_ind = 0
-            elif min_lon == loni[-1]:
-                self.lon_edge_ind = nlon - 1
-            else:
-                raise ValueError("Point lies outside of surface bounds.")
-        else:
-            raise ValueError("Point lies outside of surface bounds.")
-
-    def find_corner_inds(
-        self,
-        lati: np.ndarray,
-        loni: np.ndarray,
-        lat: float,
-        lon: float,
-    ):
-        """
-        Find the indices of the corner of the global surface closest to the lat-lon point.
-
-        Parameters
-        ----------
-        lati : np.ndarray
-            Array of latitudes of the global surface.
-        loni : np.ndarray
-            Array of longitudes of the global surface.
-        lat : float
-            Latitude of the point for eventual interpolation.
-        lon : float
-            Longitude of the point for eventual interpolation.
-        """
-        max_lat = np.max(lati)
-        min_lat = np.min(lati)
-        max_lon = np.max(loni)
-        min_lon = np.min(loni)
-        nlat = len(lati)
-        nlon = len(loni)
-
-        if np.isclose(lat, lati[0]):
-            self.corner_lat_ind = 0
-        elif np.isclose(lat, lati[-1]):
-            self.corner_lat_ind = nlat - 1
-        else:
-            raise ValueError(
-                f"Point lies outside of surface bounds. Lat {lat} outside [{lati[0]} {lati[-1]}]"
-            )
-
-        if np.isclose(lon, loni[0]):
-            self.corner_lon_ind = 0
-        elif np.isclose(lon, loni[-1]):
-            self.corner_lon_ind = nlon - 1
-        else:
-            raise ValueError(
-                f"Point lies outside of surface bounds. Lon {lon} outside [{loni[0]} {loni[-1]}]"
-            )
-
-        self.in_corner_zone = True
 
 
 class SmoothingBoundary:
