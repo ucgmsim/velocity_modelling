@@ -43,6 +43,7 @@ class CVMRegistry:
                 break
 
         self.logger = logger
+        self.cache = {}  # Initialize a cache dictionary
 
     def log(self, message, level=logging.INFO):
         if self.logger is not None:
@@ -119,6 +120,11 @@ class CVMRegistry:
 
         v1d_path = self.get_full_path(v1d_path)
 
+        # Check if the data is already in the cache
+        if v1d_path in self.cache:
+            print(f"{v1d_path} loaded from cache")
+            return self.cache[v1d_path]
+
         try:
             with open(v1d_path, "r") as file:
                 next(file)
@@ -126,6 +132,8 @@ class CVMRegistry:
                 velo_mod_1d_data = VeloMod1DData(
                     data[:, 0], data[:, 1], data[:, 2], data[:, 5]
                 )
+                # Store the loaded data in the cache
+                self.cache[v1d_path] = velo_mod_1d_data
 
         except FileNotFoundError:
             self.log(f"Error 1D velocity model file {v1d_path} not found.")
@@ -242,6 +250,10 @@ class CVMRegistry:
         self.log(f"Loading basin surface file {surface_info['path']}")
 
         basin_surface_path = self.get_full_path(surface_info["path"])
+        # Check if the data is already in the cache
+        if basin_surface_path in self.cache:
+            print(f"{basin_surface_path} loaded from cache")
+            return self.cache[basin_surface_path]
 
         try:
             with open(basin_surface_path, "r") as f:
@@ -274,6 +286,9 @@ class CVMRegistry:
                 last_lon = basin_surf_read.loni[nlon - 1]
                 basin_surf_read.max_lon = max(first_lon, last_lon)
                 basin_surf_read.min_lon = min(first_lon, last_lon)
+
+                # Store the loaded data in the cache
+                self.cache[basin_surface_path] = basin_surf_read
 
                 return basin_surf_read
 
