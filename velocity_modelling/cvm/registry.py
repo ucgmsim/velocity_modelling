@@ -12,6 +12,7 @@ from velocity_modelling.cvm.constants import (
     DATA_ROOT,
     DEFAULT_OFFSHORE_1D_MODEL,
     DEFAULT_OFFSHORE_DISTANCE,
+    VTYPE,
 )
 
 
@@ -113,10 +114,10 @@ class CVMRegistry:
 
         Returns
         -------
-        VeloMod1DData
+        VelocityModel1D
             The loaded 1D velocity model data.
         """
-        from velocity_modelling.cvm.velocity import VeloMod1DData
+        from velocity_modelling.cvm.velocity1d import VelocityModel1D
 
         v1d_path = self.get_full_path(v1d_path)
 
@@ -129,7 +130,7 @@ class CVMRegistry:
             with open(v1d_path, "r") as file:
                 next(file)
                 data = np.loadtxt(file)
-                velo_mod_1d_data = VeloMod1DData(
+                velo_mod_1d_data = VelocityModel1D(
                     data[:, 0], data[:, 1], data[:, 2], data[:, 5]
                 )
                 # Store the loaded data in the cache
@@ -201,12 +202,11 @@ class CVMRegistry:
         Parameters
         ----------
         basin_surface : dict {'name': str, 'submodel': str}
-
             Dictionary containing basin surface data.
 
         Returns
         -------
-        VeloMod1DData or None
+        VelocityModel1D or None
             The loaded sub-model data or None if not applicable.
         """
         submodel_name = basin_surface["submodel"]
@@ -321,9 +321,48 @@ class CVMRegistry:
         -------
         TomographyData
             The loaded tomography data.
-        """
 
-        return TomographyData(self, tomo_name, offshore_surface_name, offshore_v1d_name)
+        """
+        from velocity_modelling.cvm.global_model import TomographyData
+
+        tomo = self.get_info("tomography", tomo_name)
+        surf_depth = tomo["elev"]
+        special_offshore_tapering = tomo["special_offshore_tapering"]
+        vs30 = self.load_global_surface(tomo["vs30_path"])
+
+        surfaces = []
+        for i, elev in enumerate(surf_depth):
+            surfaces.append({})
+            elev_name = (
+                f"{elev}" if elev == int(elev) else f"{elev:.2f}".replace(".", "p")
+            )
+            for vtype in VTYPE:
+                tomofile = (
+                    self.get_full_path(tomo["path"])
+                    / f"surf_tomography_{vtype.name}_elev{elev_name}.in"
+                )
+                assert tomofile.exists()
+                surfaces[i][vtype.name] = self.load_global_surface(tomofile)
+
+        offshore_distance_surface = self.load_global_surface(
+            self.get_info("surface", offshore_surface_name)["path"]
+        )
+        offshore_basin_model_1d = self.load_1d_velo_sub_model(
+            self.get_info("vm1d", offshore_v1d_name)["path"]
+        )
+
+        tomography_data = TomographyData(
+            name=tomo_name,
+            surf_depth=surf_depth,
+            special_offshore_tapering=special_offshore_tapering,
+            vs30=vs30,
+            surfaces=surfaces,
+            offshore_distance_surface=offshore_distance_surface,
+            offshore_basin_model_1d=offshore_basin_model_1d,
+            logger=None,
+        )
+
+        return tomography_data
 
     def load_all_global_data(self, logger: Logger):
         """
@@ -336,7 +375,7 @@ class CVMRegistry:
 
         Returns
         -------
-        Tuple[VeloMod1DData, TomographyData, GlobalSurfaces, List[BasinData]]
+        Tuple[VelocityModel1D, TomographyData, GlobalSurfaces, List[BasinData]]
             The loaded global data.
         """
         velo_mod_1d_data = None
@@ -397,13 +436,9 @@ class CVMRegistry:
         try:
             with open(surface_file, "r") as f:
                 nlat, nlon = map(int, f.readline().split())
-                global_surf_read = GlobalSurfaceRead(nlat, nlon)
 
                 latitudes = np.fromfile(f, dtype=float, count=nlat, sep=" ")
                 longitudes = np.fromfile(f, dtype=float, count=nlon, sep=" ")
-
-                global_surf_read.lati = latitudes
-                global_surf_read.loni = longitudes
 
                 raster_data = np.fromfile(f, dtype=float, count=nlat * nlon, sep=" ")
                 if len(raster_data) != nlat * nlon:
@@ -413,19 +448,10 @@ class CVMRegistry:
                     raster_data = np.pad(
                         raster_data, (0, nlat * nlon - len(raster_data)), "constant"
                     )
-                global_surf_read.raster = raster_data.reshape((nlat, nlon)).T
 
-                first_lat = global_surf_read.lati[0]
-                last_lat = global_surf_read.lati[nlat - 1]
-                global_surf_read.max_lat = max(first_lat, last_lat)
-                global_surf_read.min_lat = min(first_lat, last_lat)
-
-                first_lon = global_surf_read.loni[0]
-                last_lon = global_surf_read.loni[nlon - 1]
-                global_surf_read.max_lon = max(first_lon, last_lon)
-                global_surf_read.min_lon = min(first_lon, last_lon)
-
-                return global_surf_read
+                return GlobalSurfaceRead(
+                    latitudes, longitudes, raster_data.reshape((nlat, nlon)).T
+                )
 
         except FileNotFoundError:
             self.log(f"Error surface file {surface_file} not found.")
@@ -451,10 +477,9 @@ class CVMRegistry:
         from velocity_modelling.cvm.global_model import GlobalSurfaces
 
         surfaces = [self.get_info("surface", name) for name in global_surface_names]
-        global_surfaces = GlobalSurfaces()
-
-        for surface in surfaces:
-            global_surfaces.surface.append(self.load_global_surface(surface["path"]))
+        global_surfaces = GlobalSurfaces(
+            [self.load_global_surface(surface["path"]) for surface in surfaces]
+        )
 
         return global_surfaces
 
@@ -508,115 +533,3 @@ class CVMRegistry:
                 self.log(f"Smoothing not required for basin {basin_name}.")
 
         return SmoothingBoundary(smooth_bound_xpts, smooth_bound_ypts)
-
-
-class TomographyData:
-    def __init__(
-        self,
-        cvm_registry: CVMRegistry,
-        tomo_name: str,
-        offshore_surface_name: str,
-        offshore_v1d_name: str,
-        logger: Logger = None,
-    ):
-        """
-        Initialize the TomographyData.
-
-        Parameters
-        ----------
-        cvm_registry : CVMRegistry
-            The CVMRegistry instance.
-        tomo_name : str
-            The name of the tomography data.
-        offshore_surface_name : str
-            The name of the offshore surface.
-        offshore_v1d_name : str
-            The name of the offshore 1D model.
-        logger : Logger, optional
-
-        """
-
-        from velocity_modelling.cvm.constants import VTYPE
-
-        tomo = cvm_registry.get_info("tomography", tomo_name)
-        self.name = tomo_name
-
-        self.surf_depth = tomo["elev"]
-        self.surface = []
-
-        self.tomography_loaded = False
-        self.special_offshore_tapering = tomo["special_offshore_tapering"]
-        self.smooth_boundary = None
-
-        surf_tomo_path = cvm_registry.get_full_path(tomo["path"])
-        offshore_surface_path = cvm_registry.get_info("surface", offshore_surface_name)[
-            "path"
-        ]
-        offshore_v1d_path = cvm_registry.get_info("vm1d", offshore_v1d_name)["path"]
-
-        self.vs30 = cvm_registry.load_global_surface(
-            tomo["vs30_path"]
-        )  # GlobalSurfaceRead
-
-        for i, elev in enumerate(self.surf_depth):
-            self.surface.append({})
-            elev_name = (
-                f"{elev}" if elev == int(elev) else f"{elev:.2f}".replace(".", "p")
-            )
-            for vtype in VTYPE:
-                tomofile = (
-                    surf_tomo_path / f"surf_tomography_{vtype.name}_elev{elev_name}.in"
-                )
-                assert tomofile.exists()
-                self.surface[i][vtype.name] = cvm_registry.load_global_surface(tomofile)
-
-        self.offshore_distance_surface = cvm_registry.load_global_surface(
-            offshore_surface_path
-        )
-        self.offshore_basin_model_1d = cvm_registry.load_1d_velo_sub_model(
-            offshore_v1d_path
-        )
-        self.tomography_loaded = True
-        self.logger = logger
-
-    def log(self, message, level=logging.INFO):
-        if self.logger is not None:
-            self.logger.log(level, message)
-        else:
-            print(message, file=sys.stderr)
-
-    def calculate_vs30_from_tomo_vs30_surface(self, mesh_vector: MeshVector):
-        from velocity_modelling.cvm.global_model import interpolate_global_surface
-
-        adjacent_points = AdjacentPoints.find_global_adjacent_points(
-            self.vs30.lati, self.vs30.loni, mesh_vector.lat, mesh_vector.lon
-        )
-
-        mesh_vector.vs30 = interpolate_global_surface(
-            self.vs30, mesh_vector, adjacent_points
-        )
-
-    def calculate_distance_from_shoreline(self, mesh_vector: MeshVector):
-        """
-        Calculate the distance from the shoreline for a given mesh vector.
-
-        Parameters:
-        mesh_vector (MeshVector): The mesh vector containing latitude and longitude.
-
-        Returns:
-        None: The result is stored in the mesh_vector's distance_from_shoreline attribute.
-        """
-        from velocity_modelling.cvm.global_model import interpolate_global_surface
-
-        # Find the adjacent points for interpolation
-        adjacent_points = AdjacentPoints.find_global_adjacent_points(
-            self.offshore_distance_surface.lati,
-            self.offshore_distance_surface.loni,
-            mesh_vector.lat,
-            mesh_vector.lon,
-        )
-
-        # Interpolate the global surface value at the given latitude and longitude
-        mesh_vector.distance_from_shoreline = interpolate_global_surface(
-            self.offshore_distance_surface, mesh_vector, adjacent_points
-        )

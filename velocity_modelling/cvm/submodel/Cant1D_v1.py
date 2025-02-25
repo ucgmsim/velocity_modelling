@@ -1,12 +1,13 @@
 import numpy as np
-from velocity_modelling.cvm.velocity import QualitiesVector, VeloMod1DData
+from velocity_modelling.cvm.velocity1d import VelocityModel1D
+from velocity_modelling.cvm.velocity3d import QualitiesVector
 
 
 def main(
     zInd: int,
     depth: float,
     qualities_vector: QualitiesVector,
-    velo_mod_1d_data: VeloMod1DData,
+    velo_mod_1d_data: VelocityModel1D,
 ):
     """
     Purpose:   calculate the rho vp and vs values at a single lat long depth point

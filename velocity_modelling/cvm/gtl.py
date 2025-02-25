@@ -1,7 +1,9 @@
 import numpy as np
+import numba
 
 
-def rho_from_vp_brocher(vp):
+@numba.jit(nopython=True)
+def rho_from_vp_brocher(vp: np.float64) -> np.float64:
     """
     Calculate Rho given Vp from the Brocher correlation.
 
@@ -21,7 +23,8 @@ def rho_from_vp_brocher(vp):
     return density
 
 
-def vp_from_vs_brocher(vs):
+@numba.jit(nopython=True)
+def vp_from_vs_brocher(vs: np.float64) -> np.float64:
     """
     Calculate Vp given vs from the Brocher correlation.
 
@@ -39,7 +42,8 @@ def vp_from_vs_brocher(vs):
     return vp
 
 
-def vs_from_vp_brocher(vp):
+@numba.jit(nopython=True)
+def vs_from_vp_brocher(vp: np.float64) -> np.float64:
     """
     Calculate vs given Vp from the Brocher correlation.
 
@@ -57,7 +61,8 @@ def vs_from_vp_brocher(vp):
     return vs
 
 
-def v30gtl(vs30, vt, z, zt):
+@numba.jit(nopython=True)
+def v30gtl(vs30: np.float64, vt: np.float64, z: np.float64, zt: np.float64):
     """
     vs30 Geotechnical Layer (GTL) based on Ely (2010).
 

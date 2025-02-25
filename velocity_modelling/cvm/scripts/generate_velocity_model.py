@@ -21,7 +21,7 @@ from velocity_modelling.cvm.geometry import (
 )
 from velocity_modelling.cvm.global_model import PartialGlobalSurfaceDepths
 from velocity_modelling.cvm.registry import CVMRegistry
-from velocity_modelling.cvm.velocity import PartialGlobalQualities, QualitiesVector
+from velocity_modelling.cvm.velocity3d import PartialGlobalQualities, QualitiesVector
 from velocity_modelling.cvm.write.emod3d import write_global_qualities
 
 
@@ -113,7 +113,7 @@ def generate_velocity_model(
                 for basin_data in basin_data_list
             ]
             partial_global_surface_depths = PartialGlobalSurfaceDepths(
-                len(global_surfaces.surface)
+                len(global_surfaces.surfaces)
             )
 
             partial_basin_surface_depths_list = [

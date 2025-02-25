@@ -1,7 +1,7 @@
 from velocity_modelling.cvm.basin_model import PartialBasinSurfaceDepths
 from velocity_modelling.cvm.global_model import PartialGlobalSurfaceDepths
 
-from velocity_modelling.cvm.velocity import QualitiesVector
+from velocity_modelling.cvm.velocity3d import QualitiesVector
 from velocity_modelling.cvm.gtl import v30gtl
 from velocity_modelling.cvm.submodel.BPVSubMod_v1 import vs_full, vp_full, rho_full
 
@@ -29,7 +29,7 @@ def main(
 
     point_depth = partial_basin_surface_depths.depth[0] - depth
 
-    DEM_depth = partial_global_surface_depths.depth[1]  # value of the DEM
+    DEM_depth = partial_global_surface_depths.depths[1]  # value of the DEM
     BPV_top = partial_basin_surface_depths.depth[0]  # value of the BPV top
 
     z_DEM_relative = DEM_depth - depth  # delth of the gridpoint relative to the DEM

@@ -12,9 +12,9 @@ from qcore import point_in_polygon
 
 def check_boundary_index(func):
     def wrapper(self, i, *args, **kwargs):
-        if i < 0 or i >= len(self.boundary):
+        if i < 0 or i >= len(self.boundaries):
             self.log(
-                f"Error: basin boundary {i} not found. Max index is {len(self.boundary) - 1}"
+                f"Error: basin boundary {i} not found. Max index is {len(self.boundaries) - 1}"
             )
             return None
         return func(self, i, *args, **kwargs)
@@ -42,15 +42,15 @@ class BasinData:
 
         basin_info = cvm_registry.get_info("basin", basin_name)
 
-        self.boundary = [
+        self.boundaries = [
             cvm_registry.load_basin_boundary(boundary_path)
             for boundary_path in basin_info["boundaries"]
         ]
-        self.surface = [
+        self.surfaces = [
             cvm_registry.load_basin_surface(surface)
             for surface in basin_info["surfaces"]
         ]
-        self.submodel = [
+        self.submodels = [
             cvm_registry.load_basin_submodel(surface)
             for surface in basin_info["surfaces"]
         ]
@@ -91,7 +91,7 @@ class BasinData:
         np.ndarray
             The latitude of the boundary.
         """
-        return self.boundary[i][:, 1]
+        return self.boundaries[i][:, 1]
 
     @check_boundary_index
     def boundary_lon(self, i: int) -> np.ndarray:
@@ -108,7 +108,7 @@ class BasinData:
         np.ndarray
             The longitude of the boundary.
         """
-        return self.boundary[i][:, 0]
+        return self.boundaries[i][:, 0]
 
     def determine_if_within_basin_lat_lon(self, mesh_vector: MeshVector):
         """
@@ -131,7 +131,7 @@ class BasinData:
         # See https://github.com/ucgmsim/mapping/blob/80b8e66222803d69e2f8f2182ccc1adc467b7cb1/mapbox/vs30/scripts/basin_z_values/gen_sites_in_basin.py#L119C2-L123C55
         # and https://github.com/ucgmsim/qcore/blob/master/qcore/point_in_polygon.py
 
-        for ind, boundary in enumerate(self.boundary):
+        for ind, boundary in enumerate(self.boundaries):
 
             if not (
                 np.min(boundary[:, 0]) <= mesh_vector.lon <= np.max(boundary[:, 0])
@@ -152,7 +152,7 @@ class BasinData:
 
 
 class InBasin:
-    def __init__(self, basin_data: BasinData, n_depth: int):
+    def __init__(self, basin_data: BasinData, n_depths: int):
         """
         Initialize the InBasin.
 
@@ -160,12 +160,12 @@ class InBasin:
         ----------
         basin_data : BasinData
             The BasinData instance.
-        n_depth : int
+        n_depths : int
             The number of depth points.
         """
         self.basin_data = basin_data
-        self.in_basin_lat_lon = np.zeros(len(basin_data.boundary), dtype=bool)
-        self.in_basin_depth = np.zeros((n_depth), dtype=bool)
+        self.in_basin_lat_lon = np.zeros(len(basin_data.boundaries), dtype=bool)
+        self.in_basin_depth = np.zeros((n_depths), dtype=bool)
 
     def determine_if_within_basin_lat_lon(self, mesh_vector: MeshVector):
         """
@@ -188,7 +188,7 @@ class InBasin:
         # See https://github.com/ucgmsim/mapping/blob/80b8e66222803d69e2f8f2182ccc1adc467b7cb1/mapbox/vs30/scripts/basin_z_values/gen_sites_in_basin.py#L119C2-L123C55
         # and https://github.com/ucgmsim/qcore/blob/master/qcore/point_in_polygon.py
 
-        for ind, boundary in enumerate(self.basin_data.boundary):
+        for ind, boundary in enumerate(self.basin_data.boundaries):
 
             if not (
                 np.min(boundary[:, 0]) <= mesh_vector.lon <= np.max(boundary[:, 0])
@@ -231,8 +231,8 @@ class PartialBasinSurfaceDepths:
             The BasinData instance.
         """
         # List of arrays of depths for each surface of the basin
-        # self.depth[i] is the depth of the i-th surface
-        self.depth = np.zeros(len(basin_data.surface), dtype=np.float64)
+        # self.depths[i] is the depth of the i-th surfaces
+        self.depths = np.zeros(len(basin_data.surfaces), dtype=np.float64)
         self.basin = basin_data
 
     def determine_basin_surface_depths(
@@ -250,7 +250,7 @@ class PartialBasinSurfaceDepths:
         mesh_vector : MeshVector
             Struct containing a single lat-lon point with one or more depths.
         """
-        for surface_ind, surface in enumerate(inbasin.basin_data.surface):
+        for surface_ind, surface in enumerate(inbasin.basin_data.surfaces):
 
             if np.any(
                 inbasin.in_basin_lat_lon
@@ -277,7 +277,7 @@ class PartialBasinSurfaceDepths:
                 q22 = surface.raster[adjacent_points.lon_ind[1]][
                     adjacent_points.lat_ind[1]
                 ]
-                self.depth[surface_ind] = bi_linear_interpolation(
+                self.depths[surface_ind] = bi_linear_interpolation(
                     x1,
                     x2,
                     y1,
@@ -290,29 +290,28 @@ class PartialBasinSurfaceDepths:
                     mesh_vector.lat,
                 )
             else:
-                self.depth[surface_ind] = None
+                self.depths[surface_ind] = None
 
     # TODO: can be inserted into enforce_basin_surface_depths()
     def enforce_surface_depths(self):
         """
-        Enforce the depths of the surfaces are consistent with stratigraphy.
+        Enforce the depths of the surface are consistent with stratigraphy.
         """
 
-        depths = self.depth
         # Find the first NaN value
-        nan_indices = np.where(np.isnan(depths))[0]
+        nan_indices = np.where(np.isnan(self.depths))[0]
         if nan_indices.size > 0:
             nan_ind = nan_indices[0]
         else:
-            nan_ind = len(depths)
+            nan_ind = len(self.depths)
         # Enforce stratigraphy for depths before the first NaN
         for i in range(nan_ind - 1, 0, -1):
-            if depths[i - 1] < depths[i]:
-                depths[i - 1] = depths[i]
+            if self.depths[i - 1] < self.depths[i]:
+                self.depths[i - 1] = self.depths[i]
         # Enforce stratigraphy for depths after the first NaN
         for i in range(nan_ind - 1):
-            if depths[i] < depths[i + 1]:
-                depths[i] = depths[i + 1]
+            if self.depths[i] < self.depths[i + 1]:
+                self.depths[i] = self.depths[i + 1]
 
     def determine_basin_surface_above(self, depth):
         """
@@ -328,9 +327,9 @@ class PartialBasinSurfaceDepths:
         int
             Index of the surface directly above the grid point.
         """
-        depths = self.depth  # depth is decreasing order
+        # self.depths is in decreasing order
 
-        valid_indices = np.where((~np.isnan(depths)) & (depths >= depth))[0]
+        valid_indices = np.where((~np.isnan(self.depths)) & (self.depths >= depth))[0]
         return valid_indices[-1] if valid_indices.size > 0 else 0  # the last one
 
     def determine_basin_surface_below(self, depth: float):
@@ -347,8 +346,7 @@ class PartialBasinSurfaceDepths:
         int
             Index of the surface directly below the grid point.
         """
-        depths = self.depth
-        valid_indices = np.where((~np.isnan(depths)) & (depths <= depth))[0]
+        valid_indices = np.where((~np.isnan(self.depths)) & (self.depths <= depth))[0]
         return valid_indices[-1] if valid_indices.size > 0 else 0  # the last index
 
     def enforce_basin_surface_depths(
@@ -371,8 +369,8 @@ class PartialBasinSurfaceDepths:
 
             self.enforce_surface_depths()
             # TODO: check if this is correct
-            top_lim = self.depth[0]  # the depth of the first surface
-            bot_lim = self.depth[-1]  # the depth of the last surface
+            top_lim = self.depths[0]  # the depth of the first surface
+            bot_lim = self.depths[-1]  # the depth of the last surface
 
             in_basin.in_basin_depth = (bot_lim <= mesh_vector.z) & (
                 mesh_vector.z <= top_lim
@@ -386,7 +384,8 @@ class PartialBasinSurfaceDepths:
         mesh_vector: MeshVector,
     ):
         """
-        Determine if a lat-lon point is in a basin, if so interpolate the basin surface depths, enforce their hierarchy, then determine which depth points lie within the basin limits.
+        Determine if a lat-lon point is in a basin, if so interpolate the basin surface depths, enforce their hierarchy,
+         then determine which depth points lie within the basin limits.
 
         Parameters
         ----------

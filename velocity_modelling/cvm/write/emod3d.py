@@ -9,7 +9,7 @@ import yaml
 from pathlib import Path
 
 from velocity_modelling.cvm.geometry import PartialGlobalMesh
-from velocity_modelling.cvm.velocity import PartialGlobalQualities
+from velocity_modelling.cvm.velocity3d import PartialGlobalQualities
 
 
 def write_global_qualities(

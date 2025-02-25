@@ -1,5 +1,5 @@
 import numpy as np
-from velocity_modelling.cvm.velocity import QualitiesVector
+from velocity_modelling.cvm.velocity3d import QualitiesVector
 
 
 def main(

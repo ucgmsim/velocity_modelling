@@ -1,11 +1,11 @@
 import numpy as np
 
-from velocity_modelling.cvm.geometry import AdjacentPoints
-from velocity_modelling.cvm.registry import TomographyData
-from velocity_modelling.cvm.velocity import MeshVector, QualitiesVector
+from velocity_modelling.cvm.geometry import MeshVector, AdjacentPoints
+from velocity_modelling.cvm.velocity3d import QualitiesVector
 from velocity_modelling.cvm.global_model import (
     PartialGlobalSurfaceDepths,
     interpolate_global_surface,
+    TomographyData,
 )
 from velocity_modelling.cvm.constants import VTYPE
 from velocity_modelling.cvm.interpolate import linear_interpolation
@@ -29,7 +29,7 @@ def off_shore_basin_model(
         Struct containing the vp, vs, and rho values.
     zInd : int
         Index of the depth point.
-    velo_mod_1d_data : VeloMod1DData
+    velo_mod_1d_data : VelocityModel1D
         Struct containing 1D velocity model data.
     """
     offshore_depth = offshore_basin_depth(shoreline_dist)
@@ -88,7 +88,7 @@ def main(
     nz_tomography_data : TomographyData
         Struct containing New Zealand tomography data.
     partial_global_surface_depths : PartialGlobalSurfaceDepths
-        Struct containing global surface depths.
+        Struct containing global surfaces depths.
     gtl : bool
         Flag indicating whether GTL (Geotechnical Layer) is applied.
     in_any_basin_lat_lon : bool
@@ -105,7 +105,7 @@ def main(
         surf_depth_ascending, depth, side="right"
     )
 
-    # # Find the index of the first "surface" above the data point in question
+    # # Find the index of the first "surfaces" above the data point in question
     # while dep < nz_tomography_data.surf_depth[count] * 1000:
     #     count += 1
 
@@ -113,15 +113,15 @@ def main(
     ind_above, ind_below = count - 1, count
 
     # Vectorized search for adjacent points
-    global_surf_read = nz_tomography_data.surface[0]["vp"]
+    global_surf_read = nz_tomography_data.surfaces[0]["vp"]
     adjacent_points = AdjacentPoints.find_global_adjacent_points(
         global_surf_read.lati, global_surf_read.loni, mesh_vector.lat, mesh_vector.lon
     )
 
     # Loop over the depth points and obtain the vp, vs, and rho values using interpolation between "surfaces"
     for vtype in VTYPE:  # vp, vs, rho
-        surface_pointer_above = nz_tomography_data.surface[ind_above][vtype.name]
-        surface_pointer_below = nz_tomography_data.surface[ind_below][vtype.name]
+        surface_pointer_above = nz_tomography_data.surfaces[ind_above][vtype.name]
+        surface_pointer_below = nz_tomography_data.surfaces[ind_below][vtype.name]
 
         val_above = interpolate_global_surface(
             surface_pointer_above, mesh_vector, adjacent_points
@@ -144,7 +144,7 @@ def main(
     # Calculate relative depth
     # why depth[1]??
     relative_depth = (
-        partial_global_surface_depths.depth[1] - depth
+        partial_global_surface_depths.depths[1] - depth
     )  # DEM minus the depth of the point
 
     # Apply GTL and special offshore smoothing if necessary

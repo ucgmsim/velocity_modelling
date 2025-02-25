@@ -2,12 +2,13 @@ from logging import Logger
 from typing import List
 
 import numpy as np
-
+from copy import deepcopy
 
 from velocity_modelling.cvm.constants import MAX_DIST_SMOOTH
 from velocity_modelling.cvm.global_model import (
     GlobalSurfaces,
     PartialGlobalSurfaceDepths,
+    TomographyData,
 )  # noqa: F401
 from velocity_modelling.cvm.basin_model import (
     BasinData,
@@ -15,45 +16,29 @@ from velocity_modelling.cvm.basin_model import (
     PartialBasinSurfaceDepths,
 )
 from velocity_modelling.cvm.geometry import MeshVector
-from velocity_modelling.cvm.registry import CVMRegistry, TomographyData
-
-
-class VeloMod1DData:
-    def __init__(
-        self, vp: np.ndarray, vs: np.ndarray, rho: np.ndarray, depth: np.ndarray
-    ):
-        """
-        Initialize the VeloMod1DData.
-        """
-        self.vp = vp
-        self.vs = vs
-        self.rho = rho
-        self.depth = depth
-        self.n_depth = len(vp)  # maybe should be len(dep) but I'm not sure
-        assert len(vp) == len(vs) == len(rho) == len(depth)
+from velocity_modelling.cvm.registry import CVMRegistry
+from velocity_modelling.cvm.velocity1d import VelocityModel1D
 
 
 class PartialGlobalQualities:
-    def __init__(self, lon_grid_dim_max: int, dep_grid_dim_max: int):
-        self.vp = np.zeros(
-            (lon_grid_dim_max, dep_grid_dim_max), dtype=np.float64
-        )  # TODO: why dim max??
-        self.vs = np.zeros((lon_grid_dim_max, dep_grid_dim_max), dtype=np.float64)
-        self.rho = np.zeros((lon_grid_dim_max, dep_grid_dim_max), dtype=np.float64)
-        self.inbasin = np.zeros((lon_grid_dim_max, dep_grid_dim_max), dtype=np.int8)
+    def __init__(self, n_lon: int, n_depth: int):
+        self.vp = np.zeros((n_lon, n_depth), dtype=np.float64)
+        self.vs = np.zeros((n_lon, n_depth), dtype=np.float64)
+        self.rho = np.zeros((n_lon, n_depth), dtype=np.float64)
+        self.inbasin = np.zeros((n_lon, n_depth), dtype=np.int8)
 
 
 class QualitiesVector:
-    def __init__(self, dep_grid_dim_max: int):
-        self.vp = np.zeros(dep_grid_dim_max, dtype=np.float64)
-        self.vs = np.zeros(dep_grid_dim_max, dtype=np.float64)
-        self.rho = np.zeros(dep_grid_dim_max, dtype=np.float64)
-        self.inbasin = np.zeros(dep_grid_dim_max, dtype=np.int8)
+    def __init__(self, n_depth: int):
+        self.vp = np.zeros(n_depth, dtype=np.float64)
+        self.vs = np.zeros(n_depth, dtype=np.float64)
+        self.rho = np.zeros(n_depth, dtype=np.float64)
+        self.inbasin = np.zeros(n_depth, dtype=np.int8)
 
     def prescribe_velocities(
         self,
         global_model_parameters: dict,
-        velo_mod_1d_data: VeloMod1DData,
+        velo_mod_1d_data: VelocityModel1D,
         nz_tomography_data: TomographyData,
         global_surfaces: GlobalSurfaces,
         basin_data_list: List[BasinData],
@@ -83,36 +68,33 @@ class QualitiesVector:
         )
         # TODO: test this
         if topo_type == "SQUASHED":
-            shifted_mesh_vector = MeshVector(
-                mesh_vector.nz, lat=mesh_vector.lat, lon=mesh_vector.lon
-            )
+            shifted_mesh_vector = deepcopy(mesh_vector)
 
             depth_change = -mesh_vector.z  # is this correct????
             shifted_mesh_vector.z = (
-                partial_global_surface_depths.depth[1] - depth_change
+                partial_global_surface_depths.depths[1] - depth_change
             )
         # TODO: test this
         elif topo_type == "SQUASHED_TAPERED":
             dZ = mesh_vector.z[0] - mesh_vector.z[1]
             TAPER_DIST = 1.0
-            shifted_mesh_vector = MeshVector(
-                mesh_vector.nz, lat=mesh_vector.lat, lon=mesh_vector.lon
-            )
+            shifted_mesh_vector = deepcopy(mesh_vector)
 
             depth_change = -mesh_vector.z
             TAPER_VAL = np.where(
                 (depth_change == 0)
-                | (partial_global_surface_depths.depth[1] == 0)
-                | (partial_global_surface_depths.depth[1] < 0),
+                | (partial_global_surface_depths.depths[1] == 0)
+                | (partial_global_surface_depths.depths[1] < 0),
                 1.0,
                 1.0
                 - (
-                    depth_change / (partial_global_surface_depths.depth[1] * TAPER_DIST)
+                    depth_change
+                    / (partial_global_surface_depths.depths[1] * TAPER_DIST)
                 ),
             )
             TAPER_VAL = np.clip(TAPER_VAL, 0.0, None)
             shifted_mesh_vector.z = (
-                partial_global_surface_depths.depth[1] * TAPER_VAL - depth_change
+                partial_global_surface_depths.depths[1] * TAPER_VAL - depth_change
             )
 
         elif topo_type in ["BULLDOZED", "TRUE"]:
@@ -179,7 +161,7 @@ class QualitiesVector:
                     on_boundary,
                 )
 
-            if z > partial_global_surface_depths.depth[1]:
+            if z > partial_global_surface_depths.depths[1]:
                 self.rho[k] = np.nan
                 self.vp[k] = np.nan
                 self.vs[k] = np.nan
@@ -199,7 +181,7 @@ class QualitiesVector:
     def assign_qualities(
         self,
         cvm_registry: CVMRegistry,
-        velo_mod_1d_data: VeloMod1DData,
+        velo_mod_1d_data: VelocityModel1D,
         nz_tomography_data: TomographyData,
         global_surfaces: GlobalSurfaces,
         basin_data_list: List[BasinData],
@@ -263,7 +245,7 @@ class QualitiesVector:
                 InBasin(basin_data, mesh_vector.nz) for basin_data in basin_data_list
             ]
             partial_global_surface_depths_b = PartialGlobalSurfaceDepths(
-                len(global_surfaces.surface)
+                len(global_surfaces.surfaces)
             )
             partial_basin_surface_depths_list_b = [
                 PartialBasinSurfaceDepths(basin_data) for basin_data in basin_data_list
@@ -421,7 +403,7 @@ class QualitiesVector:
         k: int,
         global_model_parameters: dict,
         partial_global_surface_depths: PartialGlobalSurfaceDepths,
-        velo_mod_1d_data: VeloMod1DData,
+        velo_mod_1d_data: VelocityModel1D,
         nz_tomography_data: TomographyData,
         mesh_vector: MeshVector,
         in_any_basin_lat_lon: bool,
@@ -442,7 +424,7 @@ class QualitiesVector:
             Struct containing all model parameters (surface names, submodel names, basin names, etc.)
         partial_global_surface_depths : PartialGlobalSurfaceDepths
             Struct containing global surface depths.
-        velo_mod_1d_data : velocity_modelling.cvm.velocity.VeloMod1DData
+        velo_mod_1d_data : velocity_modelling.cvm.velocity.VelocityModel1D
             Struct containing the 1D velocity model data.
         nz_tomography_data : TomographyData
             Struct containing tomography data.
@@ -530,7 +512,7 @@ class QualitiesVector:
         basin_data = partial_basin_surface_depths.basin
         self.inbasin[z_ind] = basin_num  # basin number that the point is in
 
-        submodel_name, submodel_data = basin_data.submodel[ind_above]
+        submodel_name, submodel_data = basin_data.submodels[ind_above]
 
         if submodel_name == "NaNsubMod":
             self.nan_sub_mod(z_ind)

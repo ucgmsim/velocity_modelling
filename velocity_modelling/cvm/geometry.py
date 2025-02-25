@@ -16,19 +16,6 @@ from velocity_modelling.cvm.constants import (
 )
 
 
-class MeshVector:
-    def __init__(self, nz, lat=None, lon=None):
-        self.lat = lat
-        self.lon = lon
-        self.z = np.zeros(nz)
-        self.vs30 = None
-        self.distance_from_shoreline = None
-
-    @property
-    def nz(self):
-        return len(self.z)
-
-
 class GlobalMesh:
     def __init__(self, nx: int, ny: int, nz: int):
         """
@@ -67,7 +54,7 @@ class GlobalMesh:
 
 
 class PartialGlobalMesh:
-    def __init__(self, nx: int, nz: int):
+    def __init__(self, global_mesh: GlobalMesh, lat_ind: int):
         """
         Initialize the PartialGlobalMesh.
 
@@ -78,15 +65,30 @@ class PartialGlobalMesh:
         nz : int
             The number of points in the Z direction.
         """
-        self.lon = np.zeros(nx)
-        self.lat = np.zeros(nx)
-        self.x = np.zeros(nx)
-        self.z = np.zeros(nz)
-        self.y = 0.0
+
+        self.x = global_mesh.x.copy()
+        self.y = global_mesh.y[lat_ind]
+        self.z = global_mesh.z.copy()
+        self.lat = global_mesh.lat[:, lat_ind].copy()
+        self.lon = global_mesh.lon[:, lat_ind].copy()
 
     @property
     def nx(self):
         return len(self.x)
+
+    @property
+    def nz(self):
+        return len(self.z)
+
+
+class MeshVector:
+    def __init__(self, partial_global_mesh: PartialGlobalMesh, lon_ind: int):
+
+        self.lat = partial_global_mesh.lat[lon_ind]
+        self.lon = partial_global_mesh.lon[lon_ind]
+        self.z = partial_global_mesh.z.copy()
+        self.vs30 = None
+        self.distance_from_shoreline = None
 
     @property
     def nz(self):
@@ -759,15 +761,8 @@ def extract_partial_mesh(global_mesh: GlobalMesh, lat_ind: int) -> PartialGlobal
     PartialGlobalMesh
         A struct containing a slice of the global mesh.
     """
-    partial_global_mesh = PartialGlobalMesh(global_mesh.nx, global_mesh.nz)
-    partial_global_mesh.y = global_mesh.y[lat_ind]
 
-    partial_global_mesh.z = global_mesh.z.copy()
-    partial_global_mesh.lon = global_mesh.lon[:, lat_ind].copy()
-    partial_global_mesh.lat = global_mesh.lat[:, lat_ind].copy()
-    partial_global_mesh.x = global_mesh.x.copy()
-
-    return partial_global_mesh
+    return PartialGlobalMesh(global_mesh, lat_ind)
 
 
 def extract_mesh_vector(partial_global_mesh: PartialGlobalMesh, lon_ind: int):
@@ -786,10 +781,5 @@ def extract_mesh_vector(partial_global_mesh: PartialGlobalMesh, lon_ind: int):
     MeshVector
         A struct containing one lat-lon point and the depths of all grid points at this location.
     """
-    mesh_vector = MeshVector(len(partial_global_mesh.z))
 
-    mesh_vector.lat = partial_global_mesh.lat[lon_ind]
-    mesh_vector.lon = partial_global_mesh.lon[lon_ind]
-    mesh_vector.z = partial_global_mesh.z.copy()
-
-    return mesh_vector
+    return MeshVector(partial_global_mesh, lon_ind)
