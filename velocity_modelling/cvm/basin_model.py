@@ -296,6 +296,11 @@ class PartialBasinSurfaceDepths:
     def enforce_surface_depths(self):
         """
         Enforce the depths of the surface are consistent with stratigraphy.
+
+        Returns
+        -------
+        None
+            Updates the depths in place.
         """
 
         # Find the first NaN value

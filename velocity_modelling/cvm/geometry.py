@@ -60,10 +60,10 @@ class PartialGlobalMesh:
 
         Parameters
         ----------
-        nx : int
-            The number of points in the X direction.
-        nz : int
-            The number of points in the Z direction.
+        global_mesh : GlobalMesh
+            The global mesh object.
+        lat_ind : int
+            The index of the latitude.
         """
 
         self.x = global_mesh.x.copy()
@@ -83,6 +83,17 @@ class PartialGlobalMesh:
 
 class MeshVector:
     def __init__(self, partial_global_mesh: PartialGlobalMesh, lon_ind: int):
+        """
+        Initialize the MeshVector.
+        Parameters
+        ----------
+        partial_global_mesh : PartialGlobalMesh
+            The partial global mesh object.
+
+        lon_ind: int
+            The index of the longitude.
+
+        """
 
         self.lat = partial_global_mesh.lat[lon_ind]
         self.lon = partial_global_mesh.lon[lon_ind]
@@ -168,6 +179,28 @@ def find_edge_inds(
     max_lon: float,
     min_lon: float,
 ):
+    """
+    Find the edge indices of the given latitude and longitude arrays.
+    Parameters
+    ----------
+    lati    : np.ndarray
+    loni    : np.ndarray
+    edge_type : int
+        Type of edge to find.(1: north, 2: east, 3: south, 4: west)
+    max_lat: float
+    min_lat : float
+    max_lon: float
+    min_lon: float
+
+    Returns
+    -------
+    lat_edge_ind : int
+        Index of the latitude edge.
+    lon_edge_ind : int
+        Index of the longitude edge
+
+    """
+
     nlat = len(lati)
     nlon = len(loni)
     lat_edge_ind = 0
@@ -209,6 +242,23 @@ def find_edge_inds(
 
 @njit
 def find_corner_inds(lati: np.ndarray, loni: np.ndarray, lat: float, lon: float):
+    """
+    Find the corner indices of the given latitude and longitude arrays.
+    Parameters
+    ----------
+    lati    : np.ndarray
+    loni    : np.ndarray
+    lat : float
+    lon : float
+
+    Returns
+    -------
+    corner_lat_ind : int
+        Index of the latitude corner.
+    corner_lon_ind : int
+        Index of the longitude corner
+
+    """
     nlat = len(lati)
     nlon = len(loni)
     corner_lat_ind = 0
@@ -270,7 +320,8 @@ class AdjacentPoints:
 
         Returns
         -------
-        None
+        adjacent_points : AdjacentPoints
+            Object containing the adjacent points.
         """
         adjacent_points = cls()
 
@@ -330,7 +381,8 @@ class AdjacentPoints:
 
         Returns
         -------
-        None
+        adjacent_points : AdjacentPoints
+            Object containing the adjacent points.
         """
         max_lat = np.max(lati)
         min_lat = np.min(lati)
@@ -472,6 +524,14 @@ class SmoothingBoundary:
     def __init__(self, xpts, ypts):
         """
         Initialize the SmoothingBoundary.
+
+        Parameters
+        ----------
+        xpts : List[float]
+            List of x-coordinates.
+        ypts : List[float]
+            List of y-coordinates.
+
         """
         self.x = xpts
         self.y = ypts
@@ -482,11 +542,18 @@ class SmoothingBoundary:
         """
         Determine the closest index within the smoothing boundary to the given mesh vector coordinates.
 
-        Parameters:
-        mesh_vector (MeshVector): Object containing mesh vector data.
+        Parameters
+        ----------
+        mesh_vector : MeshVector
+            Object containing mesh vector data.
 
-        Returns:
-        int: Index of the closest point in the smoothing boundary.
+        Returns
+        -------
+        closed_ind: int
+            Index of the closest point in the smoothing boundary.
+        distance: float
+            Distance from the closest point in the smoothing boundary.
+
         """
         closest_ind, distance = self.brute_force(mesh_vector)
 

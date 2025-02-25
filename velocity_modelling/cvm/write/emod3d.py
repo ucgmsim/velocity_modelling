@@ -21,14 +21,26 @@ def write_global_qualities(
     logger: Logger,
 ):
     """
-    Purpose: write the full velocity model to file
+    Write the full velocity model to file for EMOD3D
 
-    Input variables:
-    partial_global_mesh        - pointer to structure containing lat lon grid
-    partial_global_qualities   - pointer to structure containing vp vs and rho for all gridpoints
+    Parameters
+    ----------
+    output_dir : Path
+        Directory where the output files will be written.
+    partial_global_mesh : PartialGlobalMesh
+        Structure containing the latitude and longitude grid.
+    partial_global_qualities : PartialGlobalQualities
+        Structure containing Vp, Vs, and Rho for all grid points.
+    vm_params : dict
+        Dictionary containing velocity model parameters.
+    lat_ind : int
+        Latitude index to determine the write mode (write or append).
+    logger : Logger
+        Logger instance for logging messages.
 
-    Output variables:
-    N/A.
+    Returns
+    -------
+    None
     """
 
     # perform endian check
