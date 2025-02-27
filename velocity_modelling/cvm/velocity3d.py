@@ -60,11 +60,14 @@ class QualitiesVector:
 
         shifted_mesh_vector = None
 
+        # in_any_basin_lat_lon = any(
+        #     [
+        #         basin_data.determine_if_within_basin_lat_lon(mesh_vector)
+        #         for basin_data in basin_data_list
+        #     ]
+        # )
         in_any_basin_lat_lon = any(
-            [
-                basin_data.determine_if_within_basin_lat_lon(mesh_vector)
-                for basin_data in basin_data_list
-            ]
+            in_basin.in_basin_lat_lon for in_basin in in_basin_list
         )
         # TODO: test this
         if topo_type == "SQUASHED":
@@ -204,6 +207,7 @@ class QualitiesVector:
                 1e6  # if there are no points in the smoothing boundary, then skip
             )
         else:
+            # TODO: this can be preprocessed in bulk
             closest_ind, distance = (
                 smooth_bound.determine_if_lat_lon_within_smoothing_region(mesh_vector)
             )
@@ -220,14 +224,15 @@ class QualitiesVector:
                 mesh_vector
             )  # mesh_vector.distance_from_shoreline updated
 
-        in_any_basin = any(
-            [
-                basin_data.determine_if_within_basin_lat_lon(
-                    mesh_vector
-                )  # this can be preprocessed in bulk
-                for basin_data in basin_data_list
-            ]
-        )
+        # in_any_basin = any(
+        #     [
+        #         basin_data.determine_if_within_basin_lat_lon(
+        #             mesh_vector
+        #         )  # this can be preprocessed in bulk
+        #         for basin_data in basin_data_list
+        #     ]
+        # )
+        in_any_basin = any(in_basin.in_basin_lat_lon for in_basin in in_basin_list)
 
         # point lies within smoothing zone, is offshore, and is not in any basin (i.e., outside any boundaries)
         if (

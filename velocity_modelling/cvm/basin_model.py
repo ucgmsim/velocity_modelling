@@ -6,8 +6,16 @@ import sys
 
 from velocity_modelling.cvm.registry import CVMRegistry
 from velocity_modelling.cvm.interpolate import bi_linear_interpolation
-from velocity_modelling.cvm.geometry import point_on_vertex, AdjacentPoints, MeshVector
+from velocity_modelling.cvm.geometry import (
+    point_on_vertex,
+    AdjacentPoints,
+    MeshVector,
+    GlobalMesh,
+)
+
 from qcore import point_in_polygon
+from aabbtree import AABB, AABBTree
+from shapely.geometry import Point, Polygon
 
 
 def check_boundary_index(func):
@@ -149,6 +157,68 @@ class BasinData:
                     return True  # inside a basin (any)
 
         return False  # not inside basin
+
+
+class BasinLocator:
+    def __init__(self, boundaries: list[np.ndarray]):
+        """
+        Initialize the BasinLocator with given boundaries.
+
+        Parameters
+        ----------
+        boundaries : list of np.ndarray
+            Each boundary is defined by an array of (lon, lat) points.
+        """
+        self.boundaries = [Polygon(boundary) for boundary in boundaries]
+        self.tree = AABBTree()
+
+        # Build the AABB tree for fast spatial filtering
+        for i, boundary in enumerate(self.boundaries):
+            minx, miny, maxx, maxy = boundary.bounds
+            self.tree.add(AABB([(minx, maxx), (miny, maxy)]), i)
+
+    def determine_if_within_basin_batch(self, global_mesh: GlobalMesh):
+        """
+        Determine which grid points in the global mesh are inside any boundary.
+
+        Parameters
+        ----------
+        global_mesh : GlobalMesh
+            The global mesh containing lat/lon values.
+
+        Returns
+        -------
+        np.ndarray (nx, ny)
+            Boolean mask where True means the grid point is inside a boundary.
+        """
+        nx, ny = global_mesh.lat.shape
+        inside_boundary = np.zeros((nx, ny), dtype=bool)  # Initialize result mask
+
+        # Flatten lat/lon for vectorized processing
+        lon_flat = global_mesh.lon.ravel()
+        lat_flat = global_mesh.lat.ravel()
+        points = np.column_stack((lon_flat, lat_flat))
+
+        # Step 1: AABB Filtering
+        candidate_mask = np.zeros_like(lon_flat, dtype=bool)
+        for idx in range(len(points)):
+            point_aabb = AABB(
+                [(lon_flat[idx], lon_flat[idx]), (lat_flat[idx], lat_flat[idx])]
+            )
+            potential_boundaries = [
+                self.boundaries[node.obj] for node in self.tree.query(point_aabb)
+            ]
+
+            # Step 2: Exact Polygon Check
+            if any(
+                boundary.contains(Point(points[idx]))
+                for boundary in potential_boundaries
+            ):
+                candidate_mask[idx] = True
+
+        # Reshape back to (nx, ny)
+        inside_boundary.ravel()[:] = candidate_mask
+        return inside_boundary
 
 
 class InBasin:

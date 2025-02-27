@@ -5,13 +5,19 @@ import logging
 
 from pathlib import Path
 import argparse
+import numpy as np
 
 import yaml
 
-from typing import Dict
+from typing import Dict, List
 
 from velocity_modelling.cvm.constants import NZVM_REGISTRY_PATH
-from velocity_modelling.cvm.basin_model import InBasin, PartialBasinSurfaceDepths
+from velocity_modelling.cvm.basin_model import (
+    InBasin,
+    PartialBasinSurfaceDepths,
+    BasinLocator,
+    BasinData,
+)
 from velocity_modelling.cvm.geometry import (
     gen_full_model_grid_great_circle,
     extract_partial_mesh,
@@ -66,6 +72,22 @@ def write_velo_mod_corners_text_file(
     logger.info("Velocity model corners file write complete.")
 
 
+def preprocess_basin_membership(
+    global_mesh: GlobalMesh, basin_data_list: List[BasinData]
+) -> np.ndarray:
+    ny, nx = len(global_mesh.y), len(global_mesh.x)
+    basin_membership = np.full((ny, nx), -1, dtype=int)  # -1 indicates not in any basin
+
+    for b, basin_data in enumerate(basin_data_list):
+        locator = BasinLocator(basin_data.boundaries)
+        inside_basin = locator.determine_if_within_basin_batch(global_mesh)
+
+        # Update membership where the grid point is inside the current basin
+        basin_membership[inside_basin] = b
+
+    return basin_membership
+
+
 def generate_velocity_model(
     cvm_registry: CVMRegistry,
     out_dir: Path,
@@ -98,6 +120,8 @@ def generate_velocity_model(
         cvm_registry.load_all_global_data(logger)
     )
 
+    basin_membership = preprocess_basin_membership(global_mesh, basin_data_list)
+
     for j in range(len(global_mesh.y)):
         logger.info(
             f"Generating velocity model {j * 100 / len(global_mesh.y):.2f}% complete."
@@ -112,6 +136,9 @@ def generate_velocity_model(
                 InBasin(basin_data, partial_global_mesh.nz)
                 for basin_data in basin_data_list
             ]
+            for b, in_basin in enumerate(in_basin_list):
+                in_basin.in_basin_lat_lon = basin_membership[j, k, b]
+
             partial_global_surface_depths = PartialGlobalSurfaceDepths(
                 len(global_surfaces.surfaces)
             )
