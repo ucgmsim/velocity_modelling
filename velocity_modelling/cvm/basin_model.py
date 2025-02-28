@@ -11,11 +11,15 @@ from velocity_modelling.cvm.geometry import (
     AdjacentPoints,
     MeshVector,
     GlobalMesh,
+    PartialGlobalMesh,
+    extract_partial_mesh,
 )
 
 from qcore import point_in_polygon
-from aabbtree import AABB, AABBTree
 from shapely.geometry import Point, Polygon
+from shapely.vectorized import contains
+from shapely.strtree import STRtree
+from typing import List, Tuple
 
 
 def check_boundary_index(func):
@@ -118,113 +122,143 @@ class BasinData:
         """
         return self.boundaries[i][:, 0]
 
-    def determine_if_within_basin_lat_lon(self, mesh_vector: MeshVector):
+    # def determine_if_within_basin_lat_lon(self, mesh_vector: MeshVector):
+    #     """
+    #     Determine if a point lies within the different basin boundaries.
+    #
+    #     Parameters
+    #     ----------
+    #     mesh_vector : MeshVector
+    #         Struct containing a single lat-lon point.
+    #
+    #     Returns
+    #     -------
+    #     bool
+    #         True if inside a basin, False otherwise.
+    #     """
+    #
+    #     # TODO: Only Perturbation basins are ignored for smoothing, which will be handled in the perturbation code.
+    #     #  We dropped ignoreBasinForSmoothing from Basin definition. By default we don't ignore any basins for smoothing.
+    #
+    #     # See https://github.com/ucgmsim/mapping/blob/80b8e66222803d69e2f8f2182ccc1adc467b7cb1/mapbox/vs30/scripts/basin_z_values/gen_sites_in_basin.py#L119C2-L123C55
+    #     # and https://github.com/ucgmsim/qcore/blob/master/qcore/point_in_polygon.py
+    #
+    #     for ind, boundary in enumerate(self.boundaries):
+    #
+    #         if not (
+    #             np.min(boundary[:, 0]) <= mesh_vector.lon <= np.max(boundary[:, 0])
+    #             and np.min(boundary[:, 1]) <= mesh_vector.lat <= np.max(boundary[:, 1])
+    #         ):
+    #             continue  # outside of basin
+    #
+    #         else:
+    #             # possibly in basin
+    #             in_poly = point_in_polygon.is_inside_postgis(
+    #                 boundary, np.array([mesh_vector.lon, mesh_vector.lat])
+    #             )  # check if in poly
+    #
+    #             if in_poly:  # in_poly == 1 (inside) ==2 (on edge)
+    #                 return True  # inside a basin (any)
+    #
+    #     return False  # not inside basin
+
+
+class InBasinGlobalMesh:
+    def __init__(self, global_mesh: GlobalMesh):
         """
-        Determine if a point lies within the different basin boundaries.
-
-        Parameters
-        ----------
-        mesh_vector : MeshVector
-            Struct containing a single lat-lon point.
-
-        Returns
-        -------
-        bool
-            True if inside a basin, False otherwise.
-        """
-
-        # TODO: Only Perturbation basins are ignored for smoothing, which will be handled in the perturbation code.
-        #  We dropped ignoreBasinForSmoothing from Basin definition. By default we don't ignore any basins for smoothing.
-
-        # See https://github.com/ucgmsim/mapping/blob/80b8e66222803d69e2f8f2182ccc1adc467b7cb1/mapbox/vs30/scripts/basin_z_values/gen_sites_in_basin.py#L119C2-L123C55
-        # and https://github.com/ucgmsim/qcore/blob/master/qcore/point_in_polygon.py
-
-        for ind, boundary in enumerate(self.boundaries):
-
-            if not (
-                np.min(boundary[:, 0]) <= mesh_vector.lon <= np.max(boundary[:, 0])
-                and np.min(boundary[:, 1]) <= mesh_vector.lat <= np.max(boundary[:, 1])
-            ):
-                continue  # outside of basin
-
-            else:
-                # possibly in basin
-                in_poly = point_in_polygon.is_inside_postgis(
-                    boundary, np.array([mesh_vector.lon, mesh_vector.lat])
-                )  # check if in poly
-
-                if in_poly:  # in_poly == 1 (inside) ==2 (on edge)
-                    return True  # inside a basin (any)
-
-        return False  # not inside basin
-
-
-class BasinLocator:
-    def __init__(self, boundaries: list[np.ndarray]):
-        """
-        Initialize the BasinLocator with given boundaries.
-
-        Parameters
-        ----------
-        boundaries : list of np.ndarray
-            Each boundary is defined by an array of (lon, lat) points.
-        """
-        self.boundaries = [Polygon(boundary) for boundary in boundaries]
-        self.tree = AABBTree()
-
-        # Build the AABB tree for fast spatial filtering
-        for i, boundary in enumerate(self.boundaries):
-            minx, miny, maxx, maxy = boundary.bounds
-            self.tree.add(AABB([(minx, maxx), (miny, maxy)]), i)
-
-    def determine_if_within_basin_batch(self, global_mesh: GlobalMesh):
-        """
-        Determine which grid points in the global mesh are inside any boundary.
+        Initialize the InBasinGlobalMesh with basin membership data.
 
         Parameters
         ----------
         global_mesh : GlobalMesh
             The global mesh containing lat/lon values.
+        """
+        self.nx, self.ny = global_mesh.lat.shape
+        self.nz = len(global_mesh.z)
+        self.lat = global_mesh.lat.copy()  # (nx, ny)
+        self.lon = global_mesh.lon.copy()  # (nx, ny)
+        self.basin_membership = np.full(
+            (self.ny, self.nx), -1, dtype=int
+        )  # (ny, nx), -1 means no basin
+
+    def get_basin_idx(self, j: int, k: int) -> int:
+        """
+        Get the basin index for a given (j, k) grid point.
+
+        Parameters
+        ----------
+        j : int
+            Index along the y-axis (rows).
+        k : int
+            Index along the x-axis (columns).
 
         Returns
         -------
-        np.ndarray (nx, ny)
-            Boolean mask where True means the grid point is inside a boundary.
+        int
+            Basin index (>= 0) or -1 if not in any basin.
         """
-        nx, ny = global_mesh.lat.shape
-        inside_boundary = np.zeros((nx, ny), dtype=bool)  # Initialize result mask
+        if 0 <= j < self.ny and 0 <= k < self.nx:
+            return self.basin_membership[j, k]
+        raise IndexError(
+            f"Indices (j={j}, k={k}) out of bounds for grid (ny={self.ny}, nx={self.nx})"
+        )
 
-        # Flatten lat/lon for vectorized processing
-        lon_flat = global_mesh.lon.ravel()
-        lat_flat = global_mesh.lat.ravel()
-        points = np.column_stack((lon_flat, lat_flat))
 
-        # Step 1: AABB Filtering
-        candidate_mask = np.zeros_like(lon_flat, dtype=bool)
-        for idx in range(len(points)):
-            point_aabb = AABB(
-                [(lon_flat[idx], lon_flat[idx]), (lat_flat[idx], lat_flat[idx])]
-            )
-            potential_boundaries = [
-                self.boundaries[node.obj] for node in self.tree.query(point_aabb)
-            ]
+def determine_if_within_basin_lat_lon(basin_data: BasinData, lat: float, lon: float):
+    """
+    Determine if a point lies within the different basin boundaries.
 
-            # Step 2: Exact Polygon Check
-            if any(
-                boundary.contains(Point(points[idx]))
-                for boundary in potential_boundaries
-            ):
-                candidate_mask[idx] = True
+    Parameters
+    ----------
+    mesh_vector : MeshVector
+        Struct containing a single lat-lon point.
 
-        # Reshape back to (nx, ny)
-        inside_boundary.ravel()[:] = candidate_mask
-        return inside_boundary
+    Returns
+    -------
+    bool
+        True if inside a basin, False otherwise.
+    """
+
+    # TODO: Only Perturbation basins are ignored for smoothing, which will be handled in the perturbation code.
+    #  We dropped ignoreBasinForSmoothing from Basin definition. By default we don't ignore any basins for smoothing.
+
+    # See https://github.com/ucgmsim/mapping/blob/80b8e66222803d69e2f8f2182ccc1adc467b7cb1/mapbox/vs30/scripts/basin_z_values/gen_sites_in_basin.py#L119C2-L123C55
+    # and https://github.com/ucgmsim/qcore/blob/master/qcore/point_in_polygon.py
+
+    for ind, boundary in enumerate(basin_data.boundaries):
+
+        if not (
+            np.min(boundary[:, 0]) <= lon <= np.max(boundary[:, 0])
+            and np.min(boundary[:, 1]) <= lat <= np.max(boundary[:, 1])
+        ):
+            continue  # outside of basin
+
+        else:
+            # possibly in basin
+            in_poly = point_in_polygon.is_inside_postgis(
+                boundary, np.array([lon, lat])
+            )  # check if in poly
+            if in_poly:  # in_poly == 1 (inside) ==2 (on edge)
+                return True  # inside a basin (any)
+            else:  # outside poly
+                # check if it is on vertex. if in_poly
+                on_vertex = point_on_vertex(
+                    basin_data.boundary_lat(ind),
+                    basin_data.boundary_lon(ind),
+                    lat,
+                    lon,
+                )
+                if on_vertex:
+                    return True
+                continue  # outside of basin
+
+    return False  # not inside basin
 
 
 class InBasin:
     def __init__(self, basin_data: BasinData, n_depths: int):
         """
-        Initialize the InBasin.
+        Initialize the InBasin. Used to determine if a given point is within the basin.
 
         Parameters
         ----------
@@ -234,60 +268,74 @@ class InBasin:
             The number of depth points.
         """
         self.basin_data = basin_data
-        self.in_basin_lat_lon = np.zeros(len(basin_data.boundaries), dtype=bool)
+        # the given lat lon is within a boundary of this basin
+        self.in_basin_lat_lon = False
+        # checks the basin's surface depth and if the point in the range of n_depths is within the basin
         self.in_basin_depth = np.zeros((n_depths), dtype=bool)
 
-    def determine_if_within_basin_lat_lon(self, mesh_vector: MeshVector):
-        """
-        Determine if a point lies within the different basin boundaries.
 
-        Parameters
-        ----------
-        mesh_vector : MeshVector
-            Struct containing a single lat-lon point.
+def preprocess_basin_membership(
+    global_mesh: GlobalMesh, basin_data_list: List[BasinData]
+) -> Tuple[InBasinGlobalMesh, List[PartialGlobalMesh]]:
 
-        Returns
-        -------
-        bool
-            True if inside a basin, False otherwise.
-        """
+    in_basin_mesh = InBasinGlobalMesh(global_mesh)
+    nx, ny = in_basin_mesh.nx, in_basin_mesh.ny
+    partial_global_mesh_list = [extract_partial_mesh(global_mesh, j) for j in range(ny)]
+    for j in range(ny):
+        partial_global_mesh = partial_global_mesh_list[j]
+        for k in range(nx):
+            lat = partial_global_mesh.lat[k]
+            lon = partial_global_mesh.lon[k]
+            for basin_idx, basin_data in enumerate(basin_data_list):
+                if determine_if_within_basin_lat_lon(basin_data, lat, lon):
+                    in_basin_mesh.basin_membership[j, k] = basin_idx
 
-        # TODO: Only Perturbation basins are ignored for smoothing, which will be handled in the perturbation code.
-        #  We dropped ignoreBasinForSmoothing from Basin definition. By default we don't ignore any basins for smoothing.
+    return in_basin_mesh, partial_global_mesh_list
 
-        # See https://github.com/ucgmsim/mapping/blob/80b8e66222803d69e2f8f2182ccc1adc467b7cb1/mapbox/vs30/scripts/basin_z_values/gen_sites_in_basin.py#L119C2-L123C55
-        # and https://github.com/ucgmsim/qcore/blob/master/qcore/point_in_polygon.py
 
-        for ind, boundary in enumerate(self.basin_data.boundaries):
-
-            if not (
-                np.min(boundary[:, 0]) <= mesh_vector.lon <= np.max(boundary[:, 0])
-                and np.min(boundary[:, 1]) <= mesh_vector.lat <= np.max(boundary[:, 1])
-            ):
-                continue  # outside of basin
-
-            else:
-                # possibly in basin
-                in_poly = point_in_polygon.is_inside_postgis(
-                    boundary, np.array([mesh_vector.lon, mesh_vector.lat])
-                )  # check if in poly
-                if in_poly:  # in_poly == 1 (inside) ==2 (on edge)
-                    self.in_basin_lat_lon[ind] = True
-                    return True  # inside a basin (any)
-                else:  # outside poly
-                    # check if it is on vertex. if in_poly
-                    on_vertex = point_on_vertex(
-                        self.basin_data.boundary_lat(ind),
-                        self.basin_data.boundary_lon(ind),
-                        mesh_vector.lat,
-                        mesh_vector.lon,
-                    )
-                    if on_vertex:
-                        self.in_basin_lat_lon[ind] = True
-                        return True
-                    continue  # outside of basin
-
-        return False  # not inside basin
+# def preprocess_basin_membership(
+#     global_mesh: GlobalMesh, basin_data_list: List[BasinData]) -> InBasinGlobalMesh:
+#     """
+#     Preprocess basin membership and return InBasinGlobalMesh and a list of InBasin objects.
+#
+#     Parameters
+#     ----------
+#     global_mesh : GlobalMesh
+#         The global mesh containing lat/lon values.
+#     basin_data_list : List[BasinData]
+#         List of BasinData objects for each basin.
+#
+#     Returns
+#     -------
+#     InBasinGlobalMesh
+#         Object with basin membership for each (j, k) grid point.
+#     """
+#     # Step 1: Create InBasinGlobalMesh
+#     in_basin_mesh = InBasinGlobalMesh(global_mesh)
+#     nx, ny = in_basin_mesh.nx, in_basin_mesh.ny
+#
+#     # Populate basin_membership
+#     for basin_idx, basin_data in enumerate(basin_data_list):
+#         boundaries = [Polygon(boundary) for boundary in basin_data.boundaries]
+#         tree = STRtree(boundaries)
+#
+#         lon_flat = global_mesh.lon.ravel()
+#         lat_flat = global_mesh.lat.ravel()
+#         points = [Point(lon, lat) for lon, lat in zip(lon_flat, lat_flat)]
+#
+#         candidate_indices = tree.query(points, predicate="intersects")
+#         if len(candidate_indices[0]) > 0:
+#             point_indices, boundary_indices = candidate_indices
+#             for pt_idx, bd_idx in zip(point_indices, boundary_indices):
+#                 boundary = boundaries[bd_idx]
+#                 point = points[pt_idx]
+#                 if boundary.contains(point):
+#                     k, j = divmod(pt_idx, ny)  # k = x-index, j = y-index
+#                     in_basin_mesh.basin_membership[j, k] = basin_idx
+#
+#
+#
+#     return in_basin_mesh
 
 
 class PartialBasinSurfaceDepths:
@@ -322,9 +370,7 @@ class PartialBasinSurfaceDepths:
         """
         for surface_ind, surface in enumerate(inbasin.basin_data.surfaces):
 
-            if np.any(
-                inbasin.in_basin_lat_lon
-            ):  # see if this is in any boundary of this basin
+            if inbasin.in_basin_lat_lon:  # see if this is in any boundary of this basin
                 adjacent_points = AdjacentPoints.find_basin_adjacent_points(
                     surface.lati, surface.loni, mesh_vector.lat, mesh_vector.lon
                 )
@@ -440,7 +486,7 @@ class PartialBasinSurfaceDepths:
             Struct containing a single lat-lon point with one or more depths.
         """
 
-        if np.any(in_basin.in_basin_lat_lon):
+        if in_basin.in_basin_lat_lon:
 
             self.enforce_surface_depths()
             # TODO: check if this is correct
@@ -469,7 +515,7 @@ class PartialBasinSurfaceDepths:
         mesh_vector : MeshVector
             Struct containing a single lat-lon point with one or more depths.
         """
-        in_basin.determine_if_within_basin_lat_lon(mesh_vector)
+        # in_basin.determine_if_within_basin_lat_lon(mesh_vector)
         self.determine_basin_surface_depths(in_basin, mesh_vector)
         self.enforce_basin_surface_depths(in_basin, mesh_vector)
 

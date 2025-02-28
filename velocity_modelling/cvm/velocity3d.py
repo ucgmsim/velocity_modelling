@@ -232,6 +232,7 @@ class QualitiesVector:
         #         for basin_data in basin_data_list
         #     ]
         # )
+
         in_any_basin = any(in_basin.in_basin_lat_lon for in_basin in in_basin_list)
 
         # point lies within smoothing zone, is offshore, and is not in any basin (i.e., outside any boundaries)

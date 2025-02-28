@@ -27,10 +27,10 @@ def main(
     n.a.
     """
 
-    point_depth = partial_basin_surface_depths.depth[0] - depth
+    point_depth = partial_basin_surface_depths.depths[0] - depth
 
     DEM_depth = partial_global_surface_depths.depths[1]  # value of the DEM
-    BPV_top = partial_basin_surface_depths.depth[0]  # value of the BPV top
+    BPV_top = partial_basin_surface_depths.depths[0]  # value of the BPV top
 
     z_DEM_relative = DEM_depth - depth  # delth of the gridpoint relative to the DEM
     z_BPV_relative = BPV_top - depth  # delth of the gridpoint relative to the BPV top

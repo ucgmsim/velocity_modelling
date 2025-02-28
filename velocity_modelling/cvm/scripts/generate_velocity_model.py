@@ -1,5 +1,5 @@
 # import concurrent.futures
-
+from copy import deepcopy
 from logging import Logger
 import logging
 
@@ -15,8 +15,9 @@ from velocity_modelling.cvm.constants import NZVM_REGISTRY_PATH
 from velocity_modelling.cvm.basin_model import (
     InBasin,
     PartialBasinSurfaceDepths,
-    BasinLocator,
     BasinData,
+    InBasinGlobalMesh,
+    preprocess_basin_membership,
 )
 from velocity_modelling.cvm.geometry import (
     gen_full_model_grid_great_circle,
@@ -72,20 +73,32 @@ def write_velo_mod_corners_text_file(
     logger.info("Velocity model corners file write complete.")
 
 
-def preprocess_basin_membership(
-    global_mesh: GlobalMesh, basin_data_list: List[BasinData]
-) -> np.ndarray:
-    ny, nx = len(global_mesh.y), len(global_mesh.x)
-    basin_membership = np.full((ny, nx), -1, dtype=int)  # -1 indicates not in any basin
-
-    for b, basin_data in enumerate(basin_data_list):
-        locator = BasinLocator(basin_data.boundaries)
-        inside_basin = locator.determine_if_within_basin_batch(global_mesh)
-
-        # Update membership where the grid point is inside the current basin
-        basin_membership[inside_basin] = b
-
-    return basin_membership
+# def preprocess_basin_membership(
+#     global_mesh: GlobalMesh, basin_data_list: List[BasinData]
+# ) -> List[InBasin]:
+#     """
+#     Preprocess basin membership and return a list of InBasin objects with updated in_basin_lat_lon.
+#
+#     Parameters
+#     ----------
+#     global_mesh : GlobalMesh
+#         The global mesh containing lat/lon values.
+#     basin_data_list : List[BasinData]
+#         List of BasinData objects for each basin.
+#
+#     Returns
+#     -------
+#     List[InBasin]
+#         List of InBasin objects with updated in_basin_lat_lon attributes.
+#     """
+#     # Initialize list of InBasin objects
+#     in_basin_list = [InBasin(basin_data, len(global_mesh.z)) for basin_data in basin_data_list]
+#
+#     # Update membership for each basin
+#     for in_basin in in_basin_list:
+#         in_basin.update_basin_membership(global_mesh)
+#
+#     return in_basin_list
 
 
 def generate_velocity_model(
@@ -120,24 +133,22 @@ def generate_velocity_model(
         cvm_registry.load_all_global_data(logger)
     )
 
-    basin_membership = preprocess_basin_membership(global_mesh, basin_data_list)
+    in_basin_mesh, partial_global_mesh_list = preprocess_basin_membership(
+        global_mesh, basin_data_list
+    )
 
     for j in range(len(global_mesh.y)):
         logger.info(
             f"Generating velocity model {j * 100 / len(global_mesh.y):.2f}% complete."
         )
-        partial_global_mesh = extract_partial_mesh(global_mesh, j)
+        partial_global_mesh = partial_global_mesh_list[
+            j
+        ]  # extract_partial_mesh(global_mesh, j)
         partial_global_qualities = PartialGlobalQualities(
             partial_global_mesh.nx, partial_global_mesh.nz
         )
 
         for k in range(len(partial_global_mesh.x)):
-            in_basin_list = [
-                InBasin(basin_data, partial_global_mesh.nz)
-                for basin_data in basin_data_list
-            ]
-            for b, in_basin in enumerate(in_basin_list):
-                in_basin.in_basin_lat_lon = basin_membership[j, k, b]
 
             partial_global_surface_depths = PartialGlobalSurfaceDepths(
                 len(global_surfaces.surfaces)
@@ -149,6 +160,15 @@ def generate_velocity_model(
             qualities_vector = QualitiesVector(partial_global_mesh.nz)
             extended_qualities_vector = QualitiesVector(partial_global_mesh.nz)
             #
+
+            basin_idx = in_basin_mesh.basin_membership[j, k]
+            in_basin_list = [
+                InBasin(basin_data, len(global_mesh.z))
+                for basin_data in basin_data_list
+            ]
+            if basin_idx >= 0:  # -1 means not in any basin
+                in_basin_list[basin_idx].in_basin_lat_lon = True
+
             if smoothing:
                 pass
             #             extended_mesh_vector = extend_mesh_vector(partial_global_mesh, n_pts_smooth, model_extent.hDep * 1000,
