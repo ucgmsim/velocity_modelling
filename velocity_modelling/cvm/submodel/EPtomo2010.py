@@ -4,7 +4,7 @@ from velocity_modelling.cvm.geometry import MeshVector, AdjacentPoints
 from velocity_modelling.cvm.velocity3d import QualitiesVector
 from velocity_modelling.cvm.global_model import (
     PartialGlobalSurfaceDepths,
-    interpolate_global_surface,
+    interpolate_global_surface_numba,
     TomographyData,
 )
 from velocity_modelling.cvm.constants import VTYPE
@@ -123,11 +123,61 @@ def main(
         surface_pointer_above = nz_tomography_data.surfaces[ind_above][vtype.name]
         surface_pointer_below = nz_tomography_data.surfaces[ind_below][vtype.name]
 
-        val_above = interpolate_global_surface(
-            surface_pointer_above, mesh_vector, adjacent_points
+        # val_above = interpolate_global_surface(
+        #     surface_pointer_above, mesh_vector, adjacent_points
+        # )
+        # val_below = interpolate_global_surface(
+        #     surface_pointer_below, mesh_vector, adjacent_points
+        # )
+        # Extract data once from mesh_vector and adjacent_points (reused across calls)
+        lon = mesh_vector.lon
+        lat = mesh_vector.lat
+        lon_ind = adjacent_points.lon_ind  # np.ndarray
+        lat_ind = adjacent_points.lat_ind  # np.ndarray
+        in_surface_bounds = adjacent_points.in_surface_bounds
+        in_lat_extension_zone = adjacent_points.in_lat_extension_zone
+        in_lon_extension_zone = adjacent_points.in_lon_extension_zone
+        in_corner_zone = adjacent_points.in_corner_zone
+        lat_edge_ind = adjacent_points.lat_edge_ind
+        lon_edge_ind = adjacent_points.lon_edge_ind
+        corner_lon_ind = adjacent_points.corner_lon_ind
+        corner_lat_ind = adjacent_points.corner_lat_ind
+
+        # Replace the four calls with Numba-optimized version
+        val_above = interpolate_global_surface_numba(
+            surface_pointer_above.lati,
+            surface_pointer_above.loni,
+            surface_pointer_above.raster,
+            lat,
+            lon,
+            lat_ind,
+            lon_ind,
+            in_surface_bounds,
+            in_lat_extension_zone,
+            in_lon_extension_zone,
+            in_corner_zone,
+            lat_edge_ind,
+            lon_edge_ind,
+            corner_lat_ind,
+            corner_lon_ind,
         )
-        val_below = interpolate_global_surface(
-            surface_pointer_below, mesh_vector, adjacent_points
+
+        val_below = interpolate_global_surface_numba(
+            surface_pointer_below.lati,
+            surface_pointer_below.loni,
+            surface_pointer_below.raster,
+            lat,
+            lon,
+            lat_ind,
+            lon_ind,
+            in_surface_bounds,
+            in_lat_extension_zone,
+            in_lon_extension_zone,
+            in_corner_zone,
+            lat_edge_ind,
+            lon_edge_ind,
+            corner_lat_ind,
+            corner_lon_ind,
         )
 
         dep_above = nz_tomography_data.surf_depth[ind_above] * 1000

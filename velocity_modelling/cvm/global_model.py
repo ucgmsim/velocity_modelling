@@ -4,6 +4,7 @@ from logging import Logger
 from typing import Dict, List
 
 import numpy as np
+from numba import njit
 
 from velocity_modelling.cvm.interpolate import (
     bi_linear_interpolation,
@@ -133,8 +134,25 @@ class PartialGlobalSurfaceDepths:
                 mesh_vector.lat,
                 mesh_vector.lon,
             )
-            self.depths[i] = interpolate_global_surface(
-                global_surf_read, mesh_vector, adjacent_points
+            # self.depths[i] = interpolate_global_surface(
+            #     global_surf_read, mesh_vector, adjacent_points
+            # )
+            self.depths[i] = interpolate_global_surface_numba(
+                global_surf_read.lati,
+                global_surf_read.loni,
+                global_surf_read.raster,
+                mesh_vector.lat,
+                mesh_vector.lon,
+                adjacent_points.lat_ind,
+                adjacent_points.lon_ind,
+                adjacent_points.in_surface_bounds,
+                adjacent_points.in_lat_extension_zone,
+                adjacent_points.in_lon_extension_zone,
+                adjacent_points.in_corner_zone,
+                adjacent_points.lat_edge_ind,
+                adjacent_points.lon_edge_ind,
+                adjacent_points.corner_lat_ind,
+                adjacent_points.corner_lon_ind,
             )
 
         # Find indices where top_val < bot_val
@@ -144,84 +162,135 @@ class PartialGlobalSurfaceDepths:
         self.depths[1:][mask] = self.depths[:-1][mask]
 
 
-def interpolate_global_surface(
-    global_surface_read: GlobalSurfaceRead,
-    mesh_vector: MeshVector,
-    adjacent_points: AdjacentPoints,
-):
-    """
-    Interpolate the global surface value at a given latitude and longitude.
+#
+# def interpolate_global_surface(
+#     global_surface_read: GlobalSurfaceRead,
+#     mesh_vector: MeshVector,
+#     adjacent_points: AdjacentPoints,
+# ):
+#     """
+#     Interpolate the global surface value at a given latitude and longitude.
+#
+#     Parameters
+#     ----------
+#     global_surface_read: GlobalSurfaceRead
+#         Object containing the global surface data.
+#     mesh_vector: MeshVector
+#         Object containing latitude and longitude.
+#     adjacent_points: AdjacentPoints
+#         Object containing indices of points adjacent to the lat-lon for interpolation.
+#
+#     Returns
+#     -------
+#     float: Interpolated value at the given lat-lon.
+#     """
+#     # if point lies within the surface bounds, perform bilinear interpolation
+#     if adjacent_points.in_surface_bounds:
+#
+#         x1 = global_surface_read.loni[adjacent_points.lon_ind[0]]
+#         x2 = global_surface_read.loni[adjacent_points.lon_ind[1]]
+#
+#         y1 = global_surface_read.lati[adjacent_points.lat_ind[0]]
+#         y2 = global_surface_read.lati[adjacent_points.lat_ind[1]]
+#
+#         q11 = global_surface_read.raster[adjacent_points.lon_ind[0]][
+#             adjacent_points.lat_ind[0]
+#         ]
+#         q12 = global_surface_read.raster[adjacent_points.lon_ind[0]][
+#             adjacent_points.lat_ind[1]
+#         ]
+#         q21 = global_surface_read.raster[adjacent_points.lon_ind[1]][
+#             adjacent_points.lat_ind[0]
+#         ]
+#         q22 = global_surface_read.raster[adjacent_points.lon_ind[1]][
+#             adjacent_points.lat_ind[1]
+#         ]
+#
+#         assert x1 != x2
+#         assert y1 != y2
+#
+#         q = bi_linear_interpolation(
+#             x1, x2, y1, y2, q11, q12, q21, q22, mesh_vector.lon, mesh_vector.lat
+#         )
+#         return q
+#
+#     # if point lies within the extension zone, take on the value of the closest point
+#     elif adjacent_points.in_lat_extension_zone:
+#         p1 = global_surface_read.loni[adjacent_points.lon_ind[0]]
+#         p2 = global_surface_read.loni[adjacent_points.lon_ind[1]]
+#         v1 = global_surface_read.raster[adjacent_points.lon_ind[0]][
+#             adjacent_points.lat_edge_ind
+#         ]
+#         v2 = global_surface_read.raster[adjacent_points.lon_ind[1]][
+#             adjacent_points.lat_edge_ind
+#         ]
+#         p3 = mesh_vector.lon
+#         return linear_interpolation(p1, p2, v1, v2, p3)
+#     elif adjacent_points.in_lon_extension_zone:
+#         p1 = global_surface_read.lati[adjacent_points.lat_ind[0]]
+#         p2 = global_surface_read.lati[adjacent_points.lat_ind[1]]
+#         v1 = global_surface_read.raster[adjacent_points.lon_edge_ind][
+#             adjacent_points.lat_ind[0]
+#         ]
+#         v2 = global_surface_read.raster[adjacent_points.lon_edge_ind][
+#             adjacent_points.lat_ind[1]
+#         ]
+#         p3 = mesh_vector.lat
+#         return linear_interpolation(p1, p2, v1, v2, p3)
+#     elif adjacent_points.in_corner_zone:
+#         return global_surface_read.raster[adjacent_points.corner_lon_ind][
+#             adjacent_points.corner_lat_ind
+#         ]
+#
+#     raise ValueError("Calculation of Global surface value failed.")
+@njit
+def interpolate_global_surface_numba(
+    lati: np.ndarray,
+    loni: np.ndarray,
+    raster: np.ndarray,
+    lat: float,
+    lon: float,
+    lat_ind: np.ndarray,
+    lon_ind: np.ndarray,
+    in_surface_bounds: bool,
+    in_lat_extension_zone: bool,
+    in_lon_extension_zone: bool,
+    in_corner_zone: bool,
+    lat_edge_ind: int,
+    lon_edge_ind: int,
+    corner_lat_ind: int,
+    corner_lon_ind: int,
+) -> float:
+    if in_surface_bounds:
+        x1 = loni[lon_ind[0]]
+        x2 = loni[lon_ind[1]]
+        y1 = lati[lat_ind[0]]
+        y2 = lati[lat_ind[1]]
 
-    Parameters
-    ----------
-    global_surface_read: GlobalSurfaceRead
-        Object containing the global surface data.
-    mesh_vector: MeshVector
-        Object containing latitude and longitude.
-    adjacent_points: AdjacentPoints
-        Object containing indices of points adjacent to the lat-lon for interpolation.
+        q11 = raster[lon_ind[0], lat_ind[0]]
+        q12 = raster[lon_ind[0], lat_ind[1]]
+        q21 = raster[lon_ind[1], lat_ind[0]]
+        q22 = raster[lon_ind[1], lat_ind[1]]
 
-    Returns
-    -------
-    float: Interpolated value at the given lat-lon.
-    """
-    # if point lies within the surface bounds, perform bilinear interpolation
-    if adjacent_points.in_surface_bounds:
+        # Assume bi_linear_interpolation is also Numba-ified
+        return bi_linear_interpolation(x1, x2, y1, y2, q11, q12, q21, q22, lon, lat)
 
-        x1 = global_surface_read.loni[adjacent_points.lon_ind[0]]
-        x2 = global_surface_read.loni[adjacent_points.lon_ind[1]]
+    elif in_lat_extension_zone:
+        p1 = loni[lon_ind[0]]
+        p2 = loni[lon_ind[1]]
+        v1 = raster[lon_ind[0], lat_edge_ind]
+        v2 = raster[lon_ind[1], lat_edge_ind]
+        return linear_interpolation(p1, p2, v1, v2, lon)
 
-        y1 = global_surface_read.lati[adjacent_points.lat_ind[0]]
-        y2 = global_surface_read.lati[adjacent_points.lat_ind[1]]
+    elif in_lon_extension_zone:
+        p1 = lati[lat_ind[0]]
+        p2 = lati[lat_ind[1]]
+        v1 = raster[lon_edge_ind, lat_ind[0]]
+        v2 = raster[lon_edge_ind, lat_ind[1]]
+        return linear_interpolation(p1, p2, v1, v2, lat)
 
-        q11 = global_surface_read.raster[adjacent_points.lon_ind[0]][
-            adjacent_points.lat_ind[0]
-        ]
-        q12 = global_surface_read.raster[adjacent_points.lon_ind[0]][
-            adjacent_points.lat_ind[1]
-        ]
-        q21 = global_surface_read.raster[adjacent_points.lon_ind[1]][
-            adjacent_points.lat_ind[0]
-        ]
-        q22 = global_surface_read.raster[adjacent_points.lon_ind[1]][
-            adjacent_points.lat_ind[1]
-        ]
-
-        assert x1 != x2
-        assert y1 != y2
-
-        q = bi_linear_interpolation(
-            x1, x2, y1, y2, q11, q12, q21, q22, mesh_vector.lon, mesh_vector.lat
-        )
-        return q
-
-    # if point lies within the extension zone, take on the value of the closest point
-    elif adjacent_points.in_lat_extension_zone:
-        p1 = global_surface_read.loni[adjacent_points.lon_ind[0]]
-        p2 = global_surface_read.loni[adjacent_points.lon_ind[1]]
-        v1 = global_surface_read.raster[adjacent_points.lon_ind[0]][
-            adjacent_points.lat_edge_ind
-        ]
-        v2 = global_surface_read.raster[adjacent_points.lon_ind[1]][
-            adjacent_points.lat_edge_ind
-        ]
-        p3 = mesh_vector.lon
-        return linear_interpolation(p1, p2, v1, v2, p3)
-    elif adjacent_points.in_lon_extension_zone:
-        p1 = global_surface_read.lati[adjacent_points.lat_ind[0]]
-        p2 = global_surface_read.lati[adjacent_points.lat_ind[1]]
-        v1 = global_surface_read.raster[adjacent_points.lon_edge_ind][
-            adjacent_points.lat_ind[0]
-        ]
-        v2 = global_surface_read.raster[adjacent_points.lon_edge_ind][
-            adjacent_points.lat_ind[1]
-        ]
-        p3 = mesh_vector.lat
-        return linear_interpolation(p1, p2, v1, v2, p3)
-    elif adjacent_points.in_corner_zone:
-        return global_surface_read.raster[adjacent_points.corner_lon_ind][
-            adjacent_points.corner_lat_ind
-        ]
+    elif in_corner_zone:
+        return raster[corner_lon_ind, corner_lat_ind]
 
     raise ValueError("Calculation of Global surface value failed.")
 
@@ -292,14 +361,31 @@ class TomographyData:
         -------
         None: The result is stored in the mesh_vector's vs30 attribute.
         """
-        from velocity_modelling.cvm.global_model import interpolate_global_surface
+        from velocity_modelling.cvm.global_model import interpolate_global_surface_numba
 
         adjacent_points = AdjacentPoints.find_global_adjacent_points(
             self.vs30.lati, self.vs30.loni, mesh_vector.lat, mesh_vector.lon
         )
 
-        mesh_vector.vs30 = interpolate_global_surface(
-            self.vs30, mesh_vector, adjacent_points
+        # mesh_vector.vs30 = interpolate_global_surface(
+        #     self.vs30, mesh_vector, adjacent_points
+        # )
+        mesh_vector.vs30 = interpolate_global_surface_numba(
+            self.vs30.lati,
+            self.vs30.loni,
+            self.vs30.raster,
+            mesh_vector.lat,
+            mesh_vector.lon,
+            adjacent_points.lat_ind,
+            adjacent_points.lon_ind,
+            adjacent_points.in_surface_bounds,
+            adjacent_points.in_lat_extension_zone,
+            adjacent_points.in_lon_extension_zone,
+            adjacent_points.in_corner_zone,
+            adjacent_points.lat_edge_ind,
+            adjacent_points.lon_edge_ind,
+            adjacent_points.corner_lat_ind,
+            adjacent_points.corner_lon_ind,
         )
 
     def calculate_distance_from_shoreline(self, mesh_vector: MeshVector):
@@ -315,7 +401,7 @@ class TomographyData:
         -------
         None : The result is stored in the mesh_vector's distance_from_shoreline attribute.
         """
-        from velocity_modelling.cvm.global_model import interpolate_global_surface
+        from velocity_modelling.cvm.global_model import interpolate_global_surface_numba
 
         # Find the adjacent points for interpolation
         adjacent_points = AdjacentPoints.find_global_adjacent_points(
@@ -326,6 +412,25 @@ class TomographyData:
         )
 
         # Interpolate the global surfaces value at the given latitude and longitude
-        mesh_vector.distance_from_shoreline = interpolate_global_surface(
-            self.offshore_distance_surface, mesh_vector, adjacent_points
+        # mesh_vector.distance_from_shoreline = interpolate_global_surface(
+        #     self.offshore_distance_surface, mesh_vector, adjacent_points
+        # )
+        # Extract data once from mesh_vector and adjacent_points (reused across calls)
+
+        mesh_vector.distance_from_shoreline = interpolate_global_surface_numba(
+            self.offshore_distance_surface.lati,
+            self.offshore_distance_surface.loni,
+            self.offshore_distance_surface.raster,
+            mesh_vector.lat,
+            mesh_vector.lon,
+            adjacent_points.lat_ind,
+            adjacent_points.lon_ind,
+            adjacent_points.in_surface_bounds,
+            adjacent_points.in_lat_extension_zone,
+            adjacent_points.in_lon_extension_zone,
+            adjacent_points.in_corner_zone,
+            adjacent_points.lat_edge_ind,
+            adjacent_points.lon_edge_ind,
+            adjacent_points.corner_lat_ind,
+            adjacent_points.corner_lon_ind,
         )
