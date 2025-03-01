@@ -14,6 +14,8 @@ from velocity_modelling.cvm.basin_model import (
     BasinData,
     InBasin,
     PartialBasinSurfaceDepths,
+    determine_if_within_basin_lat_lon,
+    InBasinGlobalMesh,
 )
 from velocity_modelling.cvm.geometry import MeshVector
 from velocity_modelling.cvm.registry import CVMRegistry
@@ -192,6 +194,7 @@ class QualitiesVector:
         partial_global_surface_depths: PartialGlobalSurfaceDepths,
         partial_basin_surface_depths_list: List[PartialBasinSurfaceDepths],
         in_basin_list: List[InBasin],
+        in_basin_mesh: InBasinGlobalMesh,  # New argument
         topo_type: str,
         logger: Logger,
     ):
@@ -207,7 +210,6 @@ class QualitiesVector:
                 1e6  # if there are no points in the smoothing boundary, then skip
             )
         else:
-            # TODO: this can be preprocessed in bulk
             closest_ind, distance = (
                 smooth_bound.determine_if_lat_lon_within_smoothing_region(mesh_vector)
             )
@@ -266,6 +268,35 @@ class QualitiesVector:
             )  # closest_ind should not be None if distance < MAX_DIST_SMOOTH
             mesh_vector.lat = smooth_bound.y[closest_ind]
             mesh_vector.lon = smooth_bound.x[closest_ind]
+
+            # determine if the point is in any basin
+            # Use preprocessed smooth_basin_membership from in_basin_mesh
+            # Check and handle if smooth_basin_membership is None
+            if in_basin_mesh.smooth_basin_membership is None:
+                logger.error(
+                    "smooth_basin_membership is None, falling back to manual calculation"
+                )
+                smooth_indices = []
+                for basin_idx, basin_data in enumerate(basin_data_list):
+                    if determine_if_within_basin_lat_lon(
+                        basin_data, mesh_vector.lat, mesh_vector.lon
+                    ):
+                        smooth_indices.append(basin_idx)
+            else:
+                smooth_indices = in_basin_mesh.smooth_basin_membership[closest_ind]
+
+            for i, in_basin in enumerate(in_basin_b_list):
+                in_basin.in_basin_lat_lon = i in smooth_indices
+
+            # #TODO: need to update in_basin_b_list with the new lat-lon
+            # for i, basin_data in enumerate(basin_data_list):
+            #     in_basin_b_list[i].in_basin_lat_lon = any(
+            #         [
+            #             determine_if_within_basin_lat_lon(basin_data,
+            #                 mesh_vector.lat, mesh_vector.lon
+            #             )  # this can be preprocessed in bulk
+            #         ]
+            #     )
 
             # velocity vector just inside the boundary
             on_boundary = True

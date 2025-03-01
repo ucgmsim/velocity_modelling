@@ -1,27 +1,21 @@
 # import concurrent.futures
-from copy import deepcopy
 from logging import Logger
 import logging
 
 from pathlib import Path
 import argparse
-import numpy as np
-
 import yaml
 
-from typing import Dict, List
+from typing import Dict
 
 from velocity_modelling.cvm.constants import NZVM_REGISTRY_PATH
 from velocity_modelling.cvm.basin_model import (
     InBasin,
     PartialBasinSurfaceDepths,
-    BasinData,
-    InBasinGlobalMesh,
     preprocess_basin_membership,
 )
 from velocity_modelling.cvm.geometry import (
     gen_full_model_grid_great_circle,
-    extract_partial_mesh,
     extract_mesh_vector,
     GlobalMesh,
     ModelExtent,
@@ -73,34 +67,6 @@ def write_velo_mod_corners_text_file(
     logger.info("Velocity model corners file write complete.")
 
 
-# def preprocess_basin_membership(
-#     global_mesh: GlobalMesh, basin_data_list: List[BasinData]
-# ) -> List[InBasin]:
-#     """
-#     Preprocess basin membership and return a list of InBasin objects with updated in_basin_lat_lon.
-#
-#     Parameters
-#     ----------
-#     global_mesh : GlobalMesh
-#         The global mesh containing lat/lon values.
-#     basin_data_list : List[BasinData]
-#         List of BasinData objects for each basin.
-#
-#     Returns
-#     -------
-#     List[InBasin]
-#         List of InBasin objects with updated in_basin_lat_lon attributes.
-#     """
-#     # Initialize list of InBasin objects
-#     in_basin_list = [InBasin(basin_data, len(global_mesh.z)) for basin_data in basin_data_list]
-#
-#     # Update membership for each basin
-#     for in_basin in in_basin_list:
-#         in_basin.update_basin_membership(global_mesh)
-#
-#     return in_basin_list
-
-
 def generate_velocity_model(
     cvm_registry: CVMRegistry,
     out_dir: Path,
@@ -124,6 +90,7 @@ def generate_velocity_model(
     smoothing : bool, optional
         Whether to apply smoothing to the model (default is False).
     """
+
     # Implementation of the function
     model_extent = ModelExtent(vm_params)
     global_mesh = gen_full_model_grid_great_circle(model_extent, logger)
@@ -134,16 +101,17 @@ def generate_velocity_model(
     )
 
     in_basin_mesh, partial_global_mesh_list = preprocess_basin_membership(
-        global_mesh, basin_data_list
+        global_mesh,
+        basin_data_list,
+        logger,
+        smooth_bound=nz_tomography_data.smooth_boundary,
     )
 
     for j in range(len(global_mesh.y)):
         logger.info(
             f"Generating velocity model {j * 100 / len(global_mesh.y):.2f}% complete."
         )
-        partial_global_mesh = partial_global_mesh_list[
-            j
-        ]  # extract_partial_mesh(global_mesh, j)
+        partial_global_mesh = partial_global_mesh_list[j]
         partial_global_qualities = PartialGlobalQualities(
             partial_global_mesh.nx, partial_global_mesh.nz
         )
@@ -161,42 +129,21 @@ def generate_velocity_model(
             extended_qualities_vector = QualitiesVector(partial_global_mesh.nz)
             #
 
-            basin_idx = in_basin_mesh.basin_membership[j, k]
+            basin_indices = in_basin_mesh.basin_membership[j][
+                k
+            ]  # List of basin indices
             in_basin_list = [
                 InBasin(basin_data, len(global_mesh.z))
                 for basin_data in basin_data_list
             ]
-            if basin_idx >= 0:  # -1 means not in any basin
-                in_basin_list[basin_idx].in_basin_lat_lon = True
+            # Set in_basin_lat_lon for all basins this point belongs to
+            for basin_idx in basin_indices:
+                if basin_idx >= 0:  # Should always be true, but keeping for safety
+                    in_basin_list[basin_idx].in_basin_lat_lon = True
 
             if smoothing:
                 pass
-            #             extended_mesh_vector = extend_mesh_vector(partial_global_mesh, n_pts_smooth, model_extent.hDep * 1000,
-            #                                                       k)
-            #             assign_qualities(global_model_parameters, velo_mod_1d_data, nz_tomography_data, global_surfaces,
-            #                              basin_data, extended_mesh_vector, partial_global_surface_depths,
-            #                              partial_basin_surface_depths, in_basin, extended_qualities_vector, logger,
-            #                              gen_extract_velo_mod_call.topo_type)
-            #
-            #             for i in range(partial_global_mesh.nz):
-            #                 mid_pt_count = i * (1 + 2 * n_pts_smooth) + 1
-            #                 mid_pt_count_plus = mid_pt_count + 1
-            #                 mid_pt_count_minus = mid_pt_count - 1
-            #
-            #                 A = one_third * extended_qualities_vector.rho[mid_pt_count_minus]
-            #                 B = four_thirds * extended_qualities_vector.rho[mid_pt_count]
-            #                 C = one_third * extended_qualities_vector.rho[mid_pt_count_plus]
-            #                 partial_global_qualities.rho[k][i] = half * (A + B + C)
-            #
-            #                 A = one_third * extended_qualities_vector.vp[mid_pt_count_minus]
-            #                 B = four_thirds * extended_qualities_vector.vp[mid_pt_count]
-            #                 C = one_third * extended_qualities_vector.vp[mid_pt_count_plus]
-            #                 partial_global_qualities.vp[k][i] = half * (A + B + C)
-            #
-            #                 A = one_third * extended_qualities_vector.vs[mid_pt_count_minus]
-            #                 B = four_thirds * extended_qualities_vector.vs[mid_pt_count]
-            #                 C = one_third * extended_qualities_vector.vs[mid_pt_count_plus]
-            #                 partial_global_qualities.vs[k][i] = half * (A + B + C)
+
             else:
                 mesh_vector = extract_mesh_vector(partial_global_mesh, k)
                 qualities_vector.assign_qualities(
@@ -209,14 +156,11 @@ def generate_velocity_model(
                     partial_global_surface_depths,
                     partial_basin_surface_depths_list,
                     in_basin_list,
+                    in_basin_mesh,
                     vm_params["topo_type"],
                     logger,
                 )
-                nz = partial_global_mesh.nz
-                # partial_global_qualities.rho[k, :nz] = qualities_vector.rho[:nz]
-                # partial_global_qualities.vp[k, :nz] = qualities_vector.vp[:nz]
-                # partial_global_qualities.vs[k, :nz] = qualities_vector.vs[:nz]
-                # partial_global_qualities.inbasin[k, :nz] = qualities_vector.inbasin[:nz]
+
                 partial_global_qualities.rho[k] = qualities_vector.rho
                 partial_global_qualities.vp[k] = qualities_vector.vp
                 partial_global_qualities.vs[k] = qualities_vector.vs

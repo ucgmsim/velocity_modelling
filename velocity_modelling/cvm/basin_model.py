@@ -13,6 +13,7 @@ from velocity_modelling.cvm.geometry import (
     GlobalMesh,
     PartialGlobalMesh,
     extract_partial_mesh,
+    SmoothingBoundary,
 )
 
 from qcore import point_in_polygon
@@ -122,86 +123,54 @@ class BasinData:
         """
         return self.boundaries[i][:, 0]
 
-    # def determine_if_within_basin_lat_lon(self, mesh_vector: MeshVector):
-    #     """
-    #     Determine if a point lies within the different basin boundaries.
-    #
-    #     Parameters
-    #     ----------
-    #     mesh_vector : MeshVector
-    #         Struct containing a single lat-lon point.
-    #
-    #     Returns
-    #     -------
-    #     bool
-    #         True if inside a basin, False otherwise.
-    #     """
-    #
-    #     # TODO: Only Perturbation basins are ignored for smoothing, which will be handled in the perturbation code.
-    #     #  We dropped ignoreBasinForSmoothing from Basin definition. By default we don't ignore any basins for smoothing.
-    #
-    #     # See https://github.com/ucgmsim/mapping/blob/80b8e66222803d69e2f8f2182ccc1adc467b7cb1/mapbox/vs30/scripts/basin_z_values/gen_sites_in_basin.py#L119C2-L123C55
-    #     # and https://github.com/ucgmsim/qcore/blob/master/qcore/point_in_polygon.py
-    #
-    #     for ind, boundary in enumerate(self.boundaries):
-    #
-    #         if not (
-    #             np.min(boundary[:, 0]) <= mesh_vector.lon <= np.max(boundary[:, 0])
-    #             and np.min(boundary[:, 1]) <= mesh_vector.lat <= np.max(boundary[:, 1])
-    #         ):
-    #             continue  # outside of basin
-    #
-    #         else:
-    #             # possibly in basin
-    #             in_poly = point_in_polygon.is_inside_postgis(
-    #                 boundary, np.array([mesh_vector.lon, mesh_vector.lat])
-    #             )  # check if in poly
-    #
-    #             if in_poly:  # in_poly == 1 (inside) ==2 (on edge)
-    #                 return True  # inside a basin (any)
-    #
-    #     return False  # not inside basin
-
 
 class InBasinGlobalMesh:
-    def __init__(self, global_mesh: GlobalMesh):
+    def __init__(
+        self,
+        global_mesh: GlobalMesh,
+        basin_data_list: List[BasinData],
+        smooth_bound: SmoothingBoundary = None,
+    ):
         """
-        Initialize the InBasinGlobalMesh with basin membership data.
+        Initialize with basin membership for global_mesh and optionally smooth_bound.
 
         Parameters
         ----------
         global_mesh : GlobalMesh
             The global mesh containing lat/lon values.
+        basin_data_list : List[BasinData]
+            List of BasinData objects for basin membership.
+        smooth_bound : SmoothingBoundary, optional
+            Smoothing boundary with x (lon) and y (lat) arrays.
         """
         self.nx, self.ny = global_mesh.lat.shape
         self.nz = len(global_mesh.z)
-        self.lat = global_mesh.lat.copy()  # (nx, ny)
-        self.lon = global_mesh.lon.copy()  # (nx, ny)
-        self.basin_membership = np.full(
-            (self.ny, self.nx), -1, dtype=int
-        )  # (ny, nx), -1 means no basin
+        # Use object dtype to store lists of basin indices
+        # Initialize basin_membership as an (ny, nx) array of empty lists
+        self.basin_membership = [[[] for _ in range(self.nx)] for _ in range(self.ny)]
+        self.basin_data_list = basin_data_list  # Store for preprocess_smooth_bound
+        self.smooth_basin_membership = None  # For smooth_bound points
+        if smooth_bound is not None:
+            print(f"DEBUG: smooth_bound provided, n={smooth_bound.n}")  # Debug
+            self.preprocess_smooth_bound(smooth_bound)
+        else:
+            print("DEBUG: smooth_bound is None")
 
-    def get_basin_idx(self, j: int, k: int) -> int:
-        """
-        Get the basin index for a given (j, k) grid point.
-
-        Parameters
-        ----------
-        j : int
-            Index along the y-axis (rows).
-        k : int
-            Index along the x-axis (columns).
-
-        Returns
-        -------
-        int
-            Basin index (>= 0) or -1 if not in any basin.
-        """
-        if 0 <= j < self.ny and 0 <= k < self.nx:
-            return self.basin_membership[j, k]
-        raise IndexError(
-            f"Indices (j={j}, k={k}) out of bounds for grid (ny={self.ny}, nx={self.nx})"
-        )
+    def preprocess_smooth_bound(self, smooth_bound: SmoothingBoundary):
+        print(
+            f"DEBUG: Preprocessing smooth_bound with {smooth_bound.n} points"
+        )  # Temporary debug
+        n_points = smooth_bound.n
+        self.smooth_basin_membership = [[] for _ in range(n_points)]
+        for i in range(n_points):
+            lat = smooth_bound.y[i]
+            lon = smooth_bound.x[i]
+            for basin_idx, basin_data in enumerate(self.basin_data_list):
+                if determine_if_within_basin_lat_lon(basin_data, lat, lon):
+                    self.smooth_basin_membership[i].append(basin_idx)
+        print(
+            f"DEBUG: smooth_basin_membership initialized with length {len(self.smooth_basin_membership)}"
+        )  # Temporary debug
 
 
 def determine_if_within_basin_lat_lon(basin_data: BasinData, lat: float, lon: float):
@@ -275,12 +244,17 @@ class InBasin:
 
 
 def preprocess_basin_membership(
-    global_mesh: GlobalMesh, basin_data_list: List[BasinData]
+    global_mesh: GlobalMesh,
+    basin_data_list: List[BasinData],
+    logger: Logger,
+    smooth_bound: SmoothingBoundary = None,
 ) -> Tuple[InBasinGlobalMesh, List[PartialGlobalMesh]]:
-
-    in_basin_mesh = InBasinGlobalMesh(global_mesh)
+    logger.info(f"DEBUG: smooth_bound in preprocess: {smooth_bound}")
+    in_basin_mesh = InBasinGlobalMesh(global_mesh, basin_data_list, smooth_bound)
     nx, ny = in_basin_mesh.nx, in_basin_mesh.ny
     partial_global_mesh_list = [extract_partial_mesh(global_mesh, j) for j in range(ny)]
+    logger.info(f"Pre-processing basin membership for {len(basin_data_list)} basins.")
+
     for j in range(ny):
         partial_global_mesh = partial_global_mesh_list[j]
         for k in range(nx):
@@ -288,54 +262,16 @@ def preprocess_basin_membership(
             lon = partial_global_mesh.lon[k]
             for basin_idx, basin_data in enumerate(basin_data_list):
                 if determine_if_within_basin_lat_lon(basin_data, lat, lon):
-                    in_basin_mesh.basin_membership[j, k] = basin_idx
+                    in_basin_mesh.basin_membership[j][k].append(basin_idx)
 
-    return in_basin_mesh, partial_global_mesh_list
-
-
-# def preprocess_basin_membership(
-#     global_mesh: GlobalMesh, basin_data_list: List[BasinData]) -> InBasinGlobalMesh:
-#     """
-#     Preprocess basin membership and return InBasinGlobalMesh and a list of InBasin objects.
-#
-#     Parameters
-#     ----------
-#     global_mesh : GlobalMesh
-#         The global mesh containing lat/lon values.
-#     basin_data_list : List[BasinData]
-#         List of BasinData objects for each basin.
-#
-#     Returns
-#     -------
-#     InBasinGlobalMesh
-#         Object with basin membership for each (j, k) grid point.
-#     """
-#     # Step 1: Create InBasinGlobalMesh
-#     in_basin_mesh = InBasinGlobalMesh(global_mesh)
-#     nx, ny = in_basin_mesh.nx, in_basin_mesh.ny
-#
-#     # Populate basin_membership
-#     for basin_idx, basin_data in enumerate(basin_data_list):
-#         boundaries = [Polygon(boundary) for boundary in basin_data.boundaries]
-#         tree = STRtree(boundaries)
-#
-#         lon_flat = global_mesh.lon.ravel()
-#         lat_flat = global_mesh.lat.ravel()
-#         points = [Point(lon, lat) for lon, lat in zip(lon_flat, lat_flat)]
-#
-#         candidate_indices = tree.query(points, predicate="intersects")
-#         if len(candidate_indices[0]) > 0:
-#             point_indices, boundary_indices = candidate_indices
-#             for pt_idx, bd_idx in zip(point_indices, boundary_indices):
-#                 boundary = boundaries[bd_idx]
-#                 point = points[pt_idx]
-#                 if boundary.contains(point):
-#                     k, j = divmod(pt_idx, ny)  # k = x-index, j = y-index
-#                     in_basin_mesh.basin_membership[j, k] = basin_idx
-#
-#
-#
-#     return in_basin_mesh
+    if smooth_bound is not None:
+        logger.info(
+            f"Pre-processed smooth boundary membership for {smooth_bound.n} points."
+        )
+    logger.info(
+        f"DEBUG: in_basin_mesh.smooth_basin_membership after preprocess: {in_basin_mesh.smooth_basin_membership}"
+    )
+    return (in_basin_mesh, partial_global_mesh_list)
 
 
 class PartialBasinSurfaceDepths:
@@ -515,7 +451,6 @@ class PartialBasinSurfaceDepths:
         mesh_vector : MeshVector
             Struct containing a single lat-lon point with one or more depths.
         """
-        # in_basin.determine_if_within_basin_lat_lon(mesh_vector)
         self.determine_basin_surface_depths(in_basin, mesh_vector)
         self.enforce_basin_surface_depths(in_basin, mesh_vector)
 
