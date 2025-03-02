@@ -108,6 +108,57 @@ class PartialGlobalSurfaceDepths:
 
         return n_velo_ind
 
+    def find_global_submodel_ind_vectorized(self, depths: np.ndarray) -> np.ndarray:
+        """
+        Find the indices of the global sub-velocity model for an array of depths.
+
+        Parameters
+        ----------
+        depths : np.ndarray
+            Array of depths (in m) to find the sub-velocity model indices for.
+
+        Returns
+        -------
+        np.ndarray
+            Array of indices of the global sub-velocity models.
+
+        Raises
+        ------
+        ValueError
+            If any depth is not found in the global sub-velocity model.
+        """
+        # Ensure depths is a NumPy array
+        depths = np.asarray(depths)
+
+        # Initialize output array with invalid indices
+        n_velo_indices = np.full_like(depths, -1, dtype=int)
+
+        # Valid depths must be less than or equal to the shallowest depth in self.depths
+        max_depth = self.depths[0]  # Assuming self.depths is in decreasing order
+        valid_mask = depths <= max_depth
+
+        if not np.all(valid_mask):
+            invalid_depths = depths[~valid_mask]
+            raise ValueError(
+                f"Error: Some depths not found in global sub-velocity model: {invalid_depths}"
+            )
+
+        # Vectorized search for indices
+        # self.depths is in decreasing order, so reverse for searchsorted
+        indices = np.searchsorted(self.depths[::-1], depths, side="right")
+        # Convert to indices in the original array
+        n_velo_indices = len(self.depths) - indices - 1
+
+        # Check for invalid indices (shouldn't happen due to valid_mask, but for safety)
+        if np.any(n_velo_indices >= len(self.depths)):
+            invalid_indices = np.where(n_velo_indices >= len(self.depths))[0]
+            invalid_depths = depths[invalid_indices]
+            raise ValueError(
+                f"Error: Some depths not found in global sub-velocity model: {invalid_depths}"
+            )
+
+        return n_velo_indices
+
     def interpolate_global_surface_depths(
         self,
         global_surfaces: GlobalSurfaces,

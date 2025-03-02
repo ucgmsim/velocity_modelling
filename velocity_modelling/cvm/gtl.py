@@ -101,3 +101,55 @@ def v30gtl(vs30: np.float64, vt: np.float64, z: np.float64, zt: np.float64):
     rho = rho_from_vp_brocher(vp)
 
     return vs, vp, rho
+
+
+@numba.jit(nopython=True)
+def v30gtl_vectorized(vs30: np.float64, vt: np.ndarray, z: np.ndarray, zt: np.float64):
+    """
+    Vectorized vs30 Geotechnical Layer (GTL) based on Ely (2010).
+
+    Parameters
+    ----------
+    vs30 : float
+        vs30 value (in m/s).
+    vt : np.ndarray
+        Array of velocity values (in km/s).
+    z : np.ndarray
+        Array of depth values (positive, in meters).
+    zt : float
+        Taper depth (in meters).
+
+    Returns
+    -------
+    tuple
+        (vs, vp, rho) arrays of adjusted vs, vp, and rho values.
+    """
+    # Constants
+    a = 0.5
+    b = 2.0 / 3.0
+    c = 2.0
+
+    # Normalize depth
+    z_normalized = z / zt  # Shape: (n,)
+
+    # Vectorized computation of f and g
+    f = z_normalized + b * (z_normalized - z_normalized * z_normalized)
+    g = (
+        a
+        - (a + 3.0 * c) * z_normalized
+        + c * z_normalized * z_normalized
+        + 2.0 * c * np.sqrt(z_normalized)
+    )
+
+    # Adjust vs
+    vs = f * vt + g * (vs30 / 1000.0)  # vs30 converted to km/s
+
+    # Compute vp from vs using Brocher correlation (vectorized)
+    vp = 0.9409 + 2.0947 * vs - 0.8206 * vs**2 + 0.2683 * vs**3 - 0.0251 * vs**4
+
+    # Compute rho from vp using Brocher correlation (vectorized)
+    rho = vp * (
+        1.6612 + vp * (-0.4721 + vp * (0.0671 + vp * (-0.0043 + 0.000106 * vp)))
+    )
+
+    return vs, vp, rho

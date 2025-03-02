@@ -31,6 +31,28 @@ def linear_interpolation(
 
 
 @numba.jit(nopython=True)
+def linear_interpolation_vectorized(x0, x1, y0, y1, x):
+    """
+    Vectorized linear interpolation.
+
+    Parameters
+    ----------
+    x0, x1 : float
+        X-coordinates of the two points (scalars).
+    y0, y1 : float
+        Y-coordinates of the two points (scalars).
+    x : np.ndarray
+        Array of x values to interpolate at.
+
+    Returns
+    -------
+    np.ndarray
+        Interpolated y values.
+    """
+    return y0 + (y1 - y0) * (x - x0) / (x1 - x0)
+
+
+@numba.jit(nopython=True)
 def bi_linear_interpolation(
     x1: np.float64,
     x2: np.float64,

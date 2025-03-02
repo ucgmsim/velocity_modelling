@@ -1,3 +1,4 @@
+import numpy as np
 from velocity_modelling.cvm.velocity3d import QualitiesVector
 
 vs_full = 2.2818  # vs at the full
@@ -22,3 +23,26 @@ def main(
     qualities_vector.rho[zInd] = rho_full
     qualities_vector.vp[zInd] = vp_full
     qualities_vector.vs[zInd] = vs_full
+
+
+vs_full = 2.2818  # vs at the full
+vp_full = 4.0  # vp at the full
+rho_full = 2.393  # rho at the full
+
+
+def main_vectorized(
+    z_indices: np.ndarray,
+    qualities_vector: QualitiesVector,
+):
+    """
+    Purpose: Calculate the rho, vp, and vs values for multiple lat-long-depth points.
+
+    Input variables:
+    z_indices - array of indices of the grid points to store the data at
+    qualities_vector - struct housing Vp, Vs, and Rho for one Lat-Lon value and multiple depths
+
+    Output variables: n.a.
+    """
+    qualities_vector.rho[z_indices] = rho_full
+    qualities_vector.vp[z_indices] = vp_full
+    qualities_vector.vs[z_indices] = vs_full

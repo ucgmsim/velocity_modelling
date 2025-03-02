@@ -504,6 +504,47 @@ class QualitiesVector:
         else:
             raise ValueError(f"Error: Submodel {submodel_name} not found in registry.")
 
+    def call_global_submodel_vectorized(
+        self,
+        submodel_names: np.ndarray,
+        z_values: np.ndarray,
+        k_indices: np.ndarray,
+        global_model_parameters: dict,
+        partial_global_surface_depths: PartialGlobalSurfaceDepths,
+        velo_mod_1d_data: VelocityModel1D,
+        nz_tomography_data: TomographyData,
+        mesh_vector: MeshVector,
+        in_any_basin_lat_lon: bool,
+        on_boundary: bool,
+    ):
+        for name in np.unique(submodel_names):
+            mask = submodel_names == name
+            z_subset = z_values[mask]
+            k_subset = k_indices[mask]
+
+            if name == "NaNsubMod":
+                self.nan_sub_mod_vectorized(k_subset)
+            elif name == "EPtomo2010subMod":
+                from velocity_modelling.cvm.submodel import EPtomo2010 as eptomo2010
+
+                eptomo2010.main_vectorized(
+                    k_subset,
+                    z_subset,
+                    self,
+                    mesh_vector,
+                    nz_tomography_data,
+                    partial_global_surface_depths,
+                    global_model_parameters["GTL"],
+                    in_any_basin_lat_lon,
+                    on_boundary,
+                )
+            elif name == "Cant1D_v1":
+                from velocity_modelling.cvm.submodel import Cant1D_v1 as Cant1D_v1
+
+                Cant1D_v1.main_vectorized(k_subset, z_subset, self, velo_mod_1d_data)
+            else:
+                raise ValueError(f"Error: Submodel {name} not found in registry.")
+
     def call_basin_submodel(
         self,
         partial_basin_surface_depths: PartialBasinSurfaceDepths,
@@ -616,83 +657,72 @@ class QualitiesVector:
         self.vp[k] = np.nan
         self.vs[k] = np.nan
 
-    def assign_basin_qualities_vectorized(
+    def call_basin_submodel_vectorized(
         self,
         partial_basin_surface_depths: PartialBasinSurfaceDepths,
         partial_global_surface_depths: PartialGlobalSurfaceDepths,
-        nz_tomography_data: TomographyData,
+        nz_tomography_data,
         mesh_vector: MeshVector,
-        in_any_basin_lat_lon: bool,
-        on_boundary: bool,
-        depths: np.ndarray,  # Array of depths
-        basin_num: int,
-        z_indices: np.ndarray,  # Array of z indices
+        in_any_basin_lat_lon,
+        on_boundary,
+        depths,
+        ind_above,
+        basin_num,
+        z_indices,
     ):
-        # Vectorized determination of surfaces above
-        ind_above = (
-            partial_basin_surface_depths.determine_basin_surface_above_vectorized(
-                depths
+        basin_data = partial_basin_surface_depths.basin
+        submodel_name, submodel_data = basin_data.submodels[ind_above]
+
+        if submodel_name == "NaNsubMod":
+            self.nan_sub_mod_vectorized(z_indices)
+        elif submodel_name in ["Cant1D_v1", "Cant1D_v2", "Cant1D_v2_Pliocene_Enforced"]:
+            from velocity_modelling.cvm.submodel import Cant1D_v1 as Cant1D_v1
+
+            Cant1D_v1.main_vectorized(z_indices, depths, self, submodel_data)
+        elif submodel_name == "PaleogeneSubMod_v1":
+            from velocity_modelling.cvm.submodel import (
+                PaleogeneSubMod_v1 as PaleogeneSubMod_v1,
             )
-        )
 
-        # Group depths by ind_above to handle different submodels
-        for idx in np.unique(ind_above):
-            mask = ind_above == idx
-            depths_subset = depths[mask]
-            z_indices_subset = z_indices[mask]
+            PaleogeneSubMod_v1.main_vectorized(z_indices, self)
+        elif submodel_name == "PlioceneSubMod_v1":
+            from velocity_modelling.cvm.submodel import (
+                PlioceneSubMod_v1 as PlioceneSubMod_v1,
+            )
 
-            self.inbasin[z_indices_subset] = basin_num
-            self.call_basin_submodel_vectorized(
+            PlioceneSubMod_v1.main_vectorized(z_indices, self)
+        elif submodel_name == "MioceneSubMod_v1":
+            from velocity_modelling.cvm.submodel import (
+                MioceneSubMod_v1 as MioceneSubMod_v1,
+            )
+
+            MioceneSubMod_v1.main_vectorized(z_indices, self)
+        elif submodel_name == "BPVSubMod_v1":
+            from velocity_modelling.cvm.submodel import BPVSubMod_v1 as BPVSubMod_v1
+
+            BPVSubMod_v1.main_vectorized(z_indices, self)
+        elif submodel_name == "BPVSubMod_v2":
+            from velocity_modelling.cvm.submodel import BPVSubMod_v2 as BPVSubMod_v2
+
+            BPVSubMod_v2.main_vectorized(z_indices, self)
+        elif submodel_name == "BPVSubMod_v3":
+            from velocity_modelling.cvm.submodel import BPVSubMod_v3 as BPVSubMod_v3
+
+            BPVSubMod_v3.main_vectorized(
+                z_indices, depths, self, partial_basin_surface_depths
+            )
+        elif submodel_name == "BPVSubMod_v4":
+            from velocity_modelling.cvm.submodel import BPVSubMod_v4 as BPVSubMod_v4
+
+            BPVSubMod_v4.main_vectorized(
+                z_indices,
+                depths,
+                self,
                 partial_basin_surface_depths,
                 partial_global_surface_depths,
-                nz_tomography_data,
-                mesh_vector,
-                in_any_basin_lat_lon,
-                on_boundary,
-                depths_subset,
-                idx,
-                basin_num,
-                z_indices_subset,
             )
-
-    def assign_basin_qualities_vectorized(
-        self,
-        partial_basin_surface_depths: PartialBasinSurfaceDepths,
-        partial_global_surface_depths: PartialGlobalSurfaceDepths,
-        nz_tomography_data: TomographyData,
-        mesh_vector: MeshVector,
-        in_any_basin_lat_lon: bool,
-        on_boundary: bool,
-        depths: np.ndarray,  # Array of depths
-        basin_num: int,
-        z_indices: np.ndarray,  # Array of z indices
-    ):
-        # Vectorized determination of surfaces above
-        ind_above = (
-            partial_basin_surface_depths.determine_basin_surface_above_vectorized(
-                depths
-            )
-        )
-
-        # Group depths by ind_above to handle different submodels
-        for idx in np.unique(ind_above):
-            mask = ind_above == idx
-            depths_subset = depths[mask]
-            z_indices_subset = z_indices[mask]
-
-            self.inbasin[z_indices_subset] = basin_num
-            self.call_basin_submodel_vectorized(
-                partial_basin_surface_depths,
-                partial_global_surface_depths,
-                nz_tomography_data,
-                mesh_vector,
-                in_any_basin_lat_lon,
-                on_boundary,
-                depths_subset,
-                idx,
-                basin_num,
-                z_indices_subset,
-            )
+        else:
+            raise ValueError(f"Error: Submodel {submodel_name} not found in registry.")
 
     def assign_basin_qualities_vectorized(
         self,

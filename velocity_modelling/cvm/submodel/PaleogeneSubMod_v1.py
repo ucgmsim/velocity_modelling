@@ -19,3 +19,21 @@ def main(
     qualities_vector.rho[zInd] = 2.151
     qualities_vector.vp[zInd] = 2.7
     qualities_vector.vs[zInd] = 1.1511
+
+
+def main_vectorized(
+    z_indices: np.ndarray,
+    qualities_vector: QualitiesVector,
+):
+    """
+    Purpose: Calculate the rho, vp, and vs values for multiple lat-long-depth points.
+
+    Input variables:
+    z_indices - array of indices of the grid points to store the data at
+    qualities_vector - struct housing Vp, Vs, and Rho for one Lat-Lon value and multiple depths
+
+    Output variables: n.a.
+    """
+    qualities_vector.rho[z_indices] = 2.151
+    qualities_vector.vp[z_indices] = 2.7
+    qualities_vector.vs[z_indices] = 1.1511
