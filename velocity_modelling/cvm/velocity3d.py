@@ -109,68 +109,100 @@ class QualitiesVector:
                     shifted_mesh_vector,
                 )
 
-        basin_flag = False
-        z = 0
+        # Initialize arrays
+        self.inbasin = np.full(mesh_vector.nz, -1, dtype=int)
+        self.vp = np.zeros(mesh_vector.nz)
+        self.vs = np.zeros(mesh_vector.nz)
+        self.rho = np.zeros(mesh_vector.nz)
 
-        # TODO: maybe a place to do some parallelization
-        for k in range(mesh_vector.nz):
-            if topo_type in ["BULLDOZED", "TRUE"]:
-                z = mesh_vector.z[k]
-            elif topo_type in ["SQUASHED", "SQUASHED_TAPERED"]:
-                z = shifted_mesh_vector.z[k]
+        # Compute z values for all depths
+        z_values = (
+            mesh_vector.z
+            if topo_type in ["BULLDOZED", "TRUE"]
+            else shifted_mesh_vector.z
+        )
+        k_indices = np.arange(mesh_vector.nz)
 
-            for i, in_basin in enumerate(
-                in_basin_list
-            ):  # TODO: we already know the basin with valid basin surface depth..no need to loop through all basins
-                if in_basin.in_basin_depth[k]:
-                    basin_flag = True
-                    self.inbasin[k] = i  # basin number
+        # Precompute basin membership for all depths
+        in_basin_depths = np.array(
+            [in_basin.in_basin_depth for in_basin in in_basin_list]
+        )  # Shape: (34, 225)
+        basin_mask = in_basin_depths  # Shape: (34, 225)
+        basin_indices = np.argmax(basin_mask, axis=0)  # Shape: (225,)
+        basin_per_k = np.where(
+            np.any(basin_mask, axis=0), basin_indices, -1
+        )  # Shape: (225,)
 
-                    self.assign_basin_qualities(
-                        partial_basin_surface_depths_list[i],
-                        partial_global_surface_depths,
-                        nz_tomography_data,
-                        mesh_vector,
-                        in_any_basin_lat_lon,
-                        on_boundary,
-                        z,
-                        i,  # basin_num
-                        k,  # z_ind
-                    )
+        # Identify depths in basins vs. not in basins
+        in_basin_mask = basin_per_k >= 0  # Shape: (225,)
+        out_basin_mask = ~in_basin_mask  # Shape: (225,)
 
-            if not basin_flag:
-                self.inbasin[k] = (
-                    -1
-                    #  Original code incorrectly gives 0 for no basin, but it could also mean the 0th basin
-                )
-                velo_mod_ind = partial_global_surface_depths.find_global_submodel_ind(z)
+        # Process depths in basins
+        if np.any(in_basin_mask):
+            k_in_basin = k_indices[in_basin_mask]
+            z_in_basin = z_values[in_basin_mask]
+            basins_in_basin = basin_per_k[in_basin_mask]
 
-                velo_mod_name = global_model_parameters["submodels"][velo_mod_ind]
-                self.call_global_submodel(
-                    velo_mod_name,
-                    z,
-                    k,
-                    global_model_parameters,
+            # Group by basin to process each basin's depths together
+            for basin_ind in np.unique(basins_in_basin):
+                basin_subset_mask = basins_in_basin == basin_ind
+                k_subset = k_in_basin[basin_subset_mask]
+                z_subset = z_in_basin[basin_subset_mask]
+
+                # Vectorized call to assign_basin_qualities
+                self.assign_basin_qualities_vectorized(
+                    partial_basin_surface_depths_list[basin_ind],
                     partial_global_surface_depths,
-                    velo_mod_1d_data,
                     nz_tomography_data,
                     mesh_vector,
                     in_any_basin_lat_lon,
                     on_boundary,
+                    z_subset,
+                    basin_ind,
+                    k_subset,
                 )
 
-            if z > partial_global_surface_depths.depths[1]:
-                self.rho[k] = np.nan
-                self.vp[k] = np.nan
-                self.vs[k] = np.nan
+        # Process depths not in any basin
+        if np.any(out_basin_mask):
+            k_out_basin = k_indices[out_basin_mask]
+            z_out_basin = z_values[out_basin_mask]
 
-            basin_flag = False
+            # Vectorized call to find submodel indices
+            velo_mod_indices = (
+                partial_global_surface_depths.find_global_submodel_ind_vectorized(
+                    z_out_basin
+                )
+            )
+            velo_mod_names = np.array(global_model_parameters["submodels"])[
+                velo_mod_indices
+            ]
 
+            # Vectorized call to call_global_submodel
+            self.call_global_submodel_vectorized(
+                velo_mod_names,
+                z_out_basin,
+                k_out_basin,
+                global_model_parameters,
+                partial_global_surface_depths,
+                velo_mod_1d_data,
+                nz_tomography_data,
+                mesh_vector,
+                in_any_basin_lat_lon,
+                on_boundary,
+            )
+
+        # Apply NaN masking for depths above the surface
+        mask_above_surface = z_values > partial_global_surface_depths.depths[1]
+        self.rho[mask_above_surface] = np.nan
+        self.vp[mask_above_surface] = np.nan
+        self.vs[mask_above_surface] = np.nan
+
+        # Apply NaN masking for bulldozed topography
         if topo_type == "BULLDOZED":
-            mask = mesh_vector.z > 0
-            self.rho[mask] = np.nan
-            self.vp[mask] = np.nan
-            self.vs[mask] = np.nan
+            mask_above_zero = mesh_vector.z > 0
+            self.rho[mask_above_zero] = np.nan
+            self.vp[mask_above_zero] = np.nan
+            self.vs[mask_above_zero] = np.nan
 
     def assign_qualities(
         self,
@@ -583,3 +615,125 @@ class QualitiesVector:
         self.rho[k] = np.nan
         self.vp[k] = np.nan
         self.vs[k] = np.nan
+
+    def assign_basin_qualities_vectorized(
+        self,
+        partial_basin_surface_depths: PartialBasinSurfaceDepths,
+        partial_global_surface_depths: PartialGlobalSurfaceDepths,
+        nz_tomography_data: TomographyData,
+        mesh_vector: MeshVector,
+        in_any_basin_lat_lon: bool,
+        on_boundary: bool,
+        depths: np.ndarray,  # Array of depths
+        basin_num: int,
+        z_indices: np.ndarray,  # Array of z indices
+    ):
+        # Vectorized determination of surfaces above
+        ind_above = (
+            partial_basin_surface_depths.determine_basin_surface_above_vectorized(
+                depths
+            )
+        )
+
+        # Group depths by ind_above to handle different submodels
+        for idx in np.unique(ind_above):
+            mask = ind_above == idx
+            depths_subset = depths[mask]
+            z_indices_subset = z_indices[mask]
+
+            self.inbasin[z_indices_subset] = basin_num
+            self.call_basin_submodel_vectorized(
+                partial_basin_surface_depths,
+                partial_global_surface_depths,
+                nz_tomography_data,
+                mesh_vector,
+                in_any_basin_lat_lon,
+                on_boundary,
+                depths_subset,
+                idx,
+                basin_num,
+                z_indices_subset,
+            )
+
+    def assign_basin_qualities_vectorized(
+        self,
+        partial_basin_surface_depths: PartialBasinSurfaceDepths,
+        partial_global_surface_depths: PartialGlobalSurfaceDepths,
+        nz_tomography_data: TomographyData,
+        mesh_vector: MeshVector,
+        in_any_basin_lat_lon: bool,
+        on_boundary: bool,
+        depths: np.ndarray,  # Array of depths
+        basin_num: int,
+        z_indices: np.ndarray,  # Array of z indices
+    ):
+        # Vectorized determination of surfaces above
+        ind_above = (
+            partial_basin_surface_depths.determine_basin_surface_above_vectorized(
+                depths
+            )
+        )
+
+        # Group depths by ind_above to handle different submodels
+        for idx in np.unique(ind_above):
+            mask = ind_above == idx
+            depths_subset = depths[mask]
+            z_indices_subset = z_indices[mask]
+
+            self.inbasin[z_indices_subset] = basin_num
+            self.call_basin_submodel_vectorized(
+                partial_basin_surface_depths,
+                partial_global_surface_depths,
+                nz_tomography_data,
+                mesh_vector,
+                in_any_basin_lat_lon,
+                on_boundary,
+                depths_subset,
+                idx,
+                basin_num,
+                z_indices_subset,
+            )
+
+    def assign_basin_qualities_vectorized(
+        self,
+        partial_basin_surface_depths: PartialBasinSurfaceDepths,
+        partial_global_surface_depths: PartialGlobalSurfaceDepths,
+        nz_tomography_data: TomographyData,
+        mesh_vector: MeshVector,
+        in_any_basin_lat_lon: bool,
+        on_boundary: bool,
+        depths: np.ndarray,  # Array of depths
+        basin_num: int,
+        z_indices: np.ndarray,  # Array of z indices
+    ):
+        # Vectorized determination of surfaces above
+        ind_above = (
+            partial_basin_surface_depths.determine_basin_surface_above_vectorized(
+                depths
+            )
+        )
+
+        # Group depths by ind_above to handle different submodels
+        for idx in np.unique(ind_above):
+            mask = ind_above == idx
+            depths_subset = depths[mask]
+            z_indices_subset = z_indices[mask]
+
+            self.inbasin[z_indices_subset] = basin_num
+            self.call_basin_submodel_vectorized(
+                partial_basin_surface_depths,
+                partial_global_surface_depths,
+                nz_tomography_data,
+                mesh_vector,
+                in_any_basin_lat_lon,
+                on_boundary,
+                depths_subset,
+                idx,
+                basin_num,
+                z_indices_subset,
+            )
+
+    def nan_sub_mod_vectorized(self, z_indices):
+        self.vp[z_indices] = np.nan
+        self.vs[z_indices] = np.nan
+        self.rho[z_indices] = np.nan

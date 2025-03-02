@@ -306,6 +306,7 @@ class PartialBasinSurfaceDepths:
         """
         assert inbasin.in_basin_lat_lon
         # this is only executed if inbasin.in_basin_lat_lon is True.
+
         for surface_ind, surface in enumerate(inbasin.basin_data.surfaces):
             adjacent_points = AdjacentPoints.find_basin_adjacent_points(
                 surface.lati, surface.loni, mesh_vector.lat, mesh_vector.lon
@@ -360,7 +361,7 @@ class PartialBasinSurfaceDepths:
             if self.depths[i] < self.depths[i + 1]:
                 self.depths[i] = self.depths[i + 1]
 
-    def determine_basin_surface_above(self, depth):
+    def determine_basin_surface_above(self, depth: float):
         """
         Determine the index of the basin surface directly above the given depth.
 
@@ -378,6 +379,49 @@ class PartialBasinSurfaceDepths:
 
         valid_indices = np.where((~np.isnan(self.depths)) & (self.depths >= depth))[0]
         return valid_indices[-1] if valid_indices.size > 0 else 0  # the last one
+
+    def determine_basin_surface_above_vectorized(self, depths: np.ndarray):
+        """
+        Determine the indices of the basin surfaces directly above the given depths.
+
+        Parameters
+        ----------
+        depths : np.ndarray
+            Array of depths for multiple grid points.
+
+        Returns
+        -------
+        np.ndarray
+            Array of indices, each corresponding to the surface directly above the respective depth.
+        """
+        # Ensure depths is a NumPy array
+        depths = np.asarray(depths)
+
+        # Initialize output array with default value 0
+        indices = np.zeros_like(depths, dtype=int)
+
+        # Mask for valid depths in self.depths (not NaN)
+        valid_mask = ~np.isnan(self.depths)
+        valid_depths = self.depths[valid_mask]
+        valid_indices = np.where(valid_mask)[0]
+
+        if valid_depths.size == 0:
+            return indices  # All depths are invalid, return zeros
+
+        # For each depth, find the last valid index where self.depths >= depth
+        # Since self.depths is in decreasing order, we can use searchsorted
+        # searchsorted finds the insertion point where depth would be inserted to maintain order
+        # Since depths are decreasing, we want the rightmost index where valid_depths >= depth
+        search_indices = np.searchsorted(-valid_depths, -depths, side="right")
+
+        # Adjust indices to account for valid_mask
+        valid_search_indices = np.clip(search_indices - 1, 0, valid_depths.size - 1)
+        indices = valid_indices[valid_search_indices]
+
+        # If no valid depths are >= depth, return 0 (as in original logic)
+        indices[search_indices == 0] = 0
+
+        return indices
 
     def determine_basin_surface_below(self, depth: float):
         """
