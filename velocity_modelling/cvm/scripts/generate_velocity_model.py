@@ -164,7 +164,13 @@ def generate_velocity_model(
                 partial_global_qualities.rho[k] = qualities_vector.rho
                 partial_global_qualities.vp[k] = qualities_vector.vp
                 partial_global_qualities.vs[k] = qualities_vector.vs
-                partial_global_qualities.inbasin[k] = qualities_vector.inbasin
+                try:
+                    temp_inbasin = qualities_vector.inbasin
+                except:
+                    print(qualities_vector)
+                    raise
+
+                partial_global_qualities.inbasin[k] = temp_inbasin
 
         write_global_qualities(
             out_dir,

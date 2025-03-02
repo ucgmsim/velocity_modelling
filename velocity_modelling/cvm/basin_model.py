@@ -240,7 +240,7 @@ class InBasin:
         # the given lat lon is within a boundary of this basin
         self.in_basin_lat_lon = False
         # checks the basin's surface depth and if the point in the range of n_depths is within the basin
-        self.in_basin_depth = np.zeros((n_depths), dtype=bool)
+        self.in_basin_depth = np.full((n_depths), False, dtype=bool)
 
 
 def preprocess_basin_membership(
@@ -286,7 +286,7 @@ class PartialBasinSurfaceDepths:
         """
         # List of arrays of depths for each surface of the basin
         # self.depths[i] is the depth of the i-th surfaces
-        self.depths = np.zeros(len(basin_data.surfaces), dtype=np.float64)
+        self.depths = np.full(len(basin_data.surfaces), np.nan, dtype=np.float64)
         self.basin = basin_data
 
     def determine_basin_surface_depths(
@@ -304,45 +304,35 @@ class PartialBasinSurfaceDepths:
         mesh_vector : MeshVector
             Struct containing a single lat-lon point with one or more depths.
         """
+        assert inbasin.in_basin_lat_lon
+        # this is only executed if inbasin.in_basin_lat_lon is True.
         for surface_ind, surface in enumerate(inbasin.basin_data.surfaces):
+            adjacent_points = AdjacentPoints.find_basin_adjacent_points(
+                surface.lati, surface.loni, mesh_vector.lat, mesh_vector.lon
+            )
+            # TODO: check if in_surface_bounds is True
+            x1 = surface.loni[adjacent_points.lon_ind[0]]
+            x2 = surface.loni[adjacent_points.lon_ind[1]]
+            y1 = surface.lati[adjacent_points.lat_ind[0]]
+            y2 = surface.lati[adjacent_points.lat_ind[1]]
+            q11 = surface.raster[adjacent_points.lon_ind[0]][adjacent_points.lat_ind[0]]
+            q12 = surface.raster[adjacent_points.lon_ind[0]][adjacent_points.lat_ind[1]]
 
-            if inbasin.in_basin_lat_lon:  # see if this is in any boundary of this basin
-                adjacent_points = AdjacentPoints.find_basin_adjacent_points(
-                    surface.lati, surface.loni, mesh_vector.lat, mesh_vector.lon
-                )
-                # TODO: check if in_surface_bounds is True
-                x1 = surface.loni[adjacent_points.lon_ind[0]]
-                x2 = surface.loni[adjacent_points.lon_ind[1]]
-                y1 = surface.lati[adjacent_points.lat_ind[0]]
-                y2 = surface.lati[adjacent_points.lat_ind[1]]
-                q11 = surface.raster[adjacent_points.lon_ind[0]][
-                    adjacent_points.lat_ind[0]
-                ]
-                q12 = surface.raster[adjacent_points.lon_ind[0]][
-                    adjacent_points.lat_ind[1]
-                ]
+            q21 = surface.raster[adjacent_points.lon_ind[1]][adjacent_points.lat_ind[0]]
 
-                q21 = surface.raster[adjacent_points.lon_ind[1]][
-                    adjacent_points.lat_ind[0]
-                ]
-
-                q22 = surface.raster[adjacent_points.lon_ind[1]][
-                    adjacent_points.lat_ind[1]
-                ]
-                self.depths[surface_ind] = bi_linear_interpolation(
-                    x1,
-                    x2,
-                    y1,
-                    y2,
-                    q11,
-                    q12,
-                    q21,
-                    q22,
-                    mesh_vector.lon,
-                    mesh_vector.lat,
-                )
-            else:
-                self.depths[surface_ind] = None
+            q22 = surface.raster[adjacent_points.lon_ind[1]][adjacent_points.lat_ind[1]]
+            self.depths[surface_ind] = bi_linear_interpolation(
+                x1,
+                x2,
+                y1,
+                y2,
+                q11,
+                q12,
+                q21,
+                q22,
+                mesh_vector.lon,
+                mesh_vector.lat,
+            )
 
     # TODO: can be inserted into enforce_basin_surface_depths()
     def enforce_surface_depths(self):
@@ -421,19 +411,16 @@ class PartialBasinSurfaceDepths:
         mesh_vector : MeshVector
             Struct containing a single lat-lon point with one or more depths.
         """
+        assert in_basin.in_basin_lat_lon
 
-        if in_basin.in_basin_lat_lon:
+        self.enforce_surface_depths()
+        # TODO: check if this is correct
+        top_lim = self.depths[0]  # the depth of the first surface
+        bot_lim = self.depths[-1]  # the depth of the last surface
 
-            self.enforce_surface_depths()
-            # TODO: check if this is correct
-            top_lim = self.depths[0]  # the depth of the first surface
-            bot_lim = self.depths[-1]  # the depth of the last surface
-
-            in_basin.in_basin_depth = (bot_lim <= mesh_vector.z) & (
-                mesh_vector.z <= top_lim
-            )  # check if the point is within the basin
-        else:
-            in_basin.in_basin_depth.fill(False)
+        in_basin.in_basin_depth = (bot_lim <= mesh_vector.z) & (
+            mesh_vector.z <= top_lim
+        )  # check if the point is within the basin
 
     def interpolate_basin_surface_depths(
         self,

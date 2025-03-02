@@ -2,7 +2,6 @@ from logging import Logger
 from typing import List
 
 import numpy as np
-from copy import deepcopy
 
 from velocity_modelling.cvm.constants import MAX_DIST_SMOOTH
 from velocity_modelling.cvm.global_model import (
@@ -57,34 +56,24 @@ class QualitiesVector:
             global_surfaces, mesh_vector, calculation_log
         )
 
-        dZ = 0
-        depth_change = 0
-
         shifted_mesh_vector = None
 
-        # in_any_basin_lat_lon = any(
-        #     [
-        #         basin_data.determine_if_within_basin_lat_lon(mesh_vector)
-        #         for basin_data in basin_data_list
-        #     ]
-        # )
         in_any_basin_lat_lon = any(
             in_basin.in_basin_lat_lon for in_basin in in_basin_list
         )
         # TODO: test this
         if topo_type == "SQUASHED":
-            shifted_mesh_vector = deepcopy(mesh_vector)
-
-            depth_change = -mesh_vector.z  # is this correct????
-            shifted_mesh_vector.z = (
-                partial_global_surface_depths.depths[1] - depth_change
+            depth_change = -mesh_vector.z
+            shifted_mesh_vector = MeshVector(
+                lat=mesh_vector.lat,
+                lon=mesh_vector.lon,
+                z=partial_global_surface_depths.depths[1] - depth_change,
+                nz=mesh_vector.nz,  # Include other necessary attributes
             )
         # TODO: test this
         elif topo_type == "SQUASHED_TAPERED":
             dZ = mesh_vector.z[0] - mesh_vector.z[1]
             TAPER_DIST = 1.0
-            shifted_mesh_vector = deepcopy(mesh_vector)
-
             depth_change = -mesh_vector.z
             TAPER_VAL = np.where(
                 (depth_change == 0)
@@ -98,8 +87,11 @@ class QualitiesVector:
                 ),
             )
             TAPER_VAL = np.clip(TAPER_VAL, 0.0, None)
-            shifted_mesh_vector.z = (
-                partial_global_surface_depths.depths[1] * TAPER_VAL - depth_change
+            shifted_mesh_vector = MeshVector(
+                lat=mesh_vector.lat,
+                lon=mesh_vector.lon,
+                z=partial_global_surface_depths.depths[1] * TAPER_VAL - depth_change,
+                nz=mesh_vector.nz,
             )
 
         elif topo_type in ["BULLDOZED", "TRUE"]:
@@ -108,13 +100,14 @@ class QualitiesVector:
         else:
             raise ValueError("User specified TOPO_TYPE not recognised, see readme.")
 
-        for basin_ind, basin_data in enumerate(basin_data_list):
-            partial_basin_surface_depths_list[
-                basin_ind
-            ].interpolate_basin_surface_depths(
-                in_basin_list[basin_ind],
-                shifted_mesh_vector,
-            )
+        for i, in_basin in enumerate(in_basin_list):
+            if (
+                in_basin.in_basin_lat_lon
+            ):  # Only interpolate if the point is in the basin
+                partial_basin_surface_depths_list[i].interpolate_basin_surface_depths(
+                    in_basin,
+                    shifted_mesh_vector,
+                )
 
         basin_flag = False
         z = 0
@@ -126,10 +119,9 @@ class QualitiesVector:
             elif topo_type in ["SQUASHED", "SQUASHED_TAPERED"]:
                 z = shifted_mesh_vector.z[k]
 
-            for i, basin_data in enumerate(
-                basin_data_list
+            for i, in_basin in enumerate(
+                in_basin_list
             ):  # TODO: we already know the basin with valid basin surface depth..no need to loop through all basins
-                in_basin = in_basin_list[i]
                 if in_basin.in_basin_depth[k]:
                     basin_flag = True
                     self.inbasin[k] = i  # basin number
@@ -148,7 +140,8 @@ class QualitiesVector:
 
             if not basin_flag:
                 self.inbasin[k] = (
-                    0  # This is incorrect in the original code. It should be -1. 0 indicates this is inside the 0th basin
+                    -1
+                    #  Original code incorrectly gives 0 for no basin, but it could also mean the 0th basin
                 )
                 velo_mod_ind = partial_global_surface_depths.find_global_submodel_ind(z)
 
@@ -174,11 +167,7 @@ class QualitiesVector:
             basin_flag = False
 
         if topo_type == "BULLDOZED":
-            # for k in range(mesh_vector.nz):
-            #     if mesh_vector.z[k] > 0:
-            #         self.nan_sub_mod(k)
             mask = mesh_vector.z > 0
-
             self.rho[mask] = np.nan
             self.vp[mask] = np.nan
             self.vs[mask] = np.nan
@@ -225,15 +214,6 @@ class QualitiesVector:
             nz_tomography_data.calculate_distance_from_shoreline(
                 mesh_vector
             )  # mesh_vector.distance_from_shoreline updated
-
-        # in_any_basin = any(
-        #     [
-        #         basin_data.determine_if_within_basin_lat_lon(
-        #             mesh_vector
-        #         )  # this can be preprocessed in bulk
-        #         for basin_data in basin_data_list
-        #     ]
-        # )
 
         in_any_basin = any(in_basin.in_basin_lat_lon for in_basin in in_basin_list)
 
@@ -287,16 +267,6 @@ class QualitiesVector:
 
             for i, in_basin in enumerate(in_basin_b_list):
                 in_basin.in_basin_lat_lon = i in smooth_indices
-
-            # #TODO: need to update in_basin_b_list with the new lat-lon
-            # for i, basin_data in enumerate(basin_data_list):
-            #     in_basin_b_list[i].in_basin_lat_lon = any(
-            #         [
-            #             determine_if_within_basin_lat_lon(basin_data,
-            #                 mesh_vector.lat, mesh_vector.lon
-            #             )  # this can be preprocessed in bulk
-            #         ]
-            #     )
 
             # velocity vector just inside the boundary
             on_boundary = True
