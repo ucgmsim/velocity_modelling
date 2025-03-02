@@ -128,20 +128,25 @@ class QualitiesVector:
             [in_basin.in_basin_depth for in_basin in in_basin_list]
         )  # Shape: (34, 225)
         basin_mask = in_basin_depths  # Shape: (34, 225)
-        basin_indices = np.argmax(basin_mask, axis=0)  # Shape: (225,)
-        basin_per_k = np.where(
-            np.any(basin_mask, axis=0), basin_indices, -1
-        )  # Shape: (225,)
+        # Find the first basin index for each depth (reverse axis to match sequential order)
+        # basin_indices = np.argmax(basin_mask, axis=0)  # This finds the last True index
+        # To find the first True index, reverse the basin order and use argmax, then adjust
+        basin_indices = np.argmax(basin_mask[::-1], axis=0)
+        basin_per_k = np.where(np.any(basin_mask, axis=0), len(basin_mask) - 1 - basin_indices, -1)
 
         # Identify depths in basins vs. not in basins
-        in_basin_mask = basin_per_k >= 0  # Shape: (225,)
-        out_basin_mask = ~in_basin_mask  # Shape: (225,)
+        in_basin_mask = basin_per_k >= 0
+        out_basin_mask = ~in_basin_mask
 
         # Process depths in basins
         if np.any(in_basin_mask):
             k_in_basin = k_indices[in_basin_mask]
             z_in_basin = z_values[in_basin_mask]
             basins_in_basin = basin_per_k[in_basin_mask]
+
+            # Debug: Log basin assignments
+            # print(f"Points in basins: {len(k_in_basin)} depths")
+            # print(f"Basins assigned: {np.unique(basins_in_basin)}")
 
             # Group by basin to process each basin's depths together
             for basin_ind in np.unique(basins_in_basin):
@@ -162,6 +167,12 @@ class QualitiesVector:
                     k_subset,
                 )
 
+            # Debug: Log intermediate vp, vs, rho values
+            # print(f"Basin {basin_ind}, k_subset={k_subset}")
+            # print(f"vp[{k_subset}]:", self.vp[k_subset])
+            # print(f"vs[{k_subset}]:", self.vs[k_subset])
+            # print(f"rho[{k_subset}]:", self.rho[k_subset])
+
         # Process depths not in any basin
         if np.any(out_basin_mask):
             k_out_basin = k_indices[out_basin_mask]
@@ -176,6 +187,9 @@ class QualitiesVector:
             velo_mod_names = np.array(global_model_parameters["submodels"])[
                 velo_mod_indices
             ]
+            # print(f"Points not in basins: {len(k_out_basin)} depths")
+            # print(f"Submodel indices: {np.unique(velo_mod_indices)}")
+            # print(f"Submodel names: {np.unique(velo_mod_names)}")
 
             # Vectorized call to call_global_submodel
             self.call_global_submodel_vectorized(
@@ -191,11 +205,20 @@ class QualitiesVector:
                 on_boundary,
             )
 
+            # Debug: Log intermediate vp, vs, rho values
+            # print(f"Non-basin points, k_out_basin={k_out_basin}")
+            # print(f"vp[{k_out_basin}]:", self.vp[k_out_basin])
+            # print(f"vs[{k_out_basin}]:", self.vs[k_out_basin])
+            # print(f"rho[{k_out_basin}]:", self.rho[k_out_basin])
+
         # Apply NaN masking for depths above the surface
         mask_above_surface = z_values > partial_global_surface_depths.depths[1]
         self.rho[mask_above_surface] = np.nan
         self.vp[mask_above_surface] = np.nan
         self.vs[mask_above_surface] = np.nan
+
+        # Debug: Check NaN masking
+        #print(f"Points above surface: {np.sum(mask_above_surface)}")
 
         # Apply NaN masking for bulldozed topography
         if topo_type == "BULLDOZED":
@@ -203,6 +226,15 @@ class QualitiesVector:
             self.rho[mask_above_zero] = np.nan
             self.vp[mask_above_zero] = np.nan
             self.vs[mask_above_zero] = np.nan
+
+            # Debug: Check bulldozed masking
+            # print(f"Points above zero (BULLDOZED): {np.sum(mask_above_zero)}")
+
+        # Debug: Final output
+        # print(f"j={j}, k={k}, final vp:", self.vp)
+        # print(f"j={j}, k={k}, final vs:", self.vs)
+        # print(f"j={j}, k={k}, final rho:", self.rho)
+        # print(f"j={j}, k={k}, final inbasin:", self.inbasin)
 
     def assign_qualities(
         self,
