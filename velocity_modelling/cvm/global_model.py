@@ -135,6 +135,7 @@ class PartialGlobalSurfaceDepths:
 
         # Valid depths must be less than or equal to the shallowest depth in self.depths
         max_depth = self.depths[0]  # Assuming self.depths is in decreasing order
+        assert np.all(depths <= max_depth)
         valid_mask = depths <= max_depth
 
         if not np.all(valid_mask):

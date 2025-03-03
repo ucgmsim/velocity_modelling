@@ -421,6 +421,8 @@ def main_vectorized(
             & (~on_boundary)
             & (mesh_vector.distance_from_shoreline > 0)
         )
+        offshore_modified = np.zeros_like(depths, dtype=bool)  # Track which depths were modified
+
         if offshore_mask:
             offshore_depths = offshore_basin_depth_vectorized(
                 mesh_vector.distance_from_shoreline
@@ -435,7 +437,10 @@ def main_vectorized(
                     qualities_vector,
                     nz_tomography_data.offshore_basin_model_1d,
                 )
-        gtl_mask = relative_depths <= 350
+                offshore_modified[offshore_apply_mask] = True
+
+        # Apply GTL only to depths NOT modified by the offshore model
+        gtl_mask = (relative_depths <= 350) & (~offshore_modified)
         if np.any(gtl_mask):
             z_indices_gtl = z_indices[gtl_mask]
             vs_gtl = qualities_vector.vs[z_indices_gtl]

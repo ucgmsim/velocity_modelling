@@ -100,14 +100,15 @@ class QualitiesVector:
         else:
             raise ValueError("User specified TOPO_TYPE not recognised, see readme.")
 
-        for i, in_basin in enumerate(in_basin_list):
-            if (
-                in_basin.in_basin_lat_lon
-            ):  # Only interpolate if the point is in the basin
-                partial_basin_surface_depths_list[i].interpolate_basin_surface_depths(
-                    in_basin,
-                    shifted_mesh_vector,
-                )
+        if in_any_basin_lat_lon:
+            for i, in_basin in enumerate(in_basin_list):
+                if (
+                    in_basin.in_basin_lat_lon
+                ):  # Only interpolate if the point is in the basin
+                    partial_basin_surface_depths_list[i].interpolate_basin_surface_depths(
+                        in_basin,
+                        shifted_mesh_vector,
+                    )
 
         # Initialize arrays
         self.inbasin = np.full(mesh_vector.nz, -1, dtype=int)
