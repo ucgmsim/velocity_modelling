@@ -100,6 +100,7 @@ def generate_velocity_model(
         cvm_registry.load_all_global_data(logger)
     )
 
+    # Preprocess basin membership
     in_basin_mesh, partial_global_mesh_list = preprocess_basin_membership(
         global_mesh,
         basin_data_list,
@@ -164,6 +165,7 @@ def generate_velocity_model(
                 partial_global_qualities.rho[k] = qualities_vector.rho
                 partial_global_qualities.vp[k] = qualities_vector.vp
                 partial_global_qualities.vs[k] = qualities_vector.vs
+                # The following is to debug the case where a range iterator is reportedly having the inbasin attribute.
                 try:
                     temp_inbasin = qualities_vector.inbasin
                 except:

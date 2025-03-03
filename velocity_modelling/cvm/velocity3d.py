@@ -105,7 +105,9 @@ class QualitiesVector:
                 if (
                     in_basin.in_basin_lat_lon
                 ):  # Only interpolate if the point is in the basin
-                    partial_basin_surface_depths_list[i].interpolate_basin_surface_depths(
+                    partial_basin_surface_depths_list[
+                        i
+                    ].interpolate_basin_surface_depths(
                         in_basin,
                         shifted_mesh_vector,
                     )
@@ -133,7 +135,9 @@ class QualitiesVector:
         # basin_indices = np.argmax(basin_mask, axis=0)  # This finds the last True index
         # To find the first True index, reverse the basin order and use argmax, then adjust
         basin_indices = np.argmax(basin_mask[::-1], axis=0)
-        basin_per_k = np.where(np.any(basin_mask, axis=0), len(basin_mask) - 1 - basin_indices, -1)
+        basin_per_k = np.where(
+            np.any(basin_mask, axis=0), len(basin_mask) - 1 - basin_indices, -1
+        )
 
         # Identify depths in basins vs. not in basins
         in_basin_mask = basin_per_k >= 0
@@ -219,7 +223,7 @@ class QualitiesVector:
         self.vs[mask_above_surface] = np.nan
 
         # Debug: Check NaN masking
-        #print(f"Points above surface: {np.sum(mask_above_surface)}")
+        # print(f"Points above surface: {np.sum(mask_above_surface)}")
 
         # Apply NaN masking for bulldozed topography
         if topo_type == "BULLDOZED":
@@ -537,6 +541,7 @@ class QualitiesVector:
         else:
             raise ValueError(f"Error: Submodel {submodel_name} not found in registry.")
 
+    # TODO: I need to fix this function to automatically trigger the right main function of the submodel
     def call_global_submodel_vectorized(
         self,
         submodel_names: np.ndarray,
@@ -558,9 +563,9 @@ class QualitiesVector:
             if name == "NaNsubMod":
                 self.nan_sub_mod_vectorized(k_subset)
             elif name == "EPtomo2010subMod":
-                from velocity_modelling.cvm.submodel import EPtomo2010 as eptomo2010
+                from velocity_modelling.cvm.submodel import EPtomo2010
 
-                eptomo2010.main_vectorized(
+                EPtomo2010.main_vectorized(
                     k_subset,
                     z_subset,
                     self,
@@ -572,12 +577,14 @@ class QualitiesVector:
                     on_boundary,
                 )
             elif name == "Cant1D_v1":
-                from velocity_modelling.cvm.submodel import Cant1D_v1 as Cant1D_v1
+                from velocity_modelling.cvm.submodel import Cant1D_v1
 
                 Cant1D_v1.main_vectorized(k_subset, z_subset, self, velo_mod_1d_data)
             else:
                 raise ValueError(f"Error: Submodel {name} not found in registry.")
 
+    # TODO: I need to fix this function to automatically trigger the right main function of the submodel
+    # some unused positional arguments are here for future use. will think of a better way to handle this
     def call_basin_submodel(
         self,
         partial_basin_surface_depths: PartialBasinSurfaceDepths,
@@ -631,41 +638,35 @@ class QualitiesVector:
             self.nan_sub_mod(z_ind)
 
         elif submodel_name in ["Cant1D_v1", "Cant1D_v2", "Cant1D_v2_Pliocene_Enforced"]:
-            from velocity_modelling.cvm.submodel import Cant1D_v1 as Cant1D_v1
+            from velocity_modelling.cvm.submodel import Cant1D_v1
 
             Cant1D_v1.main(z_ind, depth, self, submodel_data)
         elif submodel_name == "PaleogeneSubMod_v1":
-            from velocity_modelling.cvm.submodel import (
-                PaleogeneSubMod_v1 as PaleogeneSubMod_v1,
-            )
+            from velocity_modelling.cvm.submodel import PaleogeneSubMod_v1
 
             PaleogeneSubMod_v1.main(z_ind, self)
         elif submodel_name == "PlioceneSubMod_v1":
-            from velocity_modelling.cvm.submodel import (
-                PlioceneSubMod_v1 as PlioceneSubMod_v1,
-            )
+            from velocity_modelling.cvm.submodel import PlioceneSubMod_v1
 
             PlioceneSubMod_v1.main(z_ind, self)
         elif submodel_name == "MioceneSubMod_v1":
-            from velocity_modelling.cvm.submodel import (
-                MioceneSubMod_v1 as MioceneSubMod_v1,
-            )
+            from velocity_modelling.cvm.submodel import MioceneSubMod_v1
 
             MioceneSubMod_v1.main(z_ind, self)
         elif submodel_name == "BPVSubMod_v1":
-            from velocity_modelling.cvm.submodel import BPVSubMod_v1 as BPVSubMod_v1
+            from velocity_modelling.cvm.submodel import BPVSubMod_v1
 
             BPVSubMod_v1.main(z_ind, self)
         elif submodel_name == "BPVSubMod_v2":
-            from velocity_modelling.cvm.submodel import BPVSubMod_v2 as BPVSubMod_v2
+            from velocity_modelling.cvm.submodel import BPVSubMod_v2
 
             BPVSubMod_v2.main(z_ind, self)
         elif submodel_name == "BPVSubMod_v3":
-            from velocity_modelling.cvm.submodel import BPVSubMod_v3 as BPVSubMod_v3
+            from velocity_modelling.cvm.submodel import BPVSubMod_v3
 
             BPVSubMod_v3.main(z_ind, depth, self, partial_basin_surface_depths)
         elif submodel_name == "BPVSubMod_v4":
-            from velocity_modelling.cvm.submodel import BPVSubMod_v4 as BPVSubMod_v4
+            from velocity_modelling.cvm.submodel import BPVSubMod_v4
 
             BPVSubMod_v4.main(
                 z_ind,
