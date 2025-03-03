@@ -265,6 +265,41 @@ def offshore_basin_depth_vectorized(shoreline_dist):
     )
 
 
+# TODO: Utilize DEFAULT_OFFSHORE_1D_MODEL and make this function more generic
+def offshore_basinmodel_vectorized(
+    distance_from_shoreline: np.ndarray,
+    depths: np.ndarray,
+    qualities_vector: QualitiesVector,
+    z_indices: np.ndarray,
+    nz_tomography_data: TomographyData,
+):
+    """
+    Calculate the rho, vp, and vs values for multiple lat-long-depth points within this velocity submodel.
+
+    Parameters
+    ----------
+    distance_from_shoreline : np.ndarray
+        Array of distances from the shoreline.
+    depths : np.ndarray
+        Array of depth values.
+    qualities_vector : QualitiesVector
+        Struct containing vp, vs, and rho values.
+    nz_tomography_data : TomographyData
+        Struct containing New Zealand tomography data.
+    """
+    offshore_depths = offshore_basin_depth_vectorized(distance_from_shoreline)
+    offshore_apply_mask = offshore_depths < depths
+    z_indices_offshore = z_indices[offshore_apply_mask]
+    depths_offshore = depths[offshore_apply_mask]
+    if z_indices_offshore.size > 0:
+        Cant1D_v1.main_vectorized(
+            z_indices_offshore,
+            depths_offshore,
+            qualities_vector,
+            nz_tomography_data.offshore_basin_model_1d,
+        )
+
+
 def main_vectorized(
     z_indices: np.ndarray,
     depths: np.ndarray,
@@ -421,33 +456,26 @@ def main_vectorized(
             & (~on_boundary)
             & (mesh_vector.distance_from_shoreline > 0)
         )
-        offshore_modified = np.zeros_like(depths, dtype=bool)  # Track which depths were modified
 
         if offshore_mask:
-            offshore_depths = offshore_basin_depth_vectorized(
-                mesh_vector.distance_from_shoreline
+            offshore_basinmodel_vectorized(
+                mesh_vector.distance_from_shoreline,
+                depths,
+                qualities_vector,
+                z_indices,
+                nz_tomography_data,
             )
-            offshore_apply_mask = offshore_depths < depths
-            z_indices_offshore = z_indices[offshore_apply_mask]
-            depths_offshore = depths[offshore_apply_mask]
-            if z_indices_offshore.size > 0:
-                Cant1D_v1.main_vectorized(
-                    z_indices_offshore,
-                    depths_offshore,
-                    qualities_vector,
-                    nz_tomography_data.offshore_basin_model_1d,
-                )
-                offshore_modified[offshore_apply_mask] = True
 
-        # Apply GTL only to depths NOT modified by the offshore model
-        gtl_mask = (relative_depths <= 350) & (~offshore_modified)
-        if np.any(gtl_mask):
-            z_indices_gtl = z_indices[gtl_mask]
-            vs_gtl = qualities_vector.vs[z_indices_gtl]
-            relative_depths_gtl = relative_depths[gtl_mask]
-            vs_new, vp_new, rho_new = v30gtl_vectorized(
-                mesh_vector.vs30, vs_gtl, relative_depths_gtl, 350
-            )
-            qualities_vector.vs[z_indices_gtl] = vs_new
-            qualities_vector.vp[z_indices_gtl] = vp_new
-            qualities_vector.rho[z_indices_gtl] = rho_new
+        else:
+            # Apply GTL only if offshore_mask is False
+            gtl_mask = relative_depths <= 350
+            if np.any(gtl_mask):
+                z_indices_gtl = z_indices[gtl_mask]
+                vs_gtl = qualities_vector.vs[z_indices_gtl]
+                relative_depths_gtl = relative_depths[gtl_mask]
+                vs_new, vp_new, rho_new = v30gtl_vectorized(
+                    mesh_vector.vs30, vs_gtl, relative_depths_gtl, 350
+                )
+                qualities_vector.vs[z_indices_gtl] = vs_new
+                qualities_vector.vp[z_indices_gtl] = vp_new
+                qualities_vector.rho[z_indices_gtl] = rho_new
