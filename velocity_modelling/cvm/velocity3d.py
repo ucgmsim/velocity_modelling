@@ -3,11 +3,13 @@ from typing import List
 
 import numpy as np
 
-from velocity_modelling.cvm.constants import MAX_DIST_SMOOTH
+from velocity_modelling.cvm.constants import MAX_DIST_SMOOTH, VTYPE
 from velocity_modelling.cvm.global_model import (
     GlobalSurfaces,
     PartialGlobalSurfaceDepths,
     TomographyData,
+    interpolate_global_surface
+
 )  # noqa: F401
 from velocity_modelling.cvm.basin_model import (
     BasinData,
@@ -16,7 +18,7 @@ from velocity_modelling.cvm.basin_model import (
     determine_if_within_basin_lat_lon,
     InBasinGlobalMesh,
 )
-from velocity_modelling.cvm.geometry import MeshVector
+from velocity_modelling.cvm.geometry import MeshVector, AdjacentPoints
 from velocity_modelling.cvm.registry import CVMRegistry
 from velocity_modelling.cvm.velocity1d import VelocityModel1D
 
@@ -64,12 +66,9 @@ class QualitiesVector:
         # TODO: test this
         if topo_type == "SQUASHED":
             depth_change = -mesh_vector.z
-            shifted_mesh_vector = MeshVector(
-                lat=mesh_vector.lat,
-                lon=mesh_vector.lon,
-                z=partial_global_surface_depths.depths[1] - depth_change,
-                nz=mesh_vector.nz,  # Include other necessary attributes
-            )
+            shifted_mesh_vector = mesh_vector.copy()
+            shifted_mesh_vector.z = partial_global_surface_depths.depths[1] - depth_change
+
         # TODO: test this
         elif topo_type == "SQUASHED_TAPERED":
             dZ = mesh_vector.z[0] - mesh_vector.z[1]
@@ -87,12 +86,8 @@ class QualitiesVector:
                 ),
             )
             TAPER_VAL = np.clip(TAPER_VAL, 0.0, None)
-            shifted_mesh_vector = MeshVector(
-                lat=mesh_vector.lat,
-                lon=mesh_vector.lon,
-                z=partial_global_surface_depths.depths[1] * TAPER_VAL - depth_change,
-                nz=mesh_vector.nz,
-            )
+            shifted_mesh_vector = mesh_vector.copy()
+            shifted_mesh_vector.z = partial_global_surface_depths.depths[1] * TAPER_VAL - depth_change
 
         elif topo_type in ["BULLDOZED", "TRUE"]:
             shifted_mesh_vector = mesh_vector
@@ -126,6 +121,26 @@ class QualitiesVector:
         )
         k_indices = np.arange(mesh_vector.nz)
 
+        # Precompute interpolated values for all surfaces and vtype at this (lat, lon)
+        global_surf_read = nz_tomography_data.surfaces[0]["vp"]
+        adjacent_points = AdjacentPoints.find_global_adjacent_points(
+            global_surf_read.lati, global_surf_read.loni, mesh_vector.lat, mesh_vector.lon
+        )
+
+        # Precompute interpolated values for all surfaces and vtype
+        num_surfaces = len(nz_tomography_data.surfaces)
+        interpolated_values = {vtype.name: np.zeros(num_surfaces) for vtype in VTYPE}
+        for idx in range(num_surfaces):
+            for vtype in VTYPE:
+                surface = nz_tomography_data.surfaces[idx][vtype.name]
+                val = interpolate_global_surface(
+                    surface,
+                    mesh_vector.lat,
+                    mesh_vector.lon,
+                    adjacent_points
+                )
+                interpolated_values[vtype.name][idx] = val
+
         # Precompute basin membership for all depths
         in_basin_depths = np.array(
             [in_basin.in_basin_depth for in_basin in in_basin_list]
@@ -149,10 +164,6 @@ class QualitiesVector:
             z_in_basin = z_values[in_basin_mask]
             basins_in_basin = basin_per_k[in_basin_mask]
 
-            # Debug: Log basin assignments
-            # print(f"Points in basins: {len(k_in_basin)} depths")
-            # print(f"Basins assigned: {np.unique(basins_in_basin)}")
-
             # Group by basin to process each basin's depths together
             for basin_ind in np.unique(basins_in_basin):
                 basin_subset_mask = basins_in_basin == basin_ind
@@ -172,12 +183,6 @@ class QualitiesVector:
                     k_subset,
                 )
 
-            # Debug: Log intermediate vp, vs, rho values
-            # print(f"Basin {basin_ind}, k_subset={k_subset}")
-            # print(f"vp[{k_subset}]:", self.vp[k_subset])
-            # print(f"vs[{k_subset}]:", self.vs[k_subset])
-            # print(f"rho[{k_subset}]:", self.rho[k_subset])
-
         # Process depths not in any basin
         if np.any(out_basin_mask):
             k_out_basin = k_indices[out_basin_mask]
@@ -192,9 +197,6 @@ class QualitiesVector:
             velo_mod_names = np.array(global_model_parameters["submodels"])[
                 velo_mod_indices
             ]
-            # print(f"Points not in basins: {len(k_out_basin)} depths")
-            # print(f"Submodel indices: {np.unique(velo_mod_indices)}")
-            # print(f"Submodel names: {np.unique(velo_mod_names)}")
 
             # Vectorized call to call_global_submodel
             self.call_global_submodel_vectorized(
@@ -208,13 +210,9 @@ class QualitiesVector:
                 mesh_vector,
                 in_any_basin_lat_lon,
                 on_boundary,
+                interpolated_values,
             )
 
-            # Debug: Log intermediate vp, vs, rho values
-            # print(f"Non-basin points, k_out_basin={k_out_basin}")
-            # print(f"vp[{k_out_basin}]:", self.vp[k_out_basin])
-            # print(f"vs[{k_out_basin}]:", self.vs[k_out_basin])
-            # print(f"rho[{k_out_basin}]:", self.rho[k_out_basin])
 
         # Apply NaN masking for depths above the surface
         mask_above_surface = z_values > partial_global_surface_depths.depths[1]
@@ -232,14 +230,6 @@ class QualitiesVector:
             self.vp[mask_above_zero] = np.nan
             self.vs[mask_above_zero] = np.nan
 
-            # Debug: Check bulldozed masking
-            # print(f"Points above zero (BULLDOZED): {np.sum(mask_above_zero)}")
-
-        # Debug: Final output
-        # print(f"j={j}, k={k}, final vp:", self.vp)
-        # print(f"j={j}, k={k}, final vs:", self.vs)
-        # print(f"j={j}, k={k}, final rho:", self.rho)
-        # print(f"j={j}, k={k}, final inbasin:", self.inbasin)
 
     def assign_qualities(
         self,
@@ -331,6 +321,9 @@ class QualitiesVector:
                         basin_data, mesh_vector.lat, mesh_vector.lon
                     ):
                         smooth_indices.append(basin_idx)
+                tmp = in_basin_mesh.basin_search.find_all_containing_basins(mesh_vector.lat, mesh_vector.lon)
+                assert tmp == smooth_indices
+
             else:
                 smooth_indices = in_basin_mesh.smooth_basin_membership[closest_ind]
 
@@ -554,7 +547,15 @@ class QualitiesVector:
         mesh_vector: MeshVector,
         in_any_basin_lat_lon: bool,
         on_boundary: bool,
+        interpolated_values: dict,  # Precomputed interpolated values
+
     ):
+        # Sort by k_indices to preserve depth order
+        order = np.argsort(k_indices)
+        k_indices = k_indices[order]
+        z_values = z_values[order]
+        submodel_names = submodel_names[order]
+
         for name in np.unique(submodel_names):
             mask = submodel_names == name
             z_subset = z_values[mask]
@@ -575,6 +576,7 @@ class QualitiesVector:
                     global_model_parameters["GTL"],
                     in_any_basin_lat_lon,
                     on_boundary,
+                    interpolated_values,
                 )
             elif name == "Cant1D_v1":
                 from velocity_modelling.cvm.submodel import Cant1D_v1

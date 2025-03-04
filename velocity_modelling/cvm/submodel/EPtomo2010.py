@@ -4,7 +4,7 @@ from velocity_modelling.cvm.geometry import MeshVector, AdjacentPoints
 from velocity_modelling.cvm.velocity3d import QualitiesVector
 from velocity_modelling.cvm.global_model import (
     PartialGlobalSurfaceDepths,
-    interpolate_global_surface_numba,
+    interpolate_global_surface,
     TomographyData,
 )
 from velocity_modelling.cvm.constants import VTYPE
@@ -126,61 +126,18 @@ def main(
         surface_pointer_above = nz_tomography_data.surfaces[ind_above][vtype.name]
         surface_pointer_below = nz_tomography_data.surfaces[ind_below][vtype.name]
 
-        # val_above = interpolate_global_surface(
-        #     surface_pointer_above, mesh_vector, adjacent_points
-        # )
-        # val_below = interpolate_global_surface(
-        #     surface_pointer_below, mesh_vector, adjacent_points
-        # )
-        # Extract data once from mesh_vector and adjacent_points (reused across calls)
-        lon = mesh_vector.lon
-        lat = mesh_vector.lat
-        lon_ind = adjacent_points.lon_ind  # np.ndarray
-        lat_ind = adjacent_points.lat_ind  # np.ndarray
-        in_surface_bounds = adjacent_points.in_surface_bounds
-        in_lat_extension_zone = adjacent_points.in_lat_extension_zone
-        in_lon_extension_zone = adjacent_points.in_lon_extension_zone
-        in_corner_zone = adjacent_points.in_corner_zone
-        lat_edge_ind = adjacent_points.lat_edge_ind
-        lon_edge_ind = adjacent_points.lon_edge_ind
-        corner_lon_ind = adjacent_points.corner_lon_ind
-        corner_lat_ind = adjacent_points.corner_lat_ind
-
-        # Replace the four calls with Numba-optimized version
-        val_above = interpolate_global_surface_numba(
-            surface_pointer_above.lati,
-            surface_pointer_above.loni,
-            surface_pointer_above.raster,
-            lat,
-            lon,
-            lat_ind,
-            lon_ind,
-            in_surface_bounds,
-            in_lat_extension_zone,
-            in_lon_extension_zone,
-            in_corner_zone,
-            lat_edge_ind,
-            lon_edge_ind,
-            corner_lat_ind,
-            corner_lon_ind,
+        val_above = interpolate_global_surface(
+            surface_pointer_above,
+            mesh_vector.lat,
+            mesh_vector.lon,
+            adjacent_points
         )
 
-        val_below = interpolate_global_surface_numba(
-            surface_pointer_below.lati,
-            surface_pointer_below.loni,
-            surface_pointer_below.raster,
-            lat,
-            lon,
-            lat_ind,
-            lon_ind,
-            in_surface_bounds,
-            in_lat_extension_zone,
-            in_lon_extension_zone,
-            in_corner_zone,
-            lat_edge_ind,
-            lon_edge_ind,
-            corner_lat_ind,
-            corner_lon_ind,
+        val_below = interpolate_global_surface(
+            surface_pointer_below,
+            mesh_vector.lat,
+            mesh_vector.lon,
+            adjacent_points
         )
 
         dep_above = nz_tomography_data.surf_depth[ind_above] * 1000
@@ -310,6 +267,7 @@ def main_vectorized(
     gtl: bool,
     in_any_basin_lat_lon: bool,
     on_boundary: bool,
+    interpolated_values: dict,
 ):
     """
     Calculate rho, vp, and vs values for multiple lat-long-depth points within this velocity submodel.
@@ -334,6 +292,8 @@ def main_vectorized(
         Flag indicating if the point is in any basin latitude-longitude.
     on_boundary : bool
         Flag indicating if the point is on the boundary.
+    interpolated_values : dict
+        Dictionary containing the interpolated values for vp, vs, and rho.
     """
     # Convert surf_depth to meters (ascending order for searchsorted)
     surf_depth_ascending = (
@@ -351,25 +311,7 @@ def main_vectorized(
     ind_above = np.clip(ind_above, 0, len(nz_tomography_data.surfaces) - 1)
     ind_below = np.clip(ind_below, 0, len(nz_tomography_data.surfaces) - 1)
 
-    # Precompute adjacent points (same for all depths at this lat-lon)
-    global_surf_read = nz_tomography_data.surfaces[0]["vp"]
-    adjacent_points = AdjacentPoints.find_global_adjacent_points(
-        global_surf_read.lati, global_surf_read.loni, mesh_vector.lat, mesh_vector.lon
-    )
 
-    # Extract reusable data from mesh_vector and adjacent_points
-    lon = mesh_vector.lon
-    lat = mesh_vector.lat
-    lon_ind = adjacent_points.lon_ind
-    lat_ind = adjacent_points.lat_ind
-    in_surface_bounds = adjacent_points.in_surface_bounds
-    in_lat_extension_zone = adjacent_points.in_lat_extension_zone
-    in_lon_extension_zone = adjacent_points.in_lon_extension_zone
-    in_corner_zone = adjacent_points.in_corner_zone
-    lat_edge_ind = adjacent_points.lat_edge_ind
-    lon_edge_ind = adjacent_points.lon_edge_ind
-    corner_lon_ind = adjacent_points.corner_lon_ind
-    corner_lat_ind = adjacent_points.corner_lat_ind
 
     # Group depths by (ind_above, ind_below) pairs to minimize interpolate calls
     unique_pairs = np.unique(np.stack((ind_above, ind_below), axis=1), axis=0)
@@ -381,51 +323,13 @@ def main_vectorized(
         # Interpolate vp, vs, rho simultaneously for this interval
         values = {}
         for vtype in VTYPE:
-            surface_pointer_above = nz_tomography_data.surfaces[idx_above][vtype.name]
-            surface_pointer_below = nz_tomography_data.surfaces[idx_below][vtype.name]
+            val_above = interpolated_values[vtype.name][idx_above]
+            val_below = interpolated_values[vtype.name][idx_below]
 
-            # Interpolate for a single (lat, lon); scalar output
-            val_above = interpolate_global_surface_numba(
-                surface_pointer_above.lati,
-                surface_pointer_above.loni,
-                surface_pointer_above.raster,
-                lat,
-                lon,
-                lat_ind,
-                lon_ind,
-                in_surface_bounds,
-                in_lat_extension_zone,
-                in_lon_extension_zone,
-                in_corner_zone,
-                lat_edge_ind,
-                lon_edge_ind,
-                corner_lat_ind,
-                corner_lon_ind,
-            )
-            val_below = interpolate_global_surface_numba(
-                surface_pointer_below.lati,
-                surface_pointer_below.loni,
-                surface_pointer_below.raster,
-                lat,
-                lon,
-                lat_ind,
-                lon_ind,
-                in_surface_bounds,
-                in_lat_extension_zone,
-                in_lon_extension_zone,
-                in_corner_zone,
-                lat_edge_ind,
-                lon_edge_ind,
-                corner_lat_ind,
-                corner_lon_ind,
-            )
-
-            # Vectorized linear interpolation across depths
             dep_above = nz_tomography_data.surf_depth[idx_above] * 1000
             dep_below = nz_tomography_data.surf_depth[idx_below] * 1000
-            val = linear_interpolation_vectorized(
-                dep_above, dep_below, val_above, val_below, depths_subset
-            )
+            val = linear_interpolation_vectorized(dep_above, dep_below, val_above, val_below, depths_subset)
+
             values[vtype.name] = val
 
         # Assign interpolated values

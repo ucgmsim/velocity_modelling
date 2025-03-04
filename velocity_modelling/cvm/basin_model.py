@@ -123,6 +123,71 @@ class BasinData:
         """
         return self.boundaries[i][:, 0]
 
+from rtree import index
+import numpy as np
+from numba import njit, prange
+
+
+#@njit
+def check_inside_basin(basin_data, lat, lon):
+    """
+    Vectorized check if point is inside a basin.
+    """
+    for ind in range(len(basin_data.boundaries)):
+        boundary = basin_data.boundaries[ind]
+
+        # Quick bounding box check
+        if not (
+                np.min(boundary[:, 0]) <= lon <= np.max(boundary[:, 0])
+                and np.min(boundary[:, 1]) <= lat <= np.max(boundary[:, 1])
+        ):
+            continue
+
+        # Check if inside polygon
+        if point_in_polygon.is_inside_postgis(boundary, (lon, lat)):
+            return True
+
+            # Check if on a vertex
+        if point_on_vertex(basin_data.boundary_lat(ind), basin_data.boundary_lon(ind), lat, lon):
+            return True
+
+    return False
+class BasinSearchVectorized:
+    def __init__(self, basin_data_list):
+        self.basin_data_list = basin_data_list
+
+        # Convert all basin boundaries into NumPy arrays
+        self.boundary_arrays = [
+            np.vstack(basin.boundaries)  # Merge all boundary arrays for each basin
+            for basin in basin_data_list
+        ]
+
+        # Compute min/max lat/lon per basin
+        self.min_lons = np.array([np.min(boundary[:, 0]) for boundary in self.boundary_arrays])
+        self.max_lons = np.array([np.max(boundary[:, 0]) for boundary in self.boundary_arrays])
+        self.min_lats = np.array([np.min(boundary[:, 1]) for boundary in self.boundary_arrays])
+        self.max_lats = np.array([np.max(boundary[:, 1]) for boundary in self.boundary_arrays])
+
+    def find_all_containing_basins(self, lat, lon):
+        """
+        Find all basins that contain a given (lat, lon).
+        Returns a list of indices of basins that contain the point.
+        """
+
+        # Step 1: Vectorized Bounding Box Check
+        inside_bbox = (self.min_lons <= lon) & (lon <= self.max_lons) & \
+                      (self.min_lats <= lat) & (lat <= self.max_lats)
+
+        # Get candidate basin indices
+        candidate_indices = np.where(inside_bbox)[0]
+
+        # Step 2: Polygon Check (Only for Candidates)
+        inside_basins = []
+        for idx in candidate_indices:
+            if check_inside_basin(self.basin_data_list[idx], lat, lon):
+                inside_basins.append(idx)
+
+        return inside_basins  # Returns all matching basin indices
 
 class InBasinGlobalMesh:
     def __init__(
@@ -150,6 +215,7 @@ class InBasinGlobalMesh:
         self.basin_membership = [[[] for _ in range(self.nx)] for _ in range(self.ny)]
         self.basin_data_list = basin_data_list  # Store for preprocess_smooth_bound
         self.smooth_basin_membership = None  # For smooth_bound points
+        self.basin_search = BasinSearchVectorized(self.basin_data_list)
         if smooth_bound is not None:
             print(f"DEBUG: smooth_bound provided, n={smooth_bound.n}")  # Debug
             self.preprocess_smooth_bound(smooth_bound)
@@ -162,12 +228,16 @@ class InBasinGlobalMesh:
         )  # Temporary debug
         n_points = smooth_bound.n
         self.smooth_basin_membership = [[] for _ in range(n_points)]
+
         for i in range(n_points):
             lat = smooth_bound.y[i]
             lon = smooth_bound.x[i]
+
             for basin_idx, basin_data in enumerate(self.basin_data_list):
                 if determine_if_within_basin_lat_lon(basin_data, lat, lon):
                     self.smooth_basin_membership[i].append(basin_idx)
+            tmp = self.basin_search.find_all_containing_basins(lat, lon)
+            assert tmp == self.smooth_basin_membership[i]
         print(
             f"DEBUG: smooth_basin_membership initialized with length {len(self.smooth_basin_membership)}"
         )  # Temporary debug
@@ -179,8 +249,13 @@ def determine_if_within_basin_lat_lon(basin_data: BasinData, lat: float, lon: fl
 
     Parameters
     ----------
-    mesh_vector : MeshVector
-        Struct containing a single lat-lon point.
+    basin_data : BasinData
+        The BasinData instance.
+    lat : float
+        The latitude of the point.
+    lon : float
+        The longitude of the point.
+
 
     Returns
     -------
@@ -196,30 +271,21 @@ def determine_if_within_basin_lat_lon(basin_data: BasinData, lat: float, lon: fl
 
     for ind, boundary in enumerate(basin_data.boundaries):
 
-        if not (
-            np.min(boundary[:, 0]) <= lon <= np.max(boundary[:, 0])
-            and np.min(boundary[:, 1]) <= lat <= np.max(boundary[:, 1])
-        ):
-            continue  # outside of basin
+        # Precompute min/max for efficiency
+        min_lon, max_lon = np.min(boundary[:, 0]), np.max(boundary[:, 0])
+        min_lat, max_lat = np.min(boundary[:, 1]), np.max(boundary[:, 1])
 
-        else:
-            # possibly in basin
-            in_poly = point_in_polygon.is_inside_postgis(
-                boundary, np.array([lon, lat])
-            )  # check if in poly
-            if in_poly:  # in_poly == 1 (inside) ==2 (on edge)
-                return True  # inside a basin (any)
-            else:  # outside poly
-                # check if it is on vertex. if in_poly
-                on_vertex = point_on_vertex(
-                    basin_data.boundary_lat(ind),
-                    basin_data.boundary_lon(ind),
-                    lat,
-                    lon,
-                )
-                if on_vertex:
-                    return True
-                continue  # outside of basin
+        # Quick bounding box check
+        if not (min_lon <= lon <= max_lon and min_lat <= lat <= max_lat):
+            continue  # Outside of the basin's bounding box
+
+        # Check if inside the polygon
+        if point_in_polygon.is_inside_postgis(boundary, (lon, lat)):
+            return True  # Inside the basin
+
+        # Check if on a vertex
+        if point_on_vertex(basin_data.boundary_lat(ind), basin_data.boundary_lon(ind), lat, lon):
+            return True
 
     return False  # not inside basin
 
@@ -255,6 +321,7 @@ def preprocess_basin_membership(
     partial_global_mesh_list = [extract_partial_mesh(global_mesh, j) for j in range(ny)]
     logger.info(f"Pre-processing basin membership for {len(basin_data_list)} basins.")
 
+    basin_search = in_basin_mesh.basin_search
     for j in range(ny):
         partial_global_mesh = partial_global_mesh_list[j]
         for k in range(nx):
@@ -263,6 +330,13 @@ def preprocess_basin_membership(
             for basin_idx, basin_data in enumerate(basin_data_list):
                 if determine_if_within_basin_lat_lon(basin_data, lat, lon):
                     in_basin_mesh.basin_membership[j][k].append(basin_idx)
+            tmp = basin_search.find_all_containing_basins(lat, lon)
+            try:
+                assert tmp == in_basin_mesh.basin_membership[j][k]
+            except AssertionError:
+                logger.error(
+                    f"ERROR: Basin membership mismatch at lat={lat}, lon={lon}, j={j}, k={k}"
+                )
 
     if smooth_bound is not None:
         logger.info(

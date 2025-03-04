@@ -105,6 +105,33 @@ class MeshVector:
     def nz(self):
         return len(self.z)
 
+    def copy(self):
+        """
+        Create a deep copy of this MeshVector instance.
+
+        Returns
+        -------
+        MeshVector
+            A new MeshVector instance with the same attribute values.
+        """
+        # Create a new empty instance
+        new_instance = object.__new__(MeshVector)
+
+        # Copy scalar attributes
+        new_instance.lat = self.lat
+        new_instance.lon = self.lon
+
+        # Deep copy array attributes
+        if self.z is not None:
+            new_instance.z = self.z.copy()
+        else:
+            new_instance.z = None
+
+        # Copy optional attributes
+        new_instance.vs30 = self.vs30
+        new_instance.distance_from_shoreline = self.distance_from_shoreline
+
+        return new_instance
 
 class ModelExtent:
     def __init__(self, vm_params: Dict):
@@ -285,6 +312,191 @@ def find_corner_inds(lati: np.ndarray, loni: np.ndarray, lat: float, lon: float)
     return corner_lat_ind, corner_lon_ind
 
 
+@njit
+def find_basin_adjacent_points_numba(lati, loni, lat, lon):
+    """
+    Numba-optimized version of find_basin_adjacent_points.
+
+    Returns a tuple containing all the information that would be in the AdjacentPoints object.
+    """
+    # Initialize default values
+    in_surface_bounds = False
+    lat_ind = np.array([0, 0], dtype=np.int64)
+    lon_ind = np.array([0, 0], dtype=np.int64)
+
+    # Handle latitude
+    if lati[0] > lati[-1]:  # descending order
+        lat_idx = np.searchsorted(lati[::-1], lat)
+        lat_idx = len(lati) - lat_idx - 1
+    else:  # ascending order
+        lat_idx = np.searchsorted(lati, lat)
+
+    if 0 < lat_idx < len(lati):
+        lat_ind[0] = lat_idx - 1
+        lat_ind[1] = lat_idx
+    elif lat_idx == 0 and lati[0] == lat:
+        lat_ind[0] = 0
+        lat_ind[1] = 1
+    elif lat_idx == len(lati) and lati[-1] == lat:
+        lat_ind[0] = len(lati) - 1
+        lat_ind[1] = len(lati)
+
+    # Handle longitude
+    if loni[0] > loni[-1]:  # descending order
+        lon_idx = np.searchsorted(loni[::-1], lon)
+        lon_idx = len(loni) - lon_idx - 1
+    else:  # ascending order
+        lon_idx = np.searchsorted(loni, lon)
+
+    if 0 < lon_idx < len(loni):
+        lon_ind[0] = lon_idx - 1
+        lon_ind[1] = lon_idx
+    elif lon_idx == 0 and loni[0] == lon:
+        lon_ind[0] = 0
+        lon_ind[1] = 1
+    elif lon_idx == len(loni) and loni[-1] == lon:
+        lon_ind[0] = len(loni) - 1
+        lon_ind[1] = len(loni)
+
+    if lat_ind[0] != 0 or lat_ind[1] != 0:
+        if lon_ind[0] != 0 or lon_ind[1] != 0:
+            in_surface_bounds = True
+
+    return (in_surface_bounds, lat_ind, lon_ind)
+
+
+@njit
+def find_global_adjacent_points_numba(lati, loni, lat, lon):
+    """
+    Numba-optimized version of find_global_adjacent_points.
+
+    Returns a tuple containing all the information that would be in the AdjacentPoints object.
+    """
+    max_lat = np.max(lati)
+    min_lat = np.min(lati)
+    max_lon = np.max(loni)
+    min_lon = np.min(loni)
+    nlat = len(lati)
+    nlon = len(loni)
+
+    # Initialize default values
+    in_surface_bounds = False
+    lat_ind = np.array([0, 0], dtype=np.int64)
+    lon_ind = np.array([0, 0], dtype=np.int64)
+    in_lat_extension_zone = False
+    lat_extension_type = 0
+    lon_edge_ind = 0
+    in_lon_extension_zone = False
+    lon_extension_type = 0
+    lat_edge_ind = 0
+    in_corner_zone = False
+    corner_lat_ind = 0
+    corner_lon_ind = 0
+
+    lat_assigned_flag = False
+    lon_assigned_flag = False
+
+    # Check if latitude is within the range
+    if (lati[0] < lat <= lati[-1]) or (lati[0] > lat >= lati[-1]):
+        is_ascending = lati[0] < lati[-1]
+        # Create temp array for searching
+        temp_lati = lati.copy()
+        if not is_ascending:
+            temp_lati = lati[::-1]
+
+        index = np.searchsorted(temp_lati, lat)
+        if not is_ascending:
+            index = nlat - index
+
+        if 0 < index < nlat:
+            lat_ind[0] = index - 1
+            lat_ind[1] = index
+            lat_assigned_flag = True
+
+    # Check if longitude is within the range
+    if (loni[0] < lon <= loni[-1]) or (loni[0] > lon >= loni[-1]):
+        is_ascending = loni[0] < loni[-1]
+        # Create temp array for searching
+        temp_loni = loni.copy()
+        if not is_ascending:
+            temp_loni = loni[::-1]
+
+        index = np.searchsorted(temp_loni, lon)
+        if not is_ascending:
+            index = nlon - index
+
+        if 0 < index < nlon:
+            lon_ind[0] = index - 1
+            lon_ind[1] = index
+            lon_assigned_flag = True
+
+    if lat_assigned_flag and lon_assigned_flag:
+        in_surface_bounds = True
+    else:
+        # Handle extension zones
+        if lon_assigned_flag and not lat_assigned_flag:
+            if (lat - max_lat) <= MAX_LAT_SURFACE_EXTENSION and lat >= max_lat:
+                in_lat_extension_zone = True
+                lat_edge_ind, lon_edge_ind = find_edge_inds(
+                    lati, loni, 1, max_lat, min_lat, max_lon, min_lon
+                )
+                lat_extension_type = 1
+            elif (min_lat - lat) <= MAX_LAT_SURFACE_EXTENSION and lat <= min_lat:
+                in_lat_extension_zone = True
+                lat_edge_ind, lon_edge_ind = find_edge_inds(
+                    lati, loni, 3, max_lat, min_lat, max_lon, min_lon
+                )
+                lat_extension_type = 3
+
+        if lat_assigned_flag and not lon_assigned_flag:
+            if (min_lon - lon) <= MAX_LON_SURFACE_EXTENSION and lon <= min_lon:
+                in_lon_extension_zone = True
+                lat_edge_ind, lon_edge_ind = find_edge_inds(
+                    lati, loni, 4, max_lat, min_lat, max_lon, min_lon
+                )
+                lon_extension_type = 4
+            elif (lon - max_lon) <= MAX_LON_SURFACE_EXTENSION and lon >= max_lon:
+                in_lon_extension_zone = True
+                lat_edge_ind, lon_edge_ind = find_edge_inds(
+                    lati, loni, 2, max_lat, min_lat, max_lon, min_lon
+                )
+                lon_extension_type = 2
+
+        # Handle corner zones
+        corner_case = 0
+        # Case 1: Top-left corner
+        if ((lat - max_lat) <= MAX_LAT_SURFACE_EXTENSION and
+                (min_lon - lon) <= MAX_LON_SURFACE_EXTENSION and
+                lon <= min_lon and lat >= max_lat):
+            corner_lat_ind, corner_lon_ind = find_corner_inds(lati, loni, max_lat, min_lon)
+            corner_case = 1
+        # Case 2: Top-right corner
+        elif ((lat - max_lat) <= MAX_LAT_SURFACE_EXTENSION and
+              (lon - max_lon) <= MAX_LON_SURFACE_EXTENSION and
+              lon >= max_lon and lat >= max_lat):
+            corner_lat_ind, corner_lon_ind = find_corner_inds(lati, loni, max_lat, max_lon)
+            corner_case = 2
+        # Case 3: Bottom-left corner
+        elif ((min_lat - lat) <= MAX_LAT_SURFACE_EXTENSION and
+              (min_lon - lon) <= MAX_LON_SURFACE_EXTENSION and
+              lon <= min_lon and lat <= min_lat):
+            corner_lat_ind, corner_lon_ind = find_corner_inds(lati, loni, min_lat, min_lon)
+            corner_case = 3
+        # Case 4: Bottom-right corner
+        elif ((min_lat - lat) <= MAX_LAT_SURFACE_EXTENSION and
+              (lon - max_lon) <= MAX_LON_SURFACE_EXTENSION and
+              lon >= max_lon and lat <= min_lat):
+            corner_lat_ind, corner_lon_ind = find_corner_inds(lati, loni, min_lat, max_lon)
+            corner_case = 4
+
+        in_corner_zone = corner_case > 0
+
+    return (
+        in_surface_bounds, lat_ind, lon_ind,
+        in_lat_extension_zone, lat_extension_type, lon_edge_ind,
+        in_lon_extension_zone, lon_extension_type, lat_edge_ind,
+        in_corner_zone, corner_lat_ind, corner_lon_ind
+    )
 class AdjacentPoints:
     def __init__(self):
         self.in_surface_bounds = False
@@ -306,6 +518,7 @@ class AdjacentPoints:
     ):
         """
         Find the adjacent points to the given latitude and longitude in the basin surface.
+        This is a wrapper around the Numba-optimized function.
 
         Parameters
         ----------
@@ -323,42 +536,19 @@ class AdjacentPoints:
         adjacent_points : AdjacentPoints
             Object containing the adjacent points.
         """
+        # Call the Numba function
+        result = find_basin_adjacent_points_numba(lati, loni, lat, lon)
+
+        # Create and populate the AdjacentPoints object
         adjacent_points = cls()
+        adjacent_points.in_surface_bounds = result[0]
+        adjacent_points.lat_ind = result[1].tolist()
+        adjacent_points.lon_ind = result[2].tolist()
 
-        # Handle latitude
-        if lati[0] > lati[-1]:  # descending order
-            lat_idx = np.searchsorted(lati[::-1], lat)
-            lat_idx = len(lati) - lat_idx - 1
-        else:  # ascending order
-            lat_idx = np.searchsorted(lati, lat)
+        # Print error if needed
+        if not adjacent_points.in_surface_bounds:
+            print(f"Error, basin point lies outside of the extent of the basin surface ({lon}, {lat}).")
 
-        if 0 < lat_idx < len(lati):
-            adjacent_points.lat_ind = [lat_idx - 1, lat_idx]
-        elif lat_idx == 0 and lati[0] == lat:
-            adjacent_points.lat_ind = [0, 1]
-        elif lat_idx == len(lati) and lati[-1] == lat:
-            adjacent_points.lat_ind = [len(lati) - 1, len(lati)]
-
-        # Handle longitude
-        if loni[0] > loni[-1]:  # descending order
-            lon_idx = np.searchsorted(loni[::-1], lon)
-            lon_idx = len(loni) - lon_idx - 1
-        else:  # ascending order
-            lon_idx = np.searchsorted(loni, lon)
-
-        if 0 < lon_idx < len(loni):
-            adjacent_points.lon_ind = [lon_idx - 1, lon_idx]
-        elif lon_idx == 0 and loni[0] == lon:
-            adjacent_points.lon_ind = [0, 1]
-        elif lon_idx == len(loni) and loni[-1] == lon:
-            adjacent_points.lon_ind = [len(loni) - 1, len(loni)]
-
-        if adjacent_points.lat_ind != [0, 0] and adjacent_points.lon_ind != [0, 0]:
-            adjacent_points.in_surface_bounds = True
-        else:
-            print(
-                f"Error, basin point lies outside of the extent of the basin surface ({lon}, {lat})."
-            )
         return adjacent_points
 
     @classmethod
@@ -367,6 +557,7 @@ class AdjacentPoints:
     ):
         """
         Find the adjacent points to the given latitude and longitude in the global surface.
+        This is a wrapper around the Numba-optimized function.
 
         Parameters
         ----------
@@ -384,138 +575,30 @@ class AdjacentPoints:
         adjacent_points : AdjacentPoints
             Object containing the adjacent points.
         """
-        max_lat = np.max(lati)
-        min_lat = np.min(lati)
-        max_lon = np.max(loni)
-        min_lon = np.min(loni)
-        nlat = len(lati)
-        nlon = len(loni)
+        # Call the Numba function
+        result = find_global_adjacent_points_numba(lati, loni, lat, lon)
 
+        # Create and populate the AdjacentPoints object
         adjacent_points = cls()
+        adjacent_points.in_surface_bounds = result[0]
+        adjacent_points.lat_ind = result[1].tolist()
+        adjacent_points.lon_ind = result[2].tolist()
+        adjacent_points.in_lat_extension_zone = result[3]
+        adjacent_points.lat_extension_type = result[4]
+        adjacent_points.lon_edge_ind = result[5]
+        adjacent_points.in_lon_extension_zone = result[6]
+        adjacent_points.lon_extension_type = result[7]
+        adjacent_points.lat_edge_ind = result[8]
+        adjacent_points.in_corner_zone = result[9]
+        adjacent_points.corner_lat_ind = result[10]
+        adjacent_points.corner_lon_ind = result[11]
 
-        lat_assigned_flag = False
-        lon_assigned_flag = False
-
-        if lati[0] < lat <= lati[-1] or lati[0] > lat >= lati[-1]:
-            is_ascending = lati[0] < lati[-1]
-            lati = (
-                lati if is_ascending else lati[::-1]
-            )  # reverse the array if sorted in descending order
-
-            index = np.searchsorted(lati, lat)
-            index = (
-                nlat - index if not is_ascending else index
-            )  # reverse the index if sorted in descending order
-
-            if 0 < index < nlat:
-                adjacent_points.lat_ind[0] = index - 1
-                adjacent_points.lat_ind[1] = index
-                lat_assigned_flag = True
-
-        if loni[0] < lon <= loni[-1] or loni[0] > lon >= loni[-1]:
-            is_ascending = loni[0] < loni[-1]
-            loni = (
-                loni if is_ascending else loni[::-1]
-            )  # reverse the array if sorted in descending order
-
-            index = np.searchsorted(loni, lon)
-            index = (
-                nlon - index if not is_ascending else index
-            )  # reverse the index if sorted in descending order
-
-            if 0 < index < nlon:
-                adjacent_points.lon_ind[0] = index - 1
-                adjacent_points.lon_ind[1] = index
-                lon_assigned_flag = True
-
-        if lat_assigned_flag and lon_assigned_flag:
-            adjacent_points.in_surface_bounds = True
-        else:
-            if lon_assigned_flag and not lat_assigned_flag:
-                if (lat - max_lat) <= MAX_LAT_SURFACE_EXTENSION and lat >= max_lat:
-                    adjacent_points.in_lat_extension_zone = True
-                    adjacent_points.lat_edge_ind, adjacent_points.lon_edge_ind = (
-                        find_edge_inds(
-                            lati, loni, 1, max_lat, min_lat, max_lon, min_lon
-                        )
-                    )
-
-                elif (min_lat - lat) <= MAX_LAT_SURFACE_EXTENSION and lat <= min_lat:
-                    adjacent_points.in_lat_extension_zone = True
-                    adjacent_points.lat_edge_ind, adjacent_points.lon_edge_ind = (
-                        find_edge_inds(
-                            lati, loni, 3, max_lat, min_lat, max_lon, min_lon
-                        )
-                    )
-
-            if lat_assigned_flag and not lon_assigned_flag:
-                if (min_lon - lon) <= MAX_LON_SURFACE_EXTENSION and lon <= min_lon:
-                    adjacent_points.in_lon_extension_zone = True
-                    adjacent_points.lat_edge_ind, adjacent_points.lon_edge_ind = (
-                        find_edge_inds(
-                            lati, loni, 4, max_lat, min_lat, max_lon, min_lon
-                        )
-                    )
-
-                elif (lon - max_lon) <= MAX_LON_SURFACE_EXTENSION and lon >= max_lon:
-                    adjacent_points.in_lon_extension_zone = True
-                    adjacent_points.lat_edge_ind, adjacent_points.lon_edge_ind = (
-                        find_edge_inds(
-                            lati, loni, 2, max_lat, min_lat, max_lon, min_lon
-                        )
-                    )
-
-            # four cases for corner zones
-            if (
-                (lat - max_lat) <= MAX_LAT_SURFACE_EXTENSION
-                and (min_lon - lon) <= MAX_LON_SURFACE_EXTENSION
-                and lon <= min_lon
-                and lat >= max_lat
-            ):
-                adjacent_points.corner_lat_ind, adjacent_points.corner_lon_ind = (
-                    find_corner_inds(lati, loni, max_lat, min_lon)
-                )
-            elif (
-                lat - max_lat <= MAX_LAT_SURFACE_EXTENSION
-                and lon - max_lon <= MAX_LON_SURFACE_EXTENSION
-                and lon >= max_lon
-                and lat >= max_lat
-            ):
-                adjacent_points.corner_lat_ind, adjacent_points.corner_lon_ind = (
-                    find_corner_inds(lati, loni, max_lat, max_lon)
-                )
-
-            elif (
-                min_lat - lat <= MAX_LAT_SURFACE_EXTENSION
-                and min_lon - lon <= MAX_LON_SURFACE_EXTENSION
-                and lon <= min_lon
-                and lat <= min_lat
-            ):
-                adjacent_points.corner_lat_ind, adjacent_points.corner_lon_ind = (
-                    find_corner_inds(lati, loni, min_lat, min_lon)
-                )
-            elif (
-                min_lat - lat <= MAX_LAT_SURFACE_EXTENSION
-                and lon - max_lon <= MAX_LON_SURFACE_EXTENSION
-                and lon >= max_lon
-                and lat <= min_lat
-            ):
-                adjacent_points.corner_lat_ind, adjacent_points.corner_lon_ind = (
-                    find_corner_inds(lati, loni, min_lat, max_lon)
-                )
-
-            adjacent_points.in_corner_zone = (
-                True  # TODO: this is always True, so why have it?
-            )
-
-            if not (
-                adjacent_points.in_lat_extension_zone
-                or adjacent_points.in_lon_extension_zone
-                or adjacent_points.in_corner_zone
-            ):
-                raise ValueError(
-                    f"Point does not lie in any global surface extension. {lon} {lat}"
-                )
+        # Raise error if needed
+        if not (adjacent_points.in_surface_bounds or
+                adjacent_points.in_lat_extension_zone or
+                adjacent_points.in_lon_extension_zone or
+                adjacent_points.in_corner_zone):
+            raise ValueError(f"Point does not lie in any global surface extension. {lon} {lat}")
 
         return adjacent_points
 

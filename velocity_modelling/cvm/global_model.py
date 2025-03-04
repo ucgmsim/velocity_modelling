@@ -186,26 +186,14 @@ class PartialGlobalSurfaceDepths:
                 mesh_vector.lat,
                 mesh_vector.lon,
             )
-            # self.depths[i] = interpolate_global_surface(
-            #     global_surf_read, mesh_vector, adjacent_points
-            # )
-            self.depths[i] = interpolate_global_surface_numba(
-                global_surf_read.lati,
-                global_surf_read.loni,
-                global_surf_read.raster,
+
+            self.depths[i] = interpolate_global_surface(
+                global_surf_read,
                 mesh_vector.lat,
                 mesh_vector.lon,
-                adjacent_points.lat_ind,
-                adjacent_points.lon_ind,
-                adjacent_points.in_surface_bounds,
-                adjacent_points.in_lat_extension_zone,
-                adjacent_points.in_lon_extension_zone,
-                adjacent_points.in_corner_zone,
-                adjacent_points.lat_edge_ind,
-                adjacent_points.lon_edge_ind,
-                adjacent_points.corner_lat_ind,
-                adjacent_points.corner_lon_ind,
+                adjacent_points
             )
+
 
         # Find indices where top_val < bot_val
         mask = self.depths[:-1] < self.depths[1:]
@@ -265,6 +253,48 @@ def interpolate_global_surface_numba(
 
     raise ValueError("Calculation of Global surface value failed.")
 
+
+def interpolate_global_surface(surface:GlobalSurfaceRead, lat: float, lon: float, adjacent_points: AdjacentPoints):
+    """
+    A convenient wrapper for the interpolate_global_surface_numba function.
+
+    Parameters
+    ----------
+    surface : GlobalSurfaceRead
+        An object with lati, loni, and raster attributes.
+    lat : float
+        Latitude of the point to interpolate.
+    lon : float
+        Longitude of the point to interpolate.
+    adjacent_points : AdjacentPoints
+        Object containing information about adjacent points.
+
+    Returns
+    -------
+    float
+        The interpolated value at the given latitude and longitude.
+    """
+    # Convert list indices to numpy arrays if needed
+    lat_ind = np.array(adjacent_points.lat_ind, dtype=np.int64)
+    lon_ind = np.array(adjacent_points.lon_ind, dtype=np.int64)
+
+    return interpolate_global_surface_numba(
+        surface.lati,
+        surface.loni,
+        surface.raster,
+        lat,
+        lon,
+        lat_ind,
+        lon_ind,
+        adjacent_points.in_surface_bounds,
+        adjacent_points.in_lat_extension_zone,
+        adjacent_points.in_lon_extension_zone,
+        adjacent_points.in_corner_zone,
+        adjacent_points.lat_edge_ind,
+        adjacent_points.lon_edge_ind,
+        adjacent_points.corner_lat_ind,
+        adjacent_points.corner_lon_ind,
+    )
 
 class TomographyData:
     def __init__(
@@ -332,32 +362,19 @@ class TomographyData:
         -------
         None: The result is stored in the mesh_vector's vs30 attribute.
         """
-        from velocity_modelling.cvm.global_model import interpolate_global_surface_numba
+        from velocity_modelling.cvm.global_model import interpolate_global_surface
 
         adjacent_points = AdjacentPoints.find_global_adjacent_points(
             self.vs30.lati, self.vs30.loni, mesh_vector.lat, mesh_vector.lon
         )
 
-        # mesh_vector.vs30 = interpolate_global_surface(
-        #     self.vs30, mesh_vector, adjacent_points
-        # )
-        mesh_vector.vs30 = interpolate_global_surface_numba(
-            self.vs30.lati,
-            self.vs30.loni,
-            self.vs30.raster,
+        mesh_vector.vs30 = interpolate_global_surface(
+            self.vs30,
             mesh_vector.lat,
             mesh_vector.lon,
-            adjacent_points.lat_ind,
-            adjacent_points.lon_ind,
-            adjacent_points.in_surface_bounds,
-            adjacent_points.in_lat_extension_zone,
-            adjacent_points.in_lon_extension_zone,
-            adjacent_points.in_corner_zone,
-            adjacent_points.lat_edge_ind,
-            adjacent_points.lon_edge_ind,
-            adjacent_points.corner_lat_ind,
-            adjacent_points.corner_lon_ind,
+            adjacent_points
         )
+
 
     def calculate_distance_from_shoreline(self, mesh_vector: MeshVector):
         """
@@ -372,7 +389,7 @@ class TomographyData:
         -------
         None : The result is stored in the mesh_vector's distance_from_shoreline attribute.
         """
-        from velocity_modelling.cvm.global_model import interpolate_global_surface_numba
+        from velocity_modelling.cvm.global_model import interpolate_global_surface
 
         # Find the adjacent points for interpolation
         adjacent_points = AdjacentPoints.find_global_adjacent_points(
@@ -383,25 +400,9 @@ class TomographyData:
         )
 
         # Interpolate the global surfaces value at the given latitude and longitude
-        # mesh_vector.distance_from_shoreline = interpolate_global_surface(
-        #     self.offshore_distance_surface, mesh_vector, adjacent_points
-        # )
-        # Extract data once from mesh_vector and adjacent_points (reused across calls)
-
-        mesh_vector.distance_from_shoreline = interpolate_global_surface_numba(
-            self.offshore_distance_surface.lati,
-            self.offshore_distance_surface.loni,
-            self.offshore_distance_surface.raster,
+        mesh_vector.distance_from_shoreline = interpolate_global_surface(
+            self.offshore_distance_surface,
             mesh_vector.lat,
             mesh_vector.lon,
-            adjacent_points.lat_ind,
-            adjacent_points.lon_ind,
-            adjacent_points.in_surface_bounds,
-            adjacent_points.in_lat_extension_zone,
-            adjacent_points.in_lon_extension_zone,
-            adjacent_points.in_corner_zone,
-            adjacent_points.lat_edge_ind,
-            adjacent_points.lon_edge_ind,
-            adjacent_points.corner_lat_ind,
-            adjacent_points.corner_lon_ind,
+            adjacent_points
         )
