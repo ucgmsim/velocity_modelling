@@ -82,31 +82,31 @@ class PartialGlobalSurfaceDepths:
         """
         self.depths = np.zeros(n_surfaces, dtype=np.float64)
 
-    def find_global_submodel_ind(
-        self,
-        depth: np.float64,
-    ):
-        """
-        Find the index of the global sub-velocity model at the given depth.
-
-        Parameters
-        ----------
-        depth : float
-            The depth (in m) to find the sub-velocity model index at.
-
-        Returns
-        -------
-        int
-            The index of the global sub-velocity model.
-        """
-        try:
-            n_velo_ind = np.where(self.depths >= depth)[0][-1]
-            if n_velo_ind == len(self.depths):
-                raise ValueError("Error: depth not found in global sub-velocity model.")
-        except IndexError:
-            raise ValueError("Error: depth not found in global sub-velocity model.")
-
-        return n_velo_ind
+    # def find_global_submodel_ind(
+    #     self,
+    #     depth: np.float64,
+    # ):
+    #     """
+    #     Find the index of the global sub-velocity model at the given depth.
+    #
+    #     Parameters
+    #     ----------
+    #     depth : float
+    #         The depth (in m) to find the sub-velocity model index at.
+    #
+    #     Returns
+    #     -------
+    #     int
+    #         The index of the global sub-velocity model.
+    #     """
+    #     try:
+    #         n_velo_ind = np.where(self.depths >= depth)[0][-1]
+    #         if n_velo_ind == len(self.depths):
+    #             raise ValueError("Error: depth not found in global sub-velocity model.")
+    #     except IndexError:
+    #         raise ValueError("Error: depth not found in global sub-velocity model.")
+    #
+    #     return n_velo_ind
 
     def find_global_submodel_ind_vectorized(self, depths: np.ndarray) -> np.ndarray:
         """
@@ -188,12 +188,8 @@ class PartialGlobalSurfaceDepths:
             )
 
             self.depths[i] = interpolate_global_surface(
-                global_surf_read,
-                mesh_vector.lat,
-                mesh_vector.lon,
-                adjacent_points
+                global_surf_read, mesh_vector.lat, mesh_vector.lon, adjacent_points
             )
-
 
         # Find indices where top_val < bot_val
         mask = self.depths[:-1] < self.depths[1:]
@@ -254,7 +250,9 @@ def interpolate_global_surface_numba(
     raise ValueError("Calculation of Global surface value failed.")
 
 
-def interpolate_global_surface(surface:GlobalSurfaceRead, lat: float, lon: float, adjacent_points: AdjacentPoints):
+def interpolate_global_surface(
+    surface: GlobalSurfaceRead, lat: float, lon: float, adjacent_points: AdjacentPoints
+):
     """
     A convenient wrapper for the interpolate_global_surface_numba function.
 
@@ -295,6 +293,7 @@ def interpolate_global_surface(surface:GlobalSurfaceRead, lat: float, lon: float
         adjacent_points.corner_lat_ind,
         adjacent_points.corner_lon_ind,
     )
+
 
 class TomographyData:
     def __init__(
@@ -369,12 +368,8 @@ class TomographyData:
         )
 
         mesh_vector.vs30 = interpolate_global_surface(
-            self.vs30,
-            mesh_vector.lat,
-            mesh_vector.lon,
-            adjacent_points
+            self.vs30, mesh_vector.lat, mesh_vector.lon, adjacent_points
         )
-
 
     def calculate_distance_from_shoreline(self, mesh_vector: MeshVector):
         """
@@ -404,5 +399,5 @@ class TomographyData:
             self.offshore_distance_surface,
             mesh_vector.lat,
             mesh_vector.lon,
-            adjacent_points
+            adjacent_points,
         )

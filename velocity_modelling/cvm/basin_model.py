@@ -435,24 +435,24 @@ class PartialBasinSurfaceDepths:
             if self.depths[i] < self.depths[i + 1]:
                 self.depths[i] = self.depths[i + 1]
 
-    def determine_basin_surface_above(self, depth: float):
-        """
-        Determine the index of the basin surface directly above the given depth.
-
-        Parameters
-        ----------
-        depth : float
-            The depth of the grid point to determine the properties at.
-
-        Returns
-        -------
-        int
-            Index of the surface directly above the grid point.
-        """
-        # self.depths is in decreasing order
-
-        valid_indices = np.where((~np.isnan(self.depths)) & (self.depths >= depth))[0]
-        return valid_indices[-1] if valid_indices.size > 0 else 0  # the last one
+    # def determine_basin_surface_above(self, depth: float):
+    #     """
+    #     Determine the index of the basin surface directly above the given depth.
+    #
+    #     Parameters
+    #     ----------
+    #     depth : float
+    #         The depth of the grid point to determine the properties at.
+    #
+    #     Returns
+    #     -------
+    #     int
+    #         Index of the surface directly above the grid point.
+    #     """
+    #     # self.depths is in decreasing order
+    #
+    #     valid_indices = np.where((~np.isnan(self.depths)) & (self.depths >= depth))[0]
+    #     return valid_indices[-1] if valid_indices.size > 0 else 0  # the last one
 
     def determine_basin_surface_above_vectorized(self, depths: np.ndarray):
         """
@@ -497,22 +497,22 @@ class PartialBasinSurfaceDepths:
 
         return indices
 
-    def determine_basin_surface_below(self, depth: float):
-        """
-        Determine the index of the basin surface directly below the given depth.
-
-        Parameters
-        ----------
-        depth : float
-            The depth of the grid point to determine the properties at.
-
-        Returns
-        -------
-        int
-            Index of the surface directly below the grid point.
-        """
-        valid_indices = np.where((~np.isnan(self.depths)) & (self.depths <= depth))[0]
-        return valid_indices[-1] if valid_indices.size > 0 else 0  # the last index
+    # def determine_basin_surface_below(self, depth: float):
+    #     """
+    #     Determine the index of the basin surface directly below the given depth.
+    #
+    #     Parameters
+    #     ----------
+    #     depth : float
+    #         The depth of the grid point to determine the properties at.
+    #
+    #     Returns
+    #     -------
+    #     int
+    #         Index of the surface directly below the grid point.
+    #     """
+    #     valid_indices = np.where((~np.isnan(self.depths)) & (self.depths <= depth))[0]
+    #     return valid_indices[-1] if valid_indices.size > 0 else 0  # the last index
 
     def enforce_basin_surface_depths(
         self,

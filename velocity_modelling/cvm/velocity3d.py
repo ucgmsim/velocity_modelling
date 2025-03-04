@@ -124,26 +124,6 @@ class QualitiesVector:
         )
         k_indices = np.arange(mesh_vector.nz)
 
-        # Precompute interpolated values for all surfaces and vtype at this (lat, lon)
-        global_surf_read = nz_tomography_data.surfaces[0]["vp"]
-        adjacent_points = AdjacentPoints.find_global_adjacent_points(
-            global_surf_read.lati,
-            global_surf_read.loni,
-            mesh_vector.lat,
-            mesh_vector.lon,
-        )
-
-        # Precompute interpolated values for all surfaces and vtype
-        num_surfaces = len(nz_tomography_data.surfaces)
-        interpolated_values = {vtype.name: np.zeros(num_surfaces) for vtype in VTYPE}
-        for idx in range(num_surfaces):
-            for vtype in VTYPE:
-                surface = nz_tomography_data.surfaces[idx][vtype.name]
-                val = interpolate_global_surface(
-                    surface, mesh_vector.lat, mesh_vector.lon, adjacent_points
-                )
-                interpolated_values[vtype.name][idx] = val
-
         # Precompute basin membership for all depths
         in_basin_depths = np.array(
             [in_basin.in_basin_depth for in_basin in in_basin_list]
@@ -213,7 +193,6 @@ class QualitiesVector:
                 mesh_vector,
                 in_any_basin_lat_lon,
                 on_boundary,
-                interpolated_values,
             )
 
         # Apply NaN masking for depths above the surface
@@ -403,69 +382,12 @@ class QualitiesVector:
                 logger,
             )
 
-    def assign_basin_qualities(
+    # TODO: I need to fix this function to automatically trigger the right main function of the submodel
+    def call_global_submodel_vectorized(
         self,
-        partial_basin_surface_depths: PartialBasinSurfaceDepths,
-        partial_global_surface_depths: PartialGlobalSurfaceDepths,
-        nz_tomography_data: TomographyData,
-        mesh_vector: MeshVector,
-        in_any_basin_lat_lon: bool,
-        on_boundary: bool,
-        depth: float,
-        basin_num: int,
-        z_ind: int,
-    ):
-        """
-        Assign Vp, Vs, and Rho to the individual grid point.
-
-        Parameters
-        ----------
-        partial_basin_surface_depths : PartialBasinSurfaceDepths
-            Struct containing depths for all applicable basin surfaces at one lat-lon location.
-        partial_global_surface_depths : PartialGlobalSurfaceDepths
-            Struct containing global surface depths.
-        nz_tomography_data : TomographyData
-            Struct containing tomography data.
-        mesh_vector : MeshVector
-            Struct containing a single lat-lon point with one or more depths.
-        in_any_basin_lat_lon : bool
-            Flag indicating if the point is in any basin.
-        on_boundary : bool
-            Flag indicating if the point is on a boundary.
-        depth : float
-            The depth of the grid point to determine the properties at.
-        basin_num : int
-            The basin number pertaining to the basin of interest.
-        z_ind : int
-            The depth index of the single grid point.
-
-        Returns
-        -------
-        None
-        """
-        # Determine the indices of the basin surfaces above and below the given depth
-        ind_above = partial_basin_surface_depths.determine_basin_surface_above(depth)
-        # ind_below = partial_basin_surface_depths.determine_basin_surface_below(depth)
-
-        # Call the sub-velocity models to assign the qualities
-        self.call_basin_submodel(
-            partial_basin_surface_depths,
-            partial_global_surface_depths,
-            nz_tomography_data,
-            mesh_vector,
-            in_any_basin_lat_lon,
-            on_boundary,
-            depth,
-            ind_above,
-            basin_num,
-            z_ind,
-        )
-
-    def call_global_submodel(
-        self,
-        submodel_name: str,
-        z: float,
-        k: int,
+        submodel_names: np.ndarray,
+        z_values: np.ndarray,
+        k_indices: np.ndarray,
         global_model_parameters: dict,
         partial_global_surface_depths: PartialGlobalSurfaceDepths,
         velo_mod_1d_data: VelocityModel1D,
@@ -479,11 +401,11 @@ class QualitiesVector:
 
         Parameters
         ----------
-        submodel_name : str
+        submodel_names :  np.ndarray
             The name of the global submodel.
-        z : float
+        z_values : np.ndarray
             The depth of the grid point to determine the properties at.
-        k : int
+        k_indices :  np.ndarray
             The depth index of the single grid point.
         global_model_parameters : dict
             Struct containing all model parameters (surface names, submodel names, basin names, etc.)
@@ -504,47 +426,6 @@ class QualitiesVector:
         -------
         None
         """
-
-        if submodel_name == "NaNsubMod":
-            self.nan_sub_mod(k)
-
-        elif submodel_name == "EPtomo2010subMod":
-            from velocity_modelling.cvm.submodel import EPtomo2010 as eptomo2010
-
-            eptomo2010.main(
-                k,
-                z,
-                self,
-                mesh_vector,
-                nz_tomography_data,
-                partial_global_surface_depths,
-                global_model_parameters["GTL"],
-                in_any_basin_lat_lon,
-                on_boundary,
-            )
-
-        elif submodel_name == "Cant1D_v1":
-            from velocity_modelling.cvm.submodel import Cant1D_v1 as Cant1D_v1
-
-            Cant1D_v1.main(k, z, self, velo_mod_1d_data)
-        else:
-            raise ValueError(f"Error: Submodel {submodel_name} not found in registry.")
-
-    # TODO: I need to fix this function to automatically trigger the right main function of the submodel
-    def call_global_submodel_vectorized(
-        self,
-        submodel_names: np.ndarray,
-        z_values: np.ndarray,
-        k_indices: np.ndarray,
-        global_model_parameters: dict,
-        partial_global_surface_depths: PartialGlobalSurfaceDepths,
-        velo_mod_1d_data: VelocityModel1D,
-        nz_tomography_data: TomographyData,
-        mesh_vector: MeshVector,
-        in_any_basin_lat_lon: bool,
-        on_boundary: bool,
-        interpolated_values: dict,  # Precomputed interpolated values
-    ):
         # Sort by k_indices to preserve depth order
         order = np.argsort(k_indices)
         k_indices = k_indices[order]
@@ -561,6 +442,28 @@ class QualitiesVector:
             elif name == "EPtomo2010subMod":
                 from velocity_modelling.cvm.submodel import EPtomo2010
 
+                # Precompute interpolated values for all surfaces and vtype at this (lat, lon)
+                global_surf_read = nz_tomography_data.surfaces[0]["vp"]
+                adjacent_points = AdjacentPoints.find_global_adjacent_points(
+                    global_surf_read.lati,
+                    global_surf_read.loni,
+                    mesh_vector.lat,
+                    mesh_vector.lon,
+                )
+
+                # Precompute interpolated values for all surfaces and vtype
+                num_surfaces = len(nz_tomography_data.surfaces)
+                interpolated_global_surface_values = {
+                    vtype.name: np.zeros(num_surfaces) for vtype in VTYPE
+                }
+                for idx in range(num_surfaces):
+                    for vtype in VTYPE:
+                        surface = nz_tomography_data.surfaces[idx][vtype.name]
+                        val = interpolate_global_surface(
+                            surface, mesh_vector.lat, mesh_vector.lon, adjacent_points
+                        )
+                        interpolated_global_surface_values[vtype.name][idx] = val
+
                 EPtomo2010.main_vectorized(
                     k_subset,
                     z_subset,
@@ -571,7 +474,7 @@ class QualitiesVector:
                     global_model_parameters["GTL"],
                     in_any_basin_lat_lon,
                     on_boundary,
-                    interpolated_values,
+                    interpolated_global_surface_values,
                 )
             elif name == "Cant1D_v1":
                 from velocity_modelling.cvm.submodel import Cant1D_v1
@@ -582,7 +485,7 @@ class QualitiesVector:
 
     # TODO: I need to fix this function to automatically trigger the right main function of the submodel
     # some unused positional arguments are here for future use. will think of a better way to handle this
-    def call_basin_submodel(
+    def call_basin_submodel_vectorized(
         self,
         partial_basin_surface_depths: PartialBasinSurfaceDepths,
         partial_global_surface_depths: PartialGlobalSurfaceDepths,
@@ -590,10 +493,10 @@ class QualitiesVector:
         mesh_vector: MeshVector,
         in_any_basin_lat_lon,
         on_boundary,
-        depth,
+        depths,
         ind_above,
         basin_num,
-        z_ind,
+        z_indices,
     ):
         """
         Call the appropriate sub-velocity model based on the basin submodel name.
@@ -612,95 +515,20 @@ class QualitiesVector:
             Flag indicating if the point is in any basin.
         on_boundary : bool
             Flag indicating if the point is on a boundary.
-        depth : float
-            The depth of the grid point to determine the properties at.
+        depths :np.ndarray
+            The depths of the grid point to determine the properties at.
         ind_above : int
             Index of the surface directly above the grid point.
         basin_num : int
             The basin number pertaining to the basin of interest.
-        z_ind : int
-            The depth index of the single grid point.
+        z_indices : np.ndarray
+            The depth indices  of the  grid point.
 
         Returns
         -------
         None
         """
 
-        basin_data = partial_basin_surface_depths.basin
-        self.inbasin[z_ind] = basin_num  # basin number that the point is in
-
-        submodel_name, submodel_data = basin_data.submodels[ind_above]
-
-        if submodel_name == "NaNsubMod":
-            self.nan_sub_mod(z_ind)
-
-        elif submodel_name in ["Cant1D_v1", "Cant1D_v2", "Cant1D_v2_Pliocene_Enforced"]:
-            from velocity_modelling.cvm.submodel import Cant1D_v1
-
-            Cant1D_v1.main(z_ind, depth, self, submodel_data)
-        elif submodel_name == "PaleogeneSubMod_v1":
-            from velocity_modelling.cvm.submodel import PaleogeneSubMod_v1
-
-            PaleogeneSubMod_v1.main(z_ind, self)
-        elif submodel_name == "PlioceneSubMod_v1":
-            from velocity_modelling.cvm.submodel import PlioceneSubMod_v1
-
-            PlioceneSubMod_v1.main(z_ind, self)
-        elif submodel_name == "MioceneSubMod_v1":
-            from velocity_modelling.cvm.submodel import MioceneSubMod_v1
-
-            MioceneSubMod_v1.main(z_ind, self)
-        elif submodel_name == "BPVSubMod_v1":
-            from velocity_modelling.cvm.submodel import BPVSubMod_v1
-
-            BPVSubMod_v1.main(z_ind, self)
-        elif submodel_name == "BPVSubMod_v2":
-            from velocity_modelling.cvm.submodel import BPVSubMod_v2
-
-            BPVSubMod_v2.main(z_ind, self)
-        elif submodel_name == "BPVSubMod_v3":
-            from velocity_modelling.cvm.submodel import BPVSubMod_v3
-
-            BPVSubMod_v3.main(z_ind, depth, self, partial_basin_surface_depths)
-        elif submodel_name == "BPVSubMod_v4":
-            from velocity_modelling.cvm.submodel import BPVSubMod_v4
-
-            BPVSubMod_v4.main(
-                z_ind,
-                depth,
-                self,
-                partial_basin_surface_depths,
-                partial_global_surface_depths,
-            )
-        else:
-            raise ValueError(f"Error: Submodel {submodel_name} not found in registry.")
-
-    def nan_sub_mod(self, k: int):
-        """
-        Assign NaN values to the velocities and density at the given depth index.
-
-        Parameters
-        ----------
-        k : int
-            The depth index to assign NaN values to.
-        """
-        self.rho[k] = np.nan
-        self.vp[k] = np.nan
-        self.vs[k] = np.nan
-
-    def call_basin_submodel_vectorized(
-        self,
-        partial_basin_surface_depths: PartialBasinSurfaceDepths,
-        partial_global_surface_depths: PartialGlobalSurfaceDepths,
-        nz_tomography_data,
-        mesh_vector: MeshVector,
-        in_any_basin_lat_lon,
-        on_boundary,
-        depths,
-        ind_above,
-        basin_num,
-        z_indices,
-    ):
         basin_data = partial_basin_surface_depths.basin
         submodel_name, submodel_data = basin_data.submodels[ind_above]
 
@@ -767,6 +595,35 @@ class QualitiesVector:
         basin_num: int,
         z_indices: np.ndarray,  # Array of z indices
     ):
+        """
+        Assign Vp, Vs, and Rho to the individual grid point.
+
+        Parameters
+        ----------
+        partial_basin_surface_depths : PartialBasinSurfaceDepths
+            Struct containing depths for all applicable basin surfaces at one lat-lon location.
+        partial_global_surface_depths : PartialGlobalSurfaceDepths
+            Struct containing global surface depths.
+        nz_tomography_data : TomographyData
+            Struct containing tomography data.
+        mesh_vector : MeshVector
+            Struct containing a single lat-lon point with one or more depths.
+        in_any_basin_lat_lon : bool
+            Flag indicating if the point is in any basin.
+        on_boundary : bool
+            Flag indicating if the point is on a boundary.
+        depths : np.ndarray
+            The depths of the grid point to determine the properties at.
+        basin_num : int
+            The basin number pertaining to the basin of interest.
+        z_indices : np.ndarray
+            The depth indices of the grid points.
+
+        Returns
+        -------
+        None
+        """
+
         # Vectorized determination of surfaces above
         ind_above = (
             partial_basin_surface_depths.determine_basin_surface_above_vectorized(
@@ -795,6 +652,14 @@ class QualitiesVector:
             )
 
     def nan_sub_mod_vectorized(self, z_indices):
+        """
+        Assign NaN values to the velocities and density at the given depth index.
+
+        Parameters
+        ----------
+        z_indices : np.ndarray
+            The depth indices to assign NaN values to.
+        """
         self.vp[z_indices] = np.nan
         self.vs[z_indices] = np.nan
         self.rho[z_indices] = np.nan

@@ -133,6 +133,7 @@ class MeshVector:
 
         return new_instance
 
+
 class ModelExtent:
     def __init__(self, vm_params: Dict):
         """
@@ -465,38 +466,68 @@ def find_global_adjacent_points_numba(lati, loni, lat, lon):
         # Handle corner zones
         corner_case = 0
         # Case 1: Top-left corner
-        if ((lat - max_lat) <= MAX_LAT_SURFACE_EXTENSION and
-                (min_lon - lon) <= MAX_LON_SURFACE_EXTENSION and
-                lon <= min_lon and lat >= max_lat):
-            corner_lat_ind, corner_lon_ind = find_corner_inds(lati, loni, max_lat, min_lon)
+        if (
+            (lat - max_lat) <= MAX_LAT_SURFACE_EXTENSION
+            and (min_lon - lon) <= MAX_LON_SURFACE_EXTENSION
+            and lon <= min_lon
+            and lat >= max_lat
+        ):
+            corner_lat_ind, corner_lon_ind = find_corner_inds(
+                lati, loni, max_lat, min_lon
+            )
             corner_case = 1
         # Case 2: Top-right corner
-        elif ((lat - max_lat) <= MAX_LAT_SURFACE_EXTENSION and
-              (lon - max_lon) <= MAX_LON_SURFACE_EXTENSION and
-              lon >= max_lon and lat >= max_lat):
-            corner_lat_ind, corner_lon_ind = find_corner_inds(lati, loni, max_lat, max_lon)
+        elif (
+            (lat - max_lat) <= MAX_LAT_SURFACE_EXTENSION
+            and (lon - max_lon) <= MAX_LON_SURFACE_EXTENSION
+            and lon >= max_lon
+            and lat >= max_lat
+        ):
+            corner_lat_ind, corner_lon_ind = find_corner_inds(
+                lati, loni, max_lat, max_lon
+            )
             corner_case = 2
         # Case 3: Bottom-left corner
-        elif ((min_lat - lat) <= MAX_LAT_SURFACE_EXTENSION and
-              (min_lon - lon) <= MAX_LON_SURFACE_EXTENSION and
-              lon <= min_lon and lat <= min_lat):
-            corner_lat_ind, corner_lon_ind = find_corner_inds(lati, loni, min_lat, min_lon)
+        elif (
+            (min_lat - lat) <= MAX_LAT_SURFACE_EXTENSION
+            and (min_lon - lon) <= MAX_LON_SURFACE_EXTENSION
+            and lon <= min_lon
+            and lat <= min_lat
+        ):
+            corner_lat_ind, corner_lon_ind = find_corner_inds(
+                lati, loni, min_lat, min_lon
+            )
             corner_case = 3
         # Case 4: Bottom-right corner
-        elif ((min_lat - lat) <= MAX_LAT_SURFACE_EXTENSION and
-              (lon - max_lon) <= MAX_LON_SURFACE_EXTENSION and
-              lon >= max_lon and lat <= min_lat):
-            corner_lat_ind, corner_lon_ind = find_corner_inds(lati, loni, min_lat, max_lon)
+        elif (
+            (min_lat - lat) <= MAX_LAT_SURFACE_EXTENSION
+            and (lon - max_lon) <= MAX_LON_SURFACE_EXTENSION
+            and lon >= max_lon
+            and lat <= min_lat
+        ):
+            corner_lat_ind, corner_lon_ind = find_corner_inds(
+                lati, loni, min_lat, max_lon
+            )
             corner_case = 4
 
         in_corner_zone = corner_case > 0
 
     return (
-        in_surface_bounds, lat_ind, lon_ind,
-        in_lat_extension_zone, lat_extension_type, lon_edge_ind,
-        in_lon_extension_zone, lon_extension_type, lat_edge_ind,
-        in_corner_zone, corner_lat_ind, corner_lon_ind
+        in_surface_bounds,
+        lat_ind,
+        lon_ind,
+        in_lat_extension_zone,
+        lat_extension_type,
+        lon_edge_ind,
+        in_lon_extension_zone,
+        lon_extension_type,
+        lat_edge_ind,
+        in_corner_zone,
+        corner_lat_ind,
+        corner_lon_ind,
     )
+
+
 class AdjacentPoints:
     def __init__(self):
         self.in_surface_bounds = False
@@ -547,7 +578,9 @@ class AdjacentPoints:
 
         # Print error if needed
         if not adjacent_points.in_surface_bounds:
-            print(f"Error, basin point lies outside of the extent of the basin surface ({lon}, {lat}).")
+            print(
+                f"Error, basin point lies outside of the extent of the basin surface ({lon}, {lat})."
+            )
 
         return adjacent_points
 
@@ -594,11 +627,15 @@ class AdjacentPoints:
         adjacent_points.corner_lon_ind = result[11]
 
         # Raise error if needed
-        if not (adjacent_points.in_surface_bounds or
-                adjacent_points.in_lat_extension_zone or
-                adjacent_points.in_lon_extension_zone or
-                adjacent_points.in_corner_zone):
-            raise ValueError(f"Point does not lie in any global surface extension. {lon} {lat}")
+        if not (
+            adjacent_points.in_surface_bounds
+            or adjacent_points.in_lat_extension_zone
+            or adjacent_points.in_lon_extension_zone
+            or adjacent_points.in_corner_zone
+        ):
+            raise ValueError(
+                f"Point does not lie in any global surface extension. {lon} {lat}"
+            )
 
         return adjacent_points
 

@@ -31,7 +31,9 @@ def linear_interpolation(
 
 
 @numba.jit(nopython=True)
-def linear_interpolation_vectorized(x0, x1, y0, y1, x):
+def linear_interpolation_vectorized(
+    x0: np.float64, x1: np.float64, y0: np.float64, y1: np.float64, x: np.ndarray
+):
     """
     Vectorized linear interpolation.
 
