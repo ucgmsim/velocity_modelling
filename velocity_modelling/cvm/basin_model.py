@@ -92,7 +92,7 @@ class BasinData:
     @check_boundary_index
     def boundary_lat(self, i: int) -> np.ndarray:
         """
-        Get the latitude of the boundary at index i.
+        Get the latitudes of the i-th boundary
 
         Parameters
         ----------
@@ -102,14 +102,14 @@ class BasinData:
         Returns
         -------
         np.ndarray
-            The latitude of the boundary.
+            The latitudes of the boundary.
         """
         return self.boundaries[i][:, 1]
 
     @check_boundary_index
     def boundary_lon(self, i: int) -> np.ndarray:
         """
-        Get the longitude of the boundary at index i.
+        Get the longitudes of the i-th boundary
 
         Parameters
         ----------
@@ -119,75 +119,40 @@ class BasinData:
         Returns
         -------
         np.ndarray
-            The longitude of the boundary.
+            The longitudes of the boundary.
         """
         return self.boundaries[i][:, 0]
+
 
 from rtree import index
 import numpy as np
 from numba import njit, prange
 
 
-#@njit
-def check_inside_basin(basin_data, lat, lon):
-    """
-    Vectorized check if point is inside a basin.
-    """
-    for ind in range(len(basin_data.boundaries)):
-        boundary = basin_data.boundaries[ind]
+@njit
+def determine_basin_contains_lat_lon(
+    boundaries: List[np.ndarray], lat: float, lon: float
+):
+    # TODO: Only Perturbation basins are ignored for smoothing, which will be handled in the perturbation code.
+    #  We dropped ignoreBasinForSmoothing from Basin definition. By default we don't ignore any basins for smoothing.
 
-        # Quick bounding box check
-        if not (
-                np.min(boundary[:, 0]) <= lon <= np.max(boundary[:, 0])
-                and np.min(boundary[:, 1]) <= lat <= np.max(boundary[:, 1])
-        ):
-            continue
+    # Filtering by bounding box has been already done
+    for ind in range(len(boundaries)):
+        boundary = boundaries[ind]
+
+        lats = boundary[:, 1]
+        lons = boundary[:, 0]
 
         # Check if inside polygon
         if point_in_polygon.is_inside_postgis(boundary, (lon, lat)):
             return True
 
             # Check if on a vertex
-        if point_on_vertex(basin_data.boundary_lat(ind), basin_data.boundary_lon(ind), lat, lon):
+        if point_on_vertex(lats, lons, lat, lon):
             return True
 
     return False
-class BasinSearchVectorized:
-    def __init__(self, basin_data_list):
-        self.basin_data_list = basin_data_list
 
-        # Convert all basin boundaries into NumPy arrays
-        self.boundary_arrays = [
-            np.vstack(basin.boundaries)  # Merge all boundary arrays for each basin
-            for basin in basin_data_list
-        ]
-
-        # Compute min/max lat/lon per basin
-        self.min_lons = np.array([np.min(boundary[:, 0]) for boundary in self.boundary_arrays])
-        self.max_lons = np.array([np.max(boundary[:, 0]) for boundary in self.boundary_arrays])
-        self.min_lats = np.array([np.min(boundary[:, 1]) for boundary in self.boundary_arrays])
-        self.max_lats = np.array([np.max(boundary[:, 1]) for boundary in self.boundary_arrays])
-
-    def find_all_containing_basins(self, lat, lon):
-        """
-        Find all basins that contain a given (lat, lon).
-        Returns a list of indices of basins that contain the point.
-        """
-
-        # Step 1: Vectorized Bounding Box Check
-        inside_bbox = (self.min_lons <= lon) & (lon <= self.max_lons) & \
-                      (self.min_lats <= lat) & (lat <= self.max_lats)
-
-        # Get candidate basin indices
-        candidate_indices = np.where(inside_bbox)[0]
-
-        # Step 2: Polygon Check (Only for Candidates)
-        inside_basins = []
-        for idx in candidate_indices:
-            if check_inside_basin(self.basin_data_list[idx], lat, lon):
-                inside_basins.append(idx)
-
-        return inside_basins  # Returns all matching basin indices
 
 class InBasinGlobalMesh:
     def __init__(
@@ -215,12 +180,60 @@ class InBasinGlobalMesh:
         self.basin_membership = [[[] for _ in range(self.nx)] for _ in range(self.ny)]
         self.basin_data_list = basin_data_list  # Store for preprocess_smooth_bound
         self.smooth_basin_membership = None  # For smooth_bound points
-        self.basin_search = BasinSearchVectorized(self.basin_data_list)
+
+        # Convert all basin boundaries into NumPy arrays
+        boundary_arrays = [
+            np.vstack(basin.boundaries)  # Merge all boundary arrays for each basin
+            for basin in basin_data_list
+        ]
+
+        # Compute min/max lat/lon per basin
+        self.min_basin_boundary_lons = np.array(
+            [np.min(boundary[:, 0]) for boundary in boundary_arrays]
+        )
+        self.max_basin_boundary_lons = np.array(
+            [np.max(boundary[:, 0]) for boundary in boundary_arrays]
+        )
+        self.min_basin_boundary_lats = np.array(
+            [np.min(boundary[:, 1]) for boundary in boundary_arrays]
+        )
+        self.max_basin_boundary_lats = np.array(
+            [np.max(boundary[:, 1]) for boundary in boundary_arrays]
+        )
+
         if smooth_bound is not None:
             print(f"DEBUG: smooth_bound provided, n={smooth_bound.n}")  # Debug
             self.preprocess_smooth_bound(smooth_bound)
         else:
             print("DEBUG: smooth_bound is None")
+
+    def find_all_containing_basins(self, lat, lon):
+        """
+        Find all basins that contain a given (lat, lon).
+        Returns a list of indices of basins that contain the point.
+        """
+
+        # Step 1: Vectorized Bounding Box Check
+        inside_bbox = (
+            (self.min_basin_boundary_lons <= lon)
+            & (lon <= self.max_basin_boundary_lons)
+            & (self.min_basin_boundary_lats <= lat)
+            & (lat <= self.max_basin_boundary_lats)
+        )
+
+        # Get candidate basin indices
+        candidate_indices = np.where(inside_bbox)[0]
+
+        # Step 2: Polygon Check (Only for Candidates)
+        inside_basins = []
+        # TODO: could be directly vectorized if boundary_arrays (in __init__()) is used
+        for idx in candidate_indices:
+            if determine_basin_contains_lat_lon(
+                self.basin_data_list[idx].boundaries, lat, lon
+            ):
+                inside_basins.append(idx)
+
+        return inside_basins  # Returns all matching basin indices
 
     def preprocess_smooth_bound(self, smooth_bound: SmoothingBoundary):
         print(
@@ -232,12 +245,8 @@ class InBasinGlobalMesh:
         for i in range(n_points):
             lat = smooth_bound.y[i]
             lon = smooth_bound.x[i]
+            self.smooth_basin_membership[i] = self.find_all_containing_basins(lat, lon)
 
-            for basin_idx, basin_data in enumerate(self.basin_data_list):
-                if determine_if_within_basin_lat_lon(basin_data, lat, lon):
-                    self.smooth_basin_membership[i].append(basin_idx)
-            tmp = self.basin_search.find_all_containing_basins(lat, lon)
-            assert tmp == self.smooth_basin_membership[i]
         print(
             f"DEBUG: smooth_basin_membership initialized with length {len(self.smooth_basin_membership)}"
         )  # Temporary debug
@@ -263,9 +272,6 @@ def determine_if_within_basin_lat_lon(basin_data: BasinData, lat: float, lon: fl
         True if inside a basin, False otherwise.
     """
 
-    # TODO: Only Perturbation basins are ignored for smoothing, which will be handled in the perturbation code.
-    #  We dropped ignoreBasinForSmoothing from Basin definition. By default we don't ignore any basins for smoothing.
-
     # See https://github.com/ucgmsim/mapping/blob/80b8e66222803d69e2f8f2182ccc1adc467b7cb1/mapbox/vs30/scripts/basin_z_values/gen_sites_in_basin.py#L119C2-L123C55
     # and https://github.com/ucgmsim/qcore/blob/master/qcore/point_in_polygon.py
 
@@ -284,7 +290,9 @@ def determine_if_within_basin_lat_lon(basin_data: BasinData, lat: float, lon: fl
             return True  # Inside the basin
 
         # Check if on a vertex
-        if point_on_vertex(basin_data.boundary_lat(ind), basin_data.boundary_lon(ind), lat, lon):
+        if point_on_vertex(
+            basin_data.boundary_lat(ind), basin_data.boundary_lon(ind), lat, lon
+        ):
             return True
 
     return False  # not inside basin
@@ -321,22 +329,14 @@ def preprocess_basin_membership(
     partial_global_mesh_list = [extract_partial_mesh(global_mesh, j) for j in range(ny)]
     logger.info(f"Pre-processing basin membership for {len(basin_data_list)} basins.")
 
-    basin_search = in_basin_mesh.basin_search
     for j in range(ny):
         partial_global_mesh = partial_global_mesh_list[j]
         for k in range(nx):
             lat = partial_global_mesh.lat[k]
             lon = partial_global_mesh.lon[k]
-            for basin_idx, basin_data in enumerate(basin_data_list):
-                if determine_if_within_basin_lat_lon(basin_data, lat, lon):
-                    in_basin_mesh.basin_membership[j][k].append(basin_idx)
-            tmp = basin_search.find_all_containing_basins(lat, lon)
-            try:
-                assert tmp == in_basin_mesh.basin_membership[j][k]
-            except AssertionError:
-                logger.error(
-                    f"ERROR: Basin membership mismatch at lat={lat}, lon={lon}, j={j}, k={k}"
-                )
+            in_basin_mesh.basin_membership[j][k] = (
+                in_basin_mesh.find_all_containing_basins(lat, lon)
+            )
 
     if smooth_bound is not None:
         logger.info(

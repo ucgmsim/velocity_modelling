@@ -220,6 +220,9 @@ def parse_arguments() -> argparse.Namespace:
 
 
 if __name__ == "__main__":
+
+    import time
+
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
 
@@ -238,5 +241,6 @@ if __name__ == "__main__":
     cvm_registry = CVMRegistry(
         vm_params["model_version"], args.nzvm_registry, logger=logger
     )
-
+    st = time.time()
     generate_velocity_model(cvm_registry, out_dir, vm_params, logger)
+    print("Time taken: ", time.time() - st)
