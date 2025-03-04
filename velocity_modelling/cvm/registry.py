@@ -1,0 +1,535 @@
+from logging import Logger
+import logging
+import numpy as np
+from pathlib import Path
+from typing import List, Dict
+import yaml
+import sys
+
+from velocity_modelling.cvm.geometry import AdjacentPoints, MeshVector  # noqa: F401
+from velocity_modelling.cvm.constants import (
+    NZVM_REGISTRY_PATH,
+    DATA_ROOT,
+    DEFAULT_OFFSHORE_1D_MODEL,
+    DEFAULT_OFFSHORE_DISTANCE,
+    VTYPE,
+)
+
+
+class CVMRegistry:
+    def __init__(
+        self,
+        version: str,
+        registry_path: Path = NZVM_REGISTRY_PATH,
+        logger: Logger = None,
+    ):
+        """
+        Initialize the CVMRegistry.
+
+        Parameters
+        ----------
+        version : str
+            The version of the velocity model.
+        registry_path : Path, optional
+            The path to the registry file (default is nzvm_registry_path).
+        """
+        with open(registry_path, "r") as f:
+            self.registry = yaml.safe_load(f)
+        self.version = version
+        self.vm_global_params = None
+
+        for vminfo in self.registry["vm"]:
+            if str(vminfo["version"]) == version:
+                self.vm_global_params = vminfo
+                break
+
+        self.logger = logger
+        self.cache = {}  # Initialize a cache dictionary
+
+    def log(self, message, level=logging.INFO):
+        if self.logger is not None:
+            self.logger.log(level, message)
+        else:
+            print(message, file=sys.stderr)
+
+    def get_info(self, datatype: str, name: str) -> Dict:
+        """
+        Get information from the registry.
+
+        Parameters
+        ----------
+        datatype : str
+            The type of data to retrieve (e.g., 'tomography', 'surface').
+        name : str
+            The name of the data entry.
+
+        Returns
+        -------
+        Dict
+            The information dictionary for the specified data entry.
+        """
+        try:
+            self.registry[datatype]
+        except KeyError:
+            self.log(f"Error: {datatype} not found in registry")
+            return None
+
+        for info in self.registry[datatype]:
+            assert (
+                "name" in info
+            ), f"Error: This entry in {datatype} has no name defined."
+            if info["name"] == name:
+                return info
+        self.log(f"Error: {name} for datatype {datatype} not found in registry")
+        return None
+
+    def get_full_path(self, relative_path: Path) -> Path:
+        """
+        Get the full path for a given relative path.
+
+        Parameters
+        ----------
+        relative_path : Path
+            The relative path to convert.
+
+        Returns
+        -------
+        Path
+            The full path.
+        """
+        return (
+            DATA_ROOT / relative_path
+            if not Path(relative_path).is_absolute()
+            else Path(relative_path)
+        )
+
+    def load_1d_velo_sub_model(self, v1d_path: Path):
+        """
+        Load a 1D velocity submodel into memory.
+
+        Parameters
+        ----------
+        v1d_path : Path
+            The path to the 1D velocity model file.
+
+        Returns
+        -------
+        VelocityModel1D
+            The loaded 1D velocity model data.
+        """
+        from velocity_modelling.cvm.velocity1d import VelocityModel1D
+
+        v1d_path = self.get_full_path(v1d_path)
+
+        # Check if the data is already in the cache
+        if v1d_path in self.cache:
+            print(f"{v1d_path} loaded from cache")
+            return self.cache[v1d_path]
+
+        try:
+            with open(v1d_path, "r") as file:
+                next(file)
+                data = np.loadtxt(file)
+                velo_mod_1d_data = VelocityModel1D(
+                    data[:, 0], data[:, 1], data[:, 2], data[:, 5]
+                )
+                # Store the loaded data in the cache
+                self.cache[v1d_path] = velo_mod_1d_data
+
+        except FileNotFoundError:
+            self.log(f"Error 1D velocity model file {v1d_path} not found.")
+            exit(1)
+
+        return velo_mod_1d_data
+
+    def load_basin_data(self, basin_names: List[str]):
+        """
+        Load all basin data into the basin_data structure.
+
+        Parameters
+        ----------
+        basin_names : List[str]
+            List of basin names to load.
+
+        Returns
+        -------
+        List[BasinData]
+            List of loaded basin data.
+        """
+        from velocity_modelling.cvm.basin_model import BasinData  # noqa: F401
+
+        all_basin_data = []
+        for basin_name in basin_names:
+            basin_data = BasinData(self, basin_name)
+            all_basin_data.append(basin_data)
+        return all_basin_data
+
+    def load_basin_boundary(self, basin_boundary_path: Path):
+        """
+        Load a basin boundary from a file.
+
+        Parameters
+        ----------
+        basin_boundary_path : Path
+            The path to the basin boundary file.
+
+        Returns
+        -------
+        np.ndarray
+            The loaded basin boundary data.
+        """
+        try:
+            basin_boundary_path = self.get_full_path(basin_boundary_path)
+            data = np.loadtxt(basin_boundary_path)
+            lon = data[:, 0]
+            lat = data[:, 1]
+            boundary_data = np.column_stack((lon, lat))
+
+            assert lon[-1] == lon[0]
+            assert lat[-1] == lat[0]
+        except FileNotFoundError:
+            self.log(f"Error basin boundary file {basin_boundary_path} not found.")
+            exit(1)
+        except Exception as e:
+            self.log(f"Error reading basin boundary file {basin_boundary_path}: {e}")
+            exit(1)
+        return boundary_data
+
+    def load_basin_submodel(self, basin_surface: dict):
+        """
+        Load a basin sub-model into the basin_data structure.
+
+        Parameters
+        ----------
+        basin_surface : dict {'name': str, 'submodel': str}
+            Dictionary containing basin surface data.
+
+        Returns
+        -------
+        VelocityModel1D or None
+            The loaded sub-model data or None if not applicable.
+        """
+        submodel_name = basin_surface["submodel"]
+        if submodel_name == "null":
+            return None
+        submodel = self.get_info("submodel", submodel_name)
+
+        if submodel is None:
+            self.log(f"Error: submodel {submodel_name} not found.")
+            exit(1)
+
+        if submodel["type"] == "vm1d":
+            vm1d = self.get_info("vm1d", submodel["name"])
+            if vm1d is None:
+                self.log(f"Error: vm1d {submodel['name']} not found.")
+                exit(1)
+            return (submodel_name, self.load_1d_velo_sub_model(vm1d["path"]))
+
+        elif submodel["type"] == "relation":
+            return (submodel_name, None)  # TODO: Implement relation submodel
+        elif submodel["type"] == "perturbation":
+            return (submodel_name, None)  # TODO: Implement perturbation submodel
+
+    def load_basin_surface(self, basin_surface: str):
+        """
+        Load a basin surface from a file.
+
+        Parameters
+        ----------
+        basin_surface : dict {'name': str, 'submodel': str}
+
+        Returns
+        -------
+        BasinSurfaceRead
+            The loaded basin surface data.
+        """
+        from velocity_modelling.cvm.basin_model import BasinSurfaceRead
+
+        surface_info = self.get_info("surface", basin_surface["name"])
+
+        self.log(f"Loading basin surface file {surface_info['path']}")
+
+        basin_surface_path = self.get_full_path(surface_info["path"])
+        # Check if the data is already in the cache
+        if basin_surface_path in self.cache:
+            print(f"{basin_surface_path} loaded from cache")
+            return self.cache[basin_surface_path]
+
+        try:
+            with open(basin_surface_path, "r") as f:
+                nlat, nlon = map(int, f.readline().split())
+                basin_surf_read = BasinSurfaceRead(nlat, nlon)
+
+                latitudes = np.fromfile(f, dtype=float, count=nlat, sep=" ")
+                longitudes = np.fromfile(f, dtype=float, count=nlon, sep=" ")
+
+                basin_surf_read.lati = latitudes
+                basin_surf_read.loni = longitudes
+
+                raster_data = np.fromfile(f, dtype=float, count=nlat * nlon, sep=" ")
+                if len(raster_data) != nlat * nlon:
+                    print(
+                        f"Error: in {basin_surface_path} raster data length mismatch: {len(raster_data)} != {nlat * nlon}"
+                    )
+                    raster_data = np.pad(
+                        raster_data, (0, nlat * nlon - len(raster_data)), "constant"
+                    )
+
+                basin_surf_read.raster = raster_data.reshape((nlat, nlon)).T
+
+                first_lat = basin_surf_read.lati[0]
+                last_lat = basin_surf_read.lati[nlat - 1]
+                basin_surf_read.max_lat = max(first_lat, last_lat)
+                basin_surf_read.min_lat = min(first_lat, last_lat)
+
+                first_lon = basin_surf_read.loni[0]
+                last_lon = basin_surf_read.loni[nlon - 1]
+                basin_surf_read.max_lon = max(first_lon, last_lon)
+                basin_surf_read.min_lon = min(first_lon, last_lon)
+
+                # Store the loaded data in the cache
+                self.cache[basin_surface_path] = basin_surf_read
+
+                return basin_surf_read
+
+        except FileNotFoundError:
+            self.log(f"Error basin surface file {basin_surface_path} not found.")
+            exit(1)
+        except Exception as e:
+            self.log(f"Error: {e}")
+            exit(1)
+
+    def load_tomo_surface_data(
+        self,
+        tomo_name: str,
+        offshore_surface_name: str = DEFAULT_OFFSHORE_DISTANCE,
+        offshore_v1d_name: str = DEFAULT_OFFSHORE_1D_MODEL,
+    ):
+        """
+        Load tomography surface data.
+
+        Parameters
+        ----------
+        tomo_name : str
+            The name of the tomography data.
+        offshore_surface_name : str, optional
+            The name of the offshore surface (default is DEFAULT_OFFSHORE_DISTANCE).
+        offshore_v1d_name : str, optional
+            The name of the offshore 1D model (default is DEFAULT_OFFSHORE_1D_MODEL).
+
+        Returns
+        -------
+        TomographyData
+            The loaded tomography data.
+
+        """
+        from velocity_modelling.cvm.global_model import TomographyData
+
+        tomo = self.get_info("tomography", tomo_name)
+        surf_depth = tomo["elev"]
+        special_offshore_tapering = tomo["special_offshore_tapering"]
+        vs30 = self.load_global_surface(tomo["vs30_path"])
+
+        surfaces = []
+        for i, elev in enumerate(surf_depth):
+            surfaces.append({})
+            elev_name = (
+                f"{elev}" if elev == int(elev) else f"{elev:.2f}".replace(".", "p")
+            )
+            for vtype in VTYPE:
+                tomofile = (
+                    self.get_full_path(tomo["path"])
+                    / f"surf_tomography_{vtype.name}_elev{elev_name}.in"
+                )
+                assert tomofile.exists()
+                surfaces[i][vtype.name] = self.load_global_surface(tomofile)
+
+        offshore_distance_surface = self.load_global_surface(
+            self.get_info("surface", offshore_surface_name)["path"]
+        )
+        offshore_basin_model_1d = self.load_1d_velo_sub_model(
+            self.get_info("vm1d", offshore_v1d_name)["path"]
+        )
+
+        tomography_data = TomographyData(
+            name=tomo_name,
+            surf_depth=surf_depth,
+            special_offshore_tapering=special_offshore_tapering,
+            vs30=vs30,
+            surfaces=surfaces,
+            offshore_distance_surface=offshore_distance_surface,
+            offshore_basin_model_1d=offshore_basin_model_1d,
+            logger=None,
+        )
+
+        return tomography_data
+
+    def load_all_global_data(self, logger: Logger):
+        """
+        Load all data required to generate the velocity model, global surfaces, sub velocity models, and all basin data.
+
+        Parameters
+        ----------
+        logger : Logger
+            Logger for logging information.
+
+        Returns
+        -------
+        Tuple[VelocityModel1D, TomographyData, GlobalSurfaces, List[BasinData]]
+            The loaded global data.
+        """
+        velo_mod_1d_data = None
+        nz_tomography_data = None
+
+        global_model_params = self.vm_global_params
+
+        self.log("Loading global velocity submodel data.")
+        for i in range(len(global_model_params["submodels"])):
+            if global_model_params["submodels"][i] == "v1DsubMod":
+                velo_mod_1d_data = self.load_1d_velo_sub_model(
+                    global_model_params["submodels"][i]
+                )
+                self.log("Loaded 1D velocity model data.")
+            elif global_model_params["submodels"][i] == "NaNsubMod":
+                pass
+            else:
+                nz_tomography_data = self.load_tomo_surface_data(
+                    global_model_params["tomography"]
+                )
+                self.log("Loaded tomography data.")
+
+        if nz_tomography_data is not None:
+            nz_tomography_data.smooth_boundary = self.load_smooth_boundaries(
+                global_model_params["basins"]
+            )
+
+        self.log("Completed loading of global velocity submodel data.")
+
+        global_surfaces = self.load_global_surface_data(global_model_params["surfaces"])
+        self.log("Completed loading of global surfaces.")
+
+        self.log("Loading basin data.")
+        basin_data = self.load_basin_data(global_model_params["basins"])
+        self.log("Completed loading basin data.")
+        self.log("All global data loaded.")
+        return velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data
+
+    def load_global_surface(self, surface_file: Path):
+        """
+        Load a global surface from a file.
+
+        Parameters
+        ----------
+        surface_file : Path
+            The path to the global surface file.
+
+        Returns
+        -------
+        GlobalSurfaceRead
+            The loaded global surface data.
+        """
+
+        from velocity_modelling.cvm.global_model import GlobalSurfaceRead
+
+        surface_file = self.get_full_path(surface_file)
+
+        try:
+            with open(surface_file, "r") as f:
+                nlat, nlon = map(int, f.readline().split())
+
+                latitudes = np.fromfile(f, dtype=float, count=nlat, sep=" ")
+                longitudes = np.fromfile(f, dtype=float, count=nlon, sep=" ")
+
+                raster_data = np.fromfile(f, dtype=float, count=nlat * nlon, sep=" ")
+                if len(raster_data) != nlat * nlon:
+                    self.log(
+                        f"Error: in {surface_file} raster data length mismatch: {len(raster_data)} != {nlat * nlon}"
+                    )
+                    raster_data = np.pad(
+                        raster_data, (0, nlat * nlon - len(raster_data)), "constant"
+                    )
+
+                return GlobalSurfaceRead(
+                    latitudes, longitudes, raster_data.reshape((nlat, nlon)).T
+                )
+
+        except FileNotFoundError:
+            self.log(f"Error surface file {surface_file} not found.")
+            exit(1)
+        except Exception as e:
+            self.log(f"Error: {e}")
+            exit(1)
+
+    def load_global_surface_data(self, global_surface_names: List[str]):
+        """
+        Load all global surface data.
+
+        Parameters
+        ----------
+        global_surface_names : List[str]
+            List of global surface names to load.
+
+        Returns
+        -------
+        GlobalSurfaces
+            The loaded global surfaces.
+        """
+        from velocity_modelling.cvm.global_model import GlobalSurfaces
+
+        surfaces = [self.get_info("surface", name) for name in global_surface_names]
+        global_surfaces = GlobalSurfaces(
+            [self.load_global_surface(surface["path"]) for surface in surfaces]
+        )
+
+        return global_surfaces
+
+    def load_smooth_boundaries(self, basin_names: List[str]):
+        """
+        Load smooth boundaries for the tomography data.
+
+        Parameters
+        ----------
+        nz_tomography_data : TomographyData
+            The tomography data to load smooth boundaries for.
+        basin_names : List[str]
+            List of basin names to load smooth boundaries for.
+        """
+        from velocity_modelling.cvm.geometry import SmoothingBoundary
+
+        smooth_bound_xpts = []
+        smooth_bound_ypts = []
+
+        count = 0
+
+        for basin_name in basin_names:
+            basin = self.get_info("basin", basin_name)
+            if basin is None:
+                self.log(f"Error: Basin {basin_name} not found in registry.")
+                exit(1)
+            if "smoothing" in basin:
+                # Assumed a single smoothing file defined for a basin
+                boundary_vec_filename = self.get_full_path(basin["smoothing"])
+
+                if boundary_vec_filename.exists():
+                    self.log(
+                        f"Loading offshore smoothing file: {boundary_vec_filename}."
+                    )
+                    try:
+                        data = np.fromfile(boundary_vec_filename, dtype=float, sep=" ")
+                        x_pts = data[0::2]
+                        y_pts = data[1::2]
+                        smooth_bound_xpts.extend(x_pts)
+                        smooth_bound_ypts.extend(y_pts)
+                        count += len(x_pts)
+                    except Exception as e:
+                        self.log(
+                            f"Error reading smoothing boundary vector file {boundary_vec_filename}: {e}"
+                        )
+                else:
+                    self.log(
+                        f"Error smoothing boundary vector file {boundary_vec_filename} not found."
+                    )
+            else:
+                self.log(f"Smoothing not required for basin {basin_name}.")
+
+        return SmoothingBoundary(smooth_bound_xpts, smooth_bound_ypts)
