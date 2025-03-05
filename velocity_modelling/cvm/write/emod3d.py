@@ -2,7 +2,6 @@ import argparse
 import struct
 import sys
 from logging import Logger
-import logging
 
 import numpy as np
 import yaml

@@ -1,19 +1,16 @@
 import numpy as np
 
-from velocity_modelling.cvm.geometry import MeshVector, AdjacentPoints
-from velocity_modelling.cvm.velocity1d import VelocityModel1D
+from velocity_modelling.cvm.geometry import MeshVector
 from velocity_modelling.cvm.velocity3d import QualitiesVector
 from velocity_modelling.cvm.global_model import (
     PartialGlobalSurfaceDepths,
-    interpolate_global_surface,
     TomographyData,
 )
 from velocity_modelling.cvm.constants import VTYPE
 from velocity_modelling.cvm.interpolate import (
-    linear_interpolation,
     linear_interpolation_vectorized,
 )
-from velocity_modelling.cvm.gtl import v30gtl, v30gtl_vectorized
+from velocity_modelling.cvm.gtl import v30gtl_vectorized
 from velocity_modelling.cvm.submodel import Cant1D_v1
 
 

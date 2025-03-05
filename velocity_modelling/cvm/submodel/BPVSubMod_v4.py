@@ -4,7 +4,7 @@ from velocity_modelling.cvm.basin_model import PartialBasinSurfaceDepths
 from velocity_modelling.cvm.global_model import PartialGlobalSurfaceDepths
 
 from velocity_modelling.cvm.velocity3d import QualitiesVector
-from velocity_modelling.cvm.gtl import v30gtl, v30gtl_vectorized
+from velocity_modelling.cvm.gtl import v30gtl_vectorized
 from velocity_modelling.cvm.submodel.BPVSubMod_v1 import vs_full, vp_full, rho_full
 
 

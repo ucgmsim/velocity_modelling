@@ -7,14 +7,10 @@ Manages basin membership and surface depth interpolation for velocity modeling.
 import logging
 import numpy as np
 import sys
-import warnings
 
 from logging import Logger
 from numba import njit
 from typing import List, Tuple
-
-# from rtree import index
-
 
 from qcore import point_in_polygon
 from velocity_modelling.cvm.registry import CVMRegistry
