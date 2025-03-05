@@ -14,7 +14,6 @@ from velocity_modelling.cvm.basin_model import (
     BasinData,
     InBasin,
     PartialBasinSurfaceDepths,
-    determine_if_within_basin_lat_lon,
     InBasinGlobalMesh,
 )
 from velocity_modelling.cvm.geometry import MeshVector, AdjacentPoints

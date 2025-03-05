@@ -1,6 +1,13 @@
+"""
+Manages geometry constructs for the velocity model, including global mesh handling, mesh slices,
+and mesh vectors. Also contains helper functions for boundary checks and projections.
+
+.. module:: geometry
+"""
+
 from logging import Logger
 from typing import Any
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 import numpy as np
 from numba import njit
@@ -19,7 +26,7 @@ from velocity_modelling.cvm.constants import (
 class GlobalMesh:
     def __init__(self, nx: int, ny: int, nz: int):
         """
-        Initialize the GlobalMesh.
+        Initialize a global mesh of latitude, longitude, and depth points.
 
         Parameters
         ----------
@@ -56,14 +63,14 @@ class GlobalMesh:
 class PartialGlobalMesh:
     def __init__(self, global_mesh: GlobalMesh, lat_ind: int):
         """
-        Initialize the PartialGlobalMesh.
+        Create a partial mesh slice at a specific latitude index.
 
         Parameters
         ----------
         global_mesh : GlobalMesh
-            The global mesh object.
+            The full global mesh object.
         lat_ind : int
-            The index of the latitude.
+            Latitude index for the slice.
         """
 
         self.x = global_mesh.x.copy()
@@ -84,15 +91,14 @@ class PartialGlobalMesh:
 class MeshVector:
     def __init__(self, partial_global_mesh: PartialGlobalMesh, lon_ind: int):
         """
-        Initialize the MeshVector.
+        Create a single mesh vector at a specific longitude index.
+
         Parameters
         ----------
         partial_global_mesh : PartialGlobalMesh
-            The partial global mesh object.
-
-        lon_ind: int
-            The index of the longitude.
-
+            Slice of the global mesh.
+        lon_ind : int
+            Longitude index for the vector.
         """
 
         self.lat = partial_global_mesh.lat[lon_ind]
@@ -134,15 +140,16 @@ class MeshVector:
         return new_instance
 
 
+# TODO: under-utilized. could be removed
 class ModelExtent:
     def __init__(self, vm_params: Dict):
         """
-        Initialize the ModelExtent.
+        Stores parameters for the model extent.
 
         Parameters
         ----------
         vm_params : Dict
-            The velocity model parameters.
+            Dictionary containing configuration for model size and origin, e.g. 'MODEL_LAT', 'MODEL_LON'.
         """
         self.origin_lat = vm_params["MODEL_LAT"]
         self.origin_lon = vm_params["MODEL_LON"]
@@ -156,9 +163,6 @@ class ModelExtent:
         self.nx = vm_params["nx"]
         self.ny = vm_params["ny"]
         self.nz = vm_params["nz"]
-
-
-# def point_on_vertex(basin_data: BasinData, boundary_ind: int, mesh_vector: MeshVector) -> bool:
 
 
 @njit
@@ -182,11 +186,9 @@ def point_on_vertex(
     Returns
     -------
     bool
-        True if the point lies on a vertex of the boundary, False otherwise.
+        True if the point matches a boundary vertex within tolerance (1e-07), otherwise False.
     """
     # Vectorized comparison using NumPy with tolerance
-    # lat_matches = np.isclose(boundary_lats, lat, rtol=1e-07, atol=1e-07)
-    # lon_matches = np.isclose(boundary_lons, lon, rtol=1e-07, atol=1e-07)
     lat_matches = (
         np.abs(boundary_lats - lat) <= 1e-07
     )  # np.isclose is not supported by njit
@@ -314,11 +316,31 @@ def find_corner_inds(lati: np.ndarray, loni: np.ndarray, lat: float, lon: float)
 
 
 @njit
-def find_basin_adjacent_points_numba(lati, loni, lat, lon):
+def find_basin_adjacent_points_numba(
+    lati: np.ndarray, loni: np.ndarray, lat: float, lon: float
+) -> Tuple[bool, np.ndarray, np.ndarray]:
     """
-    Numba-optimized version of find_basin_adjacent_points.
+    Identify adjacent latitude/longitude indices for a given point in basin coordinates.
 
-    Returns a tuple containing all the information that would be in the AdjacentPoints object.
+    Parameters
+    ----------
+    lati : np.ndarray
+        Sorted array of latitudes (either ascending or descending).
+    loni : np.ndarray
+        Sorted array of longitudes (either ascending or descending).
+    lat : float
+        Target latitude for adjacency checks.
+    lon : float
+        Target longitude for adjacency checks.
+
+    Returns
+    -------
+    bool
+        True if the point is within surface bounds, otherwise False.
+    np.ndarray of shape (2,)
+        Latitude indices bounding the target point.
+    np.ndarray of shape (2,)
+        Longitude indices bounding the target point.
     """
     # Initialize default values
     in_surface_bounds = False
@@ -367,11 +389,51 @@ def find_basin_adjacent_points_numba(lati, loni, lat, lon):
 
 
 @njit
-def find_global_adjacent_points_numba(lati, loni, lat, lon):
+def find_global_adjacent_points_numba(
+    lati: np.ndarray, loni: np.ndarray, lat: float, lon: float
+) -> Tuple[
+    bool, np.ndarray, np.ndarray, bool, int, int, bool, int, int, bool, int, int
+]:
     """
-    Numba-optimized version of find_global_adjacent_points.
+    Identify adjacent indices and potential extension or corner zones for a global surface.
 
-    Returns a tuple containing all the information that would be in the AdjacentPoints object.
+    Parameters
+    ----------
+    lati : np.ndarray
+        Sorted array of latitudes (either ascending or descending).
+    loni : np.ndarray
+        Sorted array of longitudes (either ascending or descending).
+    lat : float
+        Target latitude for adjacency and zone checks.
+    lon : float
+        Target longitude for adjacency and zone checks.
+
+    Returns
+    -------
+    bool
+        True if the point is within normal surface bounds, otherwise False.
+    np.ndarray of shape (2,)
+        Latitude indices.
+    np.ndarray of shape (2,)
+        Longitude indices.
+    bool
+        True if in a latitude extension zone.
+    int
+        Latitude extension type code.
+    int
+        Latitude edge index in extension scenario.
+    bool
+        True if in a longitude extension zone.
+    int
+        Longitude extension type code.
+    int
+        Longitude edge index in extension scenario.
+    bool
+        True if in a corner extension scenario.
+    int
+        Corner latitude index.
+    int
+        Corner longitude index.
     """
     max_lat = np.max(lati)
     min_lat = np.min(lati)
@@ -530,6 +592,9 @@ def find_global_adjacent_points_numba(lati, loni, lat, lon):
 
 class AdjacentPoints:
     def __init__(self):
+        """
+        Store bounding indices and flags to aid in interpolation checks.
+        """
         self.in_surface_bounds = False
         self.lat_ind = [0, 0]
         self.lon_ind = [0, 0]
@@ -548,24 +613,23 @@ class AdjacentPoints:
         cls, lati: np.ndarray, loni: np.ndarray, lat: float, lon: float
     ):
         """
-        Find the adjacent points to the given latitude and longitude in the basin surface.
-        This is a wrapper around the Numba-optimized function.
+        Find basin‐related adjacent indices and flags for a given latitude/longitude.
 
         Parameters
         ----------
         lati : np.ndarray
-            Array of latitudes of the basin surface.
+            Latitude array.
         loni : np.ndarray
-            Array of longitudes of the basin surface.
+            Longitude array.
         lat : float
-            Latitude of the point to check.
+            Target latitude.
         lon : float
-            Longitude of the point to check.
+            Target longitude.
 
         Returns
         -------
-        adjacent_points : AdjacentPoints
-            Object containing the adjacent points.
+        AdjacentPoints
+            Populated object with bounds data.
         """
         # Call the Numba function
         result = find_basin_adjacent_points_numba(lati, loni, lat, lon)
@@ -643,15 +707,14 @@ class AdjacentPoints:
 class SmoothingBoundary:
     def __init__(self, xpts, ypts):
         """
-        Initialize the SmoothingBoundary.
+        Handle boundary smoothing between points.
 
         Parameters
         ----------
         xpts : List[float]
-            List of x-coordinates.
+            X or longitude coordinates.
         ypts : List[float]
-            List of y-coordinates.
-
+            Y or latitude coordinates.
         """
         self.x = xpts
         self.y = ypts
@@ -660,20 +723,19 @@ class SmoothingBoundary:
 
     def determine_if_lat_lon_within_smoothing_region(self, mesh_vector: MeshVector):
         """
-        Determine the closest index within the smoothing boundary to the given mesh vector coordinates.
+        Find the closest boundary index and distance to the given mesh vector coordinates.
 
         Parameters
         ----------
         mesh_vector : MeshVector
-            Object containing mesh vector data.
+            The mesh vector with lat/lon.
 
         Returns
         -------
-        closed_ind: int
-            Index of the closest point in the smoothing boundary.
-        distance: float
-            Distance from the closest point in the smoothing boundary.
-
+        int
+            Index of the closest boundary segment.
+        float
+            Distance to that boundary in kilometers.
         """
         closest_ind, distance = self.brute_force(mesh_vector)
 
@@ -807,20 +869,24 @@ def gen_full_model_grid_great_circle(
     model_extent: ModelExtent, logger: Logger
 ) -> GlobalMesh:
     """
-    Generate the grid of latitude, longitude, and depth points using the point radial distance method.
+    Generate a global mesh grid using great-circle projection.
 
     Parameters
     ----------
     model_extent : ModelExtent
-        Object containing the extent, spacing, and version of the model.
+        Defines the model's dimensions and origin.
     logger : Logger
-        Logger for logging information.
+        Logger instance for reporting progress.
 
     Returns
     -------
     GlobalMesh
-        Object containing the generated grid of latitude, longitude, and depth points.
+        The generated global mesh object.
     """
+    logger.info("Starting generation of model grid.")
+    # Implementation including calls to 'great_circle_projection'
+    logger.info("Completed generation of model grid.")
+
     nx = int(np.round(model_extent.xmax / model_extent.h_lat_lon))
     ny = int(np.round(model_extent.ymax / model_extent.h_lat_lon))
     nz = int(np.round((model_extent.zmax - model_extent.zmin) / model_extent.h_depth))
@@ -918,19 +984,19 @@ def gen_full_model_grid_great_circle(
 
 def extract_partial_mesh(global_mesh: GlobalMesh, lat_ind: int) -> PartialGlobalMesh:
     """
-    Extract one slice of values from the global mesh, i.e., nx x ny x nz becomes nx x 1 x nz.
+    Extract a partial mesh (slice) based on a single latitude index.
 
     Parameters
     ----------
     global_mesh : GlobalMesh
-        The global mesh containing the full model grid (lat, lon, and depth points).
+        The full global mesh object.
     lat_ind : int
-        The y index of the slice of the global grid to be extracted.
+        The index of the latitude slice.
 
     Returns
     -------
     PartialGlobalMesh
-        A struct containing a slice of the global mesh.
+        The partial slice of the global mesh.
     """
 
     return PartialGlobalMesh(global_mesh, lat_ind)
@@ -938,19 +1004,19 @@ def extract_partial_mesh(global_mesh: GlobalMesh, lat_ind: int) -> PartialGlobal
 
 def extract_mesh_vector(partial_global_mesh: PartialGlobalMesh, lon_ind: int):
     """
-    Extract one vector of values from the global mesh, i.e., nx x 1 x nz becomes 1 x 1 x nz.
+    Extract a mesh vector for a specific longitude index from the partial global mesh.
 
     Parameters
     ----------
     partial_global_mesh : PartialGlobalMesh
-        The partial global mesh containing the slice of the global grid.
+        The partial mesh containing a slice in latitude.
     lon_ind : int
-        The x index of the slice of the grid to be extracted.
+        The longitude index to extract.
 
     Returns
     -------
     MeshVector
-        A struct containing one lat-lon point and the depths of all grid points at this location.
+        Mesh vector with the given \lon_ind\ across depth points.
     """
 
     return MeshVector(partial_global_mesh, lon_ind)
