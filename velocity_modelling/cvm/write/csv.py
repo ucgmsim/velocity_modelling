@@ -59,24 +59,24 @@ def write_global_qualities(
                 )
 
             # Write data for this latitude slice
-            for i in range(partial_global_mesh.nx):  # Loop through longitude points
-                current_lon = partial_global_mesh.lon[i]
+            for k in range(partial_global_mesh.nx):  # Loop through longitude points
+                current_lon = partial_global_mesh.lon[k]
                 current_lat = partial_global_mesh.lat[
-                    i
-                ]  # Index with i only, since lat is 1D of length nx
+                    k
+                ]  # Index with k only, since lat is 1D of length nx
 
-                for k in range(partial_global_mesh.nz):  # Loop through depth points
+                for i in range(partial_global_mesh.nz):  # Loop through depth points
                     # Get indices for grid position
                     y_index = lat_ind
-                    x_index = i
-                    z_index = k
-                    depth = partial_global_mesh.z[k]
+                    x_index = k
+                    z_index = i
+                    depth = partial_global_mesh.z[i]
 
                     # Get model values
-                    vp = partial_global_qualities.vp[i][k]
-                    vs = max(partial_global_qualities.vs[i][k], min_vs)
-                    rho = partial_global_qualities.rho[i][k]
-                    inbasin = partial_global_qualities.inbasin[i][k]
+                    vp = partial_global_qualities.vp[k][i]
+                    vs = max(partial_global_qualities.vs[k][i], min_vs)
+                    rho = partial_global_qualities.rho[k][i]
+                    inbasin = partial_global_qualities.inbasin[k][i]
 
                     # Write row
                     writer.writerow(
