@@ -7,13 +7,33 @@ S-wave velocity, and density) by combining global velocity models, regional tomo
 models, and local basin models.
 
 Example usage:
-    python  generate_velocity_model.py /path/to/vm_params.yaml /path/to/output_dir
+    python  generate_velocity_model.py /path/to/nzvm.cfg --out_dir /path/to/output_dir
 
     # With custom registry location:
-     python  generate_velocity_model.py /path/to/vm_params.yaml /path/to/output_dir --nzvm_registry /path/to/registry.yaml
+    python  generate_velocity_model.py /path/to/nzvm.cfg --out_dir /path/to/output_dir --nzvm_registry /path/to/registry.yaml
 
     # With specific log level:
-     python  generate_velocity_model.py /path/to/vm_params.yaml /path/to/output_dir--log-level DEBUG
+    python  generate_velocity_model.py /path/to/nzvm.cfg --out_dir /path/to/output_dir --log-level DEBUG
+
+    if --out_dir is not specified, it will use OUTPUT_DIR specified in nzvm.cfg
+
+SAMPLE nzvm.cfg
+---------------------
+CALL_TYPE=GENERATE_VELOCITY_MOD
+MODEL_VERSION=2.07
+OUTPUT_DIR=/tmp
+ORIGIN_LAT=-41.296226
+ORIGIN_LON=174.774439
+ORIGIN_ROT=23.0
+EXTENT_X=20
+EXTENT_Y=20
+EXTENT_ZMAX=45.0
+EXTENT_ZMIN=0.0
+EXTENT_Z_SPACING=0.2
+EXTENT_LATLON_SPACING=0.2
+MIN_VS=0.5
+TOPO_TYPE=BULLDOZED
+        
 """
 
 # import concurrent.futures
