@@ -111,6 +111,7 @@ def generate_velocity_model(
     logger: VMLogger,
     smoothing: bool = False,
     progress_interval: int = 5,
+    output_format: str = "emod3d",
 ) -> None:
     """
     Generate a 3D velocity model and write it to disk.
@@ -135,7 +136,36 @@ def generate_velocity_model(
         Whether to apply smoothing at model boundaries (default False).
     progress_interval : int, optional
         How often (in %) to log progress updates (default 5%).
+    output_format : str, optional
+    Format to write the output. Options: "emod3d", "csv"
     """
+    # Import the appropriate writer based on format
+    logger.log(f"Beginning velocity model generation in {out_dir}", logger.INFO)
+    logger.log(f"Model parameters: {vm_params['model_version']}", logger.INFO)
+    logger.log(f"Using output format: {output_format}", logger.INFO)
+
+    # Import the appropriate writer based on format
+    if output_format == "emod3d":
+        from velocity_modelling.cvm.write.emod3d import write_global_qualities
+
+        logger.log("Using EMOD3D writer module", logger.DEBUG)
+    elif output_format == "csv":
+        try:
+            from velocity_modelling.cvm.write.csv import write_global_qualities
+
+            logger.log("Using CSV writer module", logger.DEBUG)
+        except ImportError:
+            logger.log("CSV writer module not found. Creating it now.", logger.WARNING)
+            from velocity_modelling.cvm.write.emod3d import write_global_qualities
+
+            logger.log(
+                "Temporarily using EMOD3D writer until CSV writer is implemented",
+                logger.WARNING,
+            )
+    else:
+        logger.log(f"Unsupported output format: {output_format}", logger.ERROR)
+        raise ValueError(f"Unsupported output format: {output_format}")
+
     logger.log(f"Beginning velocity model generation in {out_dir}", logger.INFO)
     logger.log(f"Model parameters: {vm_params['model_version']}", logger.INFO)
 
@@ -374,11 +404,19 @@ def parse_arguments() -> argparse.Namespace:
         default=NZVM_REGISTRY_PATH,
     )
     parser.add_argument(
-        "--log-level",
+        "--log_level",
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         default="INFO",
         help="Set the logging level",
     )
+
+    parser.add_argument(
+        "--output_format",
+        choices=["emod3d", "csv"],
+        default="emod3d",
+        help="Format for the output velocity model",
+    )
+
     return parser.parse_args()
 
 
@@ -433,7 +471,9 @@ if __name__ == "__main__":
             logger,
             args.nzvm_registry,
         )
-        generate_velocity_model(cvm_registry, out_dir, vm_params, logger)
+        generate_velocity_model(
+            cvm_registry, out_dir, vm_params, logger, output_format=args.output_format
+        )
 
         elapsed_time = time.time() - start_time
         logger.log(

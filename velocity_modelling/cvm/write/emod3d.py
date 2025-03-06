@@ -15,7 +15,7 @@ def write_global_qualities(
     partial_global_qualities: PartialGlobalQualities,
     vm_params: dict,
     lat_ind: int,
-    logger: VMLogger,
+    logger: VMLogger = None,
 ):
     """
     Write the full velocity model to file for EMOD3D
@@ -32,18 +32,12 @@ def write_global_qualities(
         Dictionary containing velocity model parameters.
     lat_ind : int
         Latitude index to determine the write mode (write or append).
-    logger : VMLogger
+    logger : VMLogger, optional
         Logger instance for logging messages.
 
-    Returns
-    -------
-    None
     """
-    if logger is not None:
-        logger.log(
-            f"Writing global qualities to file for latitude index {lat_ind}",
-            logger.DEBUG,
-        )
+    if logger is None:
+        logger = VMLogger("emod3d.wrote_global_qualities")
 
     # perform endian check
     endianness = sys.byteorder
@@ -59,42 +53,53 @@ def write_global_qualities(
 
     mode = "wb" if lat_ind == 0 else "ab"
 
-    # If this is the first lat index, remove any existing files
-    if lat_ind == 0:
-        vp3dfile.unlink(missing_ok=True)
-        vs3dfile.unlink(missing_ok=True)
-        rho3dfile.unlink(missing_ok=True)
-        in_basin_mask_file.unlink(missing_ok=True)
+    try:
+        # If this is the first lat index, remove any existing files
+        if lat_ind == 0:
+            vp3dfile.unlink(missing_ok=True)
+            vs3dfile.unlink(missing_ok=True)
+            rho3dfile.unlink(missing_ok=True)
+            in_basin_mask_file.unlink(missing_ok=True)
+            logger.log(f"Creating new VM files for emod3d: {output_dir}", logger.INFO)
 
-    # Flatten the arrays along the x and z dimensions. Write along x-axis first
-    vp = partial_global_qualities.vp.T.flatten()
-    vs = partial_global_qualities.vs.T.flatten()
-    rho = partial_global_qualities.rho.T.flatten()
-    inbasin = partial_global_qualities.inbasin.T.flatten()
+        # Flatten the arrays along the x and z dimensions. Write along x-axis first
+        vp = partial_global_qualities.vp.T.flatten()
+        vs = partial_global_qualities.vs.T.flatten()
+        rho = partial_global_qualities.rho.T.flatten()
+        inbasin = partial_global_qualities.inbasin.T.flatten()
 
-    # Apply the minimum vs constraint
-    vs = np.maximum(vs, vm_params["min_vs"])
+        # Apply the minimum vs constraint
+        vs = np.maximum(vs, vm_params["min_vs"])
 
-    # Pack the data using the appropriate endianness
-    vp_data = struct.pack(f"{endian_format}{len(vp)}f", *vp)
-    vs_data = struct.pack(f"{endian_format}{len(vs)}f", *vs)
-    rho_data = struct.pack(f"{endian_format}{len(rho)}f", *rho)
-    inbasin_data = struct.pack(
-        f"{endian_format}{len(inbasin)}f", *inbasin.astype(vp.dtype)
-    )
+        # Pack the data using the appropriate endianness
+        vp_data = struct.pack(f"{endian_format}{len(vp)}f", *vp)
+        vs_data = struct.pack(f"{endian_format}{len(vs)}f", *vs)
+        rho_data = struct.pack(f"{endian_format}{len(rho)}f", *rho)
+        inbasin_data = struct.pack(
+            f"{endian_format}{len(inbasin)}f", *inbasin.astype(vp.dtype)
+        )
 
-    # Write the binary data to files
-    with open(vp3dfile, mode) as fvp:
-        fvp.write(vp_data)
+        logger.log(
+            f"Writing global qualities to file for latitude index {lat_ind}",
+            logger.DEBUG,
+        )
 
-    with open(vs3dfile, mode) as fvs:
-        fvs.write(vs_data)
+        # Write the binary data to files
+        with open(vp3dfile, mode) as fvp:
+            fvp.write(vp_data)
 
-    with open(rho3dfile, mode) as frho:
-        frho.write(rho_data)
+        with open(vs3dfile, mode) as fvs:
+            fvs.write(vs_data)
 
-    with open(in_basin_mask_file, mode) as fmask:
-        fmask.write(inbasin_data)
+        with open(rho3dfile, mode) as frho:
+            frho.write(rho_data)
+
+        with open(in_basin_mask_file, mode) as fmask:
+            fmask.write(inbasin_data)
+
+    except Exception as e:
+        logger.log(f"Error writing emod3d data: {str(e)}", logger.ERROR)
+        raise
 
 
 def read_output_files(output_dir: Path):
@@ -138,6 +143,3 @@ def read_output_files(output_dir: Path):
                 data[key] = raw_data[completed_mask]
 
     return data
-
-
-

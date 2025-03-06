@@ -1,0 +1,99 @@
+# velocity_modelling/cvm/write/csv_writer.py
+import csv
+from pathlib import Path
+import numpy as np
+
+from velocity_modelling.cvm.geometry import PartialGlobalMesh
+from velocity_modelling.cvm.velocity3d import PartialGlobalQualities
+from velocity_modelling.cvm.logging import VMLogger
+
+
+def write_global_qualities(
+    output_dir: Path,
+    partial_global_mesh: PartialGlobalMesh,
+    partial_global_qualities: PartialGlobalQualities,
+    vm_params: dict,
+    lat_ind: int,
+    logger: VMLogger = None,
+):
+    """
+    Write the velocity model to CSV format.
+
+    Parameters
+    ----------
+    output_dir : Path
+        Directory where the output files will be written.
+    partial_global_mesh : PartialGlobalMesh
+        Structure containing the latitude and longitude grid.
+    partial_global_qualities : PartialGlobalQualities
+        Structure containing Vp, Vs, and Rho for all grid points.
+    vm_params : dict
+        Dictionary containing velocity model parameters.
+    lat_ind : int
+        Latitude index to determine the write mode (write or append).
+    logger : VMLogger
+        Logger instance for logging messages.
+
+    """
+    if logger is None:
+        logger = VMLogger("csv.wrote_global_qualities")
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_file = output_dir / "velocity_model.csv"
+
+    mode = "w" if lat_ind == 0 else "a"
+    min_vs = vm_params.get("min_vs", 0.0)
+
+    if lat_ind == 0:
+        logger.log(f"Creating new CSV file: {output_file}", logger.INFO)
+
+    logger.log(f"Writing CSV output for latitude index {lat_ind}", logger.DEBUG)
+
+    try:
+        with open(output_file, mode, newline="") as csvfile:
+            writer = csv.writer(csvfile)
+
+            if lat_ind == 0:
+                writer.writerow(
+                    ["y", "x", "z", "lat", "lon", "depth", "vp", "vs", "rho", "inbasin"]
+                )
+
+            # Write data for this latitude slice
+            for i in range(partial_global_mesh.nx):  # Loop through longitude points
+                current_lon = partial_global_mesh.lon[i]
+                current_lat = partial_global_mesh.lat[
+                    i
+                ]  # Index with i only, since lat is 1D of length nx
+
+                for k in range(partial_global_mesh.nz):  # Loop through depth points
+                    # Get indices for grid position
+                    y_index = lat_ind
+                    x_index = i
+                    z_index = k
+                    depth = partial_global_mesh.z[k]
+
+                    # Get model values
+                    vp = partial_global_qualities.vp[i][k]
+                    vs = max(partial_global_qualities.vs[i][k], min_vs)
+                    rho = partial_global_qualities.rho[i][k]
+                    inbasin = partial_global_qualities.inbasin[i][k]
+
+                    # Write row
+                    writer.writerow(
+                        [
+                            y_index,
+                            x_index,
+                            z_index,
+                            current_lat,
+                            current_lon,
+                            depth,
+                            vp,
+                            vs,
+                            rho,
+                            inbasin,
+                        ]
+                    )
+
+    except Exception as e:
+        logger.log(f"Error writing CSV data: {str(e)}", logger.ERROR)
+        raise
