@@ -4,7 +4,7 @@ Compare the output files from two directories containing the output files from e
 This is still experimental
 
 Usage:
-    python compare_emod3d.py output_dir1 output_dir2 vm_params
+    python compare_emod3d.py output_dir1 output_dir2 nzvm.cfg
 
 Example output
 
@@ -40,6 +40,7 @@ import yaml
 import numpy as np
 
 from velocity_modelling.cvm.scripts.emod3d_2_csv import read_output_files
+from velocity_modelling.cvm.scripts.generate_velocity_model import parse_nzvm_config
 
 
 def compare_output_files(
@@ -107,15 +108,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "output_dir2", type=Path, help="Second directory containing the write files."
     )
-    parser.add_argument("vm_params", type=Path, help="Path to the vm_params.yaml file")
+    parser.add_argument("nzvm_path", type=Path, help="Path to the nzvm.cfg file")
     args = parser.parse_args()
 
     output_dir1 = args.output_dir1
     output_dir2 = args.output_dir2
-    vm_params_path = args.vm_params
+    nzvm_path = args.nzvm_path
 
-    with open(vm_params_path, "r") as f:
-        vm_params = yaml.safe_load(f)
+    # Parse the config file
+    vm_params = parse_nzvm_config(nzvm_path)
 
     nx = vm_params["nx"]
     ny = vm_params["ny"]
