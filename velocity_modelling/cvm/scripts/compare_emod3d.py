@@ -39,7 +39,7 @@ from pathlib import Path
 import yaml
 import numpy as np
 
-from velocity_modelling.cvm.scripts.emod3d_2_csv import read_output_files
+from velocity_modelling.cvm.write.emod3d import read_output_files
 from velocity_modelling.cvm.scripts.generate_velocity_model import parse_nzvm_config
 
 
