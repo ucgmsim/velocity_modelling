@@ -15,7 +15,6 @@ dynamic = ["version", "dependencies"]
 [project.scripts]
 plot-velocity-model = "velocity_modelling.scripts.plot_velocity_model:app"
 view-velocity-model = "velocity_modelling.scripts.view_velocity_model:app"
-nzcvm = "velocity_modelling.cvm.scripts.nzcvm:app"
 
 [tool.setuptools.package-dir]
 velocity_modelling = "velocity_modelling"
