@@ -21,7 +21,6 @@ Example usage:
 import time
 from pathlib import Path
 import argparse
-import yaml
 import sys
 from typing import Dict
 
@@ -243,6 +242,86 @@ def generate_velocity_model(
     logger.log(f"Model successfully generated and written to {out_dir}", logger.INFO)
 
 
+def parse_nzvm_config(config_path: Path) -> Dict:
+    """
+    Parse the NZVM config file and convert it to the vm_params dictionary format.
+
+    Parameters
+    ----------
+    config_path : Path
+        Path to the nzvm.cfg file
+
+    Returns
+    -------
+    Dict
+        Dictionary containing the model parameters
+    """
+    vm_params = {}
+
+    with open(config_path, "r") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip()
+
+            # Map NZVM keys to vm_params keys
+            if key == "MODEL_VERSION":
+                # Always store MODEL_VERSION as string
+                vm_params["model_version"] = value
+            elif key == "OUTPUT_DIR":
+                vm_params["output_dir"] = value
+            elif key == "CALL_TYPE":
+                vm_params["call_type"] = value
+            elif key == "TOPO_TYPE":
+                vm_params["topo_type"] = value
+            else:
+                # Convert numeric values
+                try:
+                    value = float(value)
+                except ValueError:
+                    raise ValueError(
+                        f"Numeric value is required for key {key}: {value}"
+                    )
+                else:
+                    # Map NZVM keys to vm_params keys
+                    if key == "ORIGIN_LAT":
+                        vm_params["origin_lat"] = value
+                    elif key == "ORIGIN_LON":
+                        vm_params["origin_lon"] = value
+                    elif key == "ORIGIN_ROT":
+                        vm_params["origin_rot"] = value
+                    elif key == "EXTENT_X":
+                        vm_params["extent_x"] = value
+                    elif key == "EXTENT_Y":
+                        vm_params["extent_y"] = value
+                    elif key == "EXTENT_ZMAX":
+                        vm_params["extent_zmax"] = value
+                    elif key == "EXTENT_ZMIN":
+                        vm_params["extent_zmin"] = value
+                    elif key == "EXTENT_Z_SPACING":
+                        vm_params["h_depth"] = value
+                    elif key == "EXTENT_LATLON_SPACING":
+                        vm_params["h_lat_lon"] = value
+                    else:
+                        # Store any other parameters with lowercase key
+                        vm_params[key.lower()] = value
+
+    # Calculate nx, ny, nz based on spacing and extent
+    vm_params["nx"] = int(round(vm_params["extent_x"] / vm_params["h_lat_lon"]))
+    vm_params["ny"] = int(round(vm_params["extent_y"] / vm_params["h_lat_lon"]))
+    vm_params["nz"] = int(
+        round(
+            (vm_params["extent_zmax"] - vm_params["extent_zmin"]) / vm_params["h_depth"]
+        )
+    )
+
+    return vm_params
+
+
 def parse_arguments() -> argparse.Namespace:
     """
     Parse command-line arguments for the velocity model generator.
@@ -251,8 +330,8 @@ def parse_arguments() -> argparse.Namespace:
     -------
     argparse.Namespace
         The parsed command-line arguments containing:
-        - vm_params: Path to velocity model parameters file
-        - out_dir: Path to output directory
+        - config_file: Path to nzvm.cfg configuration file
+        - out_dir: Path to output directory (optional, overrides config)
         - nzvm_registry: Path to registry file (optional)
         - log_level: Logging level (optional)
     """
@@ -260,8 +339,14 @@ def parse_arguments() -> argparse.Namespace:
         description="Generate a 3D seismic velocity model",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("vm_params", type=Path, help="Path to the vm_params.yaml file")
-    parser.add_argument("out_dir", type=Path, help="Path to the output directory")
+    parser.add_argument(
+        "config_file", type=Path, help="Path to the nzvm.cfg configuration file"
+    )
+    parser.add_argument(
+        "--out_dir",
+        type=Path,
+        help="Path to the output directory (overrides config file)",
+    )
     parser.add_argument(
         "--nzvm_registry",
         type=Path,
@@ -288,28 +373,38 @@ if __name__ == "__main__":
     logger.log(f"Logger initialized with level {args.log_level}", logger.DEBUG)
 
     # Validate input files
-    vm_params_path = args.vm_params
-    if not vm_params_path.exists():
-        logger.log(f"VM params file not found: {vm_params_path}", logger.ERROR)
+    config_path = args.config_file
+    if not config_path.exists():
+        logger.log(f"Configuration file not found: {config_path}", logger.ERROR)
         sys.exit(1)
 
     if not args.nzvm_registry.exists():
         logger.log(f"Registry file not found: {args.nzvm_registry}", logger.ERROR)
         sys.exit(1)
 
+    # Parse the config file
+    try:
+        vm_params = parse_nzvm_config(config_path)
+        # Validate CALL_TYPE
+        if vm_params.get("call_type") != "GENERATE_VELOCITY_MOD":
+            logger.log(
+                f"Unsupported CALL_TYPE: {vm_params.get('call_type')}", logger.ERROR
+            )
+            sys.exit(1)
+    except Exception as e:
+        logger.log(f"Failed to parse config file: {e}", logger.ERROR)
+        sys.exit(1)
+
+    # Override output directory if specified
+    if args.out_dir:
+        out_dir = args.out_dir.resolve()
+    else:
+        # Use output_dir from config if it exists, otherwise use current directory
+        out_dir = Path(vm_params.get("output_dir", "./")).resolve()
+
     # Prepare output directory
-    out_dir = args.out_dir.resolve()
     out_dir.mkdir(exist_ok=True, parents=True)
     logger.log(f"Output will be written to: {out_dir}")
-
-    # Load velocity model parameters
-    logger.log(f"Using vm_params file: {vm_params_path}")
-    try:
-        with open(vm_params_path, "r") as f:
-            vm_params = yaml.safe_load(f)
-    except Exception as e:
-        logger.log(f"Failed to load vm_params file: {e}", logger.ERROR)
-        sys.exit(1)
 
     # Initialize registry and generate model
     try:

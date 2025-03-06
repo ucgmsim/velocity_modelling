@@ -150,17 +150,17 @@ class ModelExtent:
         Parameters
         ----------
         vm_params : Dict
-            Dictionary containing configuration for model size and origin, e.g. 'MODEL_LAT', 'MODEL_LON'.
+            Dictionary containing configuration for model size and origin
         """
-        self.origin_lat = vm_params["MODEL_LAT"]
-        self.origin_lon = vm_params["MODEL_LON"]
-        self.origin_rot = vm_params["MODEL_ROT"]  # in degrees
+        self.origin_lat = vm_params["origin_lat"]
+        self.origin_lon = vm_params["origin_lon"]
+        self.origin_rot = vm_params["origin_rot"]  # in degrees
         self.xmax = vm_params["extent_x"]
         self.ymax = vm_params["extent_y"]
         self.zmax = vm_params["extent_zmax"]
         self.zmin = vm_params["extent_zmin"]
-        self.h_depth = vm_params["hh"]
-        self.h_lat_lon = vm_params["hh"]
+        self.h_depth = vm_params["h_depth"]
+        self.h_lat_lon = vm_params["h_lat_lon"]
         self.nx = vm_params["nx"]
         self.ny = vm_params["ny"]
         self.nz = vm_params["nz"]
