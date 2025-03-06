@@ -303,9 +303,6 @@ class QualitiesVector:
         self.vp[mask_above_surface] = np.nan
         self.vs[mask_above_surface] = np.nan
 
-        # Debug: Check NaN masking
-        # print(f"Points above surface: {np.sum(mask_above_surface)}")
-
         # Apply NaN masking for bulldozed topography
         if topo_type == "BULLDOZED":
             mask_above_zero = mesh_vector.z > 0
