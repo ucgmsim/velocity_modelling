@@ -1,4 +1,16 @@
-from logging import Logger
+"""
+3D Velocity Model Module.
+
+This module provides classes and functions for calculating 3D velocity models
+by combining global velocity models, basin models, and tomographic data.
+It includes vectorized implementations for efficiently handling meshes with
+multiple depth points at the same latitude/longitude.
+
+The module's core functionality processes geology layers to determine seismic
+velocities (P-wave, S-wave) and density at specified coordinates, handling
+complex scenarios like basin boundaries and smooth transitions between models.
+"""
+
 from typing import List
 
 import numpy as np
@@ -19,10 +31,36 @@ from velocity_modelling.cvm.basin_model import (
 from velocity_modelling.cvm.geometry import MeshVector, AdjacentPoints
 from velocity_modelling.cvm.registry import CVMRegistry
 from velocity_modelling.cvm.velocity1d import VelocityModel1D
+from velocity_modelling.cvm.logging import VMLogger
 
 
 class PartialGlobalQualities:
+    """
+    Container for storing velocity and density data for a partial global mesh.
+
+    Attributes
+    ----------
+    vp : np.ndarray
+        P-wave velocities (km/s).
+    vs : np.ndarray
+        S-wave velocities (km/s).
+    rho : np.ndarray
+        Densities (g/cm³).
+    inbasin : np.ndarray
+        Basin membership indicators.
+    """
+
     def __init__(self, n_lon: int, n_depth: int):
+        """
+        Initialize arrays for velocity and density data.
+
+        Parameters
+        ----------
+        n_lon : int
+            Number of longitude points.
+        n_depth : int
+            Number of depth points.
+        """
         self.vp = np.zeros((n_lon, n_depth), dtype=np.float64)
         self.vs = np.zeros((n_lon, n_depth), dtype=np.float64)
         self.rho = np.zeros((n_lon, n_depth), dtype=np.float64)
@@ -30,11 +68,55 @@ class PartialGlobalQualities:
 
 
 class QualitiesVector:
-    def __init__(self, n_depth: int):
+    """
+    Container for velocity and density data at a single lat-lon point with multiple depths.
+
+    Attributes
+    ----------
+    vp : np.ndarray
+        P-wave velocities (km/s).
+    vs : np.ndarray
+        S-wave velocities (km/s).
+    rho : np.ndarray
+        Densities (g/cm³).
+    inbasin : np.ndarray
+        Basin membership indicators.
+    """
+
+    def __init__(self, n_depth: int, logger: VMLogger = None):
+        """
+        Initialize arrays for velocity and density data.
+
+        Parameters
+        ----------
+        n_depth : int
+            Number of depth points.
+        """
+        if logger is None:
+            self.logger = VMLogger(name="velocity_model.qualities_vector")
+        else:
+            self.logger = logger
+
         self.vp = np.zeros(n_depth, dtype=np.float64)
         self.vs = np.zeros(n_depth, dtype=np.float64)
         self.rho = np.zeros(n_depth, dtype=np.float64)
         self.inbasin = np.zeros(n_depth, dtype=np.int8)
+
+    def log(self, message: str, level: int = None) -> None:
+        """
+        Log a message with the specified level.
+
+        Parameters
+        ----------
+        message : str
+            The message to log.
+        level : int, optional
+            The logging level (default is None).
+        """
+
+        if level is None:
+            level = self.logger.INFO
+        self.logger.log(message, level)
 
     def prescribe_velocities(
         self,
@@ -42,21 +124,43 @@ class QualitiesVector:
         velo_mod_1d_data: VelocityModel1D,
         nz_tomography_data: TomographyData,
         global_surfaces: GlobalSurfaces,
-        basin_data_list: List[BasinData],
         mesh_vector: MeshVector,
         partial_global_surface_depths: PartialGlobalSurfaceDepths,
         partial_basin_surface_depths_list: List[PartialBasinSurfaceDepths],
         in_basin_list: List[InBasin],
         topo_type: str,
         on_boundary: bool,
-        calculation_log: Logger,
     ):
+        """
+        Calculate velocities and densities for all depths at a given lat-lon point.
+
+        Parameters
+        ----------
+        global_model_parameters : dict
+            Parameters for the global velocity model.
+        velo_mod_1d_data : VelocityModel1D
+            1D velocity model data.
+        nz_tomography_data : TomographyData
+            Tomography data for velocity adjustments.
+        global_surfaces : GlobalSurfaces
+            Global surface definitions.
+        mesh_vector : MeshVector
+            Lat-lon point with multiple depths.
+        partial_global_surface_depths : PartialGlobalSurfaceDepths
+            Global surface depth data at this location.
+        partial_basin_surface_depths_list : List[PartialBasinSurfaceDepths]
+            Basin surface depth data at this location.
+        in_basin_list : List[InBasin]
+            Basin membership indicators.
+        topo_type : str
+            Topography handling method ("TRUE", "BULLDOZED", "SQUASHED", "SQUASHED_TAPERED").
+        on_boundary : bool
+            Whether this point is on a model boundary.
+        """
 
         partial_global_surface_depths.interpolate_global_surface_depths(
-            global_surfaces, mesh_vector, calculation_log
+            global_surfaces, mesh_vector
         )
-
-        shifted_mesh_vector = None
 
         in_any_basin_lat_lon = any(
             in_basin.in_basin_lat_lon for in_basin in in_basin_list
@@ -71,10 +175,9 @@ class QualitiesVector:
 
         # TODO: test this
         elif topo_type == "SQUASHED_TAPERED":
-            dZ = mesh_vector.z[0] - mesh_vector.z[1]
-            TAPER_DIST = 1.0
+            taper_dist = 1.0
             depth_change = -mesh_vector.z
-            TAPER_VAL = np.where(
+            taper_val = np.where(
                 (depth_change == 0)
                 | (partial_global_surface_depths.depths[1] == 0)
                 | (partial_global_surface_depths.depths[1] < 0),
@@ -82,13 +185,13 @@ class QualitiesVector:
                 1.0
                 - (
                     depth_change
-                    / (partial_global_surface_depths.depths[1] * TAPER_DIST)
+                    / (partial_global_surface_depths.depths[1] * taper_dist)
                 ),
             )
-            TAPER_VAL = np.clip(TAPER_VAL, 0.0, None)
+            taper_val = np.clip(taper_val, 0.0, None)
             shifted_mesh_vector = mesh_vector.copy()
             shifted_mesh_vector.z = (
-                partial_global_surface_depths.depths[1] * TAPER_VAL - depth_change
+                partial_global_surface_depths.depths[1] * taper_val - depth_change
             )
 
         elif topo_type in ["BULLDOZED", "TRUE"]:
@@ -221,12 +324,38 @@ class QualitiesVector:
         partial_global_surface_depths: PartialGlobalSurfaceDepths,
         partial_basin_surface_depths_list: List[PartialBasinSurfaceDepths],
         in_basin_list: List[InBasin],
-        in_basin_mesh: InBasinGlobalMesh,  # New argument
+        in_basin_mesh: InBasinGlobalMesh,
         topo_type: str,
-        logger: Logger,
     ):
         """
         Determine if lat-lon point lies within the smoothing zone and prescribe velocities accordingly.
+
+        This method handles smoothing between velocity models at boundaries.
+
+        Parameters
+        ----------
+        cvm_registry : CVMRegistry
+            Registry containing model parameters.
+        velo_mod_1d_data : VelocityModel1D
+            1D velocity model data.
+        nz_tomography_data : TomographyData
+            Tomography data for velocity adjustments.
+        global_surfaces : GlobalSurfaces
+            Global surface definitions.
+        basin_data_list : List[BasinData]
+            List of basin data objects.
+        mesh_vector : MeshVector
+            Lat-lon point with multiple depths.
+        partial_global_surface_depths : PartialGlobalSurfaceDepths
+            Global surface depth data at this location.
+        partial_basin_surface_depths_list : List[PartialBasinSurfaceDepths]
+            Basin surface depth data at this location.
+        in_basin_list : List[InBasin]
+            Basin membership indicators.
+        in_basin_mesh : InBasinGlobalMesh
+            Pre-processed basin membership for smoothing optimization.
+        topo_type : str
+            Topography handling method.
         """
         smooth_bound = nz_tomography_data.smooth_boundary
 
@@ -291,8 +420,9 @@ class QualitiesVector:
             # Use preprocessed smooth_basin_membership from in_basin_mesh
             # Check and handle if smooth_basin_membership is None
             if in_basin_mesh.smooth_basin_membership is None:
-                logger.error(
-                    "smooth_basin_membership is None, falling back to manual calculation"
+                self.log(
+                    "smooth_basin_membership is None, falling back to manual calculation",
+                    self.logger.ERROR,
                 )
                 smooth_indices = in_basin_mesh.find_all_containing_basins(
                     mesh_vector.lat, mesh_vector.lon
@@ -311,14 +441,12 @@ class QualitiesVector:
                 velo_mod_1d_data,
                 nz_tomography_data,
                 global_surfaces,
-                basin_data_list,
                 mesh_vector,
                 partial_global_surface_depths_b,
                 partial_basin_surface_depths_list_b,
                 in_basin_b_list,
                 topo_type,
                 on_boundary,
-                logger,
             )
 
             # overwrite the lat-lon with the original lat-lon point
@@ -332,14 +460,12 @@ class QualitiesVector:
                 velo_mod_1d_data,
                 nz_tomography_data,
                 global_surfaces,
-                basin_data_list,
                 mesh_vector,
                 partial_global_surface_depths,
                 partial_basin_surface_depths_list,
                 in_basin_list,
                 topo_type,
                 on_boundary,
-                logger,
             )
 
             # apply smoothing between the two generated velocity vectors
@@ -371,22 +497,20 @@ class QualitiesVector:
                 velo_mod_1d_data,
                 nz_tomography_data,
                 global_surfaces,
-                basin_data_list,
                 mesh_vector,
                 partial_global_surface_depths,
                 partial_basin_surface_depths_list,
                 in_basin_list,
                 topo_type,
                 on_boundary,
-                logger,
             )
 
     # TODO: I need to fix this function to automatically trigger the right main function of the submodel
     def call_global_submodel_vectorized(
         self,
         submodel_names: np.ndarray,
-        z_values: np.ndarray,
-        k_indices: np.ndarray,
+        depths: np.ndarray,
+        z_indices: np.ndarray,
         global_model_parameters: dict,
         partial_global_surface_depths: PartialGlobalSurfaceDepths,
         velo_mod_1d_data: VelocityModel1D,
@@ -396,48 +520,48 @@ class QualitiesVector:
         on_boundary: bool,
     ):
         """
-        Call the appropriate sub-velocity model based on the global sub-velocity model index.
+        Call the appropriate global sub-velocity models for multiple depths.
+
+        This vectorized implementation processes multiple depths efficiently.
 
         Parameters
         ----------
-        submodel_names :  np.ndarray
-            The name of the global submodel.
-        z_values : np.ndarray
-            The depth of the grid point to determine the properties at.
-        k_indices :  np.ndarray
-            The depth index of the single grid point.
+        submodel_names : np.ndarray
+            Names of global submodels for each depth.
+        depths : np.ndarray
+            Depths (m) to calculate properties for.
+        z_indices : np.ndarray
+            Indices of depths in the mesh.
         global_model_parameters : dict
-            Struct containing all model parameters (surface names, submodel names, basin names, etc.)
+            Parameters for the global velocity model.
         partial_global_surface_depths : PartialGlobalSurfaceDepths
-            Struct containing global surface depths.
-        velo_mod_1d_data : velocity_modelling.cvm.velocity.VelocityModel1D
-            Struct containing the 1D velocity model data.
+            Global surface depth data.
+        velo_mod_1d_data : VelocityModel1D
+            1D velocity model data.
         nz_tomography_data : TomographyData
-            Struct containing tomography data.
+            Tomography data.
         mesh_vector : MeshVector
-            Struct containing a single lat-lon point with one or more depths.
+            Lat-lon point with multiple depths.
         in_any_basin_lat_lon : bool
-            Flag indicating if the point is in any basin.
+            Whether this lat-lon point is in any basin.
         on_boundary : bool
-            Flag indicating if the point is on a boundary.
-
-        Returns
-        -------
-        None
+            Whether this point is on a model boundary.
         """
-        # Sort by k_indices to preserve depth order
-        order = np.argsort(k_indices)
-        k_indices = k_indices[order]
-        z_values = z_values[order]
+        # Sort by z_indices to preserve depth order
+        order = np.argsort(z_indices)
+        z_indices = z_indices[order]
+        depths = depths[order]
         submodel_names = submodel_names[order]
 
         for name in np.unique(submodel_names):
             mask = submodel_names == name
-            z_subset = z_values[mask]
-            k_subset = k_indices[mask]
+            depth_subset = depths[mask]
+            index_subset = z_indices[mask]
 
             if name == "NaNsubMod":
-                self.nan_sub_mod_vectorized(k_subset)
+                from velocity_modelling.cvm.submodel import NaNsubMod
+
+                NaNsubMod.main_vectorized(index_subset, self)
             elif name == "EPtomo2010subMod":
                 from velocity_modelling.cvm.submodel import EPtomo2010
 
@@ -464,8 +588,8 @@ class QualitiesVector:
                         interpolated_global_surface_values[vtype.name][idx] = val
 
                 EPtomo2010.main_vectorized(
-                    k_subset,
-                    z_subset,
+                    index_subset,
+                    depth_subset,
                     self,
                     mesh_vector,
                     nz_tomography_data,
@@ -478,7 +602,9 @@ class QualitiesVector:
             elif name == "Cant1D_v1":
                 from velocity_modelling.cvm.submodel import Cant1D_v1
 
-                Cant1D_v1.main_vectorized(k_subset, z_subset, self, velo_mod_1d_data)
+                Cant1D_v1.main_vectorized(
+                    index_subset, depth_subset, self, velo_mod_1d_data
+                )
             else:
                 raise ValueError(f"Error: Submodel {name} not found in registry.")
 
@@ -488,51 +614,50 @@ class QualitiesVector:
         self,
         partial_basin_surface_depths: PartialBasinSurfaceDepths,
         partial_global_surface_depths: PartialGlobalSurfaceDepths,
-        nz_tomography_data,
+        nz_tomography_data: TomographyData,
         mesh_vector: MeshVector,
-        in_any_basin_lat_lon,
-        on_boundary,
-        depths,
-        ind_above,
-        basin_num,
-        z_indices,
+        in_any_basin_lat_lon: bool,
+        on_boundary: bool,
+        depths: np.ndarray,
+        ind_above: int,
+        basin_num: int,
+        z_indices: np.ndarray,
     ):
         """
-        Call the appropriate sub-velocity model based on the basin submodel name.
+        Call the appropriate basin sub-velocity models for multiple depths.
 
         Parameters
         ----------
         partial_basin_surface_depths : PartialBasinSurfaceDepths
-            Struct containing depths for all applicable basin surfaces at one lat-lon location.
+            Basin surface depths at this location.
         partial_global_surface_depths : PartialGlobalSurfaceDepths
-            Struct containing global surface depths.
+            Global surface depths at this location.
         nz_tomography_data : TomographyData
-            Struct containing tomography data.
+            Tomography data.
         mesh_vector : MeshVector
-            Struct containing a single lat-lon point with one or more depths.
+            Lat-lon point with multiple depths.
         in_any_basin_lat_lon : bool
-            Flag indicating if the point is in any basin.
+            Whether this lat-lon point is in any basin.
         on_boundary : bool
-            Flag indicating if the point is on a boundary.
-        depths :np.ndarray
-            The depths of the grid point to determine the properties at.
+            Whether this point is on a model boundary.
+        depths : np.ndarray
+            Depths (m) to calculate properties for.
         ind_above : int
-            Index of the surface directly above the grid point.
+            Index of surface above these depths.
         basin_num : int
-            The basin number pertaining to the basin of interest.
+            Basin identifier.
         z_indices : np.ndarray
-            The depth indices  of the  grid point.
-
-        Returns
-        -------
-        None
+            Indices of depths in the mesh.
         """
 
         basin_data = partial_basin_surface_depths.basin
         submodel_name, submodel_data = basin_data.submodels[ind_above]
 
         if submodel_name == "NaNsubMod":
-            self.nan_sub_mod_vectorized(z_indices)
+            from velocity_modelling.cvm.submodel import NaNsubMod
+
+            NaNsubMod.main_vectorized(z_indices, self)
+
         elif submodel_name in ["Cant1D_v1", "Cant1D_v2", "Cant1D_v2_Pliocene_Enforced"]:
             from velocity_modelling.cvm.submodel import Cant1D_v1 as Cant1D_v1
 
@@ -595,32 +720,28 @@ class QualitiesVector:
         z_indices: np.ndarray,  # Array of z indices
     ):
         """
-        Assign Vp, Vs, and Rho to the individual grid point.
+        Assign velocities and densities for points within a basin.
 
         Parameters
         ----------
         partial_basin_surface_depths : PartialBasinSurfaceDepths
-            Struct containing depths for all applicable basin surfaces at one lat-lon location.
+            Basin surface depths at this location.
         partial_global_surface_depths : PartialGlobalSurfaceDepths
-            Struct containing global surface depths.
+            Global surface depths at this location.
         nz_tomography_data : TomographyData
-            Struct containing tomography data.
+            Tomography data.
         mesh_vector : MeshVector
-            Struct containing a single lat-lon point with one or more depths.
+            Lat-lon point with multiple depths.
         in_any_basin_lat_lon : bool
-            Flag indicating if the point is in any basin.
+            Whether this lat-lon point is in any basin.
         on_boundary : bool
-            Flag indicating if the point is on a boundary.
+            Whether this point is on a model boundary.
         depths : np.ndarray
-            The depths of the grid point to determine the properties at.
+            Depths (m) to calculate properties for.
         basin_num : int
-            The basin number pertaining to the basin of interest.
+            Basin identifier.
         z_indices : np.ndarray
-            The depth indices of the grid points.
-
-        Returns
-        -------
-        None
+            Indices of depths in the mesh.
         """
 
         # Vectorized determination of surfaces above
@@ -652,12 +773,12 @@ class QualitiesVector:
 
     def nan_sub_mod_vectorized(self, z_indices):
         """
-        Assign NaN values to the velocities and density at the given depth index.
+        Assign NaN values to velocities and density at specified depth indices.
 
         Parameters
         ----------
         z_indices : np.ndarray
-            The depth indices to assign NaN values to.
+            Depth indices to assign NaN values to.
         """
         self.vp[z_indices] = np.nan
         self.vs[z_indices] = np.nan

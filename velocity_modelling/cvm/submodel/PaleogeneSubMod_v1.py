@@ -1,39 +1,34 @@
+"""
+Paleogene Layer Velocity Submodel v1
+
+This module provides velocity values for the Paleogene geological layer.
+It implements depth-dependent velocity values based on empirical relationships
+for sedimentary rocks of Paleogene age in the Canterbury basin.
+"""
+
 import numpy as np
 from velocity_modelling.cvm.velocity3d import QualitiesVector
-
-
-# def main(
-#     zInd: int,
-#     qualities_vector: QualitiesVector,
-# ):
-#     """
-#     Purpose:   calculate the rho vp and vs values at a single lat long depth point
-#
-#     Input variables:
-#     zInd - the index of the grid point to store the data at
-#     qualities_vector - dict housing Vp, Vs, and Rho for one Lat Lon value and one or more depths
-#
-#     Output variables:
-#     n.a.
-#     """
-#     qualities_vector.rho[zInd] = 2.151
-#     qualities_vector.vp[zInd] = 2.7
-#     qualities_vector.vs[zInd] = 1.1511
+from velocity_modelling.cvm.logging import VMLogger
 
 
 def main_vectorized(
     z_indices: np.ndarray,
     qualities_vector: QualitiesVector,
+    logger: VMLogger = None,
 ):
     """
-    Purpose: Calculate the rho, vp, and vs values for multiple lat-long-depth points.
+    Calculate rho, vp, and vs values for multiple lat-long-depth points in the Paleogene layer.
 
-    Input variables:
-    z_indices - array of indices of the grid points to store the data at
-    qualities_vector - struct housing Vp, Vs, and Rho for one Lat-Lon value and multiple depths
-
-    Output variables: n.a.
+    Parameters
+    ----------
+    z_indices : np.ndarray
+        Array of indices of the grid points to store the data at.
+    qualities_vector : QualitiesVector
+        Object housing Vp, Vs, and Rho for one Lat-Lon value and multiple depths.
+    logger : VMLogger, optional
+        Logger for reporting processing status.
     """
+
     qualities_vector.rho[z_indices] = 2.151
     qualities_vector.vp[z_indices] = 2.7
     qualities_vector.vs[z_indices] = 1.1511

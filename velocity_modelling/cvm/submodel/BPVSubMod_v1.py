@@ -1,48 +1,44 @@
+"""
+Banks Peninsula Volcanics (BPV) Velocity Submodel v1
+
+This module provides constant velocity values for the Banks Peninsula Volcanics area.
+It implements a simple model with fixed P-wave velocity, S-wave velocity, and density
+values for all points within the BPV boundaries.
+"""
+
 import numpy as np
 from velocity_modelling.cvm.velocity3d import QualitiesVector
-
-vs_full = 2.2818  # vs at the full
-vp_full = 4.0  # vp at the full
-rho_full = 2.393  # rho at the full
+from velocity_modelling.cvm.logging import VMLogger
 
 
-# def main(
-#     zInd: int,
-#     qualities_vector: QualitiesVector,
-# ):
-#     """
-#     Purpose:   calculate the rho vp and vs values at a single lat long depth point
-#
-#     Input variables:
-#     zInd - the index of the grid point to store the data at
-#     qualities_vector - dict housing Vp, Vs, and Rho for one Lat Lon value and one or more depths
-#
-#     Output variables:
-#     n.a.
-#     """
-#     qualities_vector.rho[zInd] = rho_full
-#     qualities_vector.vp[zInd] = vp_full
-#     qualities_vector.vs[zInd] = vs_full
-#
-#
-# vs_full = 2.2818  # vs at the full
-# vp_full = 4.0  # vp at the full
-# rho_full = 2.393  # rho at the full
+# Constants
+vs_full = 2.2818  # vs at the full (km/s)
+vp_full = 4.0  # vp at the full (km/s)
+rho_full = 2.393  # rho at the full (g/cm³)
 
 
 def main_vectorized(
     z_indices: np.ndarray,
     qualities_vector: QualitiesVector,
+    logger: VMLogger = None,
 ):
     """
-    Purpose: Calculate the rho, vp, and vs values for multiple lat-long-depth points.
+    Calculate rho, vp, and vs values for multiple lat-long-depth points.
 
-    Input variables:
-    z_indices - array of indices of the grid points to store the data at
-    qualities_vector - struct housing Vp, Vs, and Rho for one Lat-Lon value and multiple depths
-
-    Output variables: n.a.
+    Parameters
+    ----------
+    z_indices : np.ndarray
+        Array of indices of the grid points to store the data at.
+    qualities_vector : QualitiesVector
+        Object housing Vp, Vs, and Rho for one Lat-Lon value and multiple depths.
+    logger : VMLogger, optional
+        Logger for reporting processing status.
     """
+    if logger is not None:
+        logger.log(
+            f"Assigning BPV v1 properties to {len(z_indices)} points", logger.DEBUG
+        )
+
     qualities_vector.rho[z_indices] = rho_full
     qualities_vector.vp[z_indices] = vp_full
     qualities_vector.vs[z_indices] = vs_full

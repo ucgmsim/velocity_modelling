@@ -5,9 +5,6 @@ including interpolation and depth calculations.
 .. module:: global_model
 """
 
-import logging
-import sys
-from logging import Logger
 from typing import Dict, List
 
 import numpy as np
@@ -118,7 +115,6 @@ class PartialGlobalSurfaceDepths:
             If any depth is not found in the global sub-velocity model.
         """
         depths = np.asarray(depths)
-        n_velo_indices = np.full_like(depths, -1, dtype=int)
         max_depth = self.depths[0]
         valid_mask = depths <= max_depth
 
@@ -144,7 +140,6 @@ class PartialGlobalSurfaceDepths:
         self,
         global_surfaces: GlobalSurfaces,
         mesh_vector: MeshVector,
-        calculation_log: Logger,
     ) -> None:
         """
         Interpolate the surface depths at the lat lon location given in mesh_vector.
@@ -155,8 +150,6 @@ class PartialGlobalSurfaceDepths:
             Object containing pointers to global surfaces.
         mesh_vector : MeshVector
             Object containing a single lat lon point with one or more depths.
-        calculation_log : Logger
-            Logger instance for status reporting.
 
         Returns
         -------
@@ -234,24 +227,38 @@ def interpolate_global_surface_numba(
         q21 = raster[lon_ind[1], lat_ind[0]]
         q22 = raster[lon_ind[1], lat_ind[1]]
 
-        return bi_linear_interpolation(x1, x2, y1, y2, q11, q12, q21, q22, lon, lat)
+        # explicitly cast to float to prevent numba from regarding them as ndarray
+        return bi_linear_interpolation(
+            float(x1),
+            float(x2),
+            float(y1),
+            float(y2),
+            float(q11),
+            float(q12),
+            float(q21),
+            float(q22),
+            lon,
+            lat,
+        )
 
     elif in_lat_extension_zone:
         p1 = loni[lon_ind[0]]
         p2 = loni[lon_ind[1]]
         v1 = raster[lon_ind[0], lat_edge_ind]
         v2 = raster[lon_ind[1], lat_edge_ind]
-        return linear_interpolation(p1, p2, v1, v2, lon)
+        # explicitly cast to float to prevent numba from regarding them as ndarray
+        return linear_interpolation(float(p1), float(p2), float(v1), float(v2), lon)
 
     elif in_lon_extension_zone:
         p1 = lati[lat_ind[0]]
         p2 = lati[lat_ind[1]]
         v1 = raster[lon_edge_ind, lat_ind[0]]
         v2 = raster[lon_edge_ind, lat_ind[1]]
-        return linear_interpolation(p1, p2, v1, v2, lat)
+        # explicitly cast to float to prevent numba from regarding them as ndarray
+        return linear_interpolation(float(p1), float(p2), float(v1), float(v2), lat)
 
     elif in_corner_zone:
-        return raster[corner_lon_ind, corner_lat_ind]
+        return float(raster[corner_lon_ind, corner_lat_ind])
 
     raise ValueError("Calculation of Global surface value failed.")
 
@@ -310,7 +317,6 @@ class TomographyData:
         surfaces: List[Dict[str, GlobalSurfaceRead]],
         offshore_distance_surface: GlobalSurfaceRead,
         offshore_basin_model_1d: VelocityModel1D,
-        logger: Logger = None,
     ):
         """
         Initialize the TomographyData.
@@ -331,8 +337,6 @@ class TomographyData:
             The offshore distance surfaces data.
         offshore_basin_model_1d : VelocityModel1D
             The offshore 1D model data.
-        logger : Logger, optional
-            Logger instance for logging messages.
         """
         self.name = name
         self.surf_depth = surf_depth
@@ -344,27 +348,6 @@ class TomographyData:
         self.offshore_distance_surface = offshore_distance_surface
         self.offshore_basin_model_1d = offshore_basin_model_1d
         self.tomography_loaded = True
-        self.logger = logger
-
-    def log(self, message: str, level: int = logging.INFO) -> None:
-        """
-        Log a message.
-
-        Parameters
-        ----------
-        message : str
-            The message to log.
-        level : int, optional
-            The logging level. Defaults to logging.INFO.
-
-        Returns
-        -------
-        None
-        """
-        if self.logger is not None:
-            self.logger.log(level, message)
-        else:
-            print(message, file=sys.stderr)
 
     def calculate_vs30_from_tomo_vs30_surface(self, mesh_vector: MeshVector) -> None:
         """

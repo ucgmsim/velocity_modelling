@@ -1,7 +1,6 @@
 import argparse
 import struct
 import sys
-from logging import Logger
 
 import numpy as np
 import yaml
@@ -9,6 +8,7 @@ from pathlib import Path
 
 from velocity_modelling.cvm.geometry import PartialGlobalMesh
 from velocity_modelling.cvm.velocity3d import PartialGlobalQualities
+from velocity_modelling.cvm.logging import VMLogger
 
 
 def write_global_qualities(
@@ -17,7 +17,7 @@ def write_global_qualities(
     partial_global_qualities: PartialGlobalQualities,
     vm_params: dict,
     lat_ind: int,
-    logger: Logger,
+    logger: VMLogger,
 ):
     """
     Write the full velocity model to file for EMOD3D
@@ -34,13 +34,18 @@ def write_global_qualities(
         Dictionary containing velocity model parameters.
     lat_ind : int
         Latitude index to determine the write mode (write or append).
-    logger : Logger
+    logger : VMLogger
         Logger instance for logging messages.
 
     Returns
     -------
     None
     """
+    if logger is not None:
+        logger.log(
+            f"Writing global qualities to file for latitude index {lat_ind}",
+            logger.DEBUG,
+        )
 
     # perform endian check
     endianness = sys.byteorder

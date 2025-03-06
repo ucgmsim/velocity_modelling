@@ -3,28 +3,26 @@ import numba
 
 
 @numba.jit(nopython=True)
-def linear_interpolation(
-    p1: np.float64, p2: np.float64, v1: np.float64, v2: np.float64, p3: np.float64
-):
+def linear_interpolation(p1: float, p2: float, v1: float, v2: float, p3: float):
     """
     Perform linear interpolation between two points.
 
     Parameters
     ----------
-    p1 : np.float64
+    p1 : float
         The first point.
-    p2 : np.float64
+    p2 : float
         The second point.
-    v1 : np.float64
+    v1 : float
         The value at the first point.
-    v2 : np.float64
+    v2 : float
         The value at the second point.
-    p3 : np.float64
+    p3 : float
         The point at which to interpolate.
 
     Returns
     -------
-    np.float64
+    float
         The interpolated value at point p3.
     """
     return v1 + (v2 - v1) * (p3 - p1) / (p2 - p1)
@@ -32,40 +30,44 @@ def linear_interpolation(
 
 @numba.jit(nopython=True)
 def linear_interpolation_vectorized(
-    x0: np.float64, x1: np.float64, y0: np.float64, y1: np.float64, x: np.ndarray
-):
+    x0: float, x1: float, y0: np.ndarray | float, y1: np.ndarray | float, x: np.ndarray
+) -> np.ndarray:
     """
-    Vectorized linear interpolation.
+    Perform linear interpolation using vectorized operations.
 
     Parameters
     ----------
-    x0, x1 : float
-        X-coordinates of the two points (scalars).
-    y0, y1 : float
-        Y-coordinates of the two points (scalars).
+    x0 : float
+        First x coordinate.
+    x1 : float
+        Second x coordinate.
+    y0 : np.ndarray or float
+        First y coordinate(s).
+    y1 : np.ndarray or float
+        Second y coordinate(s).
     x : np.ndarray
         Array of x values to interpolate at.
 
     Returns
     -------
     np.ndarray
-        Interpolated y values.
+        Interpolated y values corresponding to x.
     """
     return y0 + (y1 - y0) * (x - x0) / (x1 - x0)
 
 
 @numba.jit(nopython=True)
 def bi_linear_interpolation(
-    x1: np.float64,
-    x2: np.float64,
-    y1: np.float64,
-    y2: np.float64,
-    q11: np.float64,
-    q12: np.float64,
-    q21: np.float64,
-    q22: np.float64,
-    x: np.float64,
-    y: np.float64,
+    x1: float,
+    x2: float,
+    y1: float,
+    y2: float,
+    q11: float,
+    q12: float,
+    q21: float,
+    q22: float,
+    x: float,
+    y: float,
 ):
     """
     Perform bilinear interpolation between four points.

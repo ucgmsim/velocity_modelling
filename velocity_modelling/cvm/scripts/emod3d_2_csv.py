@@ -1,3 +1,13 @@
+"""
+Convert binary velocity model files to CSV format.
+
+This is still experimental
+
+TODO:  emod3d output doesn't have lat/lon/depth information, and this script only works out (y,x,z) coordinates
+We need an auxiliary output from generate_velocity_model.py to map the (y,x,z) coordinates to lat/lon/depth
+
+"""
+
 import numpy as np
 import pandas as pd
 from pathlib import Path

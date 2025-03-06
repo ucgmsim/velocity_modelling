@@ -1,11 +1,11 @@
 """
-Manages geometry constructs for the velocity model, including global mesh handling, mesh slices,
-and mesh vectors. Also contains helper functions for boundary checks and projections.
+Geometry Module for Velocity Model Construction
 
-.. module:: geometry
+This module provides classes and functions for creating and manipulating 3D geometry
+constructs needed for seismic velocity modelling. It handles coordinate transformations,
+grid generation, mesh slicing, and boundary calculations for various model components.
 """
 
-from logging import Logger
 from typing import Any
 from typing import List, Dict, Tuple
 
@@ -21,6 +21,7 @@ from velocity_modelling.cvm.constants import (
     LAT_GRID_DIM_MAX,
     DEP_GRID_DIM_MAX,
 )
+from velocity_modelling.cvm.logging import VMLogger
 
 
 class GlobalMesh:
@@ -291,8 +292,6 @@ def find_corner_inds(lati: np.ndarray, loni: np.ndarray, lat: float, lon: float)
     """
     nlat = len(lati)
     nlon = len(loni)
-    corner_lat_ind = 0
-    corner_lon_ind = 0
 
     if np.abs(lat - lati[0]) <= 1e-07:
         corner_lat_ind = 0
@@ -385,7 +384,7 @@ def find_basin_adjacent_points_numba(
         if lon_ind[0] != 0 or lon_ind[1] != 0:
             in_surface_bounds = True
 
-    return (in_surface_bounds, lat_ind, lon_ind)
+    return in_surface_bounds, lat_ind, lon_ind
 
 
 @njit
@@ -632,13 +631,15 @@ class AdjacentPoints:
             Populated object with bounds data.
         """
         # Call the Numba function
-        result = find_basin_adjacent_points_numba(lati, loni, lat, lon)
+        in_surface_bounds, lat_ind, lon_ind = find_basin_adjacent_points_numba(
+            lati, loni, lat, lon
+        )
 
         # Create and populate the AdjacentPoints object
         adjacent_points = cls()
-        adjacent_points.in_surface_bounds = result[0]
-        adjacent_points.lat_ind = result[1].tolist()
-        adjacent_points.lon_ind = result[2].tolist()
+        adjacent_points.in_surface_bounds = in_surface_bounds
+        adjacent_points.lat_ind = lat_ind.tolist()
+        adjacent_points.lon_ind = lon_ind.tolist()
 
         # Print error if needed
         if not adjacent_points.in_surface_bounds:
@@ -791,11 +792,11 @@ def lat_lon_to_distance(
     lat_rad = np.deg2rad(lat_lon_array[:, 0])
     lon_rad = np.deg2rad(lat_lon_array[:, 1])
 
-    dLon = lon_rad - ref_lon
+    d_lon = lon_rad - ref_lon
 
     dz = np.sin(lat_rad) - np.sin(ref_lat)
-    dx = np.cos(dLon) * np.cos(lat_rad) - np.cos(ref_lat)
-    dy = np.sin(dLon) * np.cos(lat_rad)
+    dx = np.cos(d_lon) * np.cos(lat_rad) - np.cos(ref_lat)
+    dy = np.sin(d_lon) * np.cos(lat_rad)
 
     distances = (
         np.arcsin(np.sqrt(dx * dx + dy * dy + dz * dz) / 2) * 2 * EARTH_RADIUS_MEAN
@@ -836,14 +837,14 @@ def great_circle_projection(
     tuple[np.ndarray, Any]
         Computed latitude and longitude arrays.
     """
-    cosB = np.cos(x / erad - b0)
-    sinB = np.sin(x / erad - b0)
+    cos_b = np.cos(x / erad - b0)
+    sin_b = np.sin(x / erad - b0)
 
-    cosG = np.cos(y / erad - g0)
-    sinG = np.sin(y / erad - g0)
+    cos_g = np.cos(y / erad - g0)
+    sin_g = np.sin(y / erad - g0)
 
-    xp = sinG * cosB * np.sqrt(1 + sinB * sinB * sinG * sinG)
-    yp = sinB * cosG * np.sqrt(1 + sinB * sinB * sinG * sinG)
+    xp = sin_g * cos_b * np.sqrt(1 + sin_b * sin_b * sin_g * sin_g)
+    yp = sin_b * cos_g * np.sqrt(1 + sin_b * sin_b * sin_g * sin_g)
     zp = np.sqrt(1 - xp * xp - yp * yp)
     coords = np.stack((xp, yp, zp), axis=0)
 
@@ -866,7 +867,7 @@ def great_circle_projection(
 
 
 def gen_full_model_grid_great_circle(
-    model_extent: ModelExtent, logger: Logger
+    model_extent: ModelExtent, logger: VMLogger = None
 ) -> GlobalMesh:
     """
     Generate a global mesh grid using great-circle projection.
@@ -875,7 +876,7 @@ def gen_full_model_grid_great_circle(
     ----------
     model_extent : ModelExtent
         Defines the model's dimensions and origin.
-    logger : Logger
+    logger : VMLogger
         Logger instance for reporting progress.
 
     Returns
@@ -883,9 +884,10 @@ def gen_full_model_grid_great_circle(
     GlobalMesh
         The generated global mesh object.
     """
-    logger.info("Starting generation of model grid.")
-    # Implementation including calls to 'great_circle_projection'
-    logger.info("Completed generation of model grid.")
+    if logger is None:
+        logger = VMLogger(name="velocity_model.geometry")
+
+    logger.log("Starting generation of model grid.", logger.INFO)
 
     nx = int(np.round(model_extent.xmax / model_extent.h_lat_lon))
     ny = int(np.round(model_extent.ymax / model_extent.h_lat_lon))
@@ -914,7 +916,9 @@ def gen_full_model_grid_great_circle(
         )
 
     if nz != 1:
-        logger.info(f"Number of model points. nx: {nx}, ny: {ny}, nz: {nz}.")
+        logger.log(
+            f"Number of model points. nx: {nx}, ny: {ny}, nz: {nz}.", logger.INFO
+        )
 
     global_mesh.x = (
         0.5 * model_extent.h_lat_lon
@@ -935,33 +939,30 @@ def gen_full_model_grid_great_circle(
     )
 
     arg = model_extent.origin_rot * RPERD
-    cosA = np.cos(arg)
-    sinA = np.sin(arg)
+    cos_a = np.cos(arg)
+    sin_a = np.sin(arg)
 
     arg = (90.0 - model_extent.origin_lat) * RPERD
-    cosT = np.cos(arg)
-    sinT = np.sin(arg)
+    cos_t = np.cos(arg)
+    sin_t = np.sin(arg)
 
     arg = model_extent.origin_lon * RPERD
-    cosP = np.cos(arg)
-    sinP = np.sin(arg)
+    cos_p = np.cos(arg)
+    sin_p = np.sin(arg)
 
     amat = np.array(
         [
-            cosA * cosT * cosP + sinA * sinP,
-            sinA * cosT * cosP - cosA * sinP,
-            sinT * cosP,
-            cosA * cosT * sinP - sinA * cosP,
-            sinA * cosT * sinP + cosA * cosP,
-            sinT * sinP,
-            -cosA * sinT,
-            -sinA * sinT,
-            cosT,
+            cos_a * cos_t * cos_p + sin_a * sin_p,
+            sin_a * cos_t * cos_p - cos_a * sin_p,
+            sin_t * cos_p,
+            cos_a * cos_t * sin_p - sin_a * cos_p,
+            sin_a * cos_t * sin_p + cos_a * cos_p,
+            sin_t * sin_p,
+            -cos_a * sin_t,
+            -sin_a * sin_t,
+            cos_t,
         ]
     ).reshape((3, 3))
-
-    det = np.linalg.det(amat)
-    ainv = np.linalg.inv(amat) / det
 
     g0 = 0.0
     b0 = 0.0
@@ -978,7 +979,7 @@ def gen_full_model_grid_great_circle(
     global_mesh.min_lat = np.min(global_mesh.lat)
     global_mesh.min_lon = np.min(global_mesh.lon)
 
-    logger.info("Completed Generation of Model Grid.")
+    logger.log("Completed Generation of Model Grid.", logger.INFO)
     return global_mesh
 
 

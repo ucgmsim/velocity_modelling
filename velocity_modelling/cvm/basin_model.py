@@ -1,14 +1,13 @@
 """
-Manages basin membership and surface depth interpolation for velocity modeling.
+Basin Model Module
 
-.. module:: basin_model
+This module manages basin data representation, surface interpolation, and basin membership
+determination in the velocity model. It handles basin boundaries, surfaces, and submodels
+with proper logging throughout the processing workflow.
 """
 
-import logging
 import numpy as np
-import sys
 
-from logging import Logger
 from numba import njit
 from typing import List, Tuple
 
@@ -24,32 +23,7 @@ from velocity_modelling.cvm.geometry import (
     extract_partial_mesh,
     SmoothingBoundary,
 )
-
-
-def check_boundary_index(func):
-    """
-    Decorator that checks boundary indices before proceeding with boundary operations.
-
-    Parameters
-    ----------
-    func : callable
-        Function to wrap.
-
-    Returns
-    -------
-    callable
-        Wrapped function.
-    """
-
-    def wrapper(self, i, *args, **kwargs):
-        if i < 0 or i >= len(self.boundaries):
-            self.log(
-                f"Error: basin boundary {i} not found. Max index is {len(self.boundaries) - 1}"
-            )
-            return None
-        return func(self, i, *args, **kwargs)
-
-    return wrapper
+from velocity_modelling.cvm.logging import VMLogger
 
 
 class BasinData:
@@ -62,13 +36,18 @@ class BasinData:
         The CVMRegistry instance.
     basin_name : str
         The name of the basin.
-    logger : Logger, optional
+    logger : VMLogger, optional
         The logger instance.
     """
 
     def __init__(
-        self, cvm_registry: CVMRegistry, basin_name: str, logger: Logger = None
+        self, cvm_registry: CVMRegistry, basin_name: str, logger: VMLogger = None
     ):
+
+        if logger is None:
+            self.logger = VMLogger(name="velocity_model.basin_data")
+        else:
+            self.logger = logger
 
         self.name = basin_name
 
@@ -88,13 +67,12 @@ class BasinData:
         ]
 
         self.perturbation_data = None
-        self.logger = logger
 
-        self.log(f"Basin {basin_name} fully loaded.")
+        self.log(f"Basin {basin_name} fully loaded.", self.logger.INFO)
 
-    def log(self, message: str, level: int = logging.INFO):
+    def log(self, message: str, level: int = None) -> None:
         """
-        Log a message.
+        Log a message with the specified level.
 
         Parameters
         ----------
@@ -103,44 +81,10 @@ class BasinData:
         level : int, optional
             The logging level.
         """
-        if self.logger is not None:
-            self.logger.log(level, message)
-        else:
-            print(message, file=sys.stderr)
 
-    @check_boundary_index
-    def boundary_lat(self, i: int) -> np.ndarray:
-        """
-        Get the latitudes of the i-th boundary
-
-        Parameters
-        ----------
-        i : int
-            The index of the boundary.
-
-        Returns
-        -------
-        np.ndarray
-            The latitudes of the boundary.
-        """
-        return self.boundaries[i][:, 1]
-
-    @check_boundary_index
-    def boundary_lon(self, i: int) -> np.ndarray:
-        """
-        Get the longitudes of the i-th boundary
-
-        Parameters
-        ----------
-        i : int
-            The index of the boundary.
-
-        Returns
-        -------
-        np.ndarray
-            The longitudes of the boundary.
-        """
-        return self.boundaries[i][:, 0]
+        if level is None:
+            level = self.logger.INFO
+        self.logger.log(message, level)
 
 
 @njit
@@ -197,7 +141,7 @@ class InBasinGlobalMesh:
         The global mesh containing lat/lon values.
     basin_data_list : list of BasinData
         List of BasinData objects for basin membership.
-    logger : Logger, optional
+    logger : VMLogger, optional
         Optional logger instance.
     """
 
@@ -205,12 +149,16 @@ class InBasinGlobalMesh:
         self,
         global_mesh: GlobalMesh,
         basin_data_list: List[BasinData],
-        logger: Logger = None,
+        logger: VMLogger = None,
     ):
         """
         Private constructor. Use preprocess_basin_membership() instead to create instances.
 
         """
+        if logger is None:
+            self.logger = VMLogger(name=f"velocity_model.in_basin_global_mesh")
+        else:
+            self.logger = logger
 
         self.nx, self.ny = global_mesh.lat.shape
         self.nz = len(global_mesh.z)
@@ -230,7 +178,7 @@ class InBasinGlobalMesh:
         cls,
         global_mesh: GlobalMesh,
         basin_data_list: List[BasinData],
-        logger: Logger,
+        logger: VMLogger = None,
         smooth_bound: SmoothingBoundary = None,
     ) -> Tuple["InBasinGlobalMesh", List[PartialGlobalMesh]]:
         """
@@ -243,7 +191,7 @@ class InBasinGlobalMesh:
             Global mesh where each (x, y) is a lat-lon point.
         basin_data_list : list of BasinData
             Collection of BasinData objects.
-        logger : Logger
+        logger : VMLogger, optional
             Logger for status reporting.
         smooth_bound : SmoothingBoundary, optional
             Optional boundary for smoothing.
@@ -253,8 +201,9 @@ class InBasinGlobalMesh:
         tuple of (InBasinGlobalMesh, list of PartialGlobalMesh)
             Mesh membership object and list of partial slices.
         """
+        if logger is None:
+            logger = VMLogger(name=f"velocity_model.in_basin_global_mesh")
 
-        logger.info(f"smooth_bound in preprocess: {smooth_bound}")
         in_basin_mesh = cls(global_mesh, basin_data_list, logger)
 
         # Use object dtype to store lists of basin indices
@@ -283,24 +232,26 @@ class InBasinGlobalMesh:
         )
 
         if smooth_bound is not None:
-            logger.debug(f"smooth_bound provided, n={smooth_bound.n}")  # Debug
-            in_basin_mesh.preprocess_smooth_bound(smooth_bound)
-            logger.info(
-                f"Pre-processed smooth boundary membership for {smooth_bound.n} points."
+            logger.log(
+                f"Initializing smooth boundary with {smooth_bound.n} points",
+                logger.DEBUG,
             )
-            logger.debug(
-                f"in_basin_mesh.smooth_basin_membership after preprocess: {in_basin_mesh.smooth_basin_membership}"
+            in_basin_mesh.preprocess_smooth_bound(smooth_bound)
+            logger.log(
+                f"Pre-processed smooth boundary membership for {smooth_bound.n} points.",
+                logger.DEBUG,
+            )
+            logger.log(
+                f"in_basin_mesh.smooth_basin_membership after preprocess: {in_basin_mesh.smooth_basin_membership}",
+                logger.DEBUG,
             )
         else:
-            logger.debug("smooth_bound is None")
+            logger.log("smooth_bound is None", logger.DEBUG)
 
         nx, ny = in_basin_mesh.nx, in_basin_mesh.ny
         partial_global_mesh_list = [
             extract_partial_mesh(global_mesh, j) for j in range(ny)
         ]
-        logger.info(
-            f"Pre-processing basin membership for {len(basin_data_list)} basins."
-        )
 
         for j in range(ny):
             partial_global_mesh = partial_global_mesh_list[j]
@@ -311,7 +262,16 @@ class InBasinGlobalMesh:
                     in_basin_mesh.find_all_containing_basins(lat, lon)
                 )
 
+        logger.log(
+            f"Pre-processed basin membership for {len(basin_data_list)} basins.",
+            logger.INFO,
+        )
         return (in_basin_mesh, partial_global_mesh_list)
+
+    def log(self, message, level=None):
+        if level is None:
+            level = self.logger.INFO
+        self.logger.log(message, level)
 
     def get_basin_membership(self, x: int, y: int):
         """
@@ -381,8 +341,9 @@ class InBasinGlobalMesh:
         smooth_bound : SmoothingBoundary
             Boundary with 'x' and 'y' coordinate arrays and an integer 'n'.
         """
-        self.logger.debug(
-            f"Preprocessing smooth_bound with {smooth_bound.n} points"
+        self.log(
+            f"Preprocessing smooth_bound with {smooth_bound.n} points",
+            self.logger.DEBUG,
         )  # Temporary debug
 
         n_points = smooth_bound.n
@@ -393,8 +354,9 @@ class InBasinGlobalMesh:
             lon = smooth_bound.x[i]
             self.smooth_basin_membership[i] = self.find_all_containing_basins(lat, lon)
 
-        self.logger.debug(
-            f"smooth_basin_membership initialized with length {len(self.smooth_basin_membership)}"
+        self.log(
+            f"smooth_basin_membership initialized with length {len(self.smooth_basin_membership)}",
+            self.logger.DEBUG,
         )  # Temporary debug
 
 

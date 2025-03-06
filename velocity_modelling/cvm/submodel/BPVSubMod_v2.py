@@ -1,39 +1,39 @@
+"""
+Banks Peninsula Volcanics (BPV) Velocity Submodel v2
+
+This module implements an updated velocity model for the Banks Peninsula Volcanics area.
+It applies modified velocity values compared to v1, with improved constants based on
+more recent geophysical measurements.
+"""
+
 import numpy as np
 from velocity_modelling.cvm.velocity3d import QualitiesVector
-
-
-# def main(
-#     zInd: int,
-#     qualities_vector: QualitiesVector,
-# ):
-#     """
-#     Purpose:   calculate the rho vp and vs values at a single lat long depth point
-#
-#     Input variables:
-#     zInd - the index of the grid point to store the data at
-#     qualities_vector - dict housing Vp, Vs, and Rho for one Lat Lon value and one or more depths
-#
-#     Output variables:
-#     n.a.
-#     """
-#     qualities_vector.rho[zInd] = 2.334
-#     qualities_vector.vp[zInd] = 3.60
-#     qualities_vector.vs[zInd] = 1.9428
+from velocity_modelling.cvm.logging import VMLogger
 
 
 def main_vectorized(
     z_indices: np.ndarray,
     qualities_vector: QualitiesVector,
+    logger: VMLogger = None,
 ):
     """
-    Purpose: Calculate the rho, vp, and vs values for multiple lat-long-depth points.
+    Calculate the rho, vp, and vs values for multiple lat-long-depth points.
 
-    Input variables:
-    z_indices - array of indices of the grid points to store the data at
-    qualities_vector - struct housing Vp, Vs, and Rho for one Lat-Lon value and multiple depths
-
-    Output variables: n.a.
+    Parameters
+    ----------
+    z_indices : np.ndarray
+        Array of indices of the grid points to store the data at.
+    qualities_vector : QualitiesVector
+        Object housing Vp, Vs, and Rho for one Lat-Lon value and multiple depths.
+    logger : VMLogger, optional
+        Logger for reporting processing status.
     """
+
+    if logger is not None:
+        logger.log(
+            f"Assigning BPV v2 properties to {len(z_indices)} points", logger.DEBUG
+        )
+
     qualities_vector.rho[z_indices] = 2.334
     qualities_vector.vp[z_indices] = 3.60
     qualities_vector.vs[z_indices] = 1.9428
