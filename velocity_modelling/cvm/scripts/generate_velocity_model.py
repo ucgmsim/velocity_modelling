@@ -15,6 +15,10 @@ Example usage:
     # With specific log level:
     python  generate_velocity_model.py /path/to/nzvm.cfg --out_dir /path/to/output_dir --log-level DEBUG
 
+    # With specific output format:
+    python  generate_velocity_model.py /path/to/nzvm.cfg --out_dir /path/to/output_dir --output_format csv  (default: emod3d)
+
+
     if --out_dir is not specified, it will use OUTPUT_DIR specified in nzvm.cfg
 
 SAMPLE nzvm.cfg
