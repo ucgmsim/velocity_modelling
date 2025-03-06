@@ -37,34 +37,43 @@ EXTENT_Z_SPACING=0.2
 EXTENT_LATLON_SPACING=0.2
 MIN_VS=0.5
 TOPO_TYPE=BULLDOZED
-        
+
 """
 
 # import concurrent.futures
 
-import time
-from pathlib import Path
 import argparse
 import sys
+import time
+from pathlib import Path
 from typing import Dict
 
-from velocity_modelling.cvm.constants import NZVM_REGISTRY_PATH
 from velocity_modelling.cvm.basin_model import (
     InBasin,
-    PartialBasinSurfaceDepths,
     InBasinGlobalMesh,
+    PartialBasinSurfaceDepths,
+)
+from velocity_modelling.cvm.constants import (
+    NZVM_REGISTRY_PATH,
 )
 from velocity_modelling.cvm.geometry import (
-    gen_full_model_grid_great_circle,
-    extract_mesh_vector,
     GlobalMesh,
     ModelExtent,
+    extract_mesh_vector,
+    gen_full_model_grid_great_circle,
 )
-from velocity_modelling.cvm.global_model import PartialGlobalSurfaceDepths
+from velocity_modelling.cvm.global_model import (
+    PartialGlobalSurfaceDepths,
+)
 from velocity_modelling.cvm.logging import VMLogger
 from velocity_modelling.cvm.registry import CVMRegistry
-from velocity_modelling.cvm.velocity3d import PartialGlobalQualities, QualitiesVector
-from velocity_modelling.cvm.write.emod3d import write_global_qualities
+from velocity_modelling.cvm.velocity3d import (
+    PartialGlobalQualities,
+    QualitiesVector,
+)
+from velocity_modelling.cvm.write.emod3d import (
+    write_global_qualities,
+)
 
 
 def write_velo_mod_corners_text_file(
@@ -150,17 +159,23 @@ def generate_velocity_model(
 
     # Import the appropriate writer based on format
     if output_format == "emod3d":
-        from velocity_modelling.cvm.write.emod3d import write_global_qualities
+        from velocity_modelling.cvm.write.emod3d import (
+            write_global_qualities,
+        )
 
         logger.log("Using EMOD3D writer module", logger.DEBUG)
     elif output_format == "csv":
         try:
-            from velocity_modelling.cvm.write.csv import write_global_qualities
+            from velocity_modelling.cvm.write.csv import (
+                write_global_qualities,
+            )
 
             logger.log("Using CSV writer module", logger.DEBUG)
         except ImportError:
             logger.log("CSV writer module not found. Creating it now.", logger.WARNING)
-            from velocity_modelling.cvm.write.emod3d import write_global_qualities
+            from velocity_modelling.cvm.write.emod3d import (
+                write_global_qualities,
+            )
 
             logger.log(
                 "Temporarily using EMOD3D writer until CSV writer is implemented",
@@ -273,6 +288,11 @@ def generate_velocity_model(
                         logger.log(
                             f"QualitiesVector object: {qualities_vector}", logger.DEBUG
                         )
+                        import traceback
+
+                        logger.log(
+                            f"Traceback:\n{traceback.format_exc()}", logger.ERROR
+                        )
                         raise
 
                     partial_global_qualities.inbasin[k] = temp_inbasin
@@ -280,6 +300,9 @@ def generate_velocity_model(
                     logger.log(
                         f"Error processing point at j={j}, k={k}: {e}", logger.ERROR
                     )
+                    import traceback
+
+                    logger.log(f"Traceback:\n{traceback.format_exc()}", logger.ERROR)
                     raise
 
         # Write this latitude slice to disk

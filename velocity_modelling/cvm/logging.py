@@ -8,7 +8,7 @@ simpler methods adapted to the needs of the CVM system.
 
 import logging
 import sys
-from typing import Optional, Union, TextIO
+from typing import Optional, TextIO, Union
 
 
 class VMLogger:

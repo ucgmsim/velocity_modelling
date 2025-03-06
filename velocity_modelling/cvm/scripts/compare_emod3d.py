@@ -36,11 +36,16 @@ Just focus on 'allclose' for vp, vs and rho.  inbasin from the original C code i
 
 import argparse
 from pathlib import Path
-import yaml
-import numpy as np
 
-from velocity_modelling.cvm.write.emod3d import read_output_files
-from velocity_modelling.cvm.scripts.generate_velocity_model import parse_nzvm_config
+import numpy as np
+import yaml
+
+from velocity_modelling.cvm.scripts.generate_velocity_model import (
+    parse_nzvm_config,
+)
+from velocity_modelling.cvm.write.emod3d import (
+    read_output_files,
+)
 
 
 def compare_output_files(

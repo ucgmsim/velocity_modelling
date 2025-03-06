@@ -7,9 +7,14 @@ using a predefined 1D velocity profile.
 """
 
 import numpy as np
-from velocity_modelling.cvm.velocity1d import VelocityModel1D
-from velocity_modelling.cvm.velocity3d import QualitiesVector
+
 from velocity_modelling.cvm.logging import VMLogger
+from velocity_modelling.cvm.velocity1d import (
+    VelocityModel1D,
+)
+from velocity_modelling.cvm.velocity3d import (
+    QualitiesVector,
+)
 
 
 def main_vectorized(

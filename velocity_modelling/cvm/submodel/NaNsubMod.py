@@ -6,8 +6,10 @@ Used for locations where no valid velocity model can be applied.
 """
 
 import numpy as np
-from velocity_modelling.cvm.velocity3d import QualitiesVector
 
+from velocity_modelling.cvm.velocity3d import (
+    QualitiesVector,
+)
 
 # def main(
 #     zInd: int,

@@ -7,8 +7,11 @@ more recent geophysical measurements.
 """
 
 import numpy as np
-from velocity_modelling.cvm.velocity3d import QualitiesVector
+
 from velocity_modelling.cvm.logging import VMLogger
+from velocity_modelling.cvm.velocity3d import (
+    QualitiesVector,
+)
 
 
 def main_vectorized(

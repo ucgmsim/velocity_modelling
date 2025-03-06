@@ -9,8 +9,8 @@ All velocity values in this module use km/s as units unless otherwise specified.
 Depths are in meters, and densities are in g/cm³.
 """
 
-import numpy as np
 import numba
+import numpy as np
 
 
 @numba.jit(nopython=True)

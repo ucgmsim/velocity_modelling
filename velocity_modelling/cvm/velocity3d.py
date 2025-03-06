@@ -15,23 +15,31 @@ from typing import List
 
 import numpy as np
 
-from velocity_modelling.cvm.constants import MAX_DIST_SMOOTH, VTYPE
-from velocity_modelling.cvm.global_model import (
+from velocity_modelling.cvm.basin_model import (
+    BasinData,
+    InBasin,
+    InBasinGlobalMesh,
+    PartialBasinSurfaceDepths,
+)
+from velocity_modelling.cvm.constants import (
+    MAX_DIST_SMOOTH,
+    VTYPE,
+)
+from velocity_modelling.cvm.geometry import (
+    AdjacentPoints,
+    MeshVector,
+)
+from velocity_modelling.cvm.global_model import (  # noqa: F401
     GlobalSurfaces,
     PartialGlobalSurfaceDepths,
     TomographyData,
     interpolate_global_surface,
-)  # noqa: F401
-from velocity_modelling.cvm.basin_model import (
-    BasinData,
-    InBasin,
-    PartialBasinSurfaceDepths,
-    InBasinGlobalMesh,
 )
-from velocity_modelling.cvm.geometry import MeshVector, AdjacentPoints
-from velocity_modelling.cvm.registry import CVMRegistry
-from velocity_modelling.cvm.velocity1d import VelocityModel1D
 from velocity_modelling.cvm.logging import VMLogger
+from velocity_modelling.cvm.registry import CVMRegistry
+from velocity_modelling.cvm.velocity1d import (
+    VelocityModel1D,
+)
 
 
 class PartialGlobalQualities:
@@ -556,11 +564,15 @@ class QualitiesVector:
             index_subset = z_indices[mask]
 
             if name == "NaNsubMod":
-                from velocity_modelling.cvm.submodel import NaNsubMod
+                from velocity_modelling.cvm.submodel import (
+                    NaNsubMod,
+                )
 
                 NaNsubMod.main_vectorized(index_subset, self)
             elif name == "EPtomo2010subMod":
-                from velocity_modelling.cvm.submodel import EPtomo2010
+                from velocity_modelling.cvm.submodel import (
+                    EPtomo2010,
+                )
 
                 # Precompute interpolated values for all surfaces and vtype at this (lat, lon)
                 global_surf_read = nz_tomography_data.surfaces[0]["vp"]
@@ -597,7 +609,9 @@ class QualitiesVector:
                     interpolated_global_surface_values,
                 )
             elif name == "Cant1D_v1":
-                from velocity_modelling.cvm.submodel import Cant1D_v1
+                from velocity_modelling.cvm.submodel import (
+                    Cant1D_v1,
+                )
 
                 Cant1D_v1.main_vectorized(
                     index_subset, depth_subset, self, velo_mod_1d_data
@@ -651,12 +665,16 @@ class QualitiesVector:
         submodel_name, submodel_data = basin_data.submodels[ind_above]
 
         if submodel_name == "NaNsubMod":
-            from velocity_modelling.cvm.submodel import NaNsubMod
+            from velocity_modelling.cvm.submodel import (
+                NaNsubMod,
+            )
 
             NaNsubMod.main_vectorized(z_indices, self)
 
         elif submodel_name in ["Cant1D_v1", "Cant1D_v2", "Cant1D_v2_Pliocene_Enforced"]:
-            from velocity_modelling.cvm.submodel import Cant1D_v1 as Cant1D_v1
+            from velocity_modelling.cvm.submodel import (
+                Cant1D_v1 as Cant1D_v1,
+            )
 
             Cant1D_v1.main_vectorized(z_indices, depths, self, submodel_data)
         elif submodel_name == "PaleogeneSubMod_v1":
@@ -678,21 +696,29 @@ class QualitiesVector:
 
             MioceneSubMod_v1.main_vectorized(z_indices, self)
         elif submodel_name == "BPVSubMod_v1":
-            from velocity_modelling.cvm.submodel import BPVSubMod_v1 as BPVSubMod_v1
+            from velocity_modelling.cvm.submodel import (
+                BPVSubMod_v1 as BPVSubMod_v1,
+            )
 
             BPVSubMod_v1.main_vectorized(z_indices, self)
         elif submodel_name == "BPVSubMod_v2":
-            from velocity_modelling.cvm.submodel import BPVSubMod_v2 as BPVSubMod_v2
+            from velocity_modelling.cvm.submodel import (
+                BPVSubMod_v2 as BPVSubMod_v2,
+            )
 
             BPVSubMod_v2.main_vectorized(z_indices, self)
         elif submodel_name == "BPVSubMod_v3":
-            from velocity_modelling.cvm.submodel import BPVSubMod_v3 as BPVSubMod_v3
+            from velocity_modelling.cvm.submodel import (
+                BPVSubMod_v3 as BPVSubMod_v3,
+            )
 
             BPVSubMod_v3.main_vectorized(
                 z_indices, depths, self, partial_basin_surface_depths
             )
         elif submodel_name == "BPVSubMod_v4":
-            from velocity_modelling.cvm.submodel import BPVSubMod_v4 as BPVSubMod_v4
+            from velocity_modelling.cvm.submodel import (
+                BPVSubMod_v4 as BPVSubMod_v4,
+            )
 
             BPVSubMod_v4.main_vectorized(
                 z_indices,

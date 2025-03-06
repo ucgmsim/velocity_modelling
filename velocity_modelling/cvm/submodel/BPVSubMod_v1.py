@@ -7,9 +7,11 @@ values for all points within the BPV boundaries.
 """
 
 import numpy as np
-from velocity_modelling.cvm.velocity3d import QualitiesVector
-from velocity_modelling.cvm.logging import VMLogger
 
+from velocity_modelling.cvm.logging import VMLogger
+from velocity_modelling.cvm.velocity3d import (
+    QualitiesVector,
+)
 
 # Constants
 vs_full = 2.2818  # vs at the full (km/s)

@@ -1,5 +1,5 @@
-from pathlib import Path
 from enum import Enum
+from pathlib import Path
 
 MAX_DIST_SMOOTH = 10  # distance in KM to smooth tomography over
 

@@ -1,12 +1,16 @@
 import struct
 import sys
-
-import numpy as np
 from pathlib import Path
 
-from velocity_modelling.cvm.geometry import PartialGlobalMesh
-from velocity_modelling.cvm.velocity3d import PartialGlobalQualities
+import numpy as np
+
+from velocity_modelling.cvm.geometry import (
+    PartialGlobalMesh,
+)
 from velocity_modelling.cvm.logging import VMLogger
+from velocity_modelling.cvm.velocity3d import (
+    PartialGlobalQualities,
+)
 
 
 def write_global_qualities(

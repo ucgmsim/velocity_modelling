@@ -6,20 +6,20 @@ constructs needed for seismic velocity modelling. It handles coordinate transfor
 grid generation, mesh slicing, and boundary calculations for various model components.
 """
 
-from typing import Any
-from typing import List, Dict, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 from numba import njit
+
 from velocity_modelling.cvm.constants import (
-    MAX_LAT_SURFACE_EXTENSION,
-    MAX_LON_SURFACE_EXTENSION,
+    DEP_GRID_DIM_MAX,
     EARTH_RADIUS_MEAN,
     ERAD,
-    RPERD,
-    LON_GRID_DIM_MAX,
     LAT_GRID_DIM_MAX,
-    DEP_GRID_DIM_MAX,
+    LON_GRID_DIM_MAX,
+    MAX_LAT_SURFACE_EXTENSION,
+    MAX_LON_SURFACE_EXTENSION,
+    RPERD,
 )
 from velocity_modelling.cvm.logging import VMLogger
 

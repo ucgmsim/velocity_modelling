@@ -12,19 +12,23 @@ The registry loads model configuration from YAML files and provides methods to a
 specific data components, handling file loading, caching, and path resolution.
 """
 
-import numpy as np
-from pathlib import Path
-from typing import List, Dict, Optional, Union
-import yaml
 import sys
+from pathlib import Path
+from typing import Dict, List, Optional, Union
 
-from velocity_modelling.cvm.geometry import AdjacentPoints, MeshVector  # noqa: F401
+import numpy as np
+import yaml
+
 from velocity_modelling.cvm.constants import (
-    NZVM_REGISTRY_PATH,
     DATA_ROOT,
     DEFAULT_OFFSHORE_1D_MODEL,
     DEFAULT_OFFSHORE_DISTANCE,
+    NZVM_REGISTRY_PATH,
     VTYPE,
+)
+from velocity_modelling.cvm.geometry import (  # noqa: F401
+    AdjacentPoints,
+    MeshVector,
 )
 from velocity_modelling.cvm.logging import VMLogger
 
@@ -180,7 +184,9 @@ class CVMRegistry:
         SystemExit
             If the file cannot be found or read.
         """
-        from velocity_modelling.cvm.velocity1d import VelocityModel1D
+        from velocity_modelling.cvm.velocity1d import (
+            VelocityModel1D,
+        )
 
         v1d_path = self.get_full_path(v1d_path)
 
@@ -225,7 +231,9 @@ class CVMRegistry:
         List[BasinData]
             List of loaded basin data.
         """
-        from velocity_modelling.cvm.basin_model import BasinData
+        from velocity_modelling.cvm.basin_model import (
+            BasinData,
+        )
 
         all_basin_data = []
         for basin_name in basin_names:
@@ -351,7 +359,9 @@ class CVMRegistry:
         SystemExit
             If the surface file cannot be found or read.
         """
-        from velocity_modelling.cvm.basin_model import BasinSurfaceRead
+        from velocity_modelling.cvm.basin_model import (
+            BasinSurfaceRead,
+        )
 
         surface_info = self.get_info("surface", basin_surface["name"])
 
@@ -452,7 +462,9 @@ class CVMRegistry:
         AssertionError
             If tomography surface files don't exist.
         """
-        from velocity_modelling.cvm.global_model import TomographyData
+        from velocity_modelling.cvm.global_model import (
+            TomographyData,
+        )
 
         tomo = self.get_info("tomography", tomo_name)
         surf_depth = tomo["elev"]
@@ -589,7 +601,9 @@ class CVMRegistry:
             If the file cannot be found or read properly.
         """
 
-        from velocity_modelling.cvm.global_model import GlobalSurfaceRead
+        from velocity_modelling.cvm.global_model import (
+            GlobalSurfaceRead,
+        )
 
         surface_file = self.get_full_path(surface_file)
 
@@ -640,7 +654,9 @@ class CVMRegistry:
         GlobalSurfaces
             Container object with all loaded global surfaces.
         """
-        from velocity_modelling.cvm.global_model import GlobalSurfaces
+        from velocity_modelling.cvm.global_model import (
+            GlobalSurfaces,
+        )
 
         surfaces = []
 
@@ -675,7 +691,9 @@ class CVMRegistry:
         SmoothingBoundary
             Object containing smoothing boundary points.
         """
-        from velocity_modelling.cvm.geometry import SmoothingBoundary
+        from velocity_modelling.cvm.geometry import (
+            SmoothingBoundary,
+        )
 
         smooth_bound_xpts = []
         smooth_bound_ypts = []

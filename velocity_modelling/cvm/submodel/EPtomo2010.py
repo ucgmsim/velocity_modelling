@@ -8,19 +8,21 @@ P-wave velocity, S-wave velocity, and density values derived from tomographic in
 
 import numpy as np
 
+from velocity_modelling.cvm.constants import VTYPE
 from velocity_modelling.cvm.geometry import MeshVector
-from velocity_modelling.cvm.velocity3d import QualitiesVector
 from velocity_modelling.cvm.global_model import (
     PartialGlobalSurfaceDepths,
     TomographyData,
 )
-from velocity_modelling.cvm.constants import VTYPE
+from velocity_modelling.cvm.gtl import v30gtl_vectorized
 from velocity_modelling.cvm.interpolate import (
     linear_interpolation_vectorized,
 )
-from velocity_modelling.cvm.gtl import v30gtl_vectorized
-from velocity_modelling.cvm.submodel import Cant1D_v1
 from velocity_modelling.cvm.logging import VMLogger
+from velocity_modelling.cvm.submodel import Cant1D_v1
+from velocity_modelling.cvm.velocity3d import (
+    QualitiesVector,
+)
 
 
 def offshore_basin_depth_vectorized(shoreline_dist: np.ndarray):

@@ -6,24 +6,26 @@ determination in the velocity model. It handles basin boundaries, surfaces, and 
 with proper logging throughout the processing workflow.
 """
 
-import numpy as np
-
-from numba import njit
 from typing import List, Tuple
 
+import numpy as np
+from numba import njit
 from qcore import point_in_polygon
-from velocity_modelling.cvm.registry import CVMRegistry
-from velocity_modelling.cvm.interpolate import bi_linear_interpolation
+
 from velocity_modelling.cvm.geometry import (
-    point_on_vertex,
     AdjacentPoints,
-    MeshVector,
     GlobalMesh,
+    MeshVector,
     PartialGlobalMesh,
-    extract_partial_mesh,
     SmoothingBoundary,
+    extract_partial_mesh,
+    point_on_vertex,
+)
+from velocity_modelling.cvm.interpolate import (
+    bi_linear_interpolation,
 )
 from velocity_modelling.cvm.logging import VMLogger
+from velocity_modelling.cvm.registry import CVMRegistry
 
 
 class BasinData:
