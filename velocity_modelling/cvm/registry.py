@@ -134,9 +134,9 @@ class CVMRegistry:
             return None
 
         for info in data_section:
-            assert "name" in info, (
-                f"Error: This entry in {datatype} has no name defined."
-            )
+            assert (
+                "name" in info
+            ), f"Error: This entry in {datatype} has no name defined."
             if info["name"] == name:
                 return info
         self.log(
@@ -387,8 +387,8 @@ class CVMRegistry:
                 latitudes = np.fromfile(f, dtype=float, count=nlat, sep=" ")
                 longitudes = np.fromfile(f, dtype=float, count=nlon, sep=" ")
 
-                basin_surf_read.lati = latitudes
-                basin_surf_read.loni = longitudes
+                basin_surf_read.lats = latitudes
+                basin_surf_read.lons = longitudes
 
                 raster_data = np.fromfile(f, dtype=float, count=nlat * nlon, sep=" ")
                 if len(raster_data) != nlat * nlon:
@@ -404,13 +404,13 @@ class CVMRegistry:
                 basin_surf_read.raster = raster_data.reshape((nlat, nlon)).T
 
                 # Calculate min/max extents
-                first_lat = basin_surf_read.lati[0]
-                last_lat = basin_surf_read.lati[nlat - 1]
+                first_lat = basin_surf_read.lats[0]
+                last_lat = basin_surf_read.lats[nlat - 1]
                 basin_surf_read.max_lat = np.maximum(first_lat, last_lat)
                 basin_surf_read.min_lat = np.minimum(first_lat, last_lat)
 
-                first_lon = basin_surf_read.loni[0]
-                last_lon = basin_surf_read.loni[nlon - 1]
+                first_lon = basin_surf_read.lons[0]
+                last_lon = basin_surf_read.lons[nlon - 1]
                 basin_surf_read.max_lon = np.maximum(first_lon, last_lon)
                 basin_surf_read.min_lon = np.minimum(first_lon, last_lon)
 
@@ -491,9 +491,9 @@ class CVMRegistry:
                     self.log(
                         f"Error: Tomography file {tomofile} not found", VMLogger.ERROR
                     )
-                    assert tomofile.exists(), (
-                        f"Tomography file {tomofile} does not exist"
-                    )
+                    assert (
+                        tomofile.exists()
+                    ), f"Tomography file {tomofile} does not exist"
 
                 surfaces[i][vtype.name] = self.load_global_surface(tomofile)
                 self.log(

@@ -56,6 +56,6 @@ class VelocityModel1D:
         self.rho = rho
         self.depth = depth
         self.n_depth = len(depth)
-        assert len(vp) == len(vs) == len(rho) == len(depth), (
-            "Input arrays must have the same length"
-        )
+        assert (
+            len(vp) == len(vs) == len(rho) == len(depth)
+        ), "Input arrays must have the same length"

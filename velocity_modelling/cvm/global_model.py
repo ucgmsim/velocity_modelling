@@ -28,9 +28,9 @@ class GlobalSurfaceRead:
 
     Attributes
     ----------
-    lati : np.ndarray
+    lats : np.ndarray
         The latitude values.
-    loni : np.ndarray
+    lons : np.ndarray
         The longitude values.
     raster : np.ndarray
         The raster values.
@@ -59,13 +59,13 @@ class GlobalSurfaceRead:
         raster : np.ndarray
             The raster values.
         """
-        self.lati = latitudes
-        self.loni = longitudes
+        self.lats = latitudes
+        self.lons = longitudes
         self.raster = raster
-        self.max_lat = max(self.lati)
-        self.min_lat = min(self.lati)
-        self.max_lon = max(self.loni)
-        self.min_lon = min(self.loni)
+        self.max_lat = max(self.lats)
+        self.min_lat = min(self.lats)
+        self.max_lon = max(self.lons)
+        self.min_lon = min(self.lons)
 
     @property
     def nlat(self) -> int:
@@ -77,7 +77,7 @@ class GlobalSurfaceRead:
         int
             Number of latitude points.
         """
-        return len(self.lati)
+        return len(self.lats)
 
     @property
     def nlon(self) -> int:
@@ -89,7 +89,7 @@ class GlobalSurfaceRead:
         int
             Number of longitude points.
         """
-        return len(self.loni)
+        return len(self.lons)
 
 
 class GlobalSurfaces:
@@ -200,8 +200,8 @@ class PartialGlobalSurfaceDepths:
         for i in range(len(global_surfaces.surfaces)):
             global_surf_read = global_surfaces.surfaces[i]
             adjacent_points = AdjacentPoints.find_global_adjacent_points(
-                global_surf_read.lati,
-                global_surf_read.loni,
+                global_surf_read.lats,
+                global_surf_read.lons,
                 mesh_vector.lat,
                 mesh_vector.lon,
             )
@@ -216,8 +216,8 @@ class PartialGlobalSurfaceDepths:
 
 @njit
 def interpolate_global_surface_numba(
-    lati: np.ndarray,
-    loni: np.ndarray,
+    lats: np.ndarray,
+    lons: np.ndarray,
     raster: np.ndarray,
     lat: float,
     lon: float,
@@ -237,9 +237,9 @@ def interpolate_global_surface_numba(
 
     Parameters
     ----------
-    lati : np.ndarray
+    lats : np.ndarray
         Array of latitudes for the raster.
-    loni : np.ndarray
+    lons : np.ndarray
         Array of longitudes for the raster.
     raster : np.ndarray
         2D array of raster values.
@@ -259,10 +259,10 @@ def interpolate_global_surface_numba(
     """
 
     if in_surface_bounds:
-        x1 = loni[lon_ind[0]]
-        x2 = loni[lon_ind[1]]
-        y1 = lati[lat_ind[0]]
-        y2 = lati[lat_ind[1]]
+        x1 = lons[lon_ind[0]]
+        x2 = lons[lon_ind[1]]
+        y1 = lats[lat_ind[0]]
+        y2 = lats[lat_ind[1]]
 
         q11 = raster[lon_ind[0], lat_ind[0]]
         q12 = raster[lon_ind[0], lat_ind[1]]
@@ -284,16 +284,16 @@ def interpolate_global_surface_numba(
         )
 
     elif in_lat_extension_zone:
-        p1 = loni[lon_ind[0]]
-        p2 = loni[lon_ind[1]]
+        p1 = lons[lon_ind[0]]
+        p2 = lons[lon_ind[1]]
         v1 = raster[lon_ind[0], lat_edge_ind]
         v2 = raster[lon_ind[1], lat_edge_ind]
         # explicitly cast to float to prevent numba from regarding them as ndarray
         return linear_interpolation(float(p1), float(p2), float(v1), float(v2), lon)
 
     elif in_lon_extension_zone:
-        p1 = lati[lat_ind[0]]
-        p2 = lati[lat_ind[1]]
+        p1 = lats[lat_ind[0]]
+        p2 = lats[lat_ind[1]]
         v1 = raster[lon_edge_ind, lat_ind[0]]
         v2 = raster[lon_edge_ind, lat_ind[1]]
         # explicitly cast to float to prevent numba from regarding them as ndarray
@@ -331,8 +331,8 @@ def interpolate_global_surface(
     lon_ind = np.array(adjacent_points.lon_ind, dtype=np.int64)
 
     return interpolate_global_surface_numba(
-        surface.lati,
-        surface.loni,
+        surface.lats,
+        surface.lons,
         surface.raster,
         lat,
         lon,
@@ -431,7 +431,7 @@ class TomographyData:
         None
         """
         adjacent_points = AdjacentPoints.find_global_adjacent_points(
-            self.vs30.lati, self.vs30.loni, mesh_vector.lat, mesh_vector.lon
+            self.vs30.lats, self.vs30.lons, mesh_vector.lat, mesh_vector.lon
         )
 
         mesh_vector.vs30 = interpolate_global_surface(
@@ -452,8 +452,8 @@ class TomographyData:
         None
         """
         adjacent_points = AdjacentPoints.find_global_adjacent_points(
-            self.offshore_distance_surface.lati,
-            self.offshore_distance_surface.loni,
+            self.offshore_distance_surface.lats,
+            self.offshore_distance_surface.lons,
             mesh_vector.lat,
             mesh_vector.lon,
         )

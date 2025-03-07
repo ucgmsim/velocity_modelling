@@ -311,8 +311,8 @@ def point_on_vertex(
 
 @njit
 def find_edge_inds(
-    lati: np.ndarray,
-    loni: np.ndarray,
+    lats: np.ndarray,
+    lons: np.ndarray,
     edge_type: int,
     max_lat: float,
     min_lat: float,
@@ -324,9 +324,9 @@ def find_edge_inds(
 
     Parameters
     ----------
-    lati : np.ndarray
+    lats : np.ndarray
         Latitude array.
-    loni : np.ndarray
+    lons : np.ndarray
         Longitude array.
     edge_type : int
         Type of edge to find.(1: north, 2: east, 3: south, 4: west)
@@ -348,36 +348,36 @@ def find_edge_inds(
 
     """
 
-    nlat = len(lati)
-    nlon = len(loni)
+    nlat = len(lats)
+    nlon = len(lons)
     lat_edge_ind = 0
     lon_edge_ind = 0
 
     if edge_type == 1:  # north edge
-        if max_lat == lati[0]:
+        if max_lat == lats[0]:
             lat_edge_ind = 0
-        elif max_lat == lati[-1]:
+        elif max_lat == lats[-1]:
             lat_edge_ind = nlat - 1
         else:
             raise ValueError("Point lies outside of surface bounds.")
     elif edge_type == 3:  # south edge
-        if min_lat == lati[0]:
+        if min_lat == lats[0]:
             lat_edge_ind = 0
-        elif min_lat == lati[-1]:
+        elif min_lat == lats[-1]:
             lat_edge_ind = nlat - 1
         else:
             raise ValueError("Point lies outside of surface bounds.")
     elif edge_type == 2:  # east edge
-        if max_lon == loni[0]:
+        if max_lon == lons[0]:
             lon_edge_ind = 0
-        elif max_lon == loni[-1]:
+        elif max_lon == lons[-1]:
             lon_edge_ind = nlon - 1
         else:
             raise ValueError("Point lies outside of surface bounds.")
     elif edge_type == 4:  # west edge
-        if min_lon == loni[0]:
+        if min_lon == lons[0]:
             lon_edge_ind = 0
-        elif min_lon == loni[-1]:
+        elif min_lon == lons[-1]:
             lon_edge_ind = nlon - 1
         else:
             raise ValueError("Point lies outside of surface bounds.")
@@ -388,15 +388,15 @@ def find_edge_inds(
 
 
 @njit
-def find_corner_inds(lati: np.ndarray, loni: np.ndarray, lat: float, lon: float):
+def find_corner_inds(lats: np.ndarray, lons: np.ndarray, lat: float, lon: float):
     """
     Find the corner indices of the given latitude and longitude arrays.
 
     Parameters
     ----------
-    lati    : np.ndarray
+    lats    : np.ndarray
         Latitude array.
-    loni    : np.ndarray
+    lons    : np.ndarray
         Longitude array.
     lat : float
         Latitude of the given point.
@@ -411,25 +411,25 @@ def find_corner_inds(lati: np.ndarray, loni: np.ndarray, lat: float, lon: float)
         Index of the longitude corner
 
     """
-    nlat = len(lati)
-    nlon = len(loni)
+    nlat = len(lats)
+    nlon = len(lons)
 
-    if np.abs(lat - lati[0]) <= 1e-07:
+    if np.abs(lat - lats[0]) <= 1e-07:
         corner_lat_ind = 0
-    elif np.abs(lat - lati[-1]) <= 1e-07:
+    elif np.abs(lat - lats[-1]) <= 1e-07:
         corner_lat_ind = nlat - 1
     else:
         raise ValueError(
-            f"Point lies outside of surface bounds. Lat {lat} outside [{lati[0]} {lati[-1]}]"
+            f"Point lies outside of surface bounds. Lat {lat} outside [{lats[0]} {lats[-1]}]"
         )
 
-    if np.abs(lon - loni[0]) <= 1e-07:
+    if np.abs(lon - lons[0]) <= 1e-07:
         corner_lon_ind = 0
-    elif np.abs(lon - loni[-1]) <= 1e-07:
+    elif np.abs(lon - lons[-1]) <= 1e-07:
         corner_lon_ind = nlon - 1
     else:
         raise ValueError(
-            f"Point lies outside of surface bounds. Lon {lon} outside [{loni[0]} {loni[-1]}]"
+            f"Point lies outside of surface bounds. Lon {lon} outside [{lons[0]} {lons[-1]}]"
         )
 
     return corner_lat_ind, corner_lon_ind
@@ -437,16 +437,16 @@ def find_corner_inds(lati: np.ndarray, loni: np.ndarray, lat: float, lon: float)
 
 @njit
 def find_basin_adjacent_points_numba(
-    lati: np.ndarray, loni: np.ndarray, lat: float, lon: float
+    lats: np.ndarray, lons: np.ndarray, lat: float, lon: float
 ) -> tuple[bool, np.ndarray, np.ndarray]:
     """
     Identify adjacent latitude/longitude indices for a given point in basin coordinates.
 
     Parameters
     ----------
-    lati : np.ndarray
+    lats : np.ndarray
         Sorted array of latitudes (either ascending or descending).
-    loni : np.ndarray
+    lons : np.ndarray
         Sorted array of longitudes (either ascending or descending).
     lat : float
         Target latitude for adjacency checks.
@@ -468,38 +468,38 @@ def find_basin_adjacent_points_numba(
     lon_ind = np.array([0, 0], dtype=np.int64)
 
     # Handle latitude
-    if lati[0] > lati[-1]:  # descending order
-        lat_idx = np.searchsorted(lati[::-1], lat)
-        lat_idx = len(lati) - lat_idx - 1
+    if lats[0] > lats[-1]:  # descending order
+        lat_idx = np.searchsorted(lats[::-1], lat)
+        lat_idx = len(lats) - lat_idx - 1
     else:  # ascending order
-        lat_idx = np.searchsorted(lati, lat)
+        lat_idx = np.searchsorted(lats, lat)
 
-    if 0 < lat_idx < len(lati):
+    if 0 < lat_idx < len(lats):
         lat_ind[0] = lat_idx - 1
         lat_ind[1] = lat_idx
-    elif lat_idx == 0 and lati[0] == lat:
+    elif lat_idx == 0 and lats[0] == lat:
         lat_ind[0] = 0
         lat_ind[1] = 1
-    elif lat_idx == len(lati) and lati[-1] == lat:
-        lat_ind[0] = len(lati) - 1
-        lat_ind[1] = len(lati)
+    elif lat_idx == len(lats) and lats[-1] == lat:
+        lat_ind[0] = len(lats) - 1
+        lat_ind[1] = len(lats)
 
     # Handle longitude
-    if loni[0] > loni[-1]:  # descending order
-        lon_idx = np.searchsorted(loni[::-1], lon)
-        lon_idx = len(loni) - lon_idx - 1
+    if lons[0] > lons[-1]:  # descending order
+        lon_idx = np.searchsorted(lons[::-1], lon)
+        lon_idx = len(lons) - lon_idx - 1
     else:  # ascending order
-        lon_idx = np.searchsorted(loni, lon)
+        lon_idx = np.searchsorted(lons, lon)
 
-    if 0 < lon_idx < len(loni):
+    if 0 < lon_idx < len(lons):
         lon_ind[0] = lon_idx - 1
         lon_ind[1] = lon_idx
-    elif lon_idx == 0 and loni[0] == lon:
+    elif lon_idx == 0 and lons[0] == lon:
         lon_ind[0] = 0
         lon_ind[1] = 1
-    elif lon_idx == len(loni) and loni[-1] == lon:
-        lon_ind[0] = len(loni) - 1
-        lon_ind[1] = len(loni)
+    elif lon_idx == len(lons) and lons[-1] == lon:
+        lon_ind[0] = len(lons) - 1
+        lon_ind[1] = len(lons)
 
     if lat_ind[0] != 0 or lat_ind[1] != 0:
         if lon_ind[0] != 0 or lon_ind[1] != 0:
@@ -510,7 +510,7 @@ def find_basin_adjacent_points_numba(
 
 @njit
 def find_global_adjacent_points_numba(
-    lati: np.ndarray, loni: np.ndarray, lat: float, lon: float
+    lats: np.ndarray, lons: np.ndarray, lat: float, lon: float
 ) -> tuple[
     bool, np.ndarray, np.ndarray, bool, int, int, bool, int, int, bool, int, int
 ]:
@@ -519,9 +519,9 @@ def find_global_adjacent_points_numba(
 
     Parameters
     ----------
-    lati : np.ndarray
+    lats : np.ndarray
         Sorted array of latitudes (either ascending or descending).
-    loni : np.ndarray
+    lons : np.ndarray
         Sorted array of longitudes (either ascending or descending).
     lat : float
         Target latitude for adjacency and zone checks.
@@ -555,12 +555,12 @@ def find_global_adjacent_points_numba(
     int
         Corner longitude index.
     """
-    max_lat = np.max(lati)
-    min_lat = np.min(lati)
-    max_lon = np.max(loni)
-    min_lon = np.min(loni)
-    nlat = len(lati)
-    nlon = len(loni)
+    max_lat = np.max(lats)
+    min_lat = np.min(lats)
+    max_lon = np.max(lons)
+    min_lon = np.min(lons)
+    nlat = len(lats)
+    nlon = len(lons)
 
     # Initialize default values
     in_surface_bounds = False
@@ -580,14 +580,14 @@ def find_global_adjacent_points_numba(
     lon_assigned_flag = False
 
     # Check if latitude is within the range
-    if (lati[0] < lat <= lati[-1]) or (lati[0] > lat >= lati[-1]):
-        is_ascending = lati[0] < lati[-1]
+    if (lats[0] < lat <= lats[-1]) or (lats[0] > lat >= lats[-1]):
+        is_ascending = lats[0] < lats[-1]
         # Create temp array for searching
-        temp_lati = lati.copy()
+        temp_lats = lats.copy()
         if not is_ascending:
-            temp_lati = lati[::-1]
+            temp_lats = lats[::-1]
 
-        index = np.searchsorted(temp_lati, lat)
+        index = np.searchsorted(temp_lats, lat)
         if not is_ascending:
             index = nlat - index
 
@@ -597,14 +597,14 @@ def find_global_adjacent_points_numba(
             lat_assigned_flag = True
 
     # Check if longitude is within the range
-    if (loni[0] < lon <= loni[-1]) or (loni[0] > lon >= loni[-1]):
-        is_ascending = loni[0] < loni[-1]
+    if (lons[0] < lon <= lons[-1]) or (lons[0] > lon >= lons[-1]):
+        is_ascending = lons[0] < lons[-1]
         # Create temp array for searching
-        temp_loni = loni.copy()
+        temp_lons = lons.copy()
         if not is_ascending:
-            temp_loni = loni[::-1]
+            temp_lons = lons[::-1]
 
-        index = np.searchsorted(temp_loni, lon)
+        index = np.searchsorted(temp_lons, lon)
         if not is_ascending:
             index = nlon - index
 
@@ -621,13 +621,13 @@ def find_global_adjacent_points_numba(
             if (lat - max_lat) <= MAX_LAT_SURFACE_EXTENSION and lat >= max_lat:
                 in_lat_extension_zone = True
                 lat_edge_ind, lon_edge_ind = find_edge_inds(
-                    lati, loni, 1, max_lat, min_lat, max_lon, min_lon
+                    lats, lons, 1, max_lat, min_lat, max_lon, min_lon
                 )
                 lat_extension_type = 1
             elif (min_lat - lat) <= MAX_LAT_SURFACE_EXTENSION and lat <= min_lat:
                 in_lat_extension_zone = True
                 lat_edge_ind, lon_edge_ind = find_edge_inds(
-                    lati, loni, 3, max_lat, min_lat, max_lon, min_lon
+                    lats, lons, 3, max_lat, min_lat, max_lon, min_lon
                 )
                 lat_extension_type = 3
 
@@ -635,13 +635,13 @@ def find_global_adjacent_points_numba(
             if (min_lon - lon) <= MAX_LON_SURFACE_EXTENSION and lon <= min_lon:
                 in_lon_extension_zone = True
                 lat_edge_ind, lon_edge_ind = find_edge_inds(
-                    lati, loni, 4, max_lat, min_lat, max_lon, min_lon
+                    lats, lons, 4, max_lat, min_lat, max_lon, min_lon
                 )
                 lon_extension_type = 4
             elif (lon - max_lon) <= MAX_LON_SURFACE_EXTENSION and lon >= max_lon:
                 in_lon_extension_zone = True
                 lat_edge_ind, lon_edge_ind = find_edge_inds(
-                    lati, loni, 2, max_lat, min_lat, max_lon, min_lon
+                    lats, lons, 2, max_lat, min_lat, max_lon, min_lon
                 )
                 lon_extension_type = 2
 
@@ -655,7 +655,7 @@ def find_global_adjacent_points_numba(
             and lat >= max_lat
         ):
             corner_lat_ind, corner_lon_ind = find_corner_inds(
-                lati, loni, max_lat, min_lon
+                lats, lons, max_lat, min_lon
             )
             corner_case = 1
         # Case 2: Top-right corner
@@ -666,7 +666,7 @@ def find_global_adjacent_points_numba(
             and lat >= max_lat
         ):
             corner_lat_ind, corner_lon_ind = find_corner_inds(
-                lati, loni, max_lat, max_lon
+                lats, lons, max_lat, max_lon
             )
             corner_case = 2
         # Case 3: Bottom-left corner
@@ -677,7 +677,7 @@ def find_global_adjacent_points_numba(
             and lat <= min_lat
         ):
             corner_lat_ind, corner_lon_ind = find_corner_inds(
-                lati, loni, min_lat, min_lon
+                lats, lons, min_lat, min_lon
             )
             corner_case = 3
         # Case 4: Bottom-right corner
@@ -688,7 +688,7 @@ def find_global_adjacent_points_numba(
             and lat <= min_lat
         ):
             corner_lat_ind, corner_lon_ind = find_corner_inds(
-                lati, loni, min_lat, max_lon
+                lats, lons, min_lat, max_lon
             )
             corner_case = 4
 
@@ -763,16 +763,16 @@ class AdjacentPoints:
 
     @classmethod
     def find_basin_adjacent_points(
-        cls, lati: np.ndarray, loni: np.ndarray, lat: float, lon: float
+        cls, lats: np.ndarray, lons: np.ndarray, lat: float, lon: float
     ):
         """
         Find basin‐related adjacent indices and flags for a given latitude/longitude.
 
         Parameters
         ----------
-        lati : np.ndarray
+        lats : np.ndarray
             Latitude array.
-        loni : np.ndarray
+        lons : np.ndarray
             Longitude array.
         lat : float
             Target latitude.
@@ -786,7 +786,7 @@ class AdjacentPoints:
         """
         # Call the Numba function
         in_surface_bounds, lat_ind, lon_ind = find_basin_adjacent_points_numba(
-            lati, loni, lat, lon
+            lats, lons, lat, lon
         )
 
         # Create and populate the AdjacentPoints object
@@ -805,7 +805,7 @@ class AdjacentPoints:
 
     @classmethod
     def find_global_adjacent_points(
-        cls, lati: np.ndarray, loni: np.ndarray, lat: float, lon: float
+        cls, lats: np.ndarray, lons: np.ndarray, lat: float, lon: float
     ):
         """
         Find the adjacent points to the given latitude and longitude in the global surface.
@@ -813,9 +813,9 @@ class AdjacentPoints:
 
         Parameters
         ----------
-        lati : np.ndarray
+        lats : np.ndarray
             Array of latitudes of the global surface.
-        loni : np.ndarray
+        lons : np.ndarray
             Array of longitudes of the global surface.
         lat : float
             Latitude of the point to check.
@@ -828,7 +828,7 @@ class AdjacentPoints:
             Object containing the adjacent points.
         """
         # Call the Numba function
-        result = find_global_adjacent_points_numba(lati, loni, lat, lon)
+        result = find_global_adjacent_points_numba(lats, lons, lat, lon)
 
         # Create and populate the AdjacentPoints object
         adjacent_points = cls()

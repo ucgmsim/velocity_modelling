@@ -576,8 +576,8 @@ class QualitiesVector:
                 # Precompute interpolated values for all surfaces and vtype at this (lat, lon)
                 global_surf_read = nz_tomography_data.surfaces[0]["vp"]
                 adjacent_points = AdjacentPoints.find_global_adjacent_points(
-                    global_surf_read.lati,
-                    global_surf_read.loni,
+                    global_surf_read.lats,
+                    global_surf_read.lons,
                     mesh_vector.lat,
                     mesh_vector.lon,
                 )

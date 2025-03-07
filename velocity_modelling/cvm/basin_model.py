@@ -499,13 +499,13 @@ class PartialBasinSurfaceDepths:
 
         for surface_ind, surface in enumerate(inbasin.basin_data.surfaces):
             adjacent_points = AdjacentPoints.find_basin_adjacent_points(
-                surface.lati, surface.loni, mesh_vector.lat, mesh_vector.lon
+                surface.lats, surface.lons, mesh_vector.lat, mesh_vector.lon
             )
             # TODO: check if in_surface_bounds is True
-            x1 = surface.loni[adjacent_points.lon_ind[0]]
-            x2 = surface.loni[adjacent_points.lon_ind[1]]
-            y1 = surface.lati[adjacent_points.lat_ind[0]]
-            y2 = surface.lati[adjacent_points.lat_ind[1]]
+            x1 = surface.lons[adjacent_points.lon_ind[0]]
+            x2 = surface.lons[adjacent_points.lon_ind[1]]
+            y1 = surface.lats[adjacent_points.lat_ind[0]]
+            y2 = surface.lats[adjacent_points.lat_ind[1]]
             q11 = surface.raster[adjacent_points.lon_ind[0]][adjacent_points.lat_ind[0]]
             q12 = surface.raster[adjacent_points.lon_ind[0]][adjacent_points.lat_ind[1]]
 
@@ -669,9 +669,9 @@ class BasinSurfaceRead:
 
     Attributes
     ----------
-    lati : np.ndarray
+    lats : np.ndarray
         Array of latitudes.
-    loni : np.ndarray
+    lons : np.ndarray
         Array of longitudes.
     raster : np.ndarray
         2D array of raster data.
@@ -687,8 +687,8 @@ class BasinSurfaceRead:
         Initialize the BasinSurfaceRead object.
 
         """
-        self.lati = np.zeros(nlat)
-        self.loni = np.zeros(nlon)
+        self.lats = np.zeros(nlat)
+        self.lons = np.zeros(nlon)
         self.raster = np.zeros((nlon, nlat))
         self.max_lat = None
         self.min_lat = None
