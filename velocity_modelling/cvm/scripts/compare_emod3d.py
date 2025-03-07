@@ -38,21 +38,37 @@ import argparse
 from pathlib import Path
 
 import numpy as np
-import yaml
 
 from velocity_modelling.cvm.scripts.generate_velocity_model import (
     parse_nzvm_config,
 )
 from velocity_modelling.cvm.write.emod3d import (
-    read_output_files,
+    read_emomd3d_vm,
 )
 
 
 def compare_output_files(
-    dir1: Path, dir2: Path, nx: int, ny: int, nz: int, threshold=1e-5
+    dir1: Path, dir2: Path, nx: int, ny: int, nz: int, threshold: float = 1e-5
 ):
-    data1 = read_output_files(dir1)
-    data2 = read_output_files(dir2)
+    """
+    Compare the output files from two directories containing the output files from emod3d.
+
+    Parameters
+    ----------
+    dir1: Path
+    dir2: Path
+    nx: int
+    ny: int
+    nz: int
+    threshold: float, optional
+        The threshold for the difference between the two files. The default is 1e-5.
+
+    Returns
+    -------
+    dict
+    """
+    data1 = read_emomd3d_vm(dir1)
+    data2 = read_emomd3d_vm(dir2)
 
     comparison = {}
     for key in data1:
@@ -103,7 +119,6 @@ def compare_output_files(
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(
         description="Compare write files from two directories."
     )

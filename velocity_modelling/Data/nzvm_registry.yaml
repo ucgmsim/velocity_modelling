@@ -181,13 +181,13 @@ basin:
       - Boundaries/NewCanterburyBasinBoundary_WGS84_1m.txt
     surfaces:
       - name: DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: PlioceneTop
-        submodel: PlioceneSubMod_v1
+        submodel: pliocene_submod_v1
       - name: MioceneTop
-        submodel: MioceneSubMod_v1
+        submodel: miocene_submod_v1
       - name: PaleogeneTop
-        submodel: PaleogeneSubMod_v1
+        submodel: paleogene_submod_v1
       - name: BasementTopSurf
         submodel: null
 
@@ -196,16 +196,16 @@ basin:
       - Boundaries/NewCanterburyBasinBoundary_WGS84_1m.txt
     surfaces:
       - name: DEM
-        submodel: Cant1D_v2_Pliocene_Enforced
+        submodel: canterbury1d_v2_pliocene_enforced
 
       - name: PlioceneTop
-        submodel: PlioceneSubMod_v1
+        submodel: pliocene_submod_v1
 
       - name: MioceneTop
-        submodel: MioceneSubMod_v1
+        submodel: miocene_submod_v1
 
       - name: PaleogeneTop
-        submodel: PaleogeneSubMod_v1
+        submodel: paleogene_submod_v1
 
       - name: BasementTopSurf
         submodel: null
@@ -215,16 +215,16 @@ basin:
       - Boundaries/NewCanterburyBasinBoundary_WGS84_1m.txt
     surfaces:
       - name: DEM
-        submodel: Cant1D_v2_Pliocene_Enforced
+        submodel: canterbury1d_v2_pliocene_enforced
 
       - name: PlioceneTop
-        submodel: PlioceneSubMod_v1
+        submodel: pliocene_submod_v1
 
       - name: MioceneTop
-        submodel: MioceneSubMod_v1
+        submodel: miocene_submod_v1
 
       - name: PaleogeneTop
-        submodel: PaleogeneSubMod_v1
+        submodel: paleogene_submod_v1
 
       - name: BasementTopSurf
         submodel: null
@@ -234,16 +234,16 @@ basin:
       - Boundaries/NewCanterburyBasinBoundary_WGS84_1m.txt
     surfaces:
       - name: CantDEM
-        submodel: Cant1D_v2_Pliocene_Enforced
+        submodel: canterbury1d_v2_pliocene_enforced
 
       - name: PlioceneTop_46_v8p9p18
-        submodel: PlioceneSubMod_v1
+        submodel: pliocene_submod_v1
 
       - name: MioceneTop
-        submodel: MioceneSubMod_v1
+        submodel: miocene_submod_v1
 
       - name: PaleogeneTop
-        submodel: PaleogeneSubMod_v1
+        submodel: paleogene_submod_v1
 
       - name: BasementTopSurf
         submodel: null
@@ -256,7 +256,7 @@ basin:
       - SI_BASINS/NorthCanterbury_Polygon_WGS84.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
 
       - name: NorthCanterburyBasement
         submodel: null
@@ -266,7 +266,7 @@ basin:
       - Boundaries/BPVBoundary.txt
     surfaces:
       - name: BPVTop
-        submodel: BPVSubMod_v4
+        submodel: BPVSubModVer4
 
       - name: MioceneTop
         submodel: null
@@ -276,7 +276,7 @@ basin:
       - SI_BASINS/Kaikoura_Polygon_WGS84.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
 
       - name: KaikouraBasement
         submodel: null
@@ -287,7 +287,7 @@ basin:
       - SI_BASINS/Cheviot_Polygon_WGS84.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
 
       - name: CheviotBasement
         submodel: null
@@ -298,7 +298,7 @@ basin:
       - SI_BASINS/Hanmer_Polygon_WGS84.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: HanmerBasement
         submodel: null
 
@@ -308,7 +308,7 @@ basin:
       - SI_BASINS/Marlborough_Polygon_WGS84_v0p1.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: MarlboroughBasement
         submodel: null
     smoothing: Boundaries/Smoothing/Marlborough_v19p1.txt
@@ -318,7 +318,7 @@ basin:
       - SI_BASINS/Nelson_Polygon_WGS84.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: NelsonBasement
         submodel: null
     smoothing: Boundaries/Smoothing/Nelson_v19p1.txt
@@ -328,7 +328,7 @@ basin:
       - Basins/Wellington/v19p1/Wellington_Polygon_WGS84.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: WellingtonBasement_v19p1
         submodel: null
     smoothing: Boundaries/Smoothing/Wellington_v19p1.txt
@@ -338,7 +338,7 @@ basin:
       - Basins/Wellington/v19p6/Wellington_Polygon_Wainuiomata_WGS84.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: WellingtonBasement_v19p6
         submodel: null
     smoothing: Boundaries/Smoothing/Wellington_v19p6.txt
@@ -348,7 +348,7 @@ basin:
       - Basins/Wellington/v21p8/Wellington_Polygon_Wainuiomata_WGS84.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: WellingtonBasement_v21p8
         submodel: null
     smoothing: Boundaries/Smoothing/Wellington_v21p8.txt
@@ -358,7 +358,7 @@ basin:
       - Boundaries/WaikatoHaurakiBasinEdge_WGS84.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: WaikatoHaurakiBasement
         submodel: null
     smoothing: Boundaries/Smoothing/WaikatoHauraki_v19p7.txt
@@ -368,7 +368,7 @@ basin:
       - USER20_BASINS/WanakaOutlineWGS84.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: WanakaBasement
         submodel: null
 
@@ -378,7 +378,7 @@ basin:
       - USER20_BASINS/mackenzie_basin_outline_nzmg.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: MacKenzieBasement
         submodel: null
 
@@ -388,7 +388,7 @@ basin:
       - USER20_BASINS/WakatipuBasinOutlineWGS84.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: WakatipuBasement
         submodel: null
 
@@ -397,7 +397,7 @@ basin:
       - USER20_BASINS/alexandra_outline.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: RanAlexBasement
         submodel: null
 
@@ -407,7 +407,7 @@ basin:
       - USER20_BASINS/ranfurly_outline.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: RanAlexBasement
         submodel: null
 
@@ -421,7 +421,7 @@ basin:
       - USER20_BASINS/NE_otago/NE_otago_E_outline.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: RanAlexBasement
         submodel: null
 
@@ -431,7 +431,7 @@ basin:
       - USER20_BASINS/mos_outline_WGS84.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: MosgielBasement
         submodel: null
 
@@ -441,7 +441,7 @@ basin:
       - USER20_BASINS/bal_outline_WGS84.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: BalcluthaBasement
         submodel: null
     smoothing: Boundaries/Smoothing/Balclutha_v20p7.txt
@@ -452,7 +452,7 @@ basin:
       - USER20_BASINS/dun_outline_WGS84.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: DunedinBasement
         submodel: null
     smoothing: Boundaries/Smoothing/Dunedin_v20p7.txt
@@ -463,7 +463,7 @@ basin:
       - USER20_BASINS/Murchison_Basin_Outline_v1_WGS84.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: MurchisonBasement
         submodel: null
 
@@ -472,7 +472,7 @@ basin:
       - USER20_BASINS/waitaki_outline_WGS84.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: WaitakiBasement
         submodel: null
     smoothing: Boundaries/Smoothing/Waitaki_v20p8.txt
@@ -482,7 +482,7 @@ basin:
       - USER20_BASINS/hakataramea_outline_WGS84.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: HakatarameaBasement
         submodel: null
 
@@ -492,7 +492,7 @@ basin:
       - USER20_BASINS/Karamea_basin_outline_v1_WGS84.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: KarameaBasement
         submodel: null
     smoothing: Boundaries/Smoothing/Karamea_v20p11.txt
@@ -504,7 +504,7 @@ basin:
       - USER20_BASINS/CollingwoodBasinOutline_3_WGS84_v1.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: CollingwoodBasement
         submodel: null
     smoothing: Boundaries/Smoothing/CollingwoodBasin1_v20p11.txt
@@ -514,7 +514,7 @@ basin:
       - USER20_BASINS/SpringsJ_basin_outline_v1_WGS84.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: SpringsJunctionBasement
         submodel: null
 
@@ -526,7 +526,7 @@ basin:
       - Basins/Napier_Hawkes_Bay/v21p7/HawkesBay4_Outline_WGS84_delim.dat
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: HawkesBay
         submodel: null
     smoothing: Boundaries/Smoothing/HawkesBay1_v21p7.txt
@@ -541,7 +541,7 @@ basin:
       - Basins/Napier_Hawkes_Bay/v21p7/Napier6_Outline_WGS84_delim.dat
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: Napier
         submodel: null
     smoothing: Boundaries/Smoothing/Napier1_v21p7.txt
@@ -557,7 +557,7 @@ basin:
       - Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington6_Outline_WGS84.dat
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: GreaterWellingtonBasement
         submodel: null
     smoothing: Boundaries/Smoothing/GreaterWellington1_v21p7.txt
@@ -568,7 +568,7 @@ basin:
       - Basins/Greater_Wellington_and_Porirua/v21p7/Porirua2_Outline_WGS84.dat
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: PoriruaBasement
         submodel: null
     smoothing: Boundaries/Smoothing/Porirua1_v21p7.txt
@@ -578,7 +578,7 @@ basin:
       - Basins/Gisborne/v21p11/Gisborne_Outline_WGS84_delim.dat
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: Gisborne
         submodel: null
     smoothing: Boundaries/Smoothing/Gisborne_v21p11.txt
@@ -588,7 +588,7 @@ basin:
       - Basins/Southern_Hawkes_Bay/v21p12/SHB_Outline_WGS84_delim.dat
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: SouthernHawkesBay
         submodel: null
 
@@ -597,7 +597,7 @@ basin:
       - Basins/Wairarapa/v21p12/Wairarapa_Outline_WGS84_delim.dat
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: Wairarapa
         submodel: null
     smoothing: Boundaries/Smoothing/Wairarapa_v21p12.txt
@@ -609,7 +609,7 @@ basin:
       - Basins/East_Cape/v22p3/Motu_bay3_Outline_WGS84.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: Motu_Bay
         submodel: null
     smoothing: Boundaries/Smoothing/Motu_Bay1_v22p3.txt
@@ -619,7 +619,7 @@ basin:
       - USER20_BASINS/Whangaparoa_outline_WGS84.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: Whangaparoa
         submodel: null
 
@@ -628,7 +628,7 @@ basin:
       - STUDENTS_BASINS/TeAnau_outline_WGS84.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: TeAnau
         submodel: null
 
@@ -637,23 +637,23 @@ basin:
       - STUDENTS_BASINS/Westport_outline_WGS84.txt
     surfaces:
       - name: NZ_DEM
-        submodel: Cant1D_v2
+        submodel: canterbury1d_v2
       - name: Westport
         submodel: null
 
 vm1d:
-  - name: Cant1D_v1
+  - name: canterbury1d_v1
     path: 1D_Velocity_Model/Cant1D_v1.fd_modfile
-  - name: Cant1D_v2
+  - name: canterbury1d_v2
     path: 1D_Velocity_Model/Cant1D_v2.fd_modfile
-  - name: Cant1D_v2_Pliocene_Enforced
+  - name: canterbury1d_v2_pliocene_enforced
     path: 1D_Velocity_Model/Cant1D_v2_Pliocene_Enforced.fd_modfile
 
 
 velo_submodel:
   - name: NansubMod
     type: null
-  - name: Cant1D_v1
+  - name: canterbury1d_v1
     type: vm1d
   - name: 2010_Full_South_Island
     type: tomography
@@ -674,19 +674,19 @@ velo_submodel:
 submodel:
     - name: null
       type: null
-    - name: Cant1D_v1
+    - name: canterbury1d_v1
       type: vm1d
-    - name: Cant1D_v2
+    - name: canterbury1d_v2
       type: vm1d
-    - name: Cant1D_v2_Pliocene_Enforced
+    - name: canterbury1d_v2_pliocene_enforced
       type: vm1d
-    - name: BPVSubMod_v4
+    - name: BPVSubModVer4
       type: relation
-    - name: PlioceneSubMod_v1
+    - name: pliocene_submod_v1
       type: relation
-    - name: MioceneSubMod_v1
+    - name: miocene_submod_v1
       type: relation
-    - name: PaleogeneSubMod_v1
+    - name: paleogene_submod_v1
       type: relation
     - name: perturbation_v20p6
       type: perturbation
@@ -705,7 +705,7 @@ vm:
       - posInfSurf
       - negInfSurf
     submodels:
-      - Cant1D_v1
+      - canterbury1d_v1
 
   - version: 0.02
     GTL: false
@@ -713,7 +713,7 @@ vm:
       - posInfSurf
       - negInfSurf
     submodels:
-      - EPtomo2010subMod
+      - ep_tomography_submod_v2010
 
     tomography: 2010_Full_South_Island
 
@@ -725,7 +725,7 @@ vm:
       - negInfSurf
     submodels:
       - NaNsubMod
-      - EPtomo2010subMod
+      - ep_tomography_submod_v2010
     tomography: 2010_NZ_OFFSHORE
     basin_edge_smoothing: true
     basins:
@@ -748,7 +748,7 @@ vm:
       - negInfSurf
     submodels:
       - NaNsubMod
-      - EPtomo2010subMod
+      - ep_tomography_submod_v2010
     tomography: 2020_NZ_OFFSHORE
     basin_edge_smoothing: true
     basins:
@@ -795,7 +795,7 @@ vm:
       - negInfSurf
     velo_submodels:
       - NaNsubMod
-      - EPtomo2010subMod
+      - ep_tomography_submod_v2010
     tomography: 2020_NZ_OFFSHORE
     basin_edge_smoothing: true
     basins:

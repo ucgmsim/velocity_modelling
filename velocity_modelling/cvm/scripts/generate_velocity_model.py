@@ -46,7 +46,6 @@ import argparse
 import sys
 import time
 from pathlib import Path
-from typing import Dict
 
 from velocity_modelling.cvm.basin_model import (
     InBasin,
@@ -70,9 +69,6 @@ from velocity_modelling.cvm.registry import CVMRegistry
 from velocity_modelling.cvm.velocity3d import (
     PartialGlobalQualities,
     QualitiesVector,
-)
-from velocity_modelling.cvm.write.emod3d import (
-    write_global_qualities,
 )
 
 
@@ -120,7 +116,7 @@ def write_velo_mod_corners_text_file(
 def generate_velocity_model(
     cvm_registry: CVMRegistry,
     out_dir: Path,
-    vm_params: Dict,
+    vm_params: dict,
     logger: VMLogger,
     smoothing: bool = False,
     progress_interval: int = 5,
@@ -141,7 +137,7 @@ def generate_velocity_model(
         Registry containing paths to all required data files.
     out_dir : Path
         Output directory where model files will be written.
-    vm_params : Dict
+    vm_params : dict
         Velocity model parameters (dimensions, resolution, etc).
     logger : VMLogger
         Logger for reporting progress and errors.
@@ -184,9 +180,6 @@ def generate_velocity_model(
     else:
         logger.log(f"Unsupported output format: {output_format}", logger.ERROR)
         raise ValueError(f"Unsupported output format: {output_format}")
-
-    logger.log(f"Beginning velocity model generation in {out_dir}", logger.INFO)
-    logger.log(f"Model parameters: {vm_params['model_version']}", logger.INFO)
 
     # Create model grid
     logger.log("Generating model grid", logger.INFO)
@@ -288,11 +281,6 @@ def generate_velocity_model(
                         logger.log(
                             f"QualitiesVector object: {qualities_vector}", logger.DEBUG
                         )
-                        import traceback
-
-                        logger.log(
-                            f"Traceback:\n{traceback.format_exc()}", logger.ERROR
-                        )
                         raise
 
                     partial_global_qualities.inbasin[k] = temp_inbasin
@@ -300,9 +288,6 @@ def generate_velocity_model(
                     logger.log(
                         f"Error processing point at j={j}, k={k}: {e}", logger.ERROR
                     )
-                    import traceback
-
-                    logger.log(f"Traceback:\n{traceback.format_exc()}", logger.ERROR)
                     raise
 
         # Write this latitude slice to disk
@@ -319,7 +304,7 @@ def generate_velocity_model(
     logger.log(f"Model successfully generated and written to {out_dir}", logger.INFO)
 
 
-def parse_nzvm_config(config_path: Path) -> Dict:
+def parse_nzvm_config(config_path: Path) -> dict:
     """
     Parse the NZVM config file and convert it to the vm_params dictionary format.
 
@@ -330,7 +315,7 @@ def parse_nzvm_config(config_path: Path) -> Dict:
 
     Returns
     -------
-    Dict
+    dict
         Dictionary containing the model parameters
     """
     vm_params = {}
@@ -509,4 +494,4 @@ if __name__ == "__main__":
         )
     except Exception as e:
         logger.log(f"Model generation failed: {e}", logger.ERROR)
-        sys.exit(1)
+        raise

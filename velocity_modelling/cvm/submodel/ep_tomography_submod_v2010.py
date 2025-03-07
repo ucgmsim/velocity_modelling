@@ -19,7 +19,7 @@ from velocity_modelling.cvm.interpolate import (
     linear_interpolation_vectorized,
 )
 from velocity_modelling.cvm.logging import VMLogger
-from velocity_modelling.cvm.submodel import Cant1D_v1
+from velocity_modelling.cvm.submodel import canterbury1d_v1
 from velocity_modelling.cvm.velocity3d import (
     QualitiesVector,
 )
@@ -79,7 +79,7 @@ def offshore_basinmodel_vectorized(
     z_indices_offshore = z_indices[offshore_apply_mask]
     depths_offshore = depths[offshore_apply_mask]
     if z_indices_offshore.size > 0:
-        Cant1D_v1.main_vectorized(
+        canterbury1d_v1.main_vectorized(
             z_indices_offshore,
             depths_offshore,
             qualities_vector,
@@ -102,30 +102,33 @@ def main_vectorized(
 ):
     """
     Calculate rho, vp, and vs values for multiple lat-long-depth points using the
-     Eberhart-Phillips et al. (2010) tomography model.
+    Eberhart-Phillips et al. (2010) tomography model.
 
-     Parameters
-     ----------
-     z_indices : np.ndarray
-         Array of indices of the depth points.
-     depths : np.ndarray
-         Array of depth values.
-     qualities_vector : QualitiesVector
-         Struct containing vp, vs, and rho values.
-     mesh_vector : MeshVector
-         Struct containing mesh information such as latitude, longitude, and vs30.
-     nz_tomography_data : TomographyData
-         Struct containing New Zealand tomography data.
-     partial_global_surface_depths : PartialGlobalSurfaceDepths
-         Struct containing global surfaces depths.
-     gtl : bool
-         Flag indicating whether GTL (Geotechnical Layer) is applied.
-     in_any_basin_lat_lon : bool
-         Flag indicating if the point is in any basin latitude-longitude.
-     on_boundary : bool
-         Flag indicating if the point is on the boundary.
-     interpolated_global_surface_values : dict
-         Dictionary containing the interpolated values for vp, vs, and rho.
+    Parameters
+    ----------
+    z_indices : np.ndarray
+        Array of indices of the depth points.
+    depths : np.ndarray
+        Array of depth values.
+    qualities_vector : QualitiesVector
+        Struct containing vp, vs, and rho values.
+    mesh_vector : MeshVector
+        Struct containing mesh information such as latitude, longitude, and vs30.
+    nz_tomography_data : TomographyData
+        Struct containing New Zealand tomography data.
+    partial_global_surface_depths : PartialGlobalSurfaceDepths
+        Struct containing global surfaces depths.
+    gtl : bool
+        Flag indicating whether GTL (Geotechnical Layer) is applied.
+    in_any_basin_lat_lon : bool
+        Flag indicating if the point is in any basin latitude-longitude.
+    on_boundary : bool
+        Flag indicating if the point is on the boundary.
+    interpolated_global_surface_values : dict
+        Dictionary containing the interpolated values for vp, vs, and rho.
+    logger : VMLogger, optional
+        Logger instance for logging messages.
+
     """
     if logger is not None:
         logger.log(

@@ -91,11 +91,11 @@ def bi_linear_interpolation(
     if dx == 0 or dy == 0:
         raise ValueError("Error: Zero division in bi-linear interpolation.")
 
-    A = q11 * (x2 - x) * (y2 - y)
-    B = q21 * (x - x1) * (y2 - y)
-    C = q12 * (x2 - x) * (y - y1)
-    D = q22 * (x - x1) * (y - y1)
+    a = q11 * (x2 - x) * (y2 - y)
+    b = q21 * (x - x1) * (y2 - y)
+    c = q12 * (x2 - x) * (y - y1)
+    d = q22 * (x - x1) * (y - y1)
 
-    E = 1 / (dx * dy)
+    e = 1 / (dx * dy)
 
-    return (A + B + C + D) * E
+    return (a + b + c + d) * e

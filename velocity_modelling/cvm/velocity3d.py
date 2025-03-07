@@ -11,8 +11,6 @@ velocities (P-wave, S-wave) and density at specified coordinates, handling
 complex scenarios like basin boundaries and smooth transitions between models.
 """
 
-from typing import List
-
 import numpy as np
 
 from velocity_modelling.cvm.basin_model import (
@@ -46,6 +44,13 @@ class PartialGlobalQualities:
     """
     Container for storing velocity and density data for a partial global mesh.
 
+    Parameters
+    ----------
+    n_lon : int
+        Number of longitude points.
+    n_depth : int
+        Number of depth points.
+
     Attributes
     ----------
     vp : np.ndarray
@@ -61,13 +66,6 @@ class PartialGlobalQualities:
     def __init__(self, n_lon: int, n_depth: int):
         """
         Initialize arrays for velocity and density data.
-
-        Parameters
-        ----------
-        n_lon : int
-            Number of longitude points.
-        n_depth : int
-            Number of depth points.
         """
         self.vp = np.zeros((n_lon, n_depth), dtype=np.float64)
         self.vs = np.zeros((n_lon, n_depth), dtype=np.float64)
@@ -79,6 +77,13 @@ class QualitiesVector:
     """
     Container for velocity and density data at a single lat-lon point with multiple depths.
 
+    Parameters
+    ----------
+    n_depth : int
+        Number of depth points.
+    logger : VMLogger, optional
+        Logger instance for logging messages.
+
     Attributes
     ----------
     vp : np.ndarray
@@ -89,16 +94,15 @@ class QualitiesVector:
         Densities (g/cm³).
     inbasin : np.ndarray
         Basin membership indicators.
+    logger : VMLogger
+        Logger instance for logging messages.
     """
 
     def __init__(self, n_depth: int, logger: VMLogger = None):
         """
         Initialize arrays for velocity and density data.
 
-        Parameters
-        ----------
-        n_depth : int
-            Number of depth points.
+
         """
         if logger is None:
             self.logger = VMLogger(name="velocity_model.qualities_vector")
@@ -134,8 +138,8 @@ class QualitiesVector:
         global_surfaces: GlobalSurfaces,
         mesh_vector: MeshVector,
         partial_global_surface_depths: PartialGlobalSurfaceDepths,
-        partial_basin_surface_depths_list: List[PartialBasinSurfaceDepths],
-        in_basin_list: List[InBasin],
+        partial_basin_surface_depths_list: list[PartialBasinSurfaceDepths],
+        in_basin_list: list[InBasin],
         topo_type: str,
         on_boundary: bool,
     ):
@@ -156,9 +160,9 @@ class QualitiesVector:
             Lat-lon point with multiple depths.
         partial_global_surface_depths : PartialGlobalSurfaceDepths
             Global surface depth data at this location.
-        partial_basin_surface_depths_list : List[PartialBasinSurfaceDepths]
+        partial_basin_surface_depths_list : list[PartialBasinSurfaceDepths]
             Basin surface depth data at this location.
-        in_basin_list : List[InBasin]
+        in_basin_list : list[InBasin]
             Basin membership indicators.
         topo_type : str
             Topography handling method ("TRUE", "BULLDOZED", "SQUASHED", "SQUASHED_TAPERED").
@@ -324,11 +328,11 @@ class QualitiesVector:
         velo_mod_1d_data: VelocityModel1D,
         nz_tomography_data: TomographyData,
         global_surfaces: GlobalSurfaces,
-        basin_data_list: List[BasinData],
+        basin_data_list: list[BasinData],
         mesh_vector: MeshVector,
         partial_global_surface_depths: PartialGlobalSurfaceDepths,
-        partial_basin_surface_depths_list: List[PartialBasinSurfaceDepths],
-        in_basin_list: List[InBasin],
+        partial_basin_surface_depths_list: list[PartialBasinSurfaceDepths],
+        in_basin_list: list[InBasin],
         in_basin_mesh: InBasinGlobalMesh,
         topo_type: str,
     ):
@@ -347,15 +351,15 @@ class QualitiesVector:
             Tomography data for velocity adjustments.
         global_surfaces : GlobalSurfaces
             Global surface definitions.
-        basin_data_list : List[BasinData]
-            List of basin data objects.
+        basin_data_list : list[BasinData]
+            list of basin data objects.
         mesh_vector : MeshVector
             Lat-lon point with multiple depths.
         partial_global_surface_depths : PartialGlobalSurfaceDepths
             Global surface depth data at this location.
-        partial_basin_surface_depths_list : List[PartialBasinSurfaceDepths]
+        partial_basin_surface_depths_list : list[PartialBasinSurfaceDepths]
             Basin surface depth data at this location.
-        in_basin_list : List[InBasin]
+        in_basin_list : list[InBasin]
             Basin membership indicators.
         in_basin_mesh : InBasinGlobalMesh
             Pre-processed basin membership for smoothing optimization.
@@ -366,7 +370,7 @@ class QualitiesVector:
 
         closest_ind = None
 
-        if smooth_bound.n == 0:
+        if smooth_bound.n_points == 0:
             distance = (
                 1e6  # if there are no points in the smoothing boundary, then skip
             )
@@ -376,10 +380,7 @@ class QualitiesVector:
             )
 
         # calculate vs30 (used as a proxy to determine if point is on- or off-shore, only if using tomography)
-        if (
-            nz_tomography_data.tomography_loaded
-            and cvm_registry.vm_global_params["GTL"]
-        ):
+        if cvm_registry.vm_global_params["GTL"]:
             nz_tomography_data.calculate_vs30_from_tomo_vs30_surface(
                 mesh_vector
             )  # mesh_vector.vs30 updated
@@ -418,8 +419,8 @@ class QualitiesVector:
             assert (
                 closest_ind is not None
             )  # closest_ind should not be None if distance < MAX_DIST_SMOOTH
-            mesh_vector.lat = smooth_bound.y[closest_ind]
-            mesh_vector.lon = smooth_bound.x[closest_ind]
+            mesh_vector.lat = smooth_bound.lats[closest_ind]
+            mesh_vector.lon = smooth_bound.lons[closest_ind]
 
             # determine if the point is in any basin
             # Use preprocessed smooth_basin_membership from in_basin_mesh
@@ -563,16 +564,14 @@ class QualitiesVector:
             depth_subset = depths[mask]
             index_subset = z_indices[mask]
 
-            if name == "NaNsubMod":
+            if name == "nan_submod":
                 from velocity_modelling.cvm.submodel import (
-                    NaNsubMod,
+                    nan_submod,
                 )
 
-                NaNsubMod.main_vectorized(index_subset, self)
-            elif name == "EPtomo2010subMod":
-                from velocity_modelling.cvm.submodel import (
-                    EPtomo2010,
-                )
+                nan_submod.main_vectorized(index_subset, self)
+            elif name == "ep_tomography_submod_v2010":
+                from velocity_modelling.cvm.submodel import ep_tomography_submod_v2010
 
                 # Precompute interpolated values for all surfaces and vtype at this (lat, lon)
                 global_surf_read = nz_tomography_data.surfaces[0]["vp"]
@@ -596,7 +595,7 @@ class QualitiesVector:
                         )
                         interpolated_global_surface_values[vtype.name][idx] = val
 
-                EPtomo2010.main_vectorized(
+                ep_tomography_submod_v2010.main_vectorized(
                     index_subset,
                     depth_subset,
                     self,
@@ -608,12 +607,10 @@ class QualitiesVector:
                     on_boundary,
                     interpolated_global_surface_values,
                 )
-            elif name == "Cant1D_v1":
-                from velocity_modelling.cvm.submodel import (
-                    Cant1D_v1,
-                )
+            elif name == "canterbury1d_v1":
+                from velocity_modelling.cvm.submodel import canterbury1d_v1
 
-                Cant1D_v1.main_vectorized(
+                canterbury1d_v1.main_vectorized(
                     index_subset, depth_subset, self, velo_mod_1d_data
                 )
             else:
@@ -664,63 +661,49 @@ class QualitiesVector:
         basin_data = partial_basin_surface_depths.basin
         submodel_name, submodel_data = basin_data.submodels[ind_above]
 
-        if submodel_name == "NaNsubMod":
-            from velocity_modelling.cvm.submodel import (
-                NaNsubMod,
-            )
+        if submodel_name == "nan_submod":
+            from velocity_modelling.cvm.submodel import nan_submod
 
-            NaNsubMod.main_vectorized(z_indices, self)
+            nan_submod.main_vectorized(z_indices, self)
 
-        elif submodel_name in ["Cant1D_v1", "Cant1D_v2", "Cant1D_v2_Pliocene_Enforced"]:
-            from velocity_modelling.cvm.submodel import (
-                Cant1D_v1 as Cant1D_v1,
-            )
+        elif submodel_name in [
+            "canterbury1d_v1",
+            "canterbury1d_v2",
+            "canterbury1d_v2_pliocene_enforced",
+        ]:
+            from velocity_modelling.cvm.submodel import canterbury1d_v1
 
-            Cant1D_v1.main_vectorized(z_indices, depths, self, submodel_data)
-        elif submodel_name == "PaleogeneSubMod_v1":
-            from velocity_modelling.cvm.submodel import (
-                PaleogeneSubMod_v1 as PaleogeneSubMod_v1,
-            )
+            canterbury1d_v1.main_vectorized(z_indices, depths, self, submodel_data)
+        elif submodel_name == "paleogene_submod_v1":
+            from velocity_modelling.cvm.submodel import paleogene_submod_v1
 
-            PaleogeneSubMod_v1.main_vectorized(z_indices, self)
-        elif submodel_name == "PlioceneSubMod_v1":
-            from velocity_modelling.cvm.submodel import (
-                PlioceneSubMod_v1 as PlioceneSubMod_v1,
-            )
+            paleogene_submod_v1.main_vectorized(z_indices, self)
+        elif submodel_name == "pliocene_submod_v1":
+            from velocity_modelling.cvm.submodel import pliocene_submod_v1
 
-            PlioceneSubMod_v1.main_vectorized(z_indices, self)
-        elif submodel_name == "MioceneSubMod_v1":
-            from velocity_modelling.cvm.submodel import (
-                MioceneSubMod_v1 as MioceneSubMod_v1,
-            )
+            pliocene_submod_v1.main_vectorized(z_indices, self)
+        elif submodel_name == "miocene_submod_v1":
+            from velocity_modelling.cvm.submodel import miocene_submod_v1
 
-            MioceneSubMod_v1.main_vectorized(z_indices, self)
-        elif submodel_name == "BPVSubMod_v1":
-            from velocity_modelling.cvm.submodel import (
-                BPVSubMod_v1 as BPVSubMod_v1,
-            )
+            miocene_submod_v1.main_vectorized(z_indices, self)
+        elif submodel_name == "bpv_submod_v1":
+            from velocity_modelling.cvm.submodel import bpv_submod_v1
 
-            BPVSubMod_v1.main_vectorized(z_indices, self)
-        elif submodel_name == "BPVSubMod_v2":
-            from velocity_modelling.cvm.submodel import (
-                BPVSubMod_v2 as BPVSubMod_v2,
-            )
+            bpv_submod_v1.main_vectorized(z_indices, self)
+        elif submodel_name == "bpv_submod_v2":
+            from velocity_modelling.cvm.submodel import bpv_submod_v2
 
-            BPVSubMod_v2.main_vectorized(z_indices, self)
-        elif submodel_name == "BPVSubMod_v3":
-            from velocity_modelling.cvm.submodel import (
-                BPVSubMod_v3 as BPVSubMod_v3,
-            )
+            bpv_submod_v2.main_vectorized(z_indices, self)
+        elif submodel_name == "bpv_submod_v3":
+            from velocity_modelling.cvm.submodel import bpv_submod_v3
 
-            BPVSubMod_v3.main_vectorized(
+            bpv_submod_v3.main_vectorized(
                 z_indices, depths, self, partial_basin_surface_depths
             )
-        elif submodel_name == "BPVSubMod_v4":
-            from velocity_modelling.cvm.submodel import (
-                BPVSubMod_v4 as BPVSubMod_v4,
-            )
+        elif submodel_name == "bpv_submod_v4":
+            from velocity_modelling.cvm.submodel import bpv_submod_v4
 
-            BPVSubMod_v4.main_vectorized(
+            bpv_submod_v4.main_vectorized(
                 z_indices,
                 depths,
                 self,
@@ -794,7 +777,7 @@ class QualitiesVector:
                 z_indices_subset,
             )
 
-    def nan_sub_mod_vectorized(self, z_indices):
+    def nan_sub_mod_vectorized(self, z_indices: np.ndarray):
         """
         Assign NaN values to velocities and density at specified depth indices.
 

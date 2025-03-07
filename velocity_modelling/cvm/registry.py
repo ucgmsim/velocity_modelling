@@ -14,7 +14,7 @@ specific data components, handling file loading, caching, and path resolution.
 
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Optional, Union
 
 import numpy as np
 import yaml
@@ -111,7 +111,7 @@ class CVMRegistry:
             level = self.logger.INFO
         self.logger.log(message, level)
 
-    def get_info(self, datatype: str, name: str) -> Optional[Dict]:
+    def get_info(self, datatype: str, name: str) -> Optional[dict]:
         """
         Get information from the registry.
 
@@ -124,7 +124,7 @@ class CVMRegistry:
 
         Returns
         -------
-        Dict or None
+        dict or None
             The information dictionary for the specified data entry, or None if not found.
         """
         try:
@@ -134,9 +134,9 @@ class CVMRegistry:
             return None
 
         for info in data_section:
-            assert (
-                "name" in info
-            ), f"Error: This entry in {datatype} has no name defined."
+            assert "name" in info, (
+                f"Error: This entry in {datatype} has no name defined."
+            )
             if info["name"] == name:
                 return info
         self.log(
@@ -217,18 +217,18 @@ class CVMRegistry:
 
         return velo_mod_1d_data
 
-    def load_basin_data(self, basin_names: List[str]):
+    def load_basin_data(self, basin_names: list[str]):
         """
         Load all basin data into the basin_data structure.
 
         Parameters
         ----------
-        basin_names : List[str]
+        basin_names : list[str]
             List of basin names to load.
 
         Returns
         -------
-        List[BasinData]
+        list[BasinData]
             List of loaded basin data.
         """
         from velocity_modelling.cvm.basin_model import (
@@ -491,9 +491,9 @@ class CVMRegistry:
                     self.log(
                         f"Error: Tomography file {tomofile} not found", VMLogger.ERROR
                     )
-                    assert (
-                        tomofile.exists()
-                    ), f"Tomography file {tomofile} does not exist"
+                    assert tomofile.exists(), (
+                        f"Tomography file {tomofile} does not exist"
+                    )
 
                 surfaces[i][vtype.name] = self.load_global_surface(tomofile)
                 self.log(
@@ -533,7 +533,7 @@ class CVMRegistry:
 
         Returns
         -------
-        Tuple[VelocityModel1D, TomographyData, GlobalSurfaces, List[BasinData]]
+        Tuple[VelocityModel1D, TomographyData, GlobalSurfaces, list[BasinData]]
             Tuple containing:
             - 1D velocity model data
             - Tomography data with surfaces
@@ -640,13 +640,13 @@ class CVMRegistry:
             self.log(f"Error reading surface file {surface_file}: {e}", VMLogger.ERROR)
             sys.exit(1)
 
-    def load_global_surface_data(self, global_surface_names: List[str]):
+    def load_global_surface_data(self, global_surface_names: list[str]):
         """
         Load multiple global surfaces from the registry.
 
         Parameters
         ----------
-        global_surface_names : List[str]
+        global_surface_names : list[str]
             List of global surface names defined in the registry.
 
         Returns
@@ -674,7 +674,7 @@ class CVMRegistry:
         self.log(f"Loaded {len(global_surface_names)} global surfaces", VMLogger.INFO)
         return global_surfaces
 
-    def load_smooth_boundaries(self, basin_names: List[str]):
+    def load_smooth_boundaries(self, basin_names: list[str]):
         """
         Load smoothing boundary data for model transitions.
 
@@ -683,7 +683,7 @@ class CVMRegistry:
 
         Parameters
         ----------
-        basin_names : List[str]
+        basin_names : list[str]
             Names of basins to load smoothing boundaries for.
 
         Returns
@@ -695,8 +695,8 @@ class CVMRegistry:
             SmoothingBoundary,
         )
 
-        smooth_bound_xpts = []
-        smooth_bound_ypts = []
+        smooth_bound_lons = []
+        smooth_bound_lats = []
         count = 0
 
         self.log(
@@ -719,13 +719,13 @@ class CVMRegistry:
                     )
                     try:
                         data = np.fromfile(boundary_vec_filename, dtype=float, sep=" ")
-                        x_pts = data[0::2]
-                        y_pts = data[1::2]
-                        smooth_bound_xpts.extend(x_pts)
-                        smooth_bound_ypts.extend(y_pts)
-                        count += len(x_pts)
+                        smooth_lons = data[0::2]
+                        smooth_lats = data[1::2]
+                        smooth_bound_lons.extend(smooth_lons)
+                        smooth_bound_lats.extend(smooth_lats)
+                        count += len(smooth_lons)
                         self.log(
-                            f"Added {len(x_pts)} smoothing points for basin {basin_name}",
+                            f"Added {len(smooth_lons)} smoothing points for basin {basin_name}",
                             VMLogger.DEBUG,
                         )
                     except Exception as e:
@@ -741,4 +741,4 @@ class CVMRegistry:
                 self.log(f"No smoothing defined for basin {basin_name}", VMLogger.DEBUG)
 
         self.log(f"Total smoothing boundary points: {count}", VMLogger.INFO)
-        return SmoothingBoundary(smooth_bound_xpts, smooth_bound_ypts)
+        return SmoothingBoundary(smooth_bound_lons, smooth_bound_lats)

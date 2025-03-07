@@ -106,7 +106,7 @@ def write_global_qualities(
         raise
 
 
-def read_output_files(output_dir: Path):
+def read_emomd3d_vm(output_dir: Path):
     """
     Read the write files into NumPy arrays.
 

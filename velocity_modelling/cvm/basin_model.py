@@ -6,12 +6,10 @@ determination in the velocity model. It handles basin boundaries, surfaces, and 
 with proper logging throughout the processing workflow.
 """
 
-from typing import List, Tuple
-
 import numpy as np
 from numba import njit
-from qcore import point_in_polygon
 
+from qcore import point_in_polygon
 from velocity_modelling.cvm.geometry import (
     AdjacentPoints,
     GlobalMesh,
@@ -30,7 +28,7 @@ from velocity_modelling.cvm.registry import CVMRegistry
 
 class BasinData:
     """
-    Holds basin boundaries, surfaces, submodels, and logger reference.
+    Container for basin data, including boundaries, surfaces, and submodels.
 
     Parameters
     ----------
@@ -40,11 +38,29 @@ class BasinData:
         The name of the basin.
     logger : VMLogger, optional
         The logger instance.
+
+    Attributes
+    ----------
+    name : str
+        Name of the basin.
+    boundaries : list of np.ndarray
+        List of basin boundaries.
+    surfaces : list of np.ndarray
+        List of basin surfaces.
+    submodels : list of np.ndarray
+        List of basin submodels.
+    perturbation_data : None
+        Placeholder for perturbation data.
+
     """
 
     def __init__(
         self, cvm_registry: CVMRegistry, basin_name: str, logger: VMLogger = None
     ):
+        """
+        Initialize the BasinData object.
+
+        """
 
         if logger is None:
             self.logger = VMLogger(name="velocity_model.basin_data")
@@ -91,7 +107,7 @@ class BasinData:
 
 @njit
 def determine_basin_contains_lat_lon(
-    boundaries: List[np.ndarray], lat: float, lon: float
+    boundaries: list[np.ndarray], lat: float, lon: float
 ):
     """
     Check if a given (lat, lon) lies within or on a vertex of any basin boundary.
@@ -99,7 +115,7 @@ def determine_basin_contains_lat_lon(
     Parameters
     ----------
     boundaries : list of np.ndarray
-        List of arrays representing basin boundaries.
+        list of arrays representing basin boundaries.
     lat : float
         Latitude to check.
     lon : float
@@ -133,7 +149,7 @@ def determine_basin_contains_lat_lon(
 
 class InBasinGlobalMesh:
     """
-    Tracks basin membership for each lat\\-lon point of the global mesh, optionally
+    Tracks basin membership for each (lat,lon) point of the global mesh, optionally
     including a smoothing boundary.
     Instances should be created using the preprocess_basin_membership() class method.
 
@@ -141,16 +157,42 @@ class InBasinGlobalMesh:
     ----------
     global_mesh : GlobalMesh
         The global mesh containing lat/lon values.
-    basin_data_list : list of BasinData
+    basin_data_list : list[BasinData]
         List of BasinData objects for basin membership.
-    logger : VMLogger, optional
-        Optional logger instance.
+    logger : VMLogger, Optional
+        Logger instance.
+
+    Attributes
+    ----------
+    nx : int
+        Number of x-coordinates in the global mesh.
+    ny : int
+        Number of y-coordinates in the global mesh.
+    nz : int
+        Number of z-coordinates in the global mesh.
+    logger : VMLogger
+        Logger instance.
+    basin_data_list : list[BasinData]
+        List of BasinData objects for basin membership.
+    smooth_basin_membership : list[list[int]]
+        List of basin indices for each point in the smoothing boundary.
+    basin_membership : list[list[list[int]]]
+        List of basin indices for each point in the global mesh.
+    min_basin_boundary_lons : np.ndarray
+        Minimum longitude for each basin.
+    max_basin_boundary_lons : np.ndarray
+        Maximum longitude for each basin.
+    min_basin_boundary_lats : np.ndarray
+        Minimum latitude for each basin.
+    max_basin_boundary_lats : np.ndarray
+        Maximum latitude for each basin
+
     """
 
     def __init__(
         self,
         global_mesh: GlobalMesh,
-        basin_data_list: List[BasinData],
+        basin_data_list: list[BasinData],
         logger: VMLogger = None,
     ):
         """
@@ -158,7 +200,7 @@ class InBasinGlobalMesh:
 
         """
         if logger is None:
-            self.logger = VMLogger(name=f"velocity_model.in_basin_global_mesh")
+            self.logger = VMLogger(name="velocity_model.in_basin_global_mesh")
         else:
             self.logger = logger
 
@@ -179,10 +221,10 @@ class InBasinGlobalMesh:
     def preprocess_basin_membership(
         cls,
         global_mesh: GlobalMesh,
-        basin_data_list: List[BasinData],
+        basin_data_list: list[BasinData],
         logger: VMLogger = None,
         smooth_bound: SmoothingBoundary = None,
-    ) -> Tuple["InBasinGlobalMesh", List[PartialGlobalMesh]]:
+    ) -> tuple["InBasinGlobalMesh", list[PartialGlobalMesh]]:
         """
         Preprocess basin membership for a given global mesh to speed up the velocity model generation
         This method is the recommended way to create an InBasinGlobalMesh object.
@@ -204,7 +246,7 @@ class InBasinGlobalMesh:
             Mesh membership object and list of partial slices.
         """
         if logger is None:
-            logger = VMLogger(name=f"velocity_model.in_basin_global_mesh")
+            logger = VMLogger(name="velocity_model.in_basin_global_mesh")
 
         in_basin_mesh = cls(global_mesh, basin_data_list, logger)
 
@@ -235,12 +277,12 @@ class InBasinGlobalMesh:
 
         if smooth_bound is not None:
             logger.log(
-                f"Initializing smooth boundary with {smooth_bound.n} points",
+                f"Initializing smooth boundary with {smooth_bound.n_points} points",
                 logger.DEBUG,
             )
             in_basin_mesh.preprocess_smooth_bound(smooth_bound)
             logger.log(
-                f"Pre-processed smooth boundary membership for {smooth_bound.n} points.",
+                f"Pre-processed smooth boundary membership for {smooth_bound.n_points} points.",
                 logger.DEBUG,
             )
             logger.log(
@@ -270,12 +312,22 @@ class InBasinGlobalMesh:
         )
         return (in_basin_mesh, partial_global_mesh_list)
 
-    def log(self, message, level=None):
+    def log(self, message: str, level: int = None):
+        """
+        Log a message with the specified level.
+
+        Parameters
+        ----------
+        message : str
+            The message to log.
+        level : int, optional
+            The logging level.
+        """
         if level is None:
             level = self.logger.INFO
         self.logger.log(message, level)
 
-    def get_basin_membership(self, x: int, y: int):
+    def get_basin_membership(self, x: int, y: int) -> list[int]:
         """
         Get the basin membership for a given (x, y) point.
 
@@ -288,14 +340,14 @@ class InBasinGlobalMesh:
 
         Returns
         -------
-        list of int
+        list[int]
             Indices of basins containing the point.
         """
         if self.smooth_basin_membership is None:
             raise ValueError("Smooth basin membership not pre-processed.")
         return self.basin_membership[y][x]
 
-    def find_all_containing_basins(self, lat, lon):
+    def find_all_containing_basins(self, lat: float, lon: float) -> list[int]:
         """
         Determine all basins that contain a given (lat, lon).
         Use this if basin_membership is not available.
@@ -309,7 +361,7 @@ class InBasinGlobalMesh:
 
         Returns
         -------
-        list of int
+        list[int]
             Indices of basins containing the point.
         """
         # Step 1: Vectorized Bounding Box Check
@@ -341,19 +393,19 @@ class InBasinGlobalMesh:
         Parameters
         ----------
         smooth_bound : SmoothingBoundary
-            Boundary with 'x' and 'y' coordinate arrays and an integer 'n'.
+            Boundary with 'lons' and 'lats' coordinate arrays and an integer 'n_points'.
         """
         self.log(
-            f"Preprocessing smooth_bound with {smooth_bound.n} points",
+            f"Preprocessing smooth_bound with {smooth_bound.n_points} points",
             self.logger.DEBUG,
         )  # Temporary debug
 
-        n_points = smooth_bound.n
+        n_points = smooth_bound.n_points
         self.smooth_basin_membership = [[] for _ in range(n_points)]
 
         for i in range(n_points):
-            lat = smooth_bound.y[i]
-            lon = smooth_bound.x[i]
+            lat = smooth_bound.lats[i]
+            lon = smooth_bound.lons[i]
             self.smooth_basin_membership[i] = self.find_all_containing_basins(lat, lon)
 
         self.log(
@@ -372,9 +424,24 @@ class InBasin:
         The BasinData instance.
     n_depths : int
         Number of depth points in the mesh.
+
+    Attributes
+    ----------
+    basin_data : BasinData
+        The BasinData instance.
+    in_basin_lat_lon : bool
+        True if the lat-lon point lies within the basin's boundaries.
+    in_basin_depth : np.ndarray
+        True if the depth point lies within the basin's surfaces.
     """
 
     def __init__(self, basin_data: BasinData, n_depths: int):
+        """
+        Initialize the InBasin object.
+
+
+        """
+
         self.basin_data = basin_data
         self.in_basin_lat_lon = (
             False  # True if the lat-lon point lies within the basin's boundaries
@@ -392,9 +459,21 @@ class PartialBasinSurfaceDepths:
     ----------
     basin_data : BasinData
         BasinData object referencing boundaries, surfaces, submodels.
+
+    Attributes
+    ----------
+    depths : np.ndarray
+        Array of depths for each basin surface.
+    basin : BasinData
+        BasinData object referencing boundaries, surfaces, submodels.
+
     """
 
     def __init__(self, basin_data: BasinData):
+        """
+        Initialize the PartialBasinSurfaceDepths object.
+
+        """
         # self.depths[i] is the depth of the i-th surfaces
         self.depths = np.full(len(basin_data.surfaces), np.nan, dtype=np.float64)
         self.basin = basin_data
@@ -583,14 +662,31 @@ class BasinSurfaceRead:
 
     Parameters
     ----------
-    nlat : int
-        Number of latitude points.
-    nlon : int
-        Number of longitude points.
+    nlat: int
+        Number of latitudes
+    nlon: int
+        Number of longitudes
+
+    Attributes
+    ----------
+    lati : np.ndarray
+        Array of latitudes.
+    loni : np.ndarray
+        Array of longitudes.
+    raster : np.ndarray
+        2D array of raster data.
+    max_lat : float
+        Maximum latitude.
+    min_lat : float
+        Minimum latitude.
+
     """
 
     def __init__(self, nlat: int, nlon: int):
+        """
+        Initialize the BasinSurfaceRead object.
 
+        """
         self.lati = np.zeros(nlat)
         self.loni = np.zeros(nlon)
         self.raster = np.zeros((nlon, nlat))

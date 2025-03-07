@@ -17,7 +17,7 @@ from velocity_modelling.cvm.global_model import (
 )
 from velocity_modelling.cvm.gtl import v30gtl_vectorized
 from velocity_modelling.cvm.logging import VMLogger
-from velocity_modelling.cvm.submodel.BPVSubMod_v1 import (
+from velocity_modelling.cvm.submodel.bpv_submod_v1 import (
     rho_full,
     vp_full,
     vs_full,

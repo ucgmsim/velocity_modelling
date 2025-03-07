@@ -6,7 +6,7 @@ constructs needed for seismic velocity modelling. It handles coordinate transfor
 grid generation, mesh slicing, and boundary calculations for various model components.
 """
 
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import numpy as np
 from numba import njit
@@ -25,18 +25,45 @@ from velocity_modelling.cvm.logging import VMLogger
 
 
 class GlobalMesh:
+    """
+    A global mesh of latitude, longitude, and depth points.
+
+    Parameters
+    ----------
+    nx : int
+        The number of points in the X direction.
+    ny : int
+        The number of points in the Y direction.
+    nz : int
+        The number of points in the Z direction.
+
+    Attributes
+    ----------
+    lon : np.ndarray
+        Array of longitudes.
+    lat : np.ndarray
+        Array of latitudes.
+    max_lat : float
+        Maximum latitude.
+    min_lat : float
+        Minimum latitude.
+    max_lon : float
+        Maximum longitude.
+    min_lon : float
+        Minimum longitude.
+    x : np.ndarray
+        Array of X coordinates.
+    y : np.ndarray
+        Array of Y coordinates.
+    z : np.ndarray
+        Array of Z coordinates.
+
+    """
+
     def __init__(self, nx: int, ny: int, nz: int):
         """
         Initialize a global mesh of latitude, longitude, and depth points.
 
-        Parameters
-        ----------
-        nx : int
-            The number of points in the X direction.
-        ny : int
-            The number of points in the Y direction.
-        nz : int
-            The number of points in the Z direction.
         """
         self.lon = np.zeros((nx, ny))
         self.lat = np.zeros((nx, ny))
@@ -48,30 +75,37 @@ class GlobalMesh:
         self.y = np.zeros(ny)
         self.z = np.zeros(nz)
 
-    @property
-    def nx(self):
-        return len(self.x)
-
-    @property
-    def ny(self):
-        return len(self.y)
-
-    @property
-    def nz(self):
-        return len(self.z)
-
 
 class PartialGlobalMesh:
+    """
+    A partial mesh slice of a global mesh at a specific latitude index.
+
+    Parameters
+    ----------
+    global_mesh : GlobalMesh
+        The full global mesh object.
+    lat_ind : int
+        Latitude index for the slice.
+
+    Attributes
+    ----------
+    x : np.ndarray
+        Array of X coordinates.
+    y : np.ndarray
+        Array of Y coordinates.
+    z : np.ndarray
+        Array of Z coordinates.
+    lat : np.ndarray
+        Array of latitudes.
+    lon : np.ndarray
+        Array of longitudes.
+
+    """
+
     def __init__(self, global_mesh: GlobalMesh, lat_ind: int):
         """
         Create a partial mesh slice at a specific latitude index.
 
-        Parameters
-        ----------
-        global_mesh : GlobalMesh
-            The full global mesh object.
-        lat_ind : int
-            Latitude index for the slice.
         """
 
         self.x = global_mesh.x.copy()
@@ -82,24 +116,61 @@ class PartialGlobalMesh:
 
     @property
     def nx(self):
+        """
+        Get the number of X points in the mesh.
+
+        Returns
+        -------
+        int
+            The number of X points.
+
+        """
         return len(self.x)
 
     @property
     def nz(self):
+        """
+        Get the number of Z points in the mesh.
+
+        Returns
+        -------
+        int
+            The number of Z points.
+
+        """
         return len(self.z)
 
 
 class MeshVector:
+    """
+    A single mesh vector at a specific longitude index.
+
+    Parameters
+    ----------
+    partial_global_mesh : PartialGlobalMesh
+        Slice of the global mesh.
+    lon_ind : int
+        Longitude index for the vector.
+
+    Attributes
+    ----------
+    lat : float
+        Latitude of the vector.
+    lon : float
+        Longitude of the vector.
+    z : np.ndarray
+        Array of Z coordinates.
+    vs30 : float
+        Vs30 value.
+    distance_from_shoreline : float
+        Distance from the shoreline.
+
+    """
+
     def __init__(self, partial_global_mesh: PartialGlobalMesh, lon_ind: int):
         """
         Create a single mesh vector at a specific longitude index.
 
-        Parameters
-        ----------
-        partial_global_mesh : PartialGlobalMesh
-            Slice of the global mesh.
-        lon_ind : int
-            Longitude index for the vector.
         """
 
         self.lat = partial_global_mesh.lat[lon_ind]
@@ -110,6 +181,14 @@ class MeshVector:
 
     @property
     def nz(self):
+        """
+        Get the number of Z points in the mesh vector.
+
+        Returns
+        -------
+        int
+            The number of Z points.
+        """
         return len(self.z)
 
     def copy(self):
@@ -143,14 +222,44 @@ class MeshVector:
 
 # TODO: under-utilized. could be removed
 class ModelExtent:
-    def __init__(self, vm_params: Dict):
+    """
+    Location and dimension of the model to be created.
+
+    Parameters
+    ----------
+    vm_params : dict
+        Dictionary containing configuration for model size and origin
+
+    Attributes
+    ----------
+    origin_lat : float
+        Latitude of the model origin.
+    origin_lon : float
+        Longitude of the model origin
+    origin_rot : float
+        Rotation of the model origin (degrees)
+    xmax : float
+        Maximum X extent (km)
+    ymax : float
+        Maximum Y extent (km)
+    zmax : float
+        Maximum Z extent (km)
+    zmin : float
+        Minimum Z extent (km)
+    h_depth : float
+        Grid spacing for the depth (km)
+    h_lat_lon : float
+        Grid spacing for latitude and longitude (km)
+    nx : int
+        Number of X points.
+    ny : int
+        Number of Y points.
+    """
+
+    def __init__(self, vm_params: dict):
         """
         Stores parameters for the model extent.
 
-        Parameters
-        ----------
-        vm_params : Dict
-            Dictionary containing configuration for model size and origin
         """
         self.origin_lat = vm_params["origin_lat"]
         self.origin_lon = vm_params["origin_lon"]
@@ -212,16 +321,23 @@ def find_edge_inds(
 ):
     """
     Find the edge indices of the given latitude and longitude arrays.
+
     Parameters
     ----------
-    lati    : np.ndarray
-    loni    : np.ndarray
+    lati : np.ndarray
+        Latitude array.
+    loni : np.ndarray
+        Longitude array.
     edge_type : int
         Type of edge to find.(1: north, 2: east, 3: south, 4: west)
-    max_lat: float
+    max_lat : float
+        Maximum latitude.
     min_lat : float
-    max_lon: float
-    min_lon: float
+        Minimum latitude.
+    max_lon : float
+        Maximum longitude.
+    min_lon : float
+        Minimum longitude.
 
     Returns
     -------
@@ -275,12 +391,17 @@ def find_edge_inds(
 def find_corner_inds(lati: np.ndarray, loni: np.ndarray, lat: float, lon: float):
     """
     Find the corner indices of the given latitude and longitude arrays.
+
     Parameters
     ----------
     lati    : np.ndarray
+        Latitude array.
     loni    : np.ndarray
+        Longitude array.
     lat : float
+        Latitude of the given point.
     lon : float
+        Longitude of the given point.
 
     Returns
     -------
@@ -317,7 +438,7 @@ def find_corner_inds(lati: np.ndarray, loni: np.ndarray, lat: float, lon: float)
 @njit
 def find_basin_adjacent_points_numba(
     lati: np.ndarray, loni: np.ndarray, lat: float, lon: float
-) -> Tuple[bool, np.ndarray, np.ndarray]:
+) -> tuple[bool, np.ndarray, np.ndarray]:
     """
     Identify adjacent latitude/longitude indices for a given point in basin coordinates.
 
@@ -390,7 +511,7 @@ def find_basin_adjacent_points_numba(
 @njit
 def find_global_adjacent_points_numba(
     lati: np.ndarray, loni: np.ndarray, lat: float, lon: float
-) -> Tuple[
+) -> tuple[
     bool, np.ndarray, np.ndarray, bool, int, int, bool, int, int, bool, int, int
 ]:
     """
@@ -590,9 +711,42 @@ def find_global_adjacent_points_numba(
 
 
 class AdjacentPoints:
+    """
+    Store adjacent indices and flags for a given latitude/longitude point.
+
+    Attributes
+    ----------
+    in_surface_bounds : bool
+        True if the point is within the surface bounds.
+    lat_ind : list[int]
+        Latitude indices.
+    lon_ind : list[int]
+        Longitude indices.
+    in_lat_extension_zone : bool
+        True if the point is in a latitude extension zone.
+    lat_extension_type : int
+        Latitude extension type code.
+    lon_edge_ind : int
+        Longitude edge index in extension scenario.
+    in_lon_extension_zone : bool
+        True if the point is in a longitude extension zone.
+    lon_extension_type : int
+        Longitude extension type code.
+    lat_edge_ind : int
+        Latitude edge index in extension scenario.
+    in_corner_zone : bool
+        True if the point is in a corner extension scenario.
+    corner_lat_ind : int
+        Corner latitude index.
+    corner_lon_ind : int
+        Corner longitude index.
+
+    """
+
     def __init__(self):
         """
         Store bounding indices and flags to aid in interpolation checks.
+        Use the find_basin_adjacent_points or find_global_adjacent_points class methods to populate.
         """
         self.in_surface_bounds = False
         self.lat_ind = [0, 0]
@@ -706,21 +860,35 @@ class AdjacentPoints:
 
 
 class SmoothingBoundary:
-    def __init__(self, xpts, ypts):
+    """
+    Handle boundary smoothing between points.
+
+    Attributes
+    ----------
+    lons : list[float]
+        Longitude coordinates.
+    lats : list[float]
+        Latitude coordinates.
+    n_points : int
+        Number of points in the boundary
+
+    """
+
+    def __init__(self, lons: list[float], lats: list[float]):
         """
         Handle boundary smoothing between points.
 
         Parameters
         ----------
-        xpts : List[float]
-            X or longitude coordinates.
-        ypts : List[float]
-            Y or latitude coordinates.
+        lons : list[float]
+            longitude coordinates.
+        lats : list[float]
+            latitude coordinates.
         """
-        self.x = xpts
-        self.y = ypts
-        self.n = len(xpts)
-        assert len(self.x) == len(self.y)
+        self.lons = lons
+        self.lats = lats
+        self.n_points = len(lons)
+        assert len(self.lons) == len(self.lats)
 
     def determine_if_lat_lon_within_smoothing_region(self, mesh_vector: MeshVector):
         """
@@ -742,17 +910,24 @@ class SmoothingBoundary:
 
         return closest_ind, distance / 1000  # return distance in km
 
-    def brute_force(self, mesh_vector: MeshVector):
+    def brute_force(self, mesh_vector: MeshVector) -> tuple[int, float]:
         """
         Determine the closest index within the smoothing boundary to the given mesh vector coordinates.
 
-        Parameters:
-        mesh_vector (MeshVector): Object containing mesh vector data.
+        Parameters
+        ----------
+        mesh_vector: MeshVector
+            Object containing mesh vector data.
 
-        Returns:
-        int: Index of the closest point in the smoothing boundary.
+        Returns
+        -------
+        int
+            Index of the closest boundary segment.
+        float
+            Distance to that boundary
+
         """
-        boundary_points = np.column_stack((self.y, self.x))
+        boundary_points = np.column_stack((self.lats, self.lons))
         # the below wasn't giving the exact same results as the original C code
         # distances = coordinates.distance_between_wgs_depth_coordinates(
         #     boundary_points, np.array([mesh_vector.lat, mesh_vector.lon])
@@ -1017,7 +1192,7 @@ def extract_mesh_vector(partial_global_mesh: PartialGlobalMesh, lon_ind: int):
     Returns
     -------
     MeshVector
-        Mesh vector with the given \lon_ind\ across depth points.
+        Mesh vector with the given "lon_ind" across depth points.
     """
 
     return MeshVector(partial_global_mesh, lon_ind)

@@ -1,11 +1,10 @@
 """
+Global Model Module
+
 This module provides functionality for handling global surfaces and tomography data,
 including interpolation and depth calculations.
 
-.. module:: global_model
 """
-
-from typing import Dict, List
 
 import numpy as np
 from numba import njit
@@ -24,6 +23,27 @@ from velocity_modelling.cvm.velocity1d import (
 
 
 class GlobalSurfaceRead:
+    """
+    Class to store global surface data.
+
+    Attributes
+    ----------
+    lati : np.ndarray
+        The latitude values.
+    loni : np.ndarray
+        The longitude values.
+    raster : np.ndarray
+        The raster values.
+    max_lat : float
+        The maximum latitude value.
+    min_lat : float
+        The minimum latitude value.
+    max_lon : float
+        The maximum longitude value.
+    min_lon : float
+        The minimum longitude value.
+    """
+
     def __init__(
         self, latitudes: np.ndarray, longitudes: np.ndarray, raster: np.ndarray
     ):
@@ -73,19 +93,39 @@ class GlobalSurfaceRead:
 
 
 class GlobalSurfaces:
-    def __init__(self, surfaces: List[GlobalSurfaceRead]):
+    """
+    Class to store global surfaces.
+
+    Attributes
+    ----------
+    surfaces : list[GlobalSurfaceRead]
+        List of GlobalSurfaceRead objects.
+
+    """
+
+    def __init__(self, surfaces: list[GlobalSurfaceRead]):
         """
         Initialize the GlobalSurfaces.
 
         Parameters
         ----------
-        surfaces : List[GlobalSurfaceRead]
+        surfaces : list[GlobalSurfaceRead]
             List of GlobalSurfaceRead objects.
         """
         self.surfaces = surfaces
 
 
 class PartialGlobalSurfaceDepths:
+    """
+    Class to store partial global surface depths.
+
+    Attributes
+    ----------
+    depths : np.ndarray
+        Array of global surface depths.
+
+    """
+
     def __init__(self, n_surfaces: int):
         """
         Initialize the PartialGlobalSurfaceDepths.
@@ -310,13 +350,41 @@ def interpolate_global_surface(
 
 
 class TomographyData:
+    """
+    Class to store tomography data.
+
+    Attributes
+    ----------
+    name : str
+        The name of the tomography data.
+    surf_depth : list[float]
+        The list of surfaces depths.
+    surfaces : list[dict[str, GlobalSurfaceRead]]
+        List of surfaces data for each velocity type.
+    tomography_loaded : bool
+        Flag indicating if the tomography data has been loaded.
+    special_offshore_tapering : bool
+        Flag for special offshore tapering.
+    smooth_boundary : None
+        Placeholder for smooth boundary.
+    vs30 : GlobalSurfaceRead
+        The vs30 surfaces data.
+    offshore_distance_surface : GlobalSurfaceRead
+        The offshore distance surfaces data.
+    offshore_basin_model_1d : VelocityModel1D
+        The offshore 1D model data.
+    tomography_loaded : bool
+        Flag indicating if the tomography data has been loaded.
+
+    """
+
     def __init__(
         self,
         name: str,
-        surf_depth: List[float],
+        surf_depth: list[float],
         special_offshore_tapering: bool,
         vs30: GlobalSurfaceRead,
-        surfaces: List[Dict[str, GlobalSurfaceRead]],
+        surfaces: list[dict[str, GlobalSurfaceRead]],
         offshore_distance_surface: GlobalSurfaceRead,
         offshore_basin_model_1d: VelocityModel1D,
     ):
@@ -327,13 +395,13 @@ class TomographyData:
         ----------
         name : str
             The name of the tomography data.
-        surf_depth : List[float]
+        surf_depth : list[float]
             The list of surfaces depths.
         special_offshore_tapering : bool
             Flag for special offshore tapering.
         vs30 : GlobalSurfaceRead
             The vs30 surfaces data.
-        surfaces : List[Dict[str, GlobalSurfaceRead]]
+        surfaces : list[dict[str, GlobalSurfaceRead]]
             List of surfaces data for each velocity type.
         offshore_distance_surface : GlobalSurfaceRead
             The offshore distance surfaces data.
@@ -343,13 +411,11 @@ class TomographyData:
         self.name = name
         self.surf_depth = surf_depth
         self.surfaces = surfaces
-        self.tomography_loaded = False
         self.special_offshore_tapering = special_offshore_tapering
         self.smooth_boundary = None
         self.vs30 = vs30
         self.offshore_distance_surface = offshore_distance_surface
         self.offshore_basin_model_1d = offshore_basin_model_1d
-        self.tomography_loaded = True
 
     def calculate_vs30_from_tomo_vs30_surface(self, mesh_vector: MeshVector) -> None:
         """

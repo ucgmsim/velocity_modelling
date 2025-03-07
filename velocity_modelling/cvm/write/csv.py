@@ -2,8 +2,6 @@
 import csv
 from pathlib import Path
 
-import numpy as np
-
 from velocity_modelling.cvm.geometry import (
     PartialGlobalMesh,
 )

@@ -19,6 +19,17 @@ class VelocityModel1D:
     This class stores arrays of P-wave velocity, S-wave velocity, density, and
     corresponding depths, allowing for the representation of layered earth models.
 
+    Parameters
+    ----------
+    vp : np.ndarray
+        P-wave velocities (km/s).
+    vs : np.ndarray
+        S-wave velocities (km/s).
+    rho : np.ndarray
+        Densities (g/cm³).
+    depth : np.ndarray
+        Depths (m).
+
     Attributes
     ----------
     vp : np.ndarray
@@ -39,22 +50,12 @@ class VelocityModel1D:
         """
         Initialize the VelocityModel1D.
 
-        Parameters
-        ----------
-        vp : np.ndarray
-            P-wave velocities (km/s).
-        vs : np.ndarray
-            S-wave velocities (km/s).
-        rho : np.ndarray
-            Densities (g/cm³).
-        depth : np.ndarray
-            Depths (m).
         """
         self.vp = vp
         self.vs = vs
         self.rho = rho
         self.depth = depth
         self.n_depth = len(depth)
-        assert (
-            len(vp) == len(vs) == len(rho) == len(depth)
-        ), "Input arrays must have the same length"
+        assert len(vp) == len(vs) == len(rho) == len(depth), (
+            "Input arrays must have the same length"
+        )
