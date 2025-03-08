@@ -143,6 +143,7 @@ class CVMRegistry:
             f"Error: {name} for datatype {datatype} not found in registry",
             VMLogger.ERROR,
         )
+        raise KeyError(f"{name} not found in {datatype}")
         return None
 
     def get_full_path(self, relative_path: Union[Path, str]) -> Path:
@@ -310,9 +311,12 @@ class CVMRegistry:
         SystemExit
             If the specified submodel cannot be found.
         """
-        submodel_name = basin_surface["submodel"]
-        if submodel_name == "null":
+        try:
+            submodel_name = basin_surface["submodel"]
+        except KeyError:
+            # The basement surface does not have a submodel
             return None
+
         submodel = self.get_info("submodel", submodel_name)
 
         if submodel is None:
@@ -500,13 +504,29 @@ class CVMRegistry:
                     f"Loaded tomography surface for {vtype.name} at elevation {elev}",
                     VMLogger.DEBUG,
                 )
+        try:
+            offshore_surface_path = self.get_info("surface", offshore_surface_name)[
+                "path"
+            ]
+        except KeyError:
+            self.log(
+                f"Error: Offshore distance surface {offshore_surface_name} not found",
+                VMLogger.ERROR,
+            )
+            sys.exit(1)
+        else:
+            offshore_distance_surface = self.load_global_surface(offshore_surface_path)
 
-        offshore_distance_surface = self.load_global_surface(
-            self.get_info("surface", offshore_surface_name)["path"]
-        )
-        offshore_basin_model_1d = self.load_1d_velo_sub_model(
-            self.get_info("vm1d", offshore_v1d_name)["path"]
-        )
+        try:
+            offshore_v1d_path = self.get_info("vm1d", offshore_v1d_name)["path"]
+        except KeyError:
+            self.log(
+                f"Error: Offshore 1D model {offshore_v1d_name} not found",
+                VMLogger.ERROR,
+            )
+            sys.exit(1)
+        else:
+            offshore_basin_model_1d = self.load_1d_velo_sub_model(offshore_v1d_path)
 
         tomography_data = TomographyData(
             name=tomo_name,
@@ -533,7 +553,7 @@ class CVMRegistry:
 
         Returns
         -------
-        Tuple[VelocityModel1D, TomographyData, GlobalSurfaces, list[BasinData]]
+        tuple[VelocityModel1D, TomographyData, GlobalSurfaces, list[BasinData]]
             Tuple containing:
             - 1D velocity model data
             - Tomography data with surfaces
@@ -545,19 +565,35 @@ class CVMRegistry:
 
         global_model_params = self.vm_global_params
 
+        # TODO: this part here needs some more thoughts. submodels can be all merged into one category in nzvm_registry.yaml
         self.log("Loading global velocity submodel data", VMLogger.INFO)
         for submodel in global_model_params["submodels"]:
-            if submodel == "v1DsubMod":
-                velo_mod_1d_data = self.load_1d_velo_sub_model(submodel)
+            submodel_info = self.get_info("submodel", submodel)
+            if submodel_info is None:
+                self.log(f"Error: Submodel {submodel} not found", VMLogger.ERROR)
+                sys.exit(1)
+
+            if submodel_info["type"] is None:
+                self.log("nan submodel recognized (no data to load)", VMLogger.DEBUG)
+            elif submodel_info["type"] == "vm1d":
+                velo_mod_1d_data = self.load_1d_velo_sub_model(submodel_info["name"])
                 self.log("Loaded 1D velocity model data", VMLogger.INFO)
-            elif submodel == "NaNsubMod":
-                self.log("NaN submodel recognized (no data to load)", VMLogger.DEBUG)
-            else:
-                nz_tomography_data = self.load_tomo_surface_data(
-                    global_model_params["tomography"]
-                )
+            elif submodel_info["type"] == "tomography":
+                if global_model_params.get("tomography"):
+                    nz_tomography_data = self.load_tomo_surface_data(
+                        global_model_params["tomography"]
+                    )
+                else:
+                    self.log("Error: Tomography data not found", VMLogger.ERROR)
+                    sys.exit(1)
+            elif submodel_info["type"] == "relation":
                 self.log(
-                    f"Loaded tomography data: {global_model_params['tomography']}",
+                    f"Using relation submodel {submodel} with no additional data",
+                    VMLogger.DEBUG,
+                )
+            else:
+                self.log(
+                    f"Error: Unknown submodel type {submodel_info['type']} to be ignored.",
                     VMLogger.INFO,
                 )
 

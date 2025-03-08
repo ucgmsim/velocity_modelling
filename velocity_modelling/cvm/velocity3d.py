@@ -286,18 +286,18 @@ class QualitiesVector:
             z_out_basin = z_values[out_basin_mask]
 
             # Vectorized call to find submodel indices
-            velo_mod_indices = (
+            submodel_indices = (
                 partial_global_surface_depths.find_global_submodel_ind_vectorized(
                     z_out_basin
                 )
             )
-            velo_mod_names = np.array(global_model_parameters["submodels"])[
-                velo_mod_indices
+            submodel_names = np.array(global_model_parameters["submodels"])[
+                submodel_indices
             ]
 
             # Vectorized call to call_global_submodel
             self.call_global_submodel_vectorized(
-                velo_mod_names,
+                submodel_names,
                 z_out_basin,
                 k_out_basin,
                 global_model_parameters,
