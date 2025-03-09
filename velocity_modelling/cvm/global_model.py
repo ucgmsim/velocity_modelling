@@ -26,6 +26,15 @@ class GlobalSurfaceRead:
     """
     Class to store global surface data.
 
+    Parameters
+    ----------
+    latitudes : np.ndarray
+        The latitude values.
+    longitudes : np.ndarray
+        The longitude values.
+    raster : np.ndarray
+        The raster values.
+
     Attributes
     ----------
     lats : np.ndarray
@@ -49,15 +58,6 @@ class GlobalSurfaceRead:
     ):
         """
         Initialize the GlobalSurfaceRead.
-
-        Parameters
-        ----------
-        latitudes : np.ndarray
-            The latitude values.
-        longitudes : np.ndarray
-            The longitude values.
-        raster : np.ndarray
-            The raster values.
         """
         self.lats = latitudes
         self.lons = longitudes
@@ -92,9 +92,15 @@ class GlobalSurfaceRead:
         return len(self.lons)
 
 
+# TODO:  Under-utilized, perhaps remove?s
 class GlobalSurfaces:
     """
     Class to store global surfaces.
+
+    Parameters
+    ----------
+    surfaces : list[GlobalSurfaceRead]
+        List of GlobalSurfaceRead objects.
 
     Attributes
     ----------
@@ -107,10 +113,6 @@ class GlobalSurfaces:
         """
         Initialize the GlobalSurfaces.
 
-        Parameters
-        ----------
-        surfaces : list[GlobalSurfaceRead]
-            List of GlobalSurfaceRead objects.
         """
         self.surfaces = surfaces
 
@@ -118,6 +120,11 @@ class GlobalSurfaces:
 class PartialGlobalSurfaceDepths:
     """
     Class to store partial global surface depths.
+
+    Parameters
+    ----------
+    n_surfaces : int
+        The number of global surfaces.
 
     Attributes
     ----------
@@ -130,10 +137,6 @@ class PartialGlobalSurfaceDepths:
         """
         Initialize the PartialGlobalSurfaceDepths.
 
-        Parameters
-        ----------
-        n_surfaces : int
-            The number of global surfaces.
         """
         self.depths = np.zeros(n_surfaces, dtype=np.float64)
 
@@ -193,9 +196,6 @@ class PartialGlobalSurfaceDepths:
         mesh_vector : MeshVector
             Object containing a single lat lon point with one or more depths.
 
-        Returns
-        -------
-        None
         """
         for i in range(len(global_surfaces.surfaces)):
             global_surf_read = global_surfaces.surfaces[i]
@@ -353,6 +353,23 @@ class TomographyData:
     """
     Class to store tomography data.
 
+    Parameters
+    ----------
+    name : str
+        The name of the tomography data.
+    surf_depth : list[float]
+        The list of surfaces depths.
+    special_offshore_tapering : bool
+        Flag for special offshore tapering.
+    vs30 : GlobalSurfaceRead
+        The vs30 surfaces data.
+    surfaces : list[dict[str, GlobalSurfaceRead]]
+        List of surfaces data for each velocity type.
+    offshore_distance_surface : GlobalSurfaceRead
+        The offshore distance surfaces data.
+    offshore_basin_model_1d : VelocityModel1D
+        The offshore 1D model data.
+
     Attributes
     ----------
     name : str
@@ -391,22 +408,6 @@ class TomographyData:
         """
         Initialize the TomographyData.
 
-        Parameters
-        ----------
-        name : str
-            The name of the tomography data.
-        surf_depth : list[float]
-            The list of surfaces depths.
-        special_offshore_tapering : bool
-            Flag for special offshore tapering.
-        vs30 : GlobalSurfaceRead
-            The vs30 surfaces data.
-        surfaces : list[dict[str, GlobalSurfaceRead]]
-            List of surfaces data for each velocity type.
-        offshore_distance_surface : GlobalSurfaceRead
-            The offshore distance surfaces data.
-        offshore_basin_model_1d : VelocityModel1D
-            The offshore 1D model data.
         """
         self.name = name
         self.surf_depth = surf_depth
@@ -426,9 +427,6 @@ class TomographyData:
         mesh_vector : MeshVector
             The mesh vector containing latitude and longitude.
 
-        Returns
-        -------
-        None
         """
         adjacent_points = AdjacentPoints.find_global_adjacent_points(
             self.vs30.lats, self.vs30.lons, mesh_vector.lat, mesh_vector.lon
@@ -447,9 +445,6 @@ class TomographyData:
         mesh_vector : MeshVector
             The mesh vector containing latitude and longitude.
 
-        Returns
-        -------
-        None
         """
         adjacent_points = AdjacentPoints.find_global_adjacent_points(
             self.offshore_distance_surface.lats,

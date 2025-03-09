@@ -24,7 +24,7 @@ from velocity_modelling.cvm.constants import (
     DEFAULT_OFFSHORE_1D_MODEL,
     DEFAULT_OFFSHORE_DISTANCE,
     NZVM_REGISTRY_PATH,
-    VTYPE,
+    VelocityTypes,
 )
 from velocity_modelling.cvm.geometry import (  # noqa: F401
     AdjacentPoints,
@@ -39,6 +39,15 @@ class CVMRegistry:
 
     Manages loading, caching, and access to various velocity model components,
     including 1D models, basin data, surfaces, and tomography information.
+
+    Parameters
+    ----------
+    version : str
+        The version of the velocity model.
+    logger : VMLogger, optional
+        Logger for logging information and errors.
+    registry_path : Path, optional
+        The path to the registry file.
 
     Attributes
     ----------
@@ -63,14 +72,6 @@ class CVMRegistry:
         """
         Initialize the CVMRegistry.
 
-        Parameters
-        ----------
-        version : str
-            The version of the velocity model.
-        logger : VMLogger, optional
-            Logger for logging information and errors.
-        registry_path : Path, optional
-            The path to the registry file.
         """
 
         # Initialize VMLogger if not provided
@@ -163,9 +164,9 @@ class CVMRegistry:
             return None
 
         for info in data_section:
-            assert (
-                "name" in info
-            ), f"Error: This entry in {datatype} has no name defined."
+            assert "name" in info, (
+                f"Error: This entry in {datatype} has no name defined."
+            )
             if info["name"] == name:
                 return info
         self.log(
@@ -242,6 +243,8 @@ class CVMRegistry:
             )
             sys.exit(1)
         except Exception as e:
+            if isinstance(e, (SystemExit, KeyboardInterrupt)):
+                raise  # Re-raise these critical exceptions
             self.log(f"Error loading 1D velocity model: {e}", VMLogger.ERROR)
             sys.exit(1)
 
@@ -315,6 +318,8 @@ class CVMRegistry:
             )
             sys.exit(1)
         except Exception as e:
+            if isinstance(e, (SystemExit, KeyboardInterrupt)):
+                raise  # Re-raise these critical exceptions
             self.log(
                 f"Error reading basin boundary file {basin_boundary_path}: {e}",
                 VMLogger.ERROR,
@@ -459,6 +464,8 @@ class CVMRegistry:
             )
             sys.exit(1)
         except Exception as e:
+            if isinstance(e, (SystemExit, KeyboardInterrupt)):
+                raise  # Re-raise these critical exceptions
             self.log(f"Error loading basin surface: {e}", VMLogger.ERROR)
             sys.exit(1)
 
@@ -515,7 +522,7 @@ class CVMRegistry:
             elev_name = (
                 f"{elev}" if elev == int(elev) else f"{elev:.2f}".replace(".", "p")
             )
-            for vtype in VTYPE:
+            for vtype in VelocityTypes:
                 tomofile = (
                     self.get_full_path(tomo["path"])
                     / f"surf_tomography_{vtype.name}_elev{elev_name}.in"
@@ -524,9 +531,9 @@ class CVMRegistry:
                     self.log(
                         f"Error: Tomography file {tomofile} not found", VMLogger.ERROR
                     )
-                    assert (
-                        tomofile.exists()
-                    ), f"Tomography file {tomofile} does not exist"
+                    assert tomofile.exists(), (
+                        f"Tomography file {tomofile} does not exist"
+                    )
 
                 surfaces[i][vtype.name] = self.load_global_surface(tomofile)
                 self.log(
@@ -703,6 +710,8 @@ class CVMRegistry:
             self.log(f"Surface file {surface_file} not found", VMLogger.ERROR)
             sys.exit(1)
         except Exception as e:
+            if isinstance(e, (SystemExit, KeyboardInterrupt)):
+                raise  # Re-raise these critical exceptions
             self.log(f"Error reading surface file {surface_file}: {e}", VMLogger.ERROR)
             sys.exit(1)
 
@@ -795,6 +804,8 @@ class CVMRegistry:
                             VMLogger.DEBUG,
                         )
                     except Exception as e:
+                        if isinstance(e, (SystemExit, KeyboardInterrupt)):
+                            raise  # Re-raise these critical exceptions
                         self.log(
                             f"Error reading smoothing boundary: {e}", VMLogger.ERROR
                         )

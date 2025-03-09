@@ -339,9 +339,9 @@ def find_corner_inds(lats: np.ndarray, lons: np.ndarray, lat: float, lon: float)
 
     Parameters
     ----------
-    lats    : np.ndarray
+    lats : np.ndarray
         Latitude array.
-    lons    : np.ndarray
+    lons : np.ndarray
         Longitude array.
     lat : float
         Latitude of the given point.
@@ -769,7 +769,7 @@ class AdjacentPoints:
 
         Returns
         -------
-        adjacent_points : AdjacentPoints
+        AdjacentPoints
             Object containing the adjacent points.
         """
         # Call the Numba function
@@ -808,6 +808,13 @@ class SmoothingBoundary:
     """
     Handle boundary smoothing between points.
 
+    Parameters
+    ----------
+    lons : list[float]
+        longitude coordinates.
+    lats : list[float]
+        latitude coordinates.
+
     Attributes
     ----------
     lons : list[float]
@@ -823,12 +830,6 @@ class SmoothingBoundary:
         """
         Handle boundary smoothing between points.
 
-        Parameters
-        ----------
-        lons : list[float]
-            longitude coordinates.
-        lats : list[float]
-            latitude coordinates.
         """
         self.lons = lons
         self.lats = lats
@@ -861,7 +862,7 @@ class SmoothingBoundary:
 
         Parameters
         ----------
-        mesh_vector: MeshVector
+        mesh_vector : MeshVector
             Object containing mesh vector data.
 
         Returns
@@ -1029,15 +1030,15 @@ def gen_full_model_grid_great_circle(
     global_mesh.max_lon = 0
     global_mesh.min_lon = 180
 
-    assert nx == int(
-        np.round(xmax / h_lat_lon)
-    ), f" nx: {nx} != {int(np.round(xmax / h_lat_lon))}"
-    assert ny == int(
-        np.round(ymax / h_lat_lon)
-    ), f" ny: {ny} != {int(np.round(ymax / h_lat_lon))}"
-    assert nz == int(
-        np.round((zmax - zmin) / h_depth)
-    ), f" nz: {nz} != {int(np.round((zmax -zmin) / h_depth))}"
+    assert nx == int(np.round(xmax / h_lat_lon)), (
+        f" nx: {nx} != {int(np.round(xmax / h_lat_lon))}"
+    )
+    assert ny == int(np.round(ymax / h_lat_lon)), (
+        f" ny: {ny} != {int(np.round(ymax / h_lat_lon))}"
+    )
+    assert nz == int(np.round((zmax - zmin) / h_depth)), (
+        f" nz: {nz} != {int(np.round((zmax - zmin) / h_depth))}"
+    )
 
     if any(
         [

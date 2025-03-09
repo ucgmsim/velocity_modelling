@@ -1,3 +1,8 @@
+"""
+Interpolation functions for velocity modelling.
+
+"""
+
 import numba
 import numpy as np
 

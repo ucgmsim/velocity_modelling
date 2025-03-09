@@ -25,7 +25,7 @@ ERAD = 6378.139  # Earth's radius in km
 RPERD = 0.017453292
 
 
-class VTYPE(Enum):
+class VelocityTypes(Enum):
     """
     Enum for the velocity type.
 
@@ -39,7 +39,7 @@ class VTYPE(Enum):
     rho = 2
 
 
-class TOPO_TYPES(Enum):
+class TopoTypes(Enum):
     """
     Enum for the topography types.
 
@@ -53,3 +53,16 @@ class TOPO_TYPES(Enum):
     SQUASHED = 1
     SQUASHED_TAPERED = 2
     TRUE = 3
+
+
+class WriteFormat(Enum):
+    """
+    Enum for the write format types.
+
+    0: EMOD3D
+    1: CSV
+
+    """
+
+    EMOD3D = 0
+    CSV = 1

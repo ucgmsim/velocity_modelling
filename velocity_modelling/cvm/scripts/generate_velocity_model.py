@@ -21,22 +21,22 @@ Example usage:
 
     if --out_dir is not specified, it will use OUTPUT_DIR specified in nzvm.cfg
 
-SAMPLE nzvm.cfg
----------------------
-CALL_TYPE=GENERATE_VELOCITY_MOD
-MODEL_VERSION=2.07
-OUTPUT_DIR=/tmp
-ORIGIN_LAT=-41.296226
-ORIGIN_LON=174.774439
-ORIGIN_ROT=23.0
-EXTENT_X=20
-EXTENT_Y=20
-EXTENT_ZMAX=45.0
-EXTENT_ZMIN=0.0
-EXTENT_Z_SPACING=0.2
-EXTENT_LATLON_SPACING=0.2
-MIN_VS=0.5
-TOPO_TYPE=BULLDOZED
+    [example] nzvm.cfg
+
+    CALL_TYPE=GENERATE_VELOCITY_MOD
+    MODEL_VERSION=2.07
+    OUTPUT_DIR=/tmp
+    ORIGIN_LAT=-41.296226
+    ORIGIN_LON=174.774439
+    ORIGIN_ROT=23.0
+    EXTENT_X=20
+    EXTENT_Y=20
+    EXTENT_ZMAX=45.0
+    EXTENT_ZMIN=0.0
+    EXTENT_Z_SPACING=0.2
+    EXTENT_LATLON_SPACING=0.2
+    MIN_VS=0.5
+    TOPO_TYPE=BULLDOZED
 
 """
 
@@ -54,7 +54,8 @@ from velocity_modelling.cvm.basin_model import (
 )
 from velocity_modelling.cvm.constants import (
     NZVM_REGISTRY_PATH,
-    TOPO_TYPES,
+    TopoTypes,
+    WriteFormat,
 )
 from velocity_modelling.cvm.geometry import (
     GlobalMesh,
@@ -137,6 +138,8 @@ def generate_velocity_model(
         Registry containing paths to all required data files.
     out_dir : Path
         Output directory where model files will be written.
+    vm_params : dict
+        Dictionary containing the model parameters from nzvm.cfg
     logger : VMLogger
         Logger for reporting progress and errors.
     smoothing : bool, optional
@@ -144,7 +147,7 @@ def generate_velocity_model(
     progress_interval : int, optional
         How often (in %) to log progress updates (default 5%).
     output_format : str, optional
-    Format to write the output. Options: "emod3d", "csv"
+        Format to write the output. Options: "EMOD3D", "CSV"
     """
     # Import the appropriate writer based on format
     logger.log(f"Beginning velocity model generation in {out_dir}", logger.INFO)
@@ -152,30 +155,20 @@ def generate_velocity_model(
     logger.log(f"Using output format: {output_format}", logger.INFO)
 
     # Import the appropriate writer based on format
-    if output_format == "emod3d":
-        from velocity_modelling.cvm.write.emod3d import (
-            write_global_qualities,
-        )
+    try:
+        _ = WriteFormat[output_format]
+    except KeyError:
+        logger.log(f"Unsupported output format: {output_format}", logger.ERROR)
+        raise ValueError(f"Unsupported output format: {output_format}")
 
-        logger.log("Using EMOD3D writer module", logger.DEBUG)
-    elif output_format == "csv":
-        try:
-            from velocity_modelling.cvm.write.csv import (
-                write_global_qualities,
-            )
+    import importlib
 
-            logger.log("Using CSV writer module", logger.DEBUG)
-        except ImportError:
-            logger.log("CSV writer module not found. Creating it now.", logger.WARNING)
-            from velocity_modelling.cvm.write.emod3d import (
-                write_global_qualities,
-            )
-
-            logger.log(
-                "Temporarily using EMOD3D writer until CSV writer is implemented",
-                logger.WARNING,
-            )
-    else:
+    try:
+        module_name = f"velocity_modelling.cvm.write.{output_format.lower()}"
+        writer_module = importlib.import_module(module_name)
+        write_global_qualities = writer_module.write_global_qualities
+        logger.log(f"Using {output_format} writer module", logger.DEBUG)
+    except ImportError:
         logger.log(f"Unsupported output format: {output_format}", logger.ERROR)
         raise ValueError(f"Unsupported output format: {output_format}")
 
@@ -339,7 +332,7 @@ def parse_nzvm_config(config_path: Path) -> dict:
                 vm_params["call_type"] = value
             elif key == "TOPO_TYPE":
                 try:
-                    vm_params["topo_type"] = TOPO_TYPES[value]
+                    vm_params["topo_type"] = TopoTypes[value]
                 except KeyError:
                     VMLogger.error(f"Invalid topo type {value}")
                     raise KeyError(f"Invalid topo type {value}")
@@ -427,8 +420,8 @@ def parse_arguments() -> argparse.Namespace:
 
     parser.add_argument(
         "--output_format",
-        choices=["emod3d", "csv"],
-        default="emod3d",
+        choices=[fmt.name for fmt in WriteFormat],
+        default=WriteFormat.EMOD3D.name,
         help="Format for the output velocity model",
     )
 
@@ -465,6 +458,8 @@ if __name__ == "__main__":
             )
             sys.exit(1)
     except Exception as e:
+        if isinstance(e, (SystemExit, KeyboardInterrupt)):
+            raise  # Re-raise these critical exceptions
         logger.log(f"Failed to parse config file: {e}", logger.ERROR)
         sys.exit(1)
 

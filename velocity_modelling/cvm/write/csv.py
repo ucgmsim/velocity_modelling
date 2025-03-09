@@ -1,4 +1,7 @@
-# velocity_modelling/cvm/write/csv_writer.py
+"""
+Module for writing velocity model data to CSV format.
+"""
+
 import csv
 from pathlib import Path
 

@@ -1,3 +1,8 @@
+"""
+Module for writing a velocity model to file for EMOD3D.
+
+"""
+
 import struct
 import sys
 from pathlib import Path

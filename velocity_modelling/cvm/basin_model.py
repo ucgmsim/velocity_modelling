@@ -662,9 +662,9 @@ class BasinSurfaceRead:
 
     Parameters
     ----------
-    nlat: int
+    nlat : int
         Number of latitudes
-    nlon: int
+    nlon : int
         Number of longitudes
 
     Attributes

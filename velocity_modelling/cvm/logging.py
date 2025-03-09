@@ -18,6 +18,17 @@ class VMLogger:
     This class provides a consistent interface for logging across the entire
     CVM codebase, with configurable output destinations and log levels.
 
+    Parameters
+    ----------
+    name : str, optional
+        Logger name, default is "velocity_model"
+    level : str or int, optional
+        Log level, can be a string (DEBUG, INFO, etc.) or integer level, default is INFO
+    output_file : str or file-like object, optional
+        File to write logs to (in addition to console), default is None
+    format_str : str, optional
+        Format string for log messages
+
     Attributes
     ----------
     DEBUG : int

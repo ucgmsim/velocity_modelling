@@ -55,17 +55,23 @@ def compare_output_files(
 
     Parameters
     ----------
-    dir1: Path
-    dir2: Path
-    nx: int
-    ny: int
-    nz: int
-    threshold: float, optional
+    dir1 : Path
+        Directory name that contains the first set of emod3d output files.
+    dir2 : Path
+        Directory name that contains the second set of emod3 output files.
+    nx : int
+        Number of grid points in the x direction (along the longitude).
+    ny : int
+        Number of grid points in the y direction (along the latitude).
+    nz : int
+        Number of grid points in the z direction (along the depth).
+    threshold : float, optional
         The threshold for the difference between the two files. The default is 1e-5.
 
     Returns
     -------
     dict
+        Dictionary contains the comparison results for each key in the data.
     """
     data1 = read_emomd3d_vm(dir1)
     data2 = read_emomd3d_vm(dir2)

@@ -19,7 +19,7 @@ from velocity_modelling.cvm.basin_model import (
     InBasinGlobalMesh,
     PartialBasinSurfaceDepths,
 )
-from velocity_modelling.cvm.constants import MAX_DIST_SMOOTH, VTYPE, TOPO_TYPES
+from velocity_modelling.cvm.constants import MAX_DIST_SMOOTH, TopoTypes, VelocityTypes
 from velocity_modelling.cvm.geometry import (
     AdjacentPoints,
     MeshVector,
@@ -137,7 +137,7 @@ class QualitiesVector:
         partial_global_surface_depths: PartialGlobalSurfaceDepths,
         partial_basin_surface_depths_list: list[PartialBasinSurfaceDepths],
         in_basin_list: list[InBasin],
-        topo_type: TOPO_TYPES,
+        topo_type: TopoTypes,
         on_boundary: bool,
     ):
         """
@@ -161,7 +161,7 @@ class QualitiesVector:
             Basin surface depth data at this location.
         in_basin_list : list[InBasin]
             Basin membership indicators.
-        topo_type : TOPO_TYPES
+        topo_type : TopoTypes
             Topography handling method ("TRUE", "BULLDOZED", "SQUASHED", "SQUASHED_TAPERED").
         on_boundary : bool
             Whether this point is on a model boundary.
@@ -175,7 +175,7 @@ class QualitiesVector:
             in_basin.in_basin_lat_lon for in_basin in in_basin_list
         )
         # TODO: test this
-        if topo_type == TOPO_TYPES.SQUASHED:
+        if topo_type == TopoTypes.SQUASHED:
             depth_change = -mesh_vector.z
             shifted_mesh_vector = mesh_vector.copy()
             shifted_mesh_vector.z = (
@@ -183,7 +183,7 @@ class QualitiesVector:
             )
 
         # TODO: test this
-        elif topo_type == TOPO_TYPES.SQUASHED_TAPERED:
+        elif topo_type == TopoTypes.SQUASHED_TAPERED:
             taper_dist = 1.0
             depth_change = -mesh_vector.z
             taper_val = np.where(
@@ -203,7 +203,7 @@ class QualitiesVector:
                 partial_global_surface_depths.depths[1] * taper_val - depth_change
             )
 
-        elif topo_type in [TOPO_TYPES.BULLDOZED, TOPO_TYPES.TRUE]:
+        elif topo_type in [TopoTypes.BULLDOZED, TopoTypes.TRUE]:
             shifted_mesh_vector = mesh_vector
 
         else:
@@ -230,7 +230,7 @@ class QualitiesVector:
         # Compute z values for all depths
         z_values = (
             mesh_vector.z
-            if topo_type in [TOPO_TYPES.BULLDOZED, TOPO_TYPES.TRUE]
+            if topo_type in [TopoTypes.BULLDOZED, TopoTypes.TRUE]
             else shifted_mesh_vector.z
         )
         k_indices = np.arange(mesh_vector.nz)
@@ -311,7 +311,7 @@ class QualitiesVector:
         self.vs[mask_above_surface] = np.nan
 
         # Apply NaN masking for bulldozed topography
-        if topo_type == TOPO_TYPES.BULLDOZED:
+        if topo_type == TopoTypes.BULLDOZED:
             mask_above_zero = mesh_vector.z > 0
             self.rho[mask_above_zero] = np.nan
             self.vp[mask_above_zero] = np.nan
@@ -329,7 +329,7 @@ class QualitiesVector:
         partial_basin_surface_depths_list: list[PartialBasinSurfaceDepths],
         in_basin_list: list[InBasin],
         in_basin_mesh: InBasinGlobalMesh,
-        topo_type: TOPO_TYPES,
+        topo_type: TopoTypes,
     ):
         """
         Determine if lat-lon point lies within the smoothing zone and prescribe velocities accordingly.
@@ -358,7 +358,7 @@ class QualitiesVector:
             Basin membership indicators.
         in_basin_mesh : InBasinGlobalMesh
             Pre-processed basin membership for smoothing optimization.
-        topo_type : TOPO_TYPES
+        topo_type : TopoTypes
             Topography handling method.
         """
         smooth_bound = nz_tomography_data.smooth_boundary
@@ -580,10 +580,10 @@ class QualitiesVector:
                 # Precompute interpolated values for all surfaces and vtype
                 num_surfaces = len(nz_tomography_data.surfaces)
                 interpolated_global_surface_values = {
-                    vtype.name: np.zeros(num_surfaces) for vtype in VTYPE
+                    vtype.name: np.zeros(num_surfaces) for vtype in VelocityTypes
                 }
                 for idx in range(num_surfaces):
-                    for vtype in VTYPE:
+                    for vtype in VelocityTypes:
                         surface = nz_tomography_data.surfaces[idx][vtype.name]
                         val = interpolate_global_surface(
                             surface, mesh_vector.lat, mesh_vector.lon, adjacent_points

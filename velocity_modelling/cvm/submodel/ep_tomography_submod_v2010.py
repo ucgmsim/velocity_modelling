@@ -8,7 +8,7 @@ P-wave velocity, S-wave velocity, and density values derived from tomographic in
 
 import numpy as np
 
-from velocity_modelling.cvm.constants import VTYPE
+from velocity_modelling.cvm.constants import VelocityTypes
 from velocity_modelling.cvm.geometry import MeshVector
 from velocity_modelling.cvm.global_model import (
     PartialGlobalSurfaceDepths,
@@ -160,7 +160,7 @@ def main_vectorized(
 
         # Interpolate vp, vs, rho simultaneously for this interval
         values = {}
-        for vtype in VTYPE:
+        for vtype in VelocityTypes:
             val_above = interpolated_global_surface_values[vtype.name][idx_above]
             val_below = interpolated_global_surface_values[vtype.name][idx_below]
 
