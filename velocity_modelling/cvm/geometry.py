@@ -220,9 +220,6 @@ class MeshVector:
         return new_instance
 
 
-# TODO: under-utilized. Can be used to validate nzvm_config
-
-
 @njit
 def point_on_vertex(
     boundary_lats: np.ndarray, boundary_lons: np.ndarray, lat: float, lon: float
