@@ -23,6 +23,7 @@ from velocity_modelling.cvm.constants import (
     DATA_ROOT,
     DEFAULT_OFFSHORE_1D_MODEL,
     DEFAULT_OFFSHORE_DISTANCE,
+    MODEL_VERSIONS_ROOT,
     NZVM_REGISTRY_PATH,
     VelocityTypes,
 )
@@ -82,21 +83,25 @@ class CVMRegistry:
 
         with open(registry_path, "r") as f:
             self.registry = yaml.safe_load(f)
-        self.version = version
+
+        # Normalize version (replace '.' with 'p' if present)
+        self.version = version.replace(".", "p")
         self.global_params = None
 
-        for vminfo in self.registry["vm"]:
-            if str(vminfo["version"]) == version:
-                self.global_params = vminfo
-                break
+        model_version_path = MODEL_VERSIONS_ROOT / f"{self.version}.yaml"
+        if not model_version_path.exists():
+            raise ValueError(
+                f"Model version file for {self.version} not found at {model_version_path}"
+            )
+
+        with open(model_version_path, "r") as f:
+            self.global_params = yaml.safe_load(f)
 
         if self.global_params is None:
-            raise ValueError(f"Version {version} not found in registry")
-
-        global_params = self.global_params
+            raise ValueError(f"Failed to load recipe for version {self.version}")
 
         # validate global_params
-        global_surfaces_list = global_params["surfaces"]
+        global_surfaces_list = self.global_params["surfaces"]
         if (
             global_surfaces_list is None
         ):  # if no surfaces are defined, create an empty list
@@ -110,17 +115,19 @@ class CVMRegistry:
             global_surfaces_list[-1]["name"],
         )
         if first_surface_name != "posInfSurf" and last_surface_name != "negInfSurf":
-            global_params["surfaces"] = (
+            self.global_params["surfaces"] = (
                 [{"name": "posInfSurf", "submodel": "nan_submod"}]
-                + global_params["surfaces"]
+                + self.global_params["surfaces"]
                 + [{"name": "negInfSurf", "submodel": None}]
             )
 
         # Separate surface names and submodels for easier access later
-        global_params["surface_names"] = [d["name"] for d in global_params["surfaces"]]
-        global_params["submodels"] = [d["submodel"] for d in global_params["surfaces"]][
-            :-1
-        ]  # drop the last None
+        self.global_params["surface_names"] = [
+            d["name"] for d in self.global_params["surfaces"]
+        ]
+        self.global_params["submodels"] = [
+            d["submodel"] for d in self.global_params["surfaces"]
+        ][:-1]  # drop the last None
 
         self.logger = logger
         self.cache = {}  # Initialize a cache dictionary
@@ -223,7 +230,7 @@ class CVMRegistry:
 
         # Check if the data is already in the cache
         if v1d_path in self.cache:
-            self.log(f"{v1d_path} loaded from CACHE", VMLogger.INFO)
+            self.log(f"{v1d_path} loaded from CACHE", VMLogger.DEBUG)
             return self.cache[v1d_path]
 
         try:

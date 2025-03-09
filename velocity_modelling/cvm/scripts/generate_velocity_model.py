@@ -7,16 +7,25 @@ S-wave velocity, and density) by combining global velocity models, regional tomo
 models, and local basin models.
 
 Example usage:
+    # Basic usage : to use everything defined in nzvm.cfg
+    python generate_velocity_model.py /path/to/nzvm.cfg
+
+    # To override output directory
     python  generate_velocity_model.py /path/to/nzvm.cfg --out_dir /path/to/output_dir
 
     # With custom registry location:
     python  generate_velocity_model.py /path/to/nzvm.cfg --out_dir /path/to/output_dir --nzvm_registry /path/to/registry.yaml
+
+    # To override "MODEL_VERSION" in nzvm.cfg to use a .yaml file for a custom model version
+    python  generate_velocity_model.py /path/to/nzvm.cfg --out_dir /path/to/output_dir --model_version 2.07
 
     # With specific log level:
     python  generate_velocity_model.py /path/to/nzvm.cfg --out_dir /path/to/output_dir --log-level DEBUG
 
     # With specific output format:
     python  generate_velocity_model.py /path/to/nzvm.cfg --out_dir /path/to/output_dir --output_format csv  (default: emod3d)
+
+    # To overrite
 
 
     if --out_dir is not specified, it will use OUTPUT_DIR specified in nzvm.cfg
@@ -53,6 +62,7 @@ from velocity_modelling.cvm.basin_model import (
     PartialBasinSurfaceDepths,
 )
 from velocity_modelling.cvm.constants import (
+    MODEL_VERSIONS_ROOT,
     NZVM_REGISTRY_PATH,
     TopoTypes,
     WriteFormat,
@@ -151,7 +161,6 @@ def generate_velocity_model(
     """
     # Import the appropriate writer based on format
     logger.log(f"Beginning velocity model generation in {out_dir}", logger.INFO)
-    logger.log(f"Model parameters: {vm_params['model_version']}", logger.INFO)
     logger.log(f"Using output format: {output_format}", logger.INFO)
 
     # Import the appropriate writer based on format
@@ -293,7 +302,10 @@ def generate_velocity_model(
         )
 
     logger.log("Generation of velocity model 100% complete", logger.INFO)
-    logger.log(f"Model successfully generated and written to {out_dir}", logger.INFO)
+    logger.log(
+        f"Model (version: {vm_params['model_version']}) successfully generated and written to {out_dir}",
+        logger.INFO,
+    )
 
 
 def parse_nzvm_config(config_path: Path) -> dict:
@@ -411,6 +423,12 @@ def parse_arguments() -> argparse.Namespace:
         help="Path to the model registry file",
         default=NZVM_REGISTRY_PATH,
     )
+
+    parser.add_argument(
+        "--model_version",
+        type=str,
+        help=f"model_version to use (overrides MODEL_VERSION in config file). Requires a valid .yaml to exist in {MODEL_VERSIONS_ROOT}",
+    )
     parser.add_argument(
         "--log_level",
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
@@ -462,6 +480,18 @@ if __name__ == "__main__":
             raise  # Re-raise these critical exceptions
         logger.log(f"Failed to parse config file: {e}", logger.ERROR)
         sys.exit(1)
+
+    # Use --model_version if provided, otherwise fall back to MODEL_VERSION from config
+    if args.model_version and args.model_version != vm_params.get("model_version"):
+        logger.log(
+            f"UPDATING model_version fom {vm_params['model_version']} to {args.model_version}",
+            logger.INFO,
+        )
+        vm_params["model_version"] = (
+            args.model_version
+        )  # Ensure version is set in vm_params
+    else:
+        logger.log(f"Using model version: {vm_params['model_version']}", logger.INFO)
 
     # Override output directory if specified
     if args.out_dir:

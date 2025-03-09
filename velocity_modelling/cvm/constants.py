@@ -13,6 +13,7 @@ MAX_LON_SURFACE_EXTENSION = 10  # value in degrees the global (Vs30, DEM, tomogr
 EARTH_RADIUS_MEAN = 6378.139
 
 DATA_ROOT = Path(__file__).parent.parent / "Data"
+MODEL_VERSIONS_ROOT = DATA_ROOT / "model_versions"
 NZVM_REGISTRY_PATH = DATA_ROOT / "nzvm_registry.yaml"
 
 DEFAULT_OFFSHORE_1D_MODEL = "canterbury1d_v2"  # vm1d name for offshore 1D model
