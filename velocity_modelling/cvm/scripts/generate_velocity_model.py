@@ -54,10 +54,10 @@ from velocity_modelling.cvm.basin_model import (
 )
 from velocity_modelling.cvm.constants import (
     NZVM_REGISTRY_PATH,
+    TOPO_TYPES,
 )
 from velocity_modelling.cvm.geometry import (
     GlobalMesh,
-    ModelExtent,
     extract_mesh_vector,
     gen_full_model_grid_great_circle,
 )
@@ -116,7 +116,7 @@ def write_velo_mod_corners_text_file(
 def generate_velocity_model(
     cvm_registry: CVMRegistry,
     out_dir: Path,
-    vm_params: dict,
+    nzvm_config: dict,
     logger: VMLogger,
     smoothing: bool = False,
     progress_interval: int = 5,
@@ -137,8 +137,6 @@ def generate_velocity_model(
         Registry containing paths to all required data files.
     out_dir : Path
         Output directory where model files will be written.
-    vm_params : dict
-        Velocity model parameters (dimensions, resolution, etc).
     logger : VMLogger
         Logger for reporting progress and errors.
     smoothing : bool, optional
@@ -150,7 +148,7 @@ def generate_velocity_model(
     """
     # Import the appropriate writer based on format
     logger.log(f"Beginning velocity model generation in {out_dir}", logger.INFO)
-    logger.log(f"Model parameters: {vm_params['model_version']}", logger.INFO)
+    logger.log(f"Model parameters: {nzvm_config['model_version']}", logger.INFO)
     logger.log(f"Using output format: {output_format}", logger.INFO)
 
     # Import the appropriate writer based on format
@@ -183,8 +181,9 @@ def generate_velocity_model(
 
     # Create model grid
     logger.log("Generating model grid", logger.INFO)
-    model_extent = ModelExtent(vm_params)
-    global_mesh = gen_full_model_grid_great_circle(model_extent, logger)
+
+    global_mesh = gen_full_model_grid_great_circle(nzvm_config, logger)
+
     write_velo_mod_corners_text_file(global_mesh, out_dir, logger)
 
     # Load all required data
@@ -265,7 +264,7 @@ def generate_velocity_model(
                         partial_basin_surface_depths_list,
                         in_basin_list,
                         in_basin_mesh,
-                        vm_params["topo_type"],
+                        nzvm_config["topo_type"],
                     )
 
                     partial_global_qualities.rho[k] = qualities_vector.rho
@@ -295,8 +294,8 @@ def generate_velocity_model(
             out_dir,
             partial_global_mesh,
             partial_global_qualities,
-            vm_params,
             j,
+            nzvm_config["min_vs"],
             logger,
         )
 
@@ -306,7 +305,7 @@ def generate_velocity_model(
 
 def parse_nzvm_config(config_path: Path) -> dict:
     """
-    Parse the NZVM config file and convert it to the vm_params dictionary format.
+    Parse the NZVM config file and convert it to the nzvm_config dictionary format.
 
     Parameters
     ----------
@@ -318,7 +317,7 @@ def parse_nzvm_config(config_path: Path) -> dict:
     dict
         Dictionary containing the model parameters
     """
-    vm_params = {}
+    nzvm_config = {}
 
     with open(config_path, "r") as f:
         for line in f:
@@ -330,16 +329,20 @@ def parse_nzvm_config(config_path: Path) -> dict:
             key = key.strip()
             value = value.strip()
 
-            # Map NZVM keys to vm_params keys
+            # Map NZVM keys to nzvm_config keys
             if key == "MODEL_VERSION":
                 # Always store MODEL_VERSION as string
-                vm_params["model_version"] = value
+                nzvm_config["model_version"] = value
             elif key == "OUTPUT_DIR":
-                vm_params["output_dir"] = value
+                nzvm_config["output_dir"] = value
             elif key == "CALL_TYPE":
-                vm_params["call_type"] = value
+                nzvm_config["call_type"] = value
             elif key == "TOPO_TYPE":
-                vm_params["topo_type"] = value
+                try:
+                    nzvm_config["topo_type"] = TOPO_TYPES[value]
+                except KeyError:
+                    VMLogger.error(f"Invalid topo type {value}")
+                    raise KeyError(f"Invalid topo type {value}")
             else:
                 # Convert numeric values
                 try:
@@ -349,39 +352,40 @@ def parse_nzvm_config(config_path: Path) -> dict:
                         f"Numeric value is required for key {key}: {value}"
                     )
                 else:
-                    # Map NZVM keys to vm_params keys
+                    # Map NZVM keys to nzvm_config keys
                     if key == "ORIGIN_LAT":
-                        vm_params["origin_lat"] = value
+                        nzvm_config["origin_lat"] = value
                     elif key == "ORIGIN_LON":
-                        vm_params["origin_lon"] = value
+                        nzvm_config["origin_lon"] = value
                     elif key == "ORIGIN_ROT":
-                        vm_params["origin_rot"] = value
+                        nzvm_config["origin_rot"] = value
                     elif key == "EXTENT_X":
-                        vm_params["extent_x"] = value
+                        nzvm_config["extent_x"] = value
                     elif key == "EXTENT_Y":
-                        vm_params["extent_y"] = value
+                        nzvm_config["extent_y"] = value
                     elif key == "EXTENT_ZMAX":
-                        vm_params["extent_zmax"] = value
+                        nzvm_config["extent_zmax"] = value
                     elif key == "EXTENT_ZMIN":
-                        vm_params["extent_zmin"] = value
+                        nzvm_config["extent_zmin"] = value
                     elif key == "EXTENT_Z_SPACING":
-                        vm_params["h_depth"] = value
+                        nzvm_config["h_depth"] = value
                     elif key == "EXTENT_LATLON_SPACING":
-                        vm_params["h_lat_lon"] = value
+                        nzvm_config["h_lat_lon"] = value
                     else:
                         # Store any other parameters with lowercase key
-                        vm_params[key.lower()] = value
+                        nzvm_config[key.lower()] = value
 
     # Calculate nx, ny, nz based on spacing and extent
-    vm_params["nx"] = int(round(vm_params["extent_x"] / vm_params["h_lat_lon"]))
-    vm_params["ny"] = int(round(vm_params["extent_y"] / vm_params["h_lat_lon"]))
-    vm_params["nz"] = int(
+    nzvm_config["nx"] = int(round(nzvm_config["extent_x"] / nzvm_config["h_lat_lon"]))
+    nzvm_config["ny"] = int(round(nzvm_config["extent_y"] / nzvm_config["h_lat_lon"]))
+    nzvm_config["nz"] = int(
         round(
-            (vm_params["extent_zmax"] - vm_params["extent_zmin"]) / vm_params["h_depth"]
+            (nzvm_config["extent_zmax"] - nzvm_config["extent_zmin"])
+            / nzvm_config["h_depth"]
         )
     )
 
-    return vm_params
+    return nzvm_config
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -454,11 +458,11 @@ if __name__ == "__main__":
 
     # Parse the config file
     try:
-        vm_params = parse_nzvm_config(config_path)
+        nzvm_config = parse_nzvm_config(config_path)
         # Validate CALL_TYPE
-        if vm_params.get("call_type") != "GENERATE_VELOCITY_MOD":
+        if nzvm_config.get("call_type") != "GENERATE_VELOCITY_MOD":
             logger.log(
-                f"Unsupported CALL_TYPE: {vm_params.get('call_type')}", logger.ERROR
+                f"Unsupported CALL_TYPE: {nzvm_config.get('call_type')}", logger.ERROR
             )
             sys.exit(1)
     except Exception as e:
@@ -470,7 +474,7 @@ if __name__ == "__main__":
         out_dir = args.out_dir.resolve()
     else:
         # Use output_dir from config if it exists, otherwise use current directory
-        out_dir = Path(vm_params.get("output_dir", "./")).resolve()
+        out_dir = Path(nzvm_config.get("output_dir", "./")).resolve()
 
     # Prepare output directory
     out_dir.mkdir(exist_ok=True, parents=True)
@@ -479,12 +483,12 @@ if __name__ == "__main__":
     # Initialize registry and generate model
     try:
         cvm_registry = CVMRegistry(
-            vm_params["model_version"],
+            nzvm_config["model_version"],
             logger,
             args.nzvm_registry,
         )
         generate_velocity_model(
-            cvm_registry, out_dir, vm_params, logger, output_format=args.output_format
+            cvm_registry, out_dir, nzvm_config, logger, output_format=args.output_format
         )
 
         elapsed_time = time.time() - start_time

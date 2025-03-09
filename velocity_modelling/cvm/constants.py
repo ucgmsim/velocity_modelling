@@ -37,3 +37,19 @@ class VTYPE(Enum):
     vp = 0
     vs = 1
     rho = 2
+
+
+class TOPO_TYPES(Enum):
+    """
+    Enum for the topography types.
+
+    0: BULLDOZED
+    1: SQUASHED
+    2: SQUASHED_TAPERED
+    3: TRUE
+    """
+
+    BULLDOZED = 0
+    SQUASHED = 1
+    SQUASHED_TAPERED = 2
+    TRUE = 3

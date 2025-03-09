@@ -17,8 +17,8 @@ def write_global_qualities(
     output_dir: Path,
     partial_global_mesh: PartialGlobalMesh,
     partial_global_qualities: PartialGlobalQualities,
-    vm_params: dict,
     lat_ind: int,
+    min_vs: float = 0.0,
     logger: VMLogger = None,
 ):
     """
@@ -32,10 +32,10 @@ def write_global_qualities(
         Structure containing the latitude and longitude grid.
     partial_global_qualities : PartialGlobalQualities
         Structure containing Vp, Vs, and Rho for all grid points.
-    vm_params : dict
-        Dictionary containing velocity model parameters.
     lat_ind : int
         Latitude index to determine the write mode (write or append).
+    min_vs : float, optional
+        Minimum Vs value to apply to the model.
     logger : VMLogger, optional
         Logger instance for logging messages.
 
@@ -73,7 +73,7 @@ def write_global_qualities(
         inbasin = partial_global_qualities.inbasin.T.flatten()
 
         # Apply the minimum vs constraint
-        vs = np.maximum(vs, vm_params["min_vs"])
+        vs = np.maximum(vs, min_vs)
 
         # Pack the data using the appropriate endianness
         vp_data = struct.pack(f"{endian_format}{len(vp)}f", *vp)

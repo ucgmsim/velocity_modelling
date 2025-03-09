@@ -220,59 +220,7 @@ class MeshVector:
         return new_instance
 
 
-# TODO: under-utilized. could be removed
-class ModelExtent:
-    """
-    Location and dimension of the model to be created.
-
-    Parameters
-    ----------
-    vm_params : dict
-        Dictionary containing configuration for model size and origin
-
-    Attributes
-    ----------
-    origin_lat : float
-        Latitude of the model origin.
-    origin_lon : float
-        Longitude of the model origin
-    origin_rot : float
-        Rotation of the model origin (degrees)
-    xmax : float
-        Maximum X extent (km)
-    ymax : float
-        Maximum Y extent (km)
-    zmax : float
-        Maximum Z extent (km)
-    zmin : float
-        Minimum Z extent (km)
-    h_depth : float
-        Grid spacing for the depth (km)
-    h_lat_lon : float
-        Grid spacing for latitude and longitude (km)
-    nx : int
-        Number of X points.
-    ny : int
-        Number of Y points.
-    """
-
-    def __init__(self, vm_params: dict):
-        """
-        Stores parameters for the model extent.
-
-        """
-        self.origin_lat = vm_params["origin_lat"]
-        self.origin_lon = vm_params["origin_lon"]
-        self.origin_rot = vm_params["origin_rot"]  # in degrees
-        self.xmax = vm_params["extent_x"]
-        self.ymax = vm_params["extent_y"]
-        self.zmax = vm_params["extent_zmax"]
-        self.zmin = vm_params["extent_zmin"]
-        self.h_depth = vm_params["h_depth"]
-        self.h_lat_lon = vm_params["h_lat_lon"]
-        self.nx = vm_params["nx"]
-        self.ny = vm_params["ny"]
-        self.nz = vm_params["nz"]
+# TODO: under-utilized. Can be used to validate nzvm_config
 
 
 @njit
@@ -1042,14 +990,14 @@ def great_circle_projection(
 
 
 def gen_full_model_grid_great_circle(
-    model_extent: ModelExtent, logger: VMLogger = None
+    vm_params: dict, logger: VMLogger = None
 ) -> GlobalMesh:
     """
     Generate a global mesh grid using great-circle projection.
 
     Parameters
     ----------
-    model_extent : ModelExtent
+    vm_params : dict
         Defines the model's dimensions and origin.
     logger : VMLogger
         Logger instance for reporting progress.
@@ -1064,9 +1012,18 @@ def gen_full_model_grid_great_circle(
 
     logger.log("Starting generation of model grid.", logger.INFO)
 
-    nx = int(np.round(model_extent.xmax / model_extent.h_lat_lon))
-    ny = int(np.round(model_extent.ymax / model_extent.h_lat_lon))
-    nz = int(np.round((model_extent.zmax - model_extent.zmin) / model_extent.h_depth))
+    xmax = vm_params["extent_x"]
+    ymax = vm_params["extent_y"]
+    zmax = vm_params["extent_zmax"]
+    zmin = vm_params["extent_zmin"]
+    h_depth = vm_params["h_depth"]
+    h_lat_lon = vm_params["h_lat_lon"]
+    nx = vm_params["nx"]
+    ny = vm_params["ny"]
+    nz = vm_params["nz"]
+    origin_lat = vm_params["origin_lat"]
+    origin_lon = vm_params["origin_lon"]
+    origin_rot = vm_params["origin_rot"]
 
     global_mesh = GlobalMesh(nx, ny, nz)
 
@@ -1075,9 +1032,15 @@ def gen_full_model_grid_great_circle(
     global_mesh.max_lon = 0
     global_mesh.min_lon = 180
 
-    assert nx == model_extent.nx
-    assert ny == model_extent.ny
-    assert nz == model_extent.nz
+    assert nx == int(
+        np.round(xmax / h_lat_lon)
+    ), f" nx: {nx} != {int(np.round(xmax / h_lat_lon))}"
+    assert ny == int(
+        np.round(ymax / h_lat_lon)
+    ), f" ny: {ny} != {int(np.round(ymax / h_lat_lon))}"
+    assert nz == int(
+        np.round((zmax - zmin) / h_depth)
+    ), f" nz: {nz} != {int(np.round((zmax -zmin) / h_depth))}"
 
     if any(
         [
@@ -1095,33 +1058,21 @@ def gen_full_model_grid_great_circle(
             f"Number of model points. nx: {nx}, ny: {ny}, nz: {nz}.", logger.INFO
         )
 
-    global_mesh.x = (
-        0.5 * model_extent.h_lat_lon
-        + model_extent.h_lat_lon * np.arange(nx)
-        - 0.5 * model_extent.xmax
-    )
+    global_mesh.x = 0.5 * h_lat_lon + h_lat_lon * np.arange(nx) - 0.5 * xmax
 
-    global_mesh.y = (
-        0.5 * model_extent.h_lat_lon
-        + model_extent.h_lat_lon * np.arange(ny)
-        - 0.5 * model_extent.ymax
-    )
+    global_mesh.y = 0.5 * h_lat_lon + h_lat_lon * np.arange(ny) - 0.5 * ymax
 
-    global_mesh.z = -1000 * (
-        0.5 * model_extent.h_depth
-        + model_extent.h_depth * np.arange(nz)
-        + model_extent.zmin
-    )
+    global_mesh.z = -1000 * (0.5 * h_depth + h_depth * np.arange(nz) + zmin)
 
-    arg = model_extent.origin_rot * RPERD
+    arg = origin_rot * RPERD
     cos_a = np.cos(arg)
     sin_a = np.sin(arg)
 
-    arg = (90.0 - model_extent.origin_lat) * RPERD
+    arg = (90.0 - origin_lat) * RPERD
     cos_t = np.cos(arg)
     sin_t = np.sin(arg)
 
-    arg = model_extent.origin_lon * RPERD
+    arg = origin_lon * RPERD
     cos_p = np.cos(arg)
     sin_p = np.sin(arg)
 

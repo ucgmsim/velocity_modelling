@@ -46,7 +46,7 @@ class CVMRegistry:
         Loaded registry data from YAML configuration.
     version : str
         Version of the velocity model.
-    vm_global_params : dict
+    global_params : dict
         Global parameters for the specified model version.
     logger : VMLogger
         Logger for logging information and errors.
@@ -82,15 +82,44 @@ class CVMRegistry:
         with open(registry_path, "r") as f:
             self.registry = yaml.safe_load(f)
         self.version = version
-        self.vm_global_params = None
+        self.global_params = None
 
         for vminfo in self.registry["vm"]:
             if str(vminfo["version"]) == version:
-                self.vm_global_params = vminfo
+                self.global_params = vminfo
                 break
 
-        if self.vm_global_params is None:
+        if self.global_params is None:
             raise ValueError(f"Version {version} not found in registry")
+
+        global_params = self.global_params
+
+        # validate global_params
+        global_surfaces_list = global_params["surfaces"]
+        if (
+            global_surfaces_list is None
+        ):  # if no surfaces are defined, create an empty list
+            global_surfaces_list = []
+
+        # The original C code assumes the global surface to be sandwiched between  'posInfSurf' and 'negInfSurf'
+        # then linked posInfSurf to nan_submod, and negInfSurf to None
+        # Instead of enforcing this in the registry level, we will enforce this in the code.
+        first_surface_name, last_surface_name = (
+            global_surfaces_list[0]["name"],
+            global_surfaces_list[-1]["name"],
+        )
+        if first_surface_name != "posInfSurf" and last_surface_name != "negInfSurf":
+            global_params["surfaces"] = (
+                [{"name": "posInfSurf", "submodel": "nan_submod"}]
+                + global_params["surfaces"]
+                + [{"name": "negInfSurf", "submodel": None}]
+            )
+
+        # Separate surface names and submodels for easier access later
+        global_params["surface_names"] = [d["name"] for d in global_params["surfaces"]]
+        global_params["submodels"] = [d["submodel"] for d in global_params["surfaces"]][
+            :-1
+        ]  # drop the last None
 
         self.logger = logger
         self.cache = {}  # Initialize a cache dictionary
@@ -563,14 +592,18 @@ class CVMRegistry:
         velo_mod_1d_data = None
         nz_tomography_data = None
 
-        global_model_params = self.vm_global_params
+        self.log("Loading global surfaces", VMLogger.INFO)
+        global_surfaces = self.load_global_surface_data(
+            self.global_params["surface_names"]
+        )
 
         # TODO: this part here needs some more thoughts. submodels can be all merged into one category in nzvm_registry.yaml
         self.log("Loading global velocity submodel data", VMLogger.INFO)
-        for submodel in global_model_params["submodels"]:
-            submodel_info = self.get_info("submodel", submodel)
+
+        for submodel_name in self.global_params["submodels"]:
+            submodel_info = self.get_info("submodel", submodel_name)
             if submodel_info is None:
-                self.log(f"Error: Submodel {submodel} not found", VMLogger.ERROR)
+                self.log(f"Error: Submodel {submodel_name} not found", VMLogger.ERROR)
                 sys.exit(1)
 
             if submodel_info["type"] is None:
@@ -579,16 +612,16 @@ class CVMRegistry:
                 velo_mod_1d_data = self.load_1d_velo_sub_model(submodel_info["name"])
                 self.log("Loaded 1D velocity model data", VMLogger.INFO)
             elif submodel_info["type"] == "tomography":
-                if global_model_params.get("tomography"):
+                if self.global_params.get("tomography"):
                     nz_tomography_data = self.load_tomo_surface_data(
-                        global_model_params["tomography"]
+                        self.global_params["tomography"]
                     )
                 else:
                     self.log("Error: Tomography data not found", VMLogger.ERROR)
                     sys.exit(1)
             elif submodel_info["type"] == "relation":
                 self.log(
-                    f"Using relation submodel {submodel} with no additional data",
+                    f"Using relation submodel {submodel_name} with no additional data",
                     VMLogger.DEBUG,
                 )
             else:
@@ -602,14 +635,11 @@ class CVMRegistry:
                 "Loading smooth boundaries for tomography transitions", VMLogger.INFO
             )
             nz_tomography_data.smooth_boundary = self.load_smooth_boundaries(
-                global_model_params["basins"]
+                self.global_params["basins"]
             )
 
-        self.log("Loading global surfaces", VMLogger.INFO)
-        global_surfaces = self.load_global_surface_data(global_model_params["surfaces"])
-
         self.log("Loading basin data", VMLogger.INFO)
-        basin_data = self.load_basin_data(global_model_params["basins"])
+        basin_data = self.load_basin_data(self.global_params["basins"])
 
         self.log("All global data successfully loaded", VMLogger.INFO)
         return velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data
@@ -778,3 +808,65 @@ class CVMRegistry:
 
         self.log(f"Total smoothing boundary points: {count}", VMLogger.INFO)
         return SmoothingBoundary(smooth_bound_lons, smooth_bound_lats)
+
+
+# class VMParams:
+#     """
+#     Location and dimension of the model to be created.
+#
+#     Parameters
+#     ----------
+#     nzvm_config : dict
+#         Dictionary containing configuration for model size and origin
+#
+#     Attributes
+#     ----------
+#     origin_lat : float
+#         Latitude of the model origin.
+#     origin_lon : float
+#         Longitude of the model origin
+#     origin_rot : float
+#         Rotation of the model origin (degrees)
+#     xmax : float
+#         Maximum X extent (km)
+#     ymax : float
+#         Maximum Y extent (km)
+#     zmax : float
+#         Maximum Z extent (km)
+#     zmin : float
+#         Minimum Z extent (km)
+#     h_depth : float
+#         Grid spacing for the depth (km)
+#     h_lat_lon : float
+#         Grid spacing for latitude and longitude (km)
+#     nx : int
+#         Number of X points.
+#     ny : int
+#         Number of Y points.
+#     nz : int
+#         Number of Z points.
+#     min_vs : float
+#         Minimum Vs value for the model. (m/s)
+#     topo_type : str
+#         Type of topography to use. (eg. 'BULLDOZED',''SQUASHED','SQUASHED_TAPERED', 'TRUE')
+#
+#     """
+#
+#     def __init__(self, nzvm_config: dict):
+#         """
+#         Stores parameters for the model extent.
+#
+#         """
+#         self.origin_lat = nzvm_config["origin_lat"]
+#         self.origin_lon = nzvm_config["origin_lon"]
+#         self.origin_rot = nzvm_config["origin_rot"]  # in degrees
+#         self.xmax = nzvm_config["extent_x"]
+#         self.ymax = nzvm_config["extent_y"]
+#         self.zmax = nzvm_config["extent_zmax"]
+#         self.zmin = nzvm_config["extent_zmin"]
+#         self.h_depth = nzvm_config["h_depth"]
+#         self.h_lat_lon = nzvm_config["h_lat_lon"]
+#         self.nx = nzvm_config["nx"]
+#         self.ny = nzvm_config["ny"]
+#         self.nz = nzvm_config["nz"]
+#         self.min_vs = nzvm_config["min_vs"]

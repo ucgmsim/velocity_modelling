@@ -19,10 +19,7 @@ from velocity_modelling.cvm.basin_model import (
     InBasinGlobalMesh,
     PartialBasinSurfaceDepths,
 )
-from velocity_modelling.cvm.constants import (
-    MAX_DIST_SMOOTH,
-    VTYPE,
-)
+from velocity_modelling.cvm.constants import MAX_DIST_SMOOTH, VTYPE, TOPO_TYPES
 from velocity_modelling.cvm.geometry import (
     AdjacentPoints,
     MeshVector,
@@ -132,7 +129,7 @@ class QualitiesVector:
 
     def prescribe_velocities(
         self,
-        global_model_parameters: dict,
+        global_params: dict,
         velo_mod_1d_data: VelocityModel1D,
         nz_tomography_data: TomographyData,
         global_surfaces: GlobalSurfaces,
@@ -140,7 +137,7 @@ class QualitiesVector:
         partial_global_surface_depths: PartialGlobalSurfaceDepths,
         partial_basin_surface_depths_list: list[PartialBasinSurfaceDepths],
         in_basin_list: list[InBasin],
-        topo_type: str,
+        topo_type: TOPO_TYPES,
         on_boundary: bool,
     ):
         """
@@ -148,7 +145,7 @@ class QualitiesVector:
 
         Parameters
         ----------
-        global_model_parameters : dict
+        global_params : dict
             Parameters for the global velocity model.
         velo_mod_1d_data : VelocityModel1D
             1D velocity model data.
@@ -164,7 +161,7 @@ class QualitiesVector:
             Basin surface depth data at this location.
         in_basin_list : list[InBasin]
             Basin membership indicators.
-        topo_type : str
+        topo_type : TOPO_TYPES
             Topography handling method ("TRUE", "BULLDOZED", "SQUASHED", "SQUASHED_TAPERED").
         on_boundary : bool
             Whether this point is on a model boundary.
@@ -178,7 +175,7 @@ class QualitiesVector:
             in_basin.in_basin_lat_lon for in_basin in in_basin_list
         )
         # TODO: test this
-        if topo_type == "SQUASHED":
+        if topo_type == TOPO_TYPES.SQUASHED:
             depth_change = -mesh_vector.z
             shifted_mesh_vector = mesh_vector.copy()
             shifted_mesh_vector.z = (
@@ -186,7 +183,7 @@ class QualitiesVector:
             )
 
         # TODO: test this
-        elif topo_type == "SQUASHED_TAPERED":
+        elif topo_type == TOPO_TYPES.SQUASHED_TAPERED:
             taper_dist = 1.0
             depth_change = -mesh_vector.z
             taper_val = np.where(
@@ -206,7 +203,7 @@ class QualitiesVector:
                 partial_global_surface_depths.depths[1] * taper_val - depth_change
             )
 
-        elif topo_type in ["BULLDOZED", "TRUE"]:
+        elif topo_type in [TOPO_TYPES.BULLDOZED, TOPO_TYPES.TRUE]:
             shifted_mesh_vector = mesh_vector
 
         else:
@@ -233,7 +230,7 @@ class QualitiesVector:
         # Compute z values for all depths
         z_values = (
             mesh_vector.z
-            if topo_type in ["BULLDOZED", "TRUE"]
+            if topo_type in [TOPO_TYPES.BULLDOZED, TOPO_TYPES.TRUE]
             else shifted_mesh_vector.z
         )
         k_indices = np.arange(mesh_vector.nz)
@@ -291,16 +288,14 @@ class QualitiesVector:
                     z_out_basin
                 )
             )
-            submodel_names = np.array(global_model_parameters["submodels"])[
-                submodel_indices
-            ]
+            submodel_names = np.array(global_params["submodels"])[submodel_indices]
 
             # Vectorized call to call_global_submodel
             self.call_global_submodel_vectorized(
                 submodel_names,
                 z_out_basin,
                 k_out_basin,
-                global_model_parameters,
+                global_params,
                 partial_global_surface_depths,
                 velo_mod_1d_data,
                 nz_tomography_data,
@@ -316,7 +311,7 @@ class QualitiesVector:
         self.vs[mask_above_surface] = np.nan
 
         # Apply NaN masking for bulldozed topography
-        if topo_type == "BULLDOZED":
+        if topo_type == TOPO_TYPES.BULLDOZED:
             mask_above_zero = mesh_vector.z > 0
             self.rho[mask_above_zero] = np.nan
             self.vp[mask_above_zero] = np.nan
@@ -334,7 +329,7 @@ class QualitiesVector:
         partial_basin_surface_depths_list: list[PartialBasinSurfaceDepths],
         in_basin_list: list[InBasin],
         in_basin_mesh: InBasinGlobalMesh,
-        topo_type: str,
+        topo_type: TOPO_TYPES,
     ):
         """
         Determine if lat-lon point lies within the smoothing zone and prescribe velocities accordingly.
@@ -363,7 +358,7 @@ class QualitiesVector:
             Basin membership indicators.
         in_basin_mesh : InBasinGlobalMesh
             Pre-processed basin membership for smoothing optimization.
-        topo_type : str
+        topo_type : TOPO_TYPES
             Topography handling method.
         """
         smooth_bound = nz_tomography_data.smooth_boundary
@@ -380,7 +375,7 @@ class QualitiesVector:
             )
 
         # calculate vs30 (used as a proxy to determine if point is on- or off-shore, only if using tomography)
-        if cvm_registry.vm_global_params["GTL"]:
+        if cvm_registry.global_params["GTL"]:
             nz_tomography_data.calculate_vs30_from_tomo_vs30_surface(
                 mesh_vector
             )  # mesh_vector.vs30 updated
@@ -394,7 +389,7 @@ class QualitiesVector:
         if (
             distance <= MAX_DIST_SMOOTH
             and not in_any_basin
-            and cvm_registry.vm_global_params[
+            and cvm_registry.global_params[
                 "GTL"
             ]  # Ely et al. 2010: Geotechnical Layer. If True, then apply the offshore basin depth
             and mesh_vector.vs30 < 100
@@ -443,7 +438,7 @@ class QualitiesVector:
             # velocity vector just inside the boundary
             on_boundary = True
             qualities_vector_b.prescribe_velocities(
-                cvm_registry.vm_global_params,
+                cvm_registry.global_params,
                 velo_mod_1d_data,
                 nz_tomography_data,
                 global_surfaces,
@@ -462,7 +457,7 @@ class QualitiesVector:
             # velocity vector at the point in question
             on_boundary = False
             qualities_vector_a.prescribe_velocities(
-                cvm_registry.vm_global_params,
+                cvm_registry.global_params,
                 velo_mod_1d_data,
                 nz_tomography_data,
                 global_surfaces,
@@ -499,7 +494,7 @@ class QualitiesVector:
         else:
             on_boundary = False
             self.prescribe_velocities(
-                cvm_registry.vm_global_params,
+                cvm_registry.global_params,
                 velo_mod_1d_data,
                 nz_tomography_data,
                 global_surfaces,
@@ -517,7 +512,7 @@ class QualitiesVector:
         submodel_names: np.ndarray,
         depths: np.ndarray,
         z_indices: np.ndarray,
-        global_model_parameters: dict,
+        global_params: dict,
         partial_global_surface_depths: PartialGlobalSurfaceDepths,
         velo_mod_1d_data: VelocityModel1D,
         nz_tomography_data: TomographyData,
@@ -538,7 +533,7 @@ class QualitiesVector:
             Depths (m) to calculate properties for.
         z_indices : np.ndarray
             Indices of depths in the mesh.
-        global_model_parameters : dict
+        global_params : dict
             Parameters for the global velocity model.
         partial_global_surface_depths : PartialGlobalSurfaceDepths
             Global surface depth data.
@@ -602,7 +597,7 @@ class QualitiesVector:
                     mesh_vector,
                     nz_tomography_data,
                     partial_global_surface_depths,
-                    global_model_parameters["GTL"],
+                    global_params["GTL"],
                     in_any_basin_lat_lon,
                     on_boundary,
                     interpolated_global_surface_values,

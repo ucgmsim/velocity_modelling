@@ -15,8 +15,8 @@ def write_global_qualities(
     output_dir: Path,
     partial_global_mesh: PartialGlobalMesh,
     partial_global_qualities: PartialGlobalQualities,
-    vm_params: dict,
     lat_ind: int,
+    min_vs: float = 0.0,
     logger: VMLogger = None,
 ):
     """
@@ -30,10 +30,10 @@ def write_global_qualities(
         Structure containing the latitude and longitude grid.
     partial_global_qualities : PartialGlobalQualities
         Structure containing Vp, Vs, and Rho for all grid points.
-    vm_params : dict
-        Dictionary containing velocity model parameters.
     lat_ind : int
         Latitude index to determine the write mode (write or append).
+    min_vs : float, optional
+        Minimum Vs value to apply to the model.
     logger : VMLogger
         Logger instance for logging messages.
 
@@ -45,7 +45,6 @@ def write_global_qualities(
     output_file = output_dir / "velocity_model.csv"
 
     mode = "w" if lat_ind == 0 else "a"
-    min_vs = vm_params.get("min_vs", 0.0)
 
     if lat_ind == 0:
         logger.log(f"Creating new CSV file: {output_file}", logger.INFO)
