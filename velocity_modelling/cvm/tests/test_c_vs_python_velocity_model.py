@@ -18,9 +18,9 @@ def generate_random_nzvm_config(c_output_dir: Path) -> Path:
     """Generate a random but sensible nzvm.cfg file with specified parameters"""
     # Sensible ranges and choices for parameters
     model_version = random.choice(["2.03", "2.07"])
-    extent_x = random.uniform(10, 20)
-    extent_y = random.uniform(10, 20)
-    extent_zmax = random.uniform(2, 10)
+    extent_x = random.uniform(10, 100)
+    extent_y = random.uniform(10, 100)
+    extent_zmax = random.uniform(2, 50)
     extent_zmin = 0.0
     extent_z_spacing = random.uniform(0.1, 1.0)
     extent_latlon_spacing = random.uniform(0.1, 2)  # Updated range
