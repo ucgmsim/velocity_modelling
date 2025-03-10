@@ -363,19 +363,19 @@ def parse_nzvm_config(config_path: Path) -> dict:
                     elif key == "ORIGIN_LON":
                         vm_params["origin_lon"] = value
                     elif key == "ORIGIN_ROT":
-                        vm_params["origin_rot"] = value
+                        vm_params["origin_rot"] = value  # degrees
                     elif key == "EXTENT_X":
-                        vm_params["extent_x"] = value
+                        vm_params["extent_x"] = value  # km
                     elif key == "EXTENT_Y":
-                        vm_params["extent_y"] = value
+                        vm_params["extent_y"] = value  # km
                     elif key == "EXTENT_ZMAX":
-                        vm_params["extent_zmax"] = value
+                        vm_params["extent_zmax"] = value  # km
                     elif key == "EXTENT_ZMIN":
-                        vm_params["extent_zmin"] = value
+                        vm_params["extent_zmin"] = value  # km
                     elif key == "EXTENT_Z_SPACING":
-                        vm_params["h_depth"] = value
+                        vm_params["h_depth"] = value  # km
                     elif key == "EXTENT_LATLON_SPACING":
-                        vm_params["h_lat_lon"] = value
+                        vm_params["h_lat_lon"] = value  # km
                     else:
                         # Store any other parameters with lowercase key
                         vm_params[key.lower()] = value

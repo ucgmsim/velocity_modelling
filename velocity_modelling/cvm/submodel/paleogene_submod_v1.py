@@ -32,6 +32,12 @@ def main_vectorized(
         Logger for reporting processing status.
     """
 
+    if logger is not None:
+        logger.log(
+            f"Assigning Paleogene layer properties to {len(z_indices)} points",
+            logger.DEBUG,
+        )
+
     qualities_vector.rho[z_indices] = 2.151
     qualities_vector.vp[z_indices] = 2.7
     qualities_vector.vs[z_indices] = 1.1511

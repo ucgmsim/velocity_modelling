@@ -108,8 +108,8 @@ class CVMRegistry:
             global_surfaces_list = []
 
         # The original C code assumes the global surface to be sandwiched between  'posInfSurf' and 'negInfSurf'
-        # then linked posInfSurf to nan_submod, and negInfSurf to None
-        # Instead of enforcing this in the registry level, we will enforce this in the code.
+        # then links posInfSurf to nan_submod, and negInfSurf to None
+        # Enforcing this in the YAML file seems pointless and counter-intuitive. so we will just add them here
         first_surface_name, last_surface_name = (
             global_surfaces_list[0]["name"],
             global_surfaces_list[-1]["name"],
@@ -826,65 +826,3 @@ class CVMRegistry:
 
         self.log(f"Total smoothing boundary points: {count}", VMLogger.INFO)
         return SmoothingBoundary(smooth_bound_lons, smooth_bound_lats)
-
-
-# class VMParams:
-#     """
-#     Location and dimension of the model to be created.
-#
-#     Parameters
-#     ----------
-#     nzvm_config : dict
-#         Dictionary containing configuration for model size and origin
-#
-#     Attributes
-#     ----------
-#     origin_lat : float
-#         Latitude of the model origin.
-#     origin_lon : float
-#         Longitude of the model origin
-#     origin_rot : float
-#         Rotation of the model origin (degrees)
-#     xmax : float
-#         Maximum X extent (km)
-#     ymax : float
-#         Maximum Y extent (km)
-#     zmax : float
-#         Maximum Z extent (km)
-#     zmin : float
-#         Minimum Z extent (km)
-#     h_depth : float
-#         Grid spacing for the depth (km)
-#     h_lat_lon : float
-#         Grid spacing for latitude and longitude (km)
-#     nx : int
-#         Number of X points.
-#     ny : int
-#         Number of Y points.
-#     nz : int
-#         Number of Z points.
-#     min_vs : float
-#         Minimum Vs value for the model. (m/s)
-#     topo_type : str
-#         Type of topography to use. (eg. 'BULLDOZED',''SQUASHED','SQUASHED_TAPERED', 'TRUE')
-#
-#     """
-#
-#     def __init__(self, nzvm_config: dict):
-#         """
-#         Stores parameters for the model extent.
-#
-#         """
-#         self.origin_lat = nzvm_config["origin_lat"]
-#         self.origin_lon = nzvm_config["origin_lon"]
-#         self.origin_rot = nzvm_config["origin_rot"]  # in degrees
-#         self.xmax = nzvm_config["extent_x"]
-#         self.ymax = nzvm_config["extent_y"]
-#         self.zmax = nzvm_config["extent_zmax"]
-#         self.zmin = nzvm_config["extent_zmin"]
-#         self.h_depth = nzvm_config["h_depth"]
-#         self.h_lat_lon = nzvm_config["h_lat_lon"]
-#         self.nx = nzvm_config["nx"]
-#         self.ny = nzvm_config["ny"]
-#         self.nz = nzvm_config["nz"]
-#         self.min_vs = nzvm_config["min_vs"]
