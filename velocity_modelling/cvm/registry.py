@@ -371,7 +371,6 @@ class CVMRegistry:
                 sys.exit(1)
             return (submodel_name, self.load_1d_velo_sub_model(vm1d["path"]))
 
-        # TODO: investigate why the original code ignores non-vm1d submodels
         elif submodel["type"] == "relation":
             self.log(
                 f"Using relation submodel {submodel_name} with no additional data",
