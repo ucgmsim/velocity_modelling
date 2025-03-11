@@ -51,21 +51,19 @@ Example usage:
 
 # import concurrent.futures
 
-import argparse
-import sys
 import time
 from pathlib import Path
-import typer
-from typing import Annotated, Dict
-import yaml
+from typing import Annotated
 
+import typer
+
+from qcore import cli
 from velocity_modelling.cvm.basin_model import (
     InBasin,
     InBasinGlobalMesh,
     PartialBasinSurfaceDepths,
 )
 from velocity_modelling.cvm.constants import (
-    MODEL_VERSIONS_ROOT,
     NZVM_REGISTRY_PATH,
     TopoTypes,
     WriteFormat,
@@ -85,10 +83,8 @@ from velocity_modelling.cvm.velocity3d import (
     QualitiesVector,
 )
 
-from qcore import cli
-
-
 app = typer.Typer(pretty_exceptions_enable=False)
+
 
 def write_velo_mod_corners_text_file(
     global_mesh: GlobalMesh, output_dir: Path | str, logger: VMLogger
@@ -130,6 +126,7 @@ def write_velo_mod_corners_text_file(
         logger.log(f"Failed to write velocity model corners: {e}", logger.ERROR)
         raise
 
+
 @cli.from_docstring(app)
 def generate_velocity_model(
     nzvm_cfg_path: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
@@ -137,7 +134,6 @@ def generate_velocity_model(
     nzvm_registry: Annotated[
         Path, typer.Option(exists=True, dir_okay=False)
     ] = NZVM_REGISTRY_PATH,
-
     smoothing: Annotated[bool, typer.Option()] = False,
     progress_interval: Annotated[int, typer.Option()] = 5,
     output_format: Annotated[str, typer.Option()] = WriteFormat.EMOD3D.name,
@@ -176,7 +172,7 @@ def generate_velocity_model(
     logger.log(f"Beginning velocity model generation in {out_dir}", logger.INFO)
     logger.log(f"Using output format: {output_format}", logger.INFO)
 
-    vm_params =  parse_nzvm_config(nzvm_cfg_path)
+    vm_params = parse_nzvm_config(nzvm_cfg_path)
 
     # Import the appropriate writer based on format
     try:
@@ -196,13 +192,10 @@ def generate_velocity_model(
         logger.log(f"Unsupported output format: {output_format}", logger.ERROR)
         raise ValueError(f"Unsupported output format: {output_format}")
 
-    import time
-
     start_time = time.time()
 
     out_dir = out_dir.resolve()
     out_dir.mkdir(exist_ok=True, parents=True)
-
 
     cvm_registry = CVMRegistry(
         vm_params["model_version"],
@@ -341,6 +334,7 @@ def generate_velocity_model(
         logger.INFO,
     )
 
+
 @cli.from_docstring(app)
 def empty_command() -> None:
     """
@@ -350,6 +344,7 @@ def empty_command() -> None:
     None
     """
     pass
+
 
 def parse_nzvm_config(config_path: Path) -> dict:
     """
