@@ -131,7 +131,7 @@ def generate_velocity_model(
     logger: VMLogger,
     smoothing: bool = False,
     progress_interval: int = 5,
-    output_format: str = "emod3d",
+    output_format: str = WriteFormat.EMOD3D.name,
 ) -> None:
     """
     Generate a 3D velocity model and write it to disk.
