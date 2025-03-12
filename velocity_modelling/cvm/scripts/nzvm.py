@@ -52,21 +52,19 @@ pip install -e  .
 
 # import concurrent.futures
 
-import argparse
-import sys
 import time
 from pathlib import Path
-import typer
-from typing import Annotated, Dict
-import yaml
+from typing import Annotated
 
+import typer
+
+from qcore import cli
 from velocity_modelling.cvm.basin_model import (
     InBasin,
     InBasinGlobalMesh,
     PartialBasinSurfaceDepths,
 )
 from velocity_modelling.cvm.constants import (
-    MODEL_VERSIONS_ROOT,
     NZVM_REGISTRY_PATH,
     TopoTypes,
     WriteFormat,
@@ -86,10 +84,8 @@ from velocity_modelling.cvm.velocity3d import (
     QualitiesVector,
 )
 
-from qcore import cli
-
-
 app = typer.Typer(pretty_exceptions_enable=False)
+
 
 def write_velo_mod_corners_text_file(
     global_mesh: GlobalMesh, output_dir: Path | str, logger: VMLogger
@@ -130,6 +126,7 @@ def write_velo_mod_corners_text_file(
     except Exception as e:
         logger.log(f"Failed to write velocity model corners: {e}", logger.ERROR)
         raise
+
 
 @cli.from_docstring(app)
 def generate_velocity_model(
@@ -209,6 +206,7 @@ def generate_velocity_model(
     else:
         logger.log(f"Using model version: {vm_params['model_version']}", logger.INFO)
 
+
     # Import the appropriate writer based on format
     try:
         _ = WriteFormat[output_format.upper()]
@@ -229,12 +227,10 @@ def generate_velocity_model(
         raise ValueError(f"Unsupported output format: {output_format}")
 
 
-
     out_dir = out_dir.resolve()
     out_dir.mkdir(exist_ok=True, parents=True)
 
     # Initialize registry and generate model
-
     cvm_registry = CVMRegistry(
         vm_params["model_version"],
         logger,
@@ -377,6 +373,7 @@ def generate_velocity_model(
         logger.INFO,
     )
 
+
 @cli.from_docstring(app)
 def empty_command() -> None:
     """
@@ -386,6 +383,7 @@ def empty_command() -> None:
     None
     """
     pass
+
 
 def parse_nzvm_config(config_path: Path) -> dict:
     """
