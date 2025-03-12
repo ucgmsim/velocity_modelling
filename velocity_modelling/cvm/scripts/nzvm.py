@@ -6,29 +6,30 @@ It creates a mesh grid representation of subsurface properties (P-wave velocity,
 S-wave velocity, and density) by combining global velocity models, regional tomographic
 models, and local basin models.
 
-Example usage:
+# Installation
+cd velocity_modelling
+pip install -e  .
+
+# Execution
+
     # Basic usage : to use everything defined in nzvm.cfg
-    python generate_velocity_model.py /path/to/nzvm.cfg
+    nzvm generate-velocity-model  /path/to/nzvm.cfg
 
     # To override output directory
-    python  generate_velocity_model.py /path/to/nzvm.cfg --out_dir /path/to/output_dir
+    nzvm generate-velocity-model /path/to/nzvm.cfg --out-dir /path/to/output_dir
 
     # With custom registry location:
-    python  generate_velocity_model.py /path/to/nzvm.cfg --out_dir /path/to/output_dir --nzvm_registry /path/to/registry.yaml
+    nzvm generate-velocity-model /path/to/nzvm.cfg --out-dir /path/to/output_dir --nzvm-registry /path/to/registry.yaml
 
     # To override "MODEL_VERSION" in nzvm.cfg to use a .yaml file for a custom model version
-    python  generate_velocity_model.py /path/to/nzvm.cfg --out_dir /path/to/output_dir --model_version 2.07
+    nzvm generate-velocity-model /path/to/nzvm.cfg --out-dir /path/to/output_dir --model-version 2.07
 
     # With specific log level:
-    python  generate_velocity_model.py /path/to/nzvm.cfg --out_dir /path/to/output_dir --log-level DEBUG
+    nzvm generate-velocity-model /path/to/nzvm.cfg --out-dir /path/to/output_dir --log-level DEBUG
 
     # With specific output format:
-    python  generate_velocity_model.py /path/to/nzvm.cfg --out_dir /path/to/output_dir --output_format csv  (default: emod3d)
+    nzvm generate-velocity-model /path/to/nzvm.cfg --out-dir /path/to/output_dir --output-format CSV  (default: emod3d)
 
-    # To overrite
-
-
-    if --out_dir is not specified, it will use OUTPUT_DIR specified in nzvm.cfg
 
     [example] nzvm.cfg
 
@@ -130,13 +131,15 @@ def write_velo_mod_corners_text_file(
 @cli.from_docstring(app)
 def generate_velocity_model(
     nzvm_cfg_path: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
-    out_dir: Annotated[Path, typer.Argument(file_okay=False)],
+    out_dir: Annotated[Path,  typer.Option(file_okay=False)] ,
     nzvm_registry: Annotated[
         Path, typer.Option(exists=True, dir_okay=False)
     ] = NZVM_REGISTRY_PATH,
+    model_version: Annotated[str, typer.Option()] = None,
+    output_format: Annotated[str, typer.Option()] = WriteFormat.EMOD3D.name,
     smoothing: Annotated[bool, typer.Option()] = False,
     progress_interval: Annotated[int, typer.Option()] = 5,
-    output_format: Annotated[str, typer.Option()] = WriteFormat.EMOD3D.name,
+
 ) -> None:
     """
     Generate a 3D velocity model and write it to disk.
@@ -149,37 +152,68 @@ def generate_velocity_model(
 
     Parameters
     ----------
-    cvm_registry : CVMRegistry
-        Registry containing paths to all required data files.
-    out_dir : Path
-        Output directory where model files will be written.
-    vm_params : dict
-        Dictionary containing the model parameters from nzvm.cfg
-    logger : VMLogger
-        Logger for reporting progress and errors.
-    smoothing : bool, optional
-        Whether to apply smoothing at model boundaries (default False).
-    progress_interval : int, optional
-        How often (in %) to log progress updates (default 5%).
+    nzvm_cfg_path : Path
+        Path to the nzvm.cfg configuration file.
+    out_dir : Path, Optional
+        Path to the output directory where the velocity model files will be written.
+         If not provided, the output directory specified in nzvm.cfg will be used.
+    nzvm_registry : Path, optional
+        Path to the model registry file (default: NZVM_REGISTRY_PATH).
+    model_version : str, optional
+        Version of the model to use (overrides MODEL_VERSION in config file).
     output_format : str, optional
         Format to write the output. Options: "EMOD3D", "CSV"
+    smoothing : bool, optional
+        Unsupported option for future smoothing implementation at model boundaries (default False).
+    progress_interval : int, optional
+        How often (in %) to log progress updates (default 5%).
+
     """
+    import time
+    start_time = time.time()
+
     # Import the appropriate writer based on format
     # Configure logging
     log_level = VMLogger.INFO
     logger = VMLogger(level=log_level)
     logger.log(f"Logger initialized with level {log_level}", logger.DEBUG)
     logger.log(f"Beginning velocity model generation in {out_dir}", logger.INFO)
-    logger.log(f"Using output format: {output_format}", logger.INFO)
 
-    vm_params = parse_nzvm_config(nzvm_cfg_path)
+    # Parse the config file
+    try:
+        vm_params = parse_nzvm_config(nzvm_cfg_path)
+        # Validate CALL_TYPE
+        if vm_params.get("call_type") != "GENERATE_VELOCITY_MOD":
+            logger.log(
+                f"Unsupported CALL_TYPE: {vm_params.get('call_type')}", logger.ERROR
+            )
+            sys.exit(1)
+    except Exception as e:
+        if isinstance(e, (SystemExit, KeyboardInterrupt)):
+            raise  # Re-raise these critical exceptions
+        logger.log(f"Failed to parse config file: {e}", logger.ERROR)
+        sys.exit(1)
+
+    # Use --model-version if provided, otherwise fall back to MODEL_VERSION from config
+    if model_version and model_version != vm_params.get("model_version"):
+        logger.log(
+            f"UPDATING model_version fom {vm_params['model_version']} to {model_version}",
+            logger.INFO,
+        )
+        vm_params["model_version"] = (
+            model_version
+        )  # Ensure version is set in vm_params
+    else:
+        logger.log(f"Using model version: {vm_params['model_version']}", logger.INFO)
+
 
     # Import the appropriate writer based on format
     try:
-        _ = WriteFormat[output_format]
+        _ = WriteFormat[output_format.upper()]
     except KeyError:
         logger.log(f"Unsupported output format: {output_format}", logger.ERROR)
         raise ValueError(f"Unsupported output format: {output_format}")
+    logger.log(f"Using output format: {output_format}", logger.INFO)
 
     import importlib
 
@@ -192,15 +226,20 @@ def generate_velocity_model(
         logger.log(f"Unsupported output format: {output_format}", logger.ERROR)
         raise ValueError(f"Unsupported output format: {output_format}")
 
-    start_time = time.time()
 
     out_dir = out_dir.resolve()
     out_dir.mkdir(exist_ok=True, parents=True)
 
+    # Initialize registry and generate model
     cvm_registry = CVMRegistry(
         vm_params["model_version"],
         logger,
         nzvm_registry,
+    )
+    elapsed_time = time.time() - start_time
+    logger.log(
+        f"Velocity model generation completed in {elapsed_time:.2f} seconds",
+        logger.INFO,
     )
 
     # Create model grid
@@ -402,134 +441,3 @@ def parse_nzvm_config(config_path: Path) -> dict:
 
     return vm_params
 
-# def parse_arguments() -> argparse.Namespace:
-#     """
-#     Parse command-line arguments for the velocity model generator.
-#
-#     Returns
-#     -------
-#     argparse.Namespace
-#         The parsed command-line arguments containing:
-#         - config_file: Path to nzvm.cfg configuration file
-#         - out_dir: Path to output directory (optional, overrides config)
-#         - nzvm_registry: Path to registry file (optional)
-#         - log_level: Logging level (optional)
-#     """
-#     parser = argparse.ArgumentParser(
-#         description="Generate a 3D seismic velocity model",
-#         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-#     )
-#     parser.add_argument(
-#         "config_file", type=Path, help="Path to the nzvm.cfg configuration file"
-#     )
-#     parser.add_argument(
-#         "--out_dir",
-#         type=Path,
-#         help="Path to the output directory (overrides config file)",
-#     )
-#     parser.add_argument(
-#         "--nzvm_registry",
-#         type=Path,
-#         help="Path to the model registry file",
-#         default=NZVM_REGISTRY_PATH,
-#     )
-#
-#     parser.add_argument(
-#         "--model_version",
-#         type=str,
-#         help=f"model_version to use (overrides MODEL_VERSION in config file). Requires a valid .yaml to exist in {MODEL_VERSIONS_ROOT}",
-#     )
-#     parser.add_argument(
-#         "--log_level",
-#         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-#         default="INFO",
-#         help="Set the logging level",
-#     )
-#
-#     parser.add_argument(
-#         "--output_format",
-#         choices=[fmt.name for fmt in WriteFormat],
-#         default=WriteFormat.EMOD3D.name,
-#         help="Format for the output velocity model",
-#     )
-#
-#     return parser.parse_args()
-#
-#
-# if __name__ == "__main__":
-#     start_time = time.time()
-#
-#     # Parse arguments
-#     args = parse_arguments()
-#
-#     # Configure logging
-#     logger = VMLogger(level=args.log_level)
-#     logger.log(f"Logger initialized with level {args.log_level}", logger.DEBUG)
-#
-#     # Validate input files
-#     config_path = args.config_file
-#     if not config_path.exists():
-#         logger.log(f"Configuration file not found: {config_path}", logger.ERROR)
-#         sys.exit(1)
-#
-#     if not args.nzvm_registry.exists():
-#         logger.log(f"Registry file not found: {args.nzvm_registry}", logger.ERROR)
-#         sys.exit(1)
-#
-#     # Parse the config file
-#     try:
-#         vm_params = parse_nzvm_config(config_path)
-#         # Validate CALL_TYPE
-#         if vm_params.get("call_type") != "GENERATE_VELOCITY_MOD":
-#             logger.log(
-#                 f"Unsupported CALL_TYPE: {vm_params.get('call_type')}", logger.ERROR
-#             )
-#             sys.exit(1)
-#     except Exception as e:
-#         if isinstance(e, (SystemExit, KeyboardInterrupt)):
-#             raise  # Re-raise these critical exceptions
-#         logger.log(f"Failed to parse config file: {e}", logger.ERROR)
-#         sys.exit(1)
-#
-#     # Use --model_version if provided, otherwise fall back to MODEL_VERSION from config
-#     if args.model_version and args.model_version != vm_params.get("model_version"):
-#         logger.log(
-#             f"UPDATING model_version fom {vm_params['model_version']} to {args.model_version}",
-#             logger.INFO,
-#         )
-#         vm_params["model_version"] = (
-#             args.model_version
-#         )  # Ensure version is set in vm_params
-#     else:
-#         logger.log(f"Using model version: {vm_params['model_version']}", logger.INFO)
-#
-#     # Override output directory if specified
-#     if args.out_dir:
-#         out_dir = args.out_dir.resolve()
-#     else:
-#         # Use output_dir from config if it exists, otherwise use current directory
-#         out_dir = Path(vm_params.get("output_dir", "./")).resolve()
-#
-#     # Prepare output directory
-#     out_dir.mkdir(exist_ok=True, parents=True)
-#     logger.log(f"Output will be written to: {out_dir}")
-#
-#     # Initialize registry and generate model
-#     try:
-#         cvm_registry = CVMRegistry(
-#             vm_params["model_version"],
-#             logger,
-#             args.nzvm_registry,
-#         )
-#         generate_velocity_model(
-#             cvm_registry, out_dir, vm_params, logger, output_format=args.output_format
-#         )
-#
-#         elapsed_time = time.time() - start_time
-#         logger.log(
-#             f"Velocity model generation completed in {elapsed_time:.2f} seconds",
-#             logger.INFO,
-#         )
-#     except Exception as e:
-#         logger.log(f"Model generation failed: {e}", logger.ERROR)
-#         raise
