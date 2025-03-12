@@ -247,7 +247,7 @@ def generate_velocity_model(
         # Process each point along this latitude slice
         for k in range(len(partial_global_mesh.x)):
             partial_global_surface_depths = PartialGlobalSurfaceDepths(
-                len(global_surfaces.surfaces)
+                len(global_surfaces)
             )
 
             partial_basin_surface_depths_list = [
@@ -361,74 +361,46 @@ def parse_nzvm_config(config_path: Path) -> dict:
         Dictionary containing the model parameters
     """
     vm_params = {}
-
+    numeric_keys = {
+        "ORIGIN_LAT", "ORIGIN_LON", "ORIGIN_ROT", "EXTENT_X", "EXTENT_Y", "EXTENT_ZMAX",
+        "EXTENT_ZMIN", "EXTENT_Z_SPACING", "EXTENT_LATLON_SPACING"
+    }
+    string_keys = {"MODEL_VERSION", "OUTPUT_DIR", "CALL_TYPE"}
+    key_mapping = {
+        "EXTENT_Z_SPACING": "h_depth", "EXTENT_LATLON_SPACING": "h_lat_lon"
+    }
     with open(config_path, "r") as f:
         for line in f:
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
 
-            key, value = line.split("=", 1)
-            key = key.strip()
-            value = value.strip()
+            key, value = map(str.strip, line.split("=", 1))
+            float_value = None
+            try:
+                float_value = float(value)
+            except ValueError:
+                pass
+            dest_key = key_mapping.get(key, key.lower())
 
-            # Map NZVM keys to vm_params keys
-            if key == "MODEL_VERSION":
-                # Always store MODEL_VERSION as string
-                vm_params["model_version"] = value
-            elif key == "OUTPUT_DIR":
-                vm_params["output_dir"] = value
-            elif key == "CALL_TYPE":
-                vm_params["call_type"] = value
+            if key in string_keys:
+                vm_params[dest_key] = value
             elif key == "TOPO_TYPE":
                 try:
-                    vm_params["topo_type"] = TopoTypes[value]
+                    vm_params[dest_key] = TopoTypes[value]
                 except KeyError:
                     VMLogger.error(f"Invalid topo type {value}")
                     raise KeyError(f"Invalid topo type {value}")
+            elif key in numeric_keys and float_value is None:
+                raise ValueError(f"Numeric value is required for key {key}: {value}")
             else:
-                # Convert numeric values
-                try:
-                    value = float(value)
-                except ValueError:
-                    raise ValueError(
-                        f"Numeric value is required for key {key}: {value}"
-                    )
-                else:
-                    # Map NZVM keys to vm_params keys
-                    if key == "ORIGIN_LAT":
-                        vm_params["origin_lat"] = value
-                    elif key == "ORIGIN_LON":
-                        vm_params["origin_lon"] = value
-                    elif key == "ORIGIN_ROT":
-                        vm_params["origin_rot"] = value  # degrees
-                    elif key == "EXTENT_X":
-                        vm_params["extent_x"] = value  # km
-                    elif key == "EXTENT_Y":
-                        vm_params["extent_y"] = value  # km
-                    elif key == "EXTENT_ZMAX":
-                        vm_params["extent_zmax"] = value  # km
-                    elif key == "EXTENT_ZMIN":
-                        vm_params["extent_zmin"] = value  # km
-                    elif key == "EXTENT_Z_SPACING":
-                        vm_params["h_depth"] = value  # km
-                    elif key == "EXTENT_LATLON_SPACING":
-                        vm_params["h_lat_lon"] = value  # km
-                    else:
-                        # Store any other parameters with lowercase key
-                        vm_params[key.lower()] = value
-
+                vm_params[dest_key] = float_value if float_value is not None else value
     # Calculate nx, ny, nz based on spacing and extent
-    vm_params["nx"] = int(round(vm_params["extent_x"] / vm_params["h_lat_lon"]))
-    vm_params["ny"] = int(round(vm_params["extent_y"] / vm_params["h_lat_lon"]))
-    vm_params["nz"] = int(
-        round(
-            (vm_params["extent_zmax"] - vm_params["extent_zmin"]) / vm_params["h_depth"]
-        )
-    )
+    vm_params["nx"] = round(vm_params["extent_x"] / vm_params["h_lat_lon"])
+    vm_params["ny"] = round(vm_params["extent_y"] / vm_params["h_lat_lon"])
+    vm_params["nz"] = round((vm_params["extent_zmax"] - vm_params["extent_zmin"]) / vm_params["h_depth"])
 
     return vm_params
-
 
 # def parse_arguments() -> argparse.Namespace:
 #     """
