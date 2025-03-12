@@ -27,11 +27,11 @@ from velocity_modelling.cvm.constants import (
     NZVM_REGISTRY_PATH,
     VelocityTypes,
 )
-from velocity_modelling.cvm.geometry import (  # noqa: F401
-    AdjacentPoints,
-    MeshVector,
+from velocity_modelling.cvm.geometry import (
+    SmoothingBoundary,
 )
 from velocity_modelling.cvm.logging import VMLogger
+from velocity_modelling.cvm.global_model import  GlobalSurfaceRead
 
 
 class CVMRegistry:
@@ -657,7 +657,7 @@ class CVMRegistry:
         self.log("All global data successfully loaded", VMLogger.INFO)
         return velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data
 
-    def load_global_surface(self, surface_file: Union[Path, str]):
+    def load_global_surface(self, surface_file:  Path | str) -> GlobalSurfaceRead:
         """
         Load a global surface raster from a file.
 
@@ -721,7 +721,7 @@ class CVMRegistry:
             self.log(f"Error reading surface file {surface_file}: {e}", VMLogger.ERROR)
             sys.exit(1)
 
-    def load_global_surface_data(self, global_surface_names: list[str]):
+    def load_global_surface_data(self, global_surface_names: list[str]) -> list[GlobalSurfaceRead]:
         """
         Load multiple global surfaces from the registry.
 
@@ -751,7 +751,7 @@ class CVMRegistry:
         self.log(f"Loaded {len(global_surface_names)} global surfaces", VMLogger.INFO)
         return surfaces
 
-    def load_smooth_boundaries(self, basin_names: list[str]):
+    def load_smooth_boundaries(self, basin_names: list[str]) -> SmoothingBoundary:
         """
         Load smoothing boundary data for model transitions.
 

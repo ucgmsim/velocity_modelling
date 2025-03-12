@@ -9,7 +9,7 @@ with proper logging throughout the processing workflow.
 import numpy as np
 from numba import njit
 
-from typing import Self
+from typing import Optional, Self
 
 from qcore import point_in_polygon
 from velocity_modelling.cvm.geometry import (
@@ -90,7 +90,7 @@ class BasinData:
 
         self.log(f"Basin {basin_name} fully loaded.", self.logger.INFO)
 
-    def log(self, message: str, level: int = None) -> None:
+    def log(self, message: str, level: Optional[int] = None) -> None:
         """
         Log a message with the specified level.
 
@@ -405,7 +405,7 @@ class InBasinGlobalMesh:
         self.log(
             f"smooth_basin_membership initialized with length {len(self.smooth_basin_membership)}",
             self.logger.DEBUG,
-        )  # Temporary debug
+        )
 
 
 class InBasin:
