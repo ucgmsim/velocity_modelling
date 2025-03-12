@@ -14,18 +14,18 @@ import numpy as np
 
 
 @numba.jit(nopython=True)
-def rho_from_vp_brocher(vp: float) -> float:
+def rho_from_vp_brocher(vp: float | np.ndarray) -> float | np.ndarray:
     """
     Calculate density given P-wave velocity using the Brocher correlation.
 
      Parameters
      ----------
-     vp : float
+     vp : float or np.ndarray
          Primary wave velocity (km/s).
 
      Returns
      -------
-     float
+     float or np.ndarray
          Density (g/cm³) from the Brocher correlation.
     """
     density = vp * (
@@ -35,18 +35,18 @@ def rho_from_vp_brocher(vp: float) -> float:
 
 
 @numba.jit(nopython=True)
-def vp_from_vs_brocher(vs: float) -> float:
+def vp_from_vs_brocher(vs: float | np.ndarray) -> float | np.ndarray:
     """
     Calculate P-wave velocity given S-wave velocity using the Brocher correlation.
 
      Parameters
      ----------
-     vs : float
+     vs : float or np.ndarray
          Secondary wave velocity (km/s).
 
      Returns
      -------
-     float
+     float or np.ndarray
          Primary wave velocity (km/s) from the Brocher correlation.
     """
     vp = 0.9409 + 2.0947 * vs - 0.8206 * vs**2 + 0.2683 * vs**3 - 0.0251 * vs**4
@@ -54,18 +54,18 @@ def vp_from_vs_brocher(vs: float) -> float:
 
 
 @numba.jit(nopython=True)
-def vs_from_vp_brocher(vp: float) -> float:
+def vs_from_vp_brocher(vp: float | np.ndarray) -> float | np.ndarray:
     """
     Calculate S-wave velocity given P-wave velocity using the Brocher correlation.
 
     Parameters
     ----------
-    vp : float
+    vp : float or np.ndarray
         Primary wave velocity (km/s).
 
     Returns
     -------
-    float
+    float or np.ndarray
         Secondary wave velocity (km/s) from the Brocher correlation.
     """
     vs = 0.7858 - 1.2344 * vp + 0.7949 * vp**2 - 0.1238 * vp**3 + 0.0064 * vp**4
@@ -119,11 +119,9 @@ def v30gtl_vectorized(
     vs = f * vt + g * (vs30 / 1000.0)  # vs30 converted to km/s
 
     # Compute vp from vs using Brocher correlation (vectorized)
-    vp = 0.9409 + 2.0947 * vs - 0.8206 * vs**2 + 0.2683 * vs**3 - 0.0251 * vs**4
+    vp = vp_from_vs_brocher(vs)
 
     # Compute rho from vp using Brocher correlation (vectorized)
-    rho = vp * (
-        1.6612 + vp * (-0.4721 + vp * (0.0671 + vp * (-0.0043 + 0.000106 * vp)))
-    )
+    rho =rho_from_vp_brocher(vp)
 
     return vs, vp, rho

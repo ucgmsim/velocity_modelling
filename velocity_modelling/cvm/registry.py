@@ -595,11 +595,11 @@ class CVMRegistry:
 
         Returns
         -------
-        tuple[VelocityModel1D, TomographyData, GlobalSurfaces, list[BasinData]]
+        tuple[VelocityModel1D, TomographyData, list[GlobalSurfaceRead], list[BasinData]]
             Tuple containing:
             - 1D velocity model data
             - Tomography data with surfaces
-            - Global surfaces (topography, etc.)
+            - List of global surfaces data (topography, etc.)
             - List of basin data objects
         """
         velo_mod_1d_data = None
@@ -732,12 +732,9 @@ class CVMRegistry:
 
         Returns
         -------
-        GlobalSurfaces
-            Container object with all loaded global surfaces.
+        list[GlobalSurfaceRead]
+            List of GlobalSurfaceRead objects containing the loaded surface data.
         """
-        from velocity_modelling.cvm.global_model import (
-            GlobalSurfaces,
-        )
 
         surfaces = []
 
@@ -751,9 +748,8 @@ class CVMRegistry:
                     f"Warning: Surface {name} not found in registry", VMLogger.WARNING
                 )
 
-        global_surfaces = GlobalSurfaces(surfaces)
         self.log(f"Loaded {len(global_surface_names)} global surfaces", VMLogger.INFO)
-        return global_surfaces
+        return surfaces
 
     def load_smooth_boundaries(self, basin_names: list[str]):
         """

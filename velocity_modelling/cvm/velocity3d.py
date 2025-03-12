@@ -24,8 +24,8 @@ from velocity_modelling.cvm.geometry import (
     AdjacentPoints,
     MeshVector,
 )
-from velocity_modelling.cvm.global_model import (  # noqa: F401
-    GlobalSurfaces,
+from velocity_modelling.cvm.global_model import (
+    GlobalSurfaceRead,
     PartialGlobalSurfaceDepths,
     TomographyData,
     interpolate_global_surface,
@@ -132,7 +132,7 @@ class QualitiesVector:
         global_params: dict,
         velo_mod_1d_data: VelocityModel1D,
         nz_tomography_data: TomographyData,
-        global_surfaces: GlobalSurfaces,
+        global_surfaces: list[GlobalSurfaceRead],
         mesh_vector: MeshVector,
         partial_global_surface_depths: PartialGlobalSurfaceDepths,
         partial_basin_surface_depths_list: list[PartialBasinSurfaceDepths],
@@ -151,8 +151,8 @@ class QualitiesVector:
             1D velocity model data.
         nz_tomography_data : TomographyData
             Tomography data for velocity adjustments.
-        global_surfaces : GlobalSurfaces
-            Global surface definitions.
+        global_surfaces : list[GlobalSurfaceRead]
+            List of GlobalSurfaceRead objects.
         mesh_vector : MeshVector
             Lat-lon point with multiple depths.
         partial_global_surface_depths : PartialGlobalSurfaceDepths
@@ -321,7 +321,7 @@ class QualitiesVector:
         cvm_registry: CVMRegistry,
         velo_mod_1d_data: VelocityModel1D,
         nz_tomography_data: TomographyData,
-        global_surfaces: GlobalSurfaces,
+        global_surfaces: list[GlobalSurfaceRead],
         basin_data_list: list[BasinData],
         mesh_vector: MeshVector,
         partial_global_surface_depths: PartialGlobalSurfaceDepths,
@@ -343,8 +343,8 @@ class QualitiesVector:
             1D velocity model data.
         nz_tomography_data : TomographyData
             Tomography data for velocity adjustments.
-        global_surfaces : GlobalSurfaces
-            Global surface definitions.
+        global_surfaces : list[GlobalSurfaceRead]
+            List of GlobalSurfaceRead objects.
         basin_data_list : list[BasinData]
             list of basin data objects.
         mesh_vector : MeshVector
@@ -400,7 +400,7 @@ class QualitiesVector:
                 InBasin(basin_data, mesh_vector.nz) for basin_data in basin_data_list
             ]
             partial_global_surface_depths_b = PartialGlobalSurfaceDepths(
-                len(global_surfaces.surfaces)
+                len(global_surfaces)
             )
             partial_basin_surface_depths_list_b = [
                 PartialBasinSurfaceDepths(basin_data) for basin_data in basin_data_list
@@ -505,7 +505,8 @@ class QualitiesVector:
                 on_boundary,
             )
 
-    # TODO: I need to fix this function to automatically trigger the right main function of the submodel
+    # TODO: I need to fix this function to automatically trigger the right main function of the submodel.
+    # Keeping this way for now, but will think of a better way to handle this
     def call_global_submodel_vectorized(
         self,
         submodel_names: np.ndarray,

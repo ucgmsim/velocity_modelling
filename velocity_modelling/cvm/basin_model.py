@@ -9,6 +9,8 @@ with proper logging throughout the processing workflow.
 import numpy as np
 from numba import njit
 
+from typing import Self
+
 from qcore import point_in_polygon
 from velocity_modelling.cvm.geometry import (
     AdjacentPoints,
@@ -136,12 +138,7 @@ def determine_basin_contains_lat_lon(
         lats = boundary[:, 1]
         lons = boundary[:, 0]
 
-        # Check if inside polygon
-        if point_in_polygon.is_inside_postgis(boundary, (lon, lat)):
-            return True
-
-        # Check if on a vertex
-        if point_on_vertex(lats, lons, lat, lon):
+        if point_in_polygon.is_inside_postgis(boundary, (lon, lat)) or point_on_vertex(lats, lons, lat, lon):
             return True
 
     return False
@@ -224,7 +221,7 @@ class InBasinGlobalMesh:
         basin_data_list: list[BasinData],
         logger: VMLogger = None,
         smooth_bound: SmoothingBoundary = None,
-    ) -> tuple["InBasinGlobalMesh", list[PartialGlobalMesh]]:
+    ) -> tuple[Self, list[PartialGlobalMesh]]:
         """
         Preprocess basin membership for a given global mesh to speed up the velocity model generation
         This method is the recommended way to create an InBasinGlobalMesh object.
@@ -334,9 +331,9 @@ class InBasinGlobalMesh:
         Parameters
         ----------
         x : int
-            The x-coordinate.
+            The index in x-direction.
         y : int
-            The y-coordinate.
+            The index in y-direction.
 
         Returns
         -------
@@ -376,15 +373,12 @@ class InBasinGlobalMesh:
         candidate_indices = np.where(inside_bbox)[0]
 
         # Step 2: Polygon Check (Only for Candidates)
-        inside_basins = []
-        # TODO: could be directly vectorized if boundary_arrays (in __init__()) is used
-        for idx in candidate_indices:
-            if determine_basin_contains_lat_lon(
-                self.basin_data_list[idx].boundaries, lat, lon
-            ):
-                inside_basins.append(idx)
+        # TODO: could be further optimized boundary_arrays (in preprocess_basin_membership()) is used
+        return [
+            idx for idx in candidate_indices
+            if determine_basin_contains_lat_lon(self.basin_data_list[idx].boundaries, lat, lon)
+        ]   # Returns all matching basin indices
 
-        return inside_basins  # Returns all matching basin indices
 
     def preprocess_smooth_bound(self, smooth_bound: SmoothingBoundary):
         """
@@ -438,7 +432,6 @@ class InBasin:
     def __init__(self, basin_data: BasinData, n_depths: int):
         """
         Initialize the InBasin object.
-
 
         """
 
@@ -512,6 +505,8 @@ class PartialBasinSurfaceDepths:
             q21 = surface.raster[adjacent_points.lon_ind[1]][adjacent_points.lat_ind[0]]
 
             q22 = surface.raster[adjacent_points.lon_ind[1]][adjacent_points.lat_ind[1]]
+            #TODO: refactor with
+            # https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.RegularGridInterpolator.html#scipy.interpolate.RegularGridInterpolator
             self.depths[surface_ind] = bi_linear_interpolation(
                 x1,
                 x2,
@@ -624,11 +619,16 @@ class PartialBasinSurfaceDepths:
             Tracks if a lat-lon is inside the basin.
         mesh_vector : MeshVector
             Coordinates for the point of interest.
+
+        Raises
+	    ---------
+	    ValueError
+	            If the mesh vector is not contained in the basin.
         """
-        assert in_basin.in_basin_lat_lon
+        if not in_basin.in_basin_lat_lon:
+            raise ValueError('Point is not contained in basin')
 
         self.enforce_surface_depths()
-        # TODO: check if this is correct
         top_lim = self.depths[0]  # the depth of the first surface
         bot_lim = self.depths[-1]  # the depth of the last surface
 

@@ -92,31 +92,6 @@ class GlobalSurfaceRead:
         return len(self.lons)
 
 
-# TODO:  Under-utilized, perhaps remove?s
-class GlobalSurfaces:
-    """
-    Class to store global surfaces.
-
-    Parameters
-    ----------
-    surfaces : list[GlobalSurfaceRead]
-        List of GlobalSurfaceRead objects.
-
-    Attributes
-    ----------
-    surfaces : list[GlobalSurfaceRead]
-        List of GlobalSurfaceRead objects.
-
-    """
-
-    def __init__(self, surfaces: list[GlobalSurfaceRead]):
-        """
-        Initialize the GlobalSurfaces.
-
-        """
-        self.surfaces = surfaces
-
-
 class PartialGlobalSurfaceDepths:
     """
     Class to store partial global surface depths.
@@ -183,7 +158,7 @@ class PartialGlobalSurfaceDepths:
 
     def interpolate_global_surface_depths(
         self,
-        global_surfaces: GlobalSurfaces,
+        global_surfaces: list[GlobalSurfaceRead],
         mesh_vector: MeshVector,
     ) -> None:
         """
@@ -191,23 +166,23 @@ class PartialGlobalSurfaceDepths:
 
         Parameters
         ----------
-        global_surfaces : GlobalSurfaces
-            Object containing pointers to global surfaces.
+        global_surfaces : list[GlobalSurfaceRead]
+            List containing global surface data
         mesh_vector : MeshVector
             Object containing a single lat lon point with one or more depths.
 
         """
-        for i in range(len(global_surfaces.surfaces)):
-            global_surf_read = global_surfaces.surfaces[i]
+        for i in range(len(global_surfaces)):
+
             adjacent_points = AdjacentPoints.find_global_adjacent_points(
-                global_surf_read.lats,
-                global_surf_read.lons,
+                global_surfaces[i].lats,
+                global_surfaces[i].lons,
                 mesh_vector.lat,
                 mesh_vector.lon,
             )
 
             self.depths[i] = interpolate_global_surface(
-                global_surf_read, mesh_vector.lat, mesh_vector.lon, adjacent_points
+                global_surfaces[i], mesh_vector.lat, mesh_vector.lon, adjacent_points
             )
 
         mask = self.depths[:-1] < self.depths[1:]
