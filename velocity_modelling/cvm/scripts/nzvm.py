@@ -19,23 +19,22 @@ pip install -e  .
     nzvm generate-velocity-model /path/to/nzvm.cfg --out-dir /path/to/output_dir
 
     # With custom registry location:
-    nzvm generate-velocity-model /path/to/nzvm.cfg --out-dir /path/to/output_dir --nzvm-registry /path/to/registry.yaml
+    nzvm generate-velocity-model /path/to/nzvm.cfg  --nzvm-registry /path/to/registry.yaml
 
     # To override "MODEL_VERSION" in nzvm.cfg to use a .yaml file for a custom model version
-    nzvm generate-velocity-model /path/to/nzvm.cfg --out-dir /path/to/output_dir --model-version 2.07
+    nzvm generate-velocity-model /path/to/nzvm.cfg  --model-version 2.07
 
     # With specific log level:
-    nzvm generate-velocity-model /path/to/nzvm.cfg --out-dir /path/to/output_dir --log-level DEBUG
+    nzvm generate-velocity-model /path/to/nzvm.cfg  --log-level DEBUG
 
     # With specific output format:
-    nzvm generate-velocity-model /path/to/nzvm.cfg --out-dir /path/to/output_dir --output-format CSV  (default: emod3d)
+    nzvm generate-velocity-model /path/to/nzvm.cfg  --output-format CSV  (default: emod3d)
 
 
     [example] nzvm.cfg
 
     CALL_TYPE=GENERATE_VELOCITY_MOD
     MODEL_VERSION=2.07
-    OUTPUT_DIR=/tmp
     ORIGIN_LAT=-41.296226
     ORIGIN_LON=174.774439
     ORIGIN_ROT=23.0
@@ -47,7 +46,7 @@ pip install -e  .
     EXTENT_LATLON_SPACING=0.2
     MIN_VS=0.5
     TOPO_TYPE=BULLDOZED
-
+    OUTPUT_DIR=/tmp
 """
 
 # import concurrent.futures
@@ -131,7 +130,7 @@ def write_velo_mod_corners_text_file(
 @cli.from_docstring(app)
 def generate_velocity_model(
     nzvm_cfg_path: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
-    out_dir: Annotated[Path,  typer.Option(file_okay=False)] ,
+    out_dir: Annotated[Path, typer.Option(file_okay=False)],
     nzvm_registry: Annotated[
         Path, typer.Option(exists=True, dir_okay=False)
     ] = NZVM_REGISTRY_PATH,
@@ -139,7 +138,6 @@ def generate_velocity_model(
     output_format: Annotated[str, typer.Option()] = WriteFormat.EMOD3D.name,
     smoothing: Annotated[bool, typer.Option()] = False,
     progress_interval: Annotated[int, typer.Option()] = 5,
-
 ) -> None:
     """
     Generate a 3D velocity model and write it to disk.
@@ -169,7 +167,6 @@ def generate_velocity_model(
         How often (in %) to log progress updates (default 5%).
 
     """
-    import time
     start_time = time.time()
 
     # Import the appropriate writer based on format
@@ -200,12 +197,9 @@ def generate_velocity_model(
             f"UPDATING model_version fom {vm_params['model_version']} to {model_version}",
             logger.INFO,
         )
-        vm_params["model_version"] = (
-            model_version
-        )  # Ensure version is set in vm_params
+        vm_params["model_version"] = model_version  # Ensure version is set in vm_params
     else:
         logger.log(f"Using model version: {vm_params['model_version']}", logger.INFO)
-
 
     # Import the appropriate writer based on format
     try:
@@ -225,7 +219,6 @@ def generate_velocity_model(
     except ImportError:
         logger.log(f"Unsupported output format: {output_format}", logger.ERROR)
         raise ValueError(f"Unsupported output format: {output_format}")
-
 
     out_dir = out_dir.resolve()
     out_dir.mkdir(exist_ok=True, parents=True)
@@ -286,7 +279,7 @@ def generate_velocity_model(
         # Process each point along this latitude slice
         for k in range(len(partial_global_mesh.x)):
             partial_global_surface_depths = PartialGlobalSurfaceDepths(
-                len(global_surfaces.surfaces)
+                len(global_surfaces)
             )
 
             partial_basin_surface_depths_list = [

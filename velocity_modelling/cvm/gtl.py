@@ -122,6 +122,6 @@ def v30gtl_vectorized(
     vp = vp_from_vs_brocher(vs)
 
     # Compute rho from vp using Brocher correlation (vectorized)
-    rho =rho_from_vp_brocher(vp)
+    rho = rho_from_vp_brocher(vp)
 
     return vs, vp, rho

@@ -173,7 +173,6 @@ class PartialGlobalSurfaceDepths:
 
         """
         for i in range(len(global_surfaces)):
-
             adjacent_points = AdjacentPoints.find_global_adjacent_points(
                 global_surfaces[i].lats,
                 global_surfaces[i].lons,
