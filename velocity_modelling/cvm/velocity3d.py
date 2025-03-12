@@ -174,7 +174,7 @@ class QualitiesVector:
         in_any_basin_lat_lon = any(
             in_basin.in_basin_lat_lon for in_basin in in_basin_list
         )
-        # TODO: test this
+
         if topo_type == TopoTypes.SQUASHED:
             depth_change = -mesh_vector.z
             shifted_mesh_vector = mesh_vector.copy()
@@ -182,7 +182,6 @@ class QualitiesVector:
                 partial_global_surface_depths.depths[1] - depth_change
             )
 
-        # TODO: test this
         elif topo_type == TopoTypes.SQUASHED_TAPERED:
             taper_dist = 1.0
             depth_change = -mesh_vector.z
