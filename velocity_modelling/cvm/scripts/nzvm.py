@@ -394,13 +394,18 @@ def parse_nzvm_config(config_path: Path) -> dict:
     """
     vm_params = {}
     numeric_keys = {
-        "ORIGIN_LAT", "ORIGIN_LON", "ORIGIN_ROT", "EXTENT_X", "EXTENT_Y", "EXTENT_ZMAX",
-        "EXTENT_ZMIN", "EXTENT_Z_SPACING", "EXTENT_LATLON_SPACING"
+        "ORIGIN_LAT",
+        "ORIGIN_LON",
+        "ORIGIN_ROT",
+        "EXTENT_X",
+        "EXTENT_Y",
+        "EXTENT_ZMAX",
+        "EXTENT_ZMIN",
+        "EXTENT_Z_SPACING",
+        "EXTENT_LATLON_SPACING",
     }
     string_keys = {"MODEL_VERSION", "OUTPUT_DIR", "CALL_TYPE"}
-    key_mapping = {
-        "EXTENT_Z_SPACING": "h_depth", "EXTENT_LATLON_SPACING": "h_lat_lon"
-    }
+    key_mapping = {"EXTENT_Z_SPACING": "h_depth", "EXTENT_LATLON_SPACING": "h_lat_lon"}
     with open(config_path, "r") as f:
         for line in f:
             line = line.strip()
@@ -430,7 +435,8 @@ def parse_nzvm_config(config_path: Path) -> dict:
     # Calculate nx, ny, nz based on spacing and extent
     vm_params["nx"] = round(vm_params["extent_x"] / vm_params["h_lat_lon"])
     vm_params["ny"] = round(vm_params["extent_y"] / vm_params["h_lat_lon"])
-    vm_params["nz"] = round((vm_params["extent_zmax"] - vm_params["extent_zmin"]) / vm_params["h_depth"])
+    vm_params["nz"] = round(
+        (vm_params["extent_zmax"] - vm_params["extent_zmin"]) / vm_params["h_depth"]
+    )
 
     return vm_params
-
