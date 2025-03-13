@@ -592,6 +592,11 @@ class PartialBasinSurfaceDepths:
             Tracks if a lat-lon is inside the basin.
         mesh_vector : MeshVector
             Coordinates for the point of interest.
+    
+    Raises
+    ---------
+    ValueError
+            If the mesh vector is not contained in the basin.
 
         Raises
             ---------
