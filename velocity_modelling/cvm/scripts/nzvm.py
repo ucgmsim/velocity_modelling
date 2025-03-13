@@ -27,7 +27,7 @@ pip install -e  .
     nzvm generate-velocity-model /path/to/nzvm.cfg --log-level DEBUG
 
     # With specific output format:
-    nzvm generate-velocity-model /path/to/nzvm.cfg --output-format CSV  (default: emod3d)
+    nzvm generate-velocity-model /path/to/nzvm.cfg --output-format CSV  (default: EMOD3D)
 
     [example] nzvm.cfg
     CALL_TYPE=GENERATE_VELOCITY_MOD
