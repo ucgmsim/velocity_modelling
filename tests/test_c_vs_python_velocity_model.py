@@ -91,7 +91,7 @@ def test_c_vs_python_velocity_model(setup_test_environment):
 
     # Run C binary from its directory with relative path
     c_result = subprocess.run(
-        ["./NZVM", "nzvm.cfg"],  # Relative path since we're in C_BINARY_DIR
+        ["/nzvm/NZVM", "nzvm.cfg"],  # Relative path since we're in C_BINARY_DIR
         cwd=str(C_BINARY_DIR),
         capture_output=True,
         text=True,

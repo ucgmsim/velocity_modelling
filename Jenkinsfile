@@ -19,6 +19,15 @@ pipeline {
                 """
             }
         }
+        stage('Installing OS Dependencies') {
+            steps {
+                echo "[[ Install GMT ]]"
+                sh """
+                   apt-get update
+                   apt-get install -y gmt libgmt-dev libgmt6 ghostscript
+                """
+            }
+        }
         stage('Install UV') {
             steps {
                 sh """
