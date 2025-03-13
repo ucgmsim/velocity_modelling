@@ -11,6 +11,9 @@ velocities (P-wave, S-wave) and density at specified coordinates, handling
 complex scenarios like basin boundaries and smooth transitions between models.
 """
 
+import logging
+from logging import Logger
+
 import numpy as np
 
 from velocity_modelling.cvm.basin_model import (
@@ -30,7 +33,6 @@ from velocity_modelling.cvm.global_model import (
     TomographyData,
     interpolate_global_surface,
 )
-from velocity_modelling.cvm.logging import VMLogger
 from velocity_modelling.cvm.registry import CVMRegistry
 from velocity_modelling.cvm.velocity1d import (
     VelocityModel1D,
@@ -78,7 +80,7 @@ class QualitiesVector:
     ----------
     n_depth : int
         Number of depth points.
-    logger : VMLogger, optional
+    logger : Logger, optional
         Logger instance for logging messages.
 
     Attributes
@@ -91,18 +93,18 @@ class QualitiesVector:
         Densities (g/cm³).
     inbasin : np.ndarray
         Basin membership indicators.
-    logger : VMLogger
+    logger : Logger
         Logger instance for logging messages.
     """
 
-    def __init__(self, n_depth: int, logger: VMLogger = None):
+    def __init__(self, n_depth: int, logger: Logger = None):
         """
         Initialize arrays for velocity and density data.
 
 
         """
         if logger is None:
-            self.logger = VMLogger(name="velocity_model.qualities_vector")
+            self.logger = Logger(name="velocity_model.qualities_vector")
         else:
             self.logger = logger
 
@@ -110,22 +112,6 @@ class QualitiesVector:
         self.vs = np.zeros(n_depth, dtype=np.float64)
         self.rho = np.zeros(n_depth, dtype=np.float64)
         self.inbasin = np.zeros(n_depth, dtype=np.int8)
-
-    def log(self, message: str, level: int = None) -> None:
-        """
-        Log a message with the specified level.
-
-        Parameters
-        ----------
-        message : str
-            The message to log.
-        level : int, optional
-            The logging level (default is None).
-        """
-
-        if level is None:
-            level = self.logger.INFO
-        self.logger.log(message, level)
 
     def prescribe_velocities(
         self,
@@ -420,9 +406,9 @@ class QualitiesVector:
             # Use preprocessed smooth_basin_membership from in_basin_mesh
             # Check and handle if smooth_basin_membership is None
             if in_basin_mesh.smooth_basin_membership is None:
-                self.log(
+                self.logger.log(
+                    logging.ERROR,
                     "smooth_basin_membership is None, falling back to manual calculation",
-                    self.logger.ERROR,
                 )
                 smooth_indices = in_basin_mesh.find_all_containing_basins(
                     mesh_vector.lat, mesh_vector.lon

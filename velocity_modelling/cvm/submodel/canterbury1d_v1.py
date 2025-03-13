@@ -6,9 +6,11 @@ It assigns P-wave velocity, S-wave velocity, and density values based on depth
 using a predefined 1D velocity profile.
 """
 
+import logging
+from logging import Logger
+
 import numpy as np
 
-from velocity_modelling.cvm.logging import VMLogger
 from velocity_modelling.cvm.velocity1d import (
     VelocityModel1D,
 )
@@ -22,7 +24,7 @@ def main_vectorized(
     depths: np.ndarray,
     qualities_vector: QualitiesVector,
     velo_mod_1d_data: VelocityModel1D,
-    logger: VMLogger = None,
+    logger: Logger = None,
 ):
     """
     Calculate rho, vp, and vs values for multiple lat-long-depth points.
@@ -37,12 +39,12 @@ def main_vectorized(
         Object housing Vp, Vs, and Rho for one Lat-Lon value and multiple depths.
     velo_mod_1d_data : VelocityModel1D
         Object containing a 1D velocity model.
-    logger : VMLogger, optional
+    logger : Logger, optional
         Logger for reporting processing status.
     """
     if logger is not None:
         logger.log(
-            f"Applying Canterbury 1D model to {len(z_indices)} points", logger.DEBUG
+            logging.DEBUG, f"Applying Canterbury 1D model to {len(z_indices)} points"
         )
 
     # Convert model depths to meters, negative downwards

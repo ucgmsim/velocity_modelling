@@ -6,9 +6,11 @@ It applies modified velocity values compared to v1, with improved constants base
 more recent geophysical measurements.
 """
 
+import logging
+from logging import Logger
+
 import numpy as np
 
-from velocity_modelling.cvm.logging import VMLogger
 from velocity_modelling.cvm.velocity3d import (
     QualitiesVector,
 )
@@ -17,7 +19,7 @@ from velocity_modelling.cvm.velocity3d import (
 def main_vectorized(
     z_indices: np.ndarray,
     qualities_vector: QualitiesVector,
-    logger: VMLogger = None,
+    logger: Logger = None,
 ):
     """
     Calculate the rho, vp, and vs values for multiple lat-long-depth points.
@@ -28,13 +30,13 @@ def main_vectorized(
         Array of indices of the grid points to store the data at.
     qualities_vector : QualitiesVector
         Object housing Vp, Vs, and Rho for one Lat-Lon value and multiple depths.
-    logger : VMLogger, optional
+    logger : Logger, optional
         Logger for reporting processing status.
     """
 
     if logger is not None:
         logger.log(
-            f"Assigning BPV v2 properties to {len(z_indices)} points", logger.DEBUG
+            logging.DEBUG, f"Assigning BPV v2 properties to {len(z_indices)} points"
         )
 
     qualities_vector.rho[z_indices] = 2.334

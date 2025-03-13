@@ -6,6 +6,8 @@ constructs needed for seismic velocity modelling. It handles coordinate transfor
 grid generation, mesh slicing, and boundary calculations for various model components.
 """
 
+import logging
+from logging import Logger
 from typing import Any
 
 import numpy as np
@@ -21,7 +23,6 @@ from velocity_modelling.cvm.constants import (
     MAX_LON_SURFACE_EXTENSION,
     RPERD,
 )
-from velocity_modelling.cvm.logging import VMLogger
 
 
 class GlobalMesh:
@@ -988,7 +989,7 @@ def great_circle_projection(
 
 
 def gen_full_model_grid_great_circle(
-    vm_params: dict, logger: VMLogger = None
+    vm_params: dict, logger: Logger = None
 ) -> GlobalMesh:
     """
     Generate a global mesh grid using great-circle projection.
@@ -997,7 +998,7 @@ def gen_full_model_grid_great_circle(
     ----------
     vm_params : dict
         Defines the model's dimensions and origin.
-    logger : VMLogger
+    logger : Logger
         Logger instance for reporting progress.
 
     Returns
@@ -1006,9 +1007,9 @@ def gen_full_model_grid_great_circle(
         The generated global mesh object.
     """
     if logger is None:
-        logger = VMLogger(name="velocity_model.geometry")
+        logger = Logger(name="velocity_model.geometry")
 
-    logger.log("Starting generation of model grid.", logger.INFO)
+    logger.log(logging.INFO, "Starting generation of model grid.")
 
     xmax = vm_params["extent_x"]
     ymax = vm_params["extent_y"]
@@ -1053,7 +1054,7 @@ def gen_full_model_grid_great_circle(
 
     if nz != 1:
         logger.log(
-            f"Number of model points. nx: {nx}, ny: {ny}, nz: {nz}.", logger.INFO
+            logging.INFO, f"Number of model points. nx: {nx}, ny: {ny}, nz: {nz}."
         )
 
     global_mesh.x = 0.5 * h_lat_lon + h_lat_lon * np.arange(nx) - 0.5 * xmax
@@ -1103,7 +1104,7 @@ def gen_full_model_grid_great_circle(
     global_mesh.min_lat = np.min(global_mesh.lat)
     global_mesh.min_lon = np.min(global_mesh.lon)
 
-    logger.log("Completed Generation of Model Grid.", logger.INFO)
+    logger.log(logging.INFO, "Completed Generation of Model Grid.")
     return global_mesh
 
 

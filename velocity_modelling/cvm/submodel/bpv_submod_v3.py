@@ -6,6 +6,9 @@ Unlike previous versions that used constant values, this model adjusts velocitie
 providing a more realistic representation of volcanic rock properties.
 """
 
+import logging
+from logging import Logger
+
 import numpy as np
 
 from velocity_modelling.cvm.basin_model import (
@@ -14,8 +17,7 @@ from velocity_modelling.cvm.basin_model import (
 from velocity_modelling.cvm.interpolate import (
     linear_interpolation_vectorized,
 )
-from velocity_modelling.cvm.logging import VMLogger
-from velocity_modelling.cvm.submodel.BPVSubMod_v1 import (
+from velocity_modelling.cvm.submodel.bpv_submod_v1 import (
     rho_full,
     vp_full,
     vs_full,
@@ -30,7 +32,7 @@ def main_vectorized(
     depths: np.ndarray,
     qualities_vector: QualitiesVector,
     partial_basin_surface_depths: PartialBasinSurfaceDepths,
-    logger: VMLogger = None,
+    logger: Logger = None,
 ):
     """
     Calculate the rho, vp, and vs values for multiple lat-long-depth points.
@@ -45,14 +47,14 @@ def main_vectorized(
         Object housing Vp, Vs, and Rho for one Lat-Lon value and multiple depths.
     partial_basin_surface_depths : PartialBasinSurfaceDepths
         Struct containing the depth of the basin surface.
-    logger : VMLogger, optional
+    logger : Logger, optional
         Logger for reporting processing status.
     """
 
     if logger is not None:
         logger.log(
+            logging.DEBUG,
             f"Assigning BPV v3 depth-dependent properties to {len(z_indices)} points",
-            logger.DEBUG,
         )
 
     weather_depth = 100

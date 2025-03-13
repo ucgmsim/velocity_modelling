@@ -3,12 +3,13 @@ Module for writing velocity model data to CSV format.
 """
 
 import csv
+import logging
+from logging import Logger
 from pathlib import Path
 
 from velocity_modelling.cvm.geometry import (
     PartialGlobalMesh,
 )
-from velocity_modelling.cvm.logging import VMLogger
 from velocity_modelling.cvm.velocity3d import (
     PartialGlobalQualities,
 )
@@ -20,7 +21,7 @@ def write_global_qualities(
     partial_global_qualities: PartialGlobalQualities,
     lat_ind: int,
     min_vs: float = 0.0,
-    logger: VMLogger = None,
+    logger: Logger = None,
 ):
     """
     Write the velocity model to CSV format.
@@ -37,12 +38,12 @@ def write_global_qualities(
         Latitude index to determine the write mode (write or append).
     min_vs : float, optional
         Minimum Vs value to apply to the model.
-    logger : VMLogger
+    logger : Logger
         Logger instance for logging messages.
 
     """
     if logger is None:
-        logger = VMLogger("csv.wrote_global_qualities")
+        logger = Logger("csv.wrote_global_qualities")
 
     output_dir.mkdir(parents=True, exist_ok=True)
     output_file = output_dir / "velocity_model.csv"
@@ -50,9 +51,9 @@ def write_global_qualities(
     mode = "w" if lat_ind == 0 else "a"
 
     if lat_ind == 0:
-        logger.log(f"Creating new CSV file: {output_file}", logger.INFO)
+        logger.log(logging.INFO, f"Creating new CSV file: {output_file}")
 
-    logger.log(f"Writing CSV output for latitude index {lat_ind}", logger.DEBUG)
+    logger.log(logging.DEBUG, f"Writing CSV output for latitude index {lat_ind}")
 
     try:
         with open(output_file, mode, newline="") as csvfile:
@@ -100,5 +101,5 @@ def write_global_qualities(
                     )
 
     except Exception as e:
-        logger.log(f"Error writing CSV data: {str(e)}", logger.ERROR)
+        logger.log(logging.ERROR, f"Error writing CSV data: {str(e)}")
         raise

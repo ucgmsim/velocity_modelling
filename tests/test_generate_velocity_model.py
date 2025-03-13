@@ -19,11 +19,12 @@ SCENARIOS = [
 ]
 
 # Define paths based on your directory structure
-BASE_DIR = Path(__file__).parent.parent  # cvm directory
-SCRIPT_DIR = BASE_DIR / "scripts"
-SCENARIO_DIR = BASE_DIR / "tests" / "scenarios"
-BENCHMARK_DIR = BASE_DIR / "tests" / "benchmarks"
-OUTPUT_DIR = BASE_DIR / "tests" / "test_output"
+BASE_DIR = Path(__file__).parent.parent  # # project root directory
+SCRIPT_DIR = BASE_DIR / "velocity_modelling/cvm/scripts"
+TEST_DIR = BASE_DIR / "tests"
+SCENARIO_DIR = TEST_DIR / "scenarios"
+BENCHMARK_DIR = TEST_DIR / "benchmarks"
+OUTPUT_DIR = TEST_DIR / "test_output"
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -40,7 +41,7 @@ def setup_test_environment():
 
 
 @pytest.fixture(params=SCENARIOS)
-def scenario(request:):
+def scenario(request):
     """Fixture to provide scenario data for each test"""
     scenario_name = request.param
     scenario_path = SCENARIO_DIR / scenario_name
@@ -68,9 +69,10 @@ def test_generate_velocity_model(scenario):
     result = subprocess.run(
         [
             "python",
-            str(SCRIPT_DIR / "generate_velocity_model.py"),
+            str(SCRIPT_DIR / "nzvm.py"),
+            "generate-velocity-model",
             str(scenario["config_file"]),
-            "--out_dir",
+            "--out-dir",
             str(scenario["output_path"]),
         ],
         capture_output=True,
@@ -78,9 +80,9 @@ def test_generate_velocity_model(scenario):
     )
 
     # Check if the script ran successfully
-    assert result.returncode == 0, (
-        f"Script failed for {scenario['name']}: {result.stderr}"
-    )
+    assert (
+        result.returncode == 0
+    ), f"Script failed for {scenario['name']}: {result.stderr}"
 
     # Parse the config file to get nx, ny, nz
     vm_params = parse_nzvm_config(scenario["config_file"])
@@ -100,9 +102,9 @@ def test_generate_velocity_model(scenario):
 
     # Check critical files (vp, vs, rho) are allclose
     for key in ["vp", "vs", "rho"]:
-        assert key in comparison_results, (
-            f"Missing {key} in comparison results for {scenario['name']}"
-        )
+        assert (
+            key in comparison_results
+        ), f"Missing {key} in comparison results for {scenario['name']}"
         assert comparison_results[key]["allclose"], (
             f"{key} data not close enough for {scenario['name']}:\n"
             f"Max diff: {comparison_results[key]['max_diff']}\n"

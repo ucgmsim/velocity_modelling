@@ -7,6 +7,9 @@ to better represent the geology of the area. The model includes a GTL component 
 
 """
 
+import logging
+from logging import Logger
+
 import numpy as np
 
 from velocity_modelling.cvm.basin_model import (
@@ -16,7 +19,6 @@ from velocity_modelling.cvm.global_model import (
     PartialGlobalSurfaceDepths,
 )
 from velocity_modelling.cvm.gtl import v30gtl_vectorized
-from velocity_modelling.cvm.logging import VMLogger
 from velocity_modelling.cvm.submodel.bpv_submod_v1 import (
     rho_full,
     vp_full,
@@ -33,7 +35,7 @@ def main_vectorized(
     qualities_vector: QualitiesVector,
     partial_basin_surface_depths: PartialBasinSurfaceDepths,
     partial_global_surface_depths: PartialGlobalSurfaceDepths,
-    logger: VMLogger = None,
+    logger: Logger = None,
 ):
     """
     Calculate the rho, vp, and vs values for multiple lat-long-depth points.
@@ -50,14 +52,14 @@ def main_vectorized(
         Struct containing the depth of the basin surface.
     partial_global_surface_depths : PartialGlobalSurfaceDepths
         Struct containing the depth of the global surface.
-    logger : VMLogger, optional
+    logger : Logger, optional
         Logger for reporting processing status.
 
     """
     if logger is not None:
         logger.log(
+            logging.DEBUG,
             f"Assigning BPV v4 depth-dependent properties to {len(z_indices)} points",
-            logger.DEBUG,
         )
 
     dem_depth = partial_global_surface_depths.depths[1]  # value of the DEM

@@ -12,6 +12,8 @@ The registry loads model configuration from YAML files and provides methods to a
 specific data components, handling file loading, caching, and path resolution.
 """
 
+import logging
+from logging import Logger
 from pathlib import Path
 from typing import Optional, Union
 
@@ -28,7 +30,6 @@ from velocity_modelling.cvm.constants import (
 )
 from velocity_modelling.cvm.geometry import SmoothingBoundary
 from velocity_modelling.cvm.global_model import GlobalSurfaceRead
-from velocity_modelling.cvm.logging import VMLogger
 
 
 class CVMRegistry:
@@ -42,7 +43,7 @@ class CVMRegistry:
     ----------
     version : str
         The version of the velocity model.
-    logger : VMLogger, optional
+    logger : Logger, optional
         Logger for logging information and errors.
     registry_path : Path, optional
         The path to the registry file.
@@ -55,7 +56,7 @@ class CVMRegistry:
         Version of the velocity model.
     global_params : dict
         Global parameters for the specified model version.
-    logger : VMLogger
+    logger : Logger
         Logger for logging information and errors.
     cache : dict
         Cache for storing loaded data to prevent redundant file operations.
@@ -64,7 +65,7 @@ class CVMRegistry:
     def __init__(
         self,
         version: str,
-        logger: VMLogger = None,
+        logger: Logger = None,
         registry_path: Path = NZVM_REGISTRY_PATH,
     ):
         """
@@ -74,7 +75,7 @@ class CVMRegistry:
         ----------
         version : str
             The version of the velocity model.
-        logger : VMLogger, optional
+        logger : Logger, optional
             Logger instance for logging; created if not provided.
         registry_path : Path, optional
             Path to the registry YAML file.
@@ -84,9 +85,9 @@ class CVMRegistry:
         ValueError
             If the model version file is not found or cannot be loaded.
         """
-        # Initialize VMLogger if not provided
+        # Initialize Logger if not provided
         self.logger = (
-            logger if logger is not None else VMLogger(name="velocity_model.registry")
+            logger if logger is not None else Logger(name="velocity_model.registry")
         )
 
         with open(registry_path, "r") as f:
@@ -137,19 +138,6 @@ class CVMRegistry:
 
         self.cache = {}  # Initialize cache
 
-    def log(self, message: str, level: int = VMLogger.INFO) -> None:
-        """
-        Log a message with the specified level.
-
-        Parameters
-        ----------
-        message : str
-            The message to log.
-        level : int, optional
-            The logging level (default is VMLogger.INFO).
-        """
-        self.logger.log(message, level or VMLogger.INFO)
-
     def get_info(self, datatype: str, name: str) -> Optional[dict]:
         """
         Get information from the registry.
@@ -174,16 +162,16 @@ class CVMRegistry:
         try:
             data_section = self.registry[datatype]
         except KeyError:
-            self.log(f"Error: {datatype} not found in registry", VMLogger.ERROR)
+            self.logger.log(logging.ERROR, f"Error: {datatype} not found in registry")
             return None
 
         for info in data_section:
             assert "name" in info, f"Error: Entry in {datatype} lacks a 'name' field."
             if info["name"] == name:
                 return info
-        self.log(
+        self.logger.log(
+            logging.ERROR,
             f"Error: {name} for datatype {datatype} not found in registry",
-            VMLogger.ERROR,
         )
         raise KeyError(f"{name} not found in {datatype}")
 
@@ -232,7 +220,7 @@ class CVMRegistry:
 
         v1d_path = self.get_full_path(v1d_path)
         if v1d_path in self.cache:
-            self.log(f"{v1d_path} loaded from CACHE", VMLogger.DEBUG)
+            self.logger.log(logging.DEBUG, f"{v1d_path} loaded from CACHE")
             return self.cache[v1d_path]
 
         try:
@@ -243,17 +231,19 @@ class CVMRegistry:
                     data[:, 0], data[:, 1], data[:, 2], data[:, 5]
                 )
                 self.cache[v1d_path] = velo_mod_1d_data
-                self.log(f"Loaded 1D velocity model from {v1d_path}", VMLogger.INFO)
+                self.logger.log(
+                    logging.INFO, f"Loaded 1D velocity model from {v1d_path}"
+                )
                 return velo_mod_1d_data
         except FileNotFoundError:
-            self.log(
-                f"Error: 1D velocity model file {v1d_path} not found.", VMLogger.ERROR
+            self.logger.log(
+                logging.ERROR, f"Error: 1D velocity model file {v1d_path} not found."
             )
             raise FileNotFoundError(f"1D velocity model file {v1d_path} not found")
         except Exception as e:
             if isinstance(e, (SystemExit, KeyboardInterrupt)):
                 raise  # Re-raise critical exceptions
-            self.log(f"Error loading 1D velocity model: {e}", VMLogger.ERROR)
+            self.logger.log(logging.ERROR, f"Error loading 1D velocity model: {e}")
             raise RuntimeError(
                 f"Failed to load 1D velocity model from {v1d_path}: {str(e)}"
             )
@@ -276,7 +266,7 @@ class CVMRegistry:
 
         all_basin_data = []
         for basin_name in basin_names:
-            self.log(f"Loading basin data for {basin_name}", VMLogger.INFO)
+            self.logger.log(logging.INFO, f"Loading basin data for {basin_name}")
             basin_data = BasinData(self, basin_name, self.logger)
             all_basin_data.append(basin_data)
         return all_basin_data
@@ -311,16 +301,16 @@ class CVMRegistry:
             boundary_data = np.column_stack((lon, lat))
 
             if lon[-1] != lon[0] or lat[-1] != lat[0]:
-                self.log(
+                self.logger.log(
+                    logging.ERROR,
                     f"Error: Basin boundary {basin_boundary_path} is not closed.",
-                    VMLogger.ERROR,
                 )
                 raise ValueError(f"Basin boundary {basin_boundary_path} is not closed")
             return boundary_data
         except FileNotFoundError:
-            self.log(
+            self.logger.log(
+                logging.ERROR,
                 f"Error: Basin boundary file {basin_boundary_path} not found.",
-                VMLogger.ERROR,
             )
             raise FileNotFoundError(
                 f"Basin boundary file {basin_boundary_path} not found"
@@ -328,9 +318,9 @@ class CVMRegistry:
         except Exception as e:
             if isinstance(e, (SystemExit, KeyboardInterrupt)):
                 raise
-            self.log(
+            self.logger.log(
+                logging.ERROR,
                 f"Error reading basin boundary file {basin_boundary_path}: {e}",
-                VMLogger.ERROR,
             )
             raise RuntimeError(
                 f"Failed to load basin boundary from {basin_boundary_path}: {str(e)}"
@@ -362,19 +352,23 @@ class CVMRegistry:
 
         submodel = self.get_info("submodel", submodel_name)
         if submodel is None:
-            self.log(f"Error: Submodel {submodel_name} not found.", VMLogger.ERROR)
+            self.logger.log(
+                logging.ERROR, f"Error: Submodel {submodel_name} not found."
+            )
             raise KeyError(f"Submodel {submodel_name} not found")
 
         if submodel["type"] == "vm1d":
             vm1d = self.get_info("vm1d", submodel["name"])
             if vm1d is None:
-                self.log(f"Error: vm1d {submodel['name']} not found.", VMLogger.ERROR)
+                self.logger.log(
+                    logging.ERROR, f"Error: vm1d {submodel['name']} not found."
+                )
                 raise KeyError(f"vm1d {submodel['name']} not found")
             return (submodel_name, self.load_1d_velo_sub_model(vm1d["path"]))
         elif submodel["type"] in {"relation", "perturbation"}:
-            self.log(
+            self.logger.log(
+                logging.DEBUG,
                 f"Using {submodel['type']} submodel {submodel_name} with no additional data",
-                VMLogger.DEBUG,
             )
             return (submodel_name, None)
         return None
@@ -406,15 +400,17 @@ class CVMRegistry:
 
         surface_info = self.get_info("surface", basin_surface["name"])
         if surface_info is None:
-            self.log(
-                f"Error: Surface {basin_surface['name']} not found.", VMLogger.ERROR
+            self.logger.log(
+                logging.ERROR, f"Error: Surface {basin_surface['name']} not found."
             )
             raise KeyError(f"Surface {basin_surface['name']} not found")
 
-        self.log(f"Loading basin surface file {surface_info['path']}", VMLogger.DEBUG)
+        self.logger.log(
+            logging.DEBUG, f"Loading basin surface file {surface_info['path']}"
+        )
         basin_surface_path = self.get_full_path(surface_info["path"])
         if basin_surface_path in self.cache:
-            self.log(f"{basin_surface_path} loaded from cache", VMLogger.DEBUG)
+            self.logger.log(logging.DEBUG, f"{basin_surface_path} loaded from cache")
             return self.cache[basin_surface_path]
 
         try:
@@ -429,10 +425,10 @@ class CVMRegistry:
 
                 raster_data = np.fromfile(f, dtype=float, count=nlat * nlon, sep=" ")
                 if len(raster_data) != nlat * nlon:
-                    self.log(
+                    self.logger.log(
+                        logging.WARNING,
                         f"Warning: In {basin_surface_path} raster data length mismatch: "
                         f"{len(raster_data)} != {nlat * nlon}. Padding with zeros.",
-                        VMLogger.WARNING,
                     )
                     raster_data = np.pad(
                         raster_data, (0, nlat * nlon - len(raster_data)), "constant"
@@ -455,9 +451,9 @@ class CVMRegistry:
                 self.cache[basin_surface_path] = basin_surf_read
                 return basin_surf_read
         except FileNotFoundError:
-            self.log(
+            self.logger.log(
+                logging.ERROR,
                 f"Error: Basin surface file {basin_surface_path} not found.",
-                VMLogger.ERROR,
             )
             raise FileNotFoundError(
                 f"Basin surface file {basin_surface_path} not found"
@@ -465,7 +461,7 @@ class CVMRegistry:
         except Exception as e:
             if isinstance(e, (SystemExit, KeyboardInterrupt)):
                 raise
-            self.log(f"Error loading basin surface: {e}", VMLogger.ERROR)
+            self.logger.log(logging.ERROR, f"Error loading basin surface: {e}")
             raise RuntimeError(
                 f"Failed to load basin surface from {basin_surface_path}: {str(e)}"
             )
@@ -512,9 +508,9 @@ class CVMRegistry:
         special_offshore_tapering = tomo["special_offshore_tapering"]
         vs30 = self.load_global_surface(tomo["vs30_path"])
 
-        self.log(
+        self.logger.log(
+            logging.INFO,
             f"Loading tomography data '{tomo_name}' with {len(surf_depth)} depth levels",
-            VMLogger.INFO,
         )
         surfaces = []
         for i, elev in enumerate(surf_depth):
@@ -528,23 +524,23 @@ class CVMRegistry:
                     / f"surf_tomography_{vtype.name}_elev{elev_name}.in"
                 )
                 if not tomofile.exists():
-                    self.log(
-                        f"Error: Tomography file {tomofile} not found", VMLogger.ERROR
+                    self.logger.log(
+                        logging.ERROR, f"Error: Tomography file {tomofile} not found"
                     )
                     raise FileNotFoundError(
                         f"Tomography file {tomofile} does not exist"
                     )
                 surfaces[i][vtype.name] = self.load_global_surface(tomofile)
-                self.log(
+                self.logger.log(
+                    logging.DEBUG,
                     f"Loaded tomography surface for {vtype.name} at elevation {elev}",
-                    VMLogger.DEBUG,
                 )
 
         offshore_surface_info = self.get_info("surface", offshore_surface_name)
         if offshore_surface_info is None:
-            self.log(
+            self.logger.log(
+                logging.ERROR,
                 f"Error: Offshore distance surface {offshore_surface_name} not found",
-                VMLogger.ERROR,
             )
             raise KeyError(
                 f"Offshore distance surface {offshore_surface_name} not found"
@@ -555,9 +551,9 @@ class CVMRegistry:
 
         offshore_v1d_info = self.get_info("vm1d", offshore_v1d_name)
         if offshore_v1d_info is None:
-            self.log(
+            self.logger.log(
+                logging.ERROR,
                 f"Error: Offshore 1D model {offshore_v1d_name} not found",
-                VMLogger.ERROR,
             )
             raise KeyError(f"Offshore 1D model {offshore_v1d_name} not found")
         offshore_basin_model_1d = self.load_1d_velo_sub_model(offshore_v1d_info["path"])
@@ -593,54 +589,59 @@ class CVMRegistry:
         velo_mod_1d_data = None
         nz_tomography_data = None
 
-        self.log("Loading global surfaces", VMLogger.INFO)
+        self.logger.log(logging.INFO, "Loading global surfaces")
         global_surfaces = self.load_global_surface_data(
             self.global_params["surface_names"]
         )
 
-        self.log("Loading global velocity submodel data", VMLogger.INFO)
+        self.logger.log(logging.INFO, "Loading global velocity submodel data")
         for submodel_name in self.global_params["submodels"]:
             submodel_info = self.get_info("submodel", submodel_name)
             if submodel_info is None:
-                self.log(f"Error: Submodel {submodel_name} not found", VMLogger.ERROR)
+                self.logger.log(
+                    logging.ERROR, f"Error: Submodel {submodel_name} not found"
+                )
                 raise KeyError(f"Submodel {submodel_name} not found")
 
             if submodel_info["type"] is None:
-                self.log("nan submodel recognized (no data to load)", VMLogger.DEBUG)
+                self.logger.log(
+                    logging.DEBUG, "nan submodel recognized (no data to load)"
+                )
             elif submodel_info["type"] == "vm1d":
                 velo_mod_1d_data = self.load_1d_velo_sub_model(submodel_info["name"])
-                self.log("Loaded 1D velocity model data", VMLogger.INFO)
+                self.logger.log(logging.INFO, "Loaded 1D velocity model data")
             elif submodel_info["type"] == "tomography":
                 if self.global_params.get("tomography"):
                     nz_tomography_data = self.load_tomo_surface_data(
                         self.global_params["tomography"]
                     )
                 else:
-                    self.log("Error: Tomography data not found", VMLogger.ERROR)
+                    self.logger.log(logging.ERROR, "Error: Tomography data not found")
                     raise KeyError("Tomography data not found")
             elif submodel_info["type"] == "relation":
-                self.log(
+                self.logger.log(
+                    logging.DEBUG,
                     f"Using relation submodel {submodel_name} with no additional data",
-                    VMLogger.DEBUG,
                 )
             else:
-                self.log(
+                self.logger.log(
+                    logging.INFO,
                     f"Error: Unknown submodel type {submodel_info['type']} to be ignored.",
-                    VMLogger.INFO,
                 )
 
         if nz_tomography_data:
-            self.log(
-                "Loading smooth boundaries for tomography transitions", VMLogger.INFO
+            self.logger.log(
+                logging.INFO,
+                "Loading smooth boundaries for tomography transitions",
             )
             nz_tomography_data.smooth_boundary = self.load_smooth_boundaries(
                 self.global_params["basins"]
             )
 
-        self.log("Loading basin data", VMLogger.INFO)
+        self.logger.log(logging.INFO, "Loading basin data")
         basin_data = self.load_basin_data(self.global_params["basins"])
 
-        self.log("All global data successfully loaded", VMLogger.INFO)
+        self.logger.log(logging.INFO, "All global data successfully loaded")
         return velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data
 
     def load_global_surface(self, surface_file: Path | str) -> GlobalSurfaceRead:
@@ -670,9 +671,9 @@ class CVMRegistry:
         try:
             with open(surface_file, "r") as f:
                 nlat, nlon = map(int, f.readline().split())
-                self.log(
+                self.logger.log(
+                    logging.DEBUG,
                     f"Reading surface with dimensions {nlat}x{nlon} from {surface_file}",
-                    VMLogger.DEBUG,
                 )
 
                 latitudes = np.fromfile(f, dtype=float, count=nlat, sep=" ")
@@ -680,10 +681,10 @@ class CVMRegistry:
                 raster_data = np.fromfile(f, dtype=float, count=nlat * nlon, sep=" ")
 
                 if len(raster_data) != nlat * nlon:
-                    self.log(
+                    self.logger.log(
+                        logging.WARNING,
                         f"Data length mismatch in {surface_file}: got {len(raster_data)}, expected {nlat * nlon}. "
                         "Missing data will be padded with 0.",
-                        VMLogger.WARNING,
                     )
                     raster_data = np.pad(
                         raster_data, (0, nlat * nlon - len(raster_data)), "constant"
@@ -693,12 +694,14 @@ class CVMRegistry:
                     latitudes, longitudes, raster_data.reshape((nlat, nlon)).T
                 )
         except FileNotFoundError:
-            self.log(f"Surface file {surface_file} not found", VMLogger.ERROR)
+            self.logger.log(logging.ERROR, f"Surface file {surface_file} not found")
             raise FileNotFoundError(f"Surface file {surface_file} not found")
         except Exception as e:
             if isinstance(e, (SystemExit, KeyboardInterrupt)):
                 raise
-            self.log(f"Error reading surface file {surface_file}: {e}", VMLogger.ERROR)
+            self.logger.log(
+                logging.ERROR, f"Error reading surface file {surface_file}: {e}"
+            )
             raise RuntimeError(
                 f"Failed to load global surface from {surface_file}: {str(e)}"
             )
@@ -723,13 +726,16 @@ class CVMRegistry:
         for name in global_surface_names:
             surface_info = self.get_info("surface", name)
             if surface_info:
-                self.log(f"Loading global surface: {name}", VMLogger.DEBUG)
+                self.logger.log(logging.DEBUG, f"Loading global surface: {name}")
                 surfaces.append(self.load_global_surface(surface_info["path"]))
             else:
-                self.log(
-                    f"Warning: Surface {name} not found in registry", VMLogger.WARNING
+                self.logger.log(
+                    logging.WARNING,
+                    f"Warning: Surface {name} not found in registry",
                 )
-        self.log(f"Loaded {len(global_surface_names)} global surfaces", VMLogger.INFO)
+        self.logger.log(
+            logging.INFO, f"Loaded {len(global_surface_names)} global surfaces"
+        )
         return surfaces
 
     def load_smooth_boundaries(self, basin_names: list[str]) -> SmoothingBoundary:
@@ -759,21 +765,24 @@ class CVMRegistry:
         smooth_bound_lats = []
         count = 0
 
-        self.log(
-            f"Loading smoothing boundaries for {len(basin_names)} basins", VMLogger.INFO
+        self.logger.log(
+            logging.INFO,
+            f"Loading smoothing boundaries for {len(basin_names)} basins",
         )
         for basin_name in basin_names:
             basin = self.get_info("basin", basin_name)
             if basin is None:
-                self.log(f"Basin {basin_name} not found in registry", VMLogger.ERROR)
+                self.logger.log(
+                    logging.ERROR, f"Basin {basin_name} not found in registry"
+                )
                 raise KeyError(f"Basin {basin_name} not found")
 
             if "smoothing" in basin:
                 boundary_vec_filename = self.get_full_path(basin["smoothing"])
                 if boundary_vec_filename.exists():
-                    self.log(
+                    self.logger.log(
+                        logging.INFO,
                         f"Loading smoothing boundary: {boundary_vec_filename}",
-                        VMLogger.INFO,
                     )
                     try:
                         data = np.fromfile(boundary_vec_filename, dtype=float, sep=" ")
@@ -781,26 +790,28 @@ class CVMRegistry:
                         smooth_bound_lons.extend(smooth_lons)
                         smooth_bound_lats.extend(smooth_lats)
                         count += len(smooth_lons)
-                        self.log(
+                        self.logger.log(
+                            logging.DEBUG,
                             f"Added {len(smooth_lons)} smoothing points for basin {basin_name}",
-                            VMLogger.DEBUG,
                         )
                     except Exception as e:
                         if isinstance(e, (SystemExit, KeyboardInterrupt)):
                             raise
-                        self.log(
-                            f"Error reading smoothing boundary: {e}", VMLogger.ERROR
+                        self.logger.log(
+                            logging.ERROR, f"Error reading smoothing boundary: {e}"
                         )
                         raise RuntimeError(
                             f"Failed to load smoothing boundary from {boundary_vec_filename}: {str(e)}"
                         )
                 else:
-                    self.log(
+                    self.logger.log(
+                        logging.WARNING,
                         f"Smoothing boundary file not found: {boundary_vec_filename} -- to be ignored",
-                        VMLogger.WARNING,
                     )
             else:
-                self.log(f"No smoothing defined for basin {basin_name}", VMLogger.DEBUG)
+                self.logger.log(
+                    logging.DEBUG, f"No smoothing defined for basin {basin_name}"
+                )
 
-        self.log(f"Total smoothing boundary points: {count}", VMLogger.INFO)
+        self.logger.log(logging.INFO, f"Total smoothing boundary points: {count}")
         return SmoothingBoundary(smooth_bound_lons, smooth_bound_lats)

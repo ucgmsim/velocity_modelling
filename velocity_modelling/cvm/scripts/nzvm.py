@@ -46,7 +46,10 @@ pip install -e  .
     OUTPUT_DIR=/tmp
 """
 
+import logging
+import sys
 import time
+from logging import Logger
 from pathlib import Path
 from typing import Annotated
 
@@ -69,15 +72,22 @@ from velocity_modelling.cvm.geometry import (
     gen_full_model_grid_great_circle,
 )
 from velocity_modelling.cvm.global_model import PartialGlobalSurfaceDepths
-from velocity_modelling.cvm.logging import VMLogger
 from velocity_modelling.cvm.registry import CVMRegistry
 from velocity_modelling.cvm.velocity3d import PartialGlobalQualities, QualitiesVector
+
+# Configure logging at the module level
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
+)
+logger = logging.getLogger("velocity_model")
 
 app = typer.Typer(pretty_exceptions_enable=False)
 
 
 def write_velo_mod_corners_text_file(
-    global_mesh: GlobalMesh, output_dir: Path | str, logger: VMLogger
+    global_mesh: GlobalMesh, output_dir: Path | str, logger: logging.Logger
 ) -> None:
     """
     Write velocity model corners to a text file for reference and visualization.
@@ -91,7 +101,7 @@ def write_velo_mod_corners_text_file(
         Object containing the global mesh data with longitude and latitude arrays.
     output_dir : Path or str
         Directory where the log file will be saved.
-    logger : VMLogger
+    logger : Logger
         Logger for reporting progress and errors.
 
     Raises
@@ -105,7 +115,7 @@ def write_velo_mod_corners_text_file(
     nx = len(global_mesh.x)
     ny = len(global_mesh.y)
 
-    logger.log(f"Writing velocity model corners to {log_file_name}", logger.INFO)
+    logger.log(logging.INFO, f"Writing velocity model corners to {log_file_name}")
     try:
         with log_file_name.open("w") as fp:
             fp.write(">Velocity model corners.\n")
@@ -113,22 +123,29 @@ def write_velo_mod_corners_text_file(
             fp.write(f"{global_mesh.lon[0][ny - 1]}\t{global_mesh.lat[0][ny - 1]}\n")
             fp.write(f"{global_mesh.lon[0][0]}\t{global_mesh.lat[0][0]}\n")
             fp.write(f"{global_mesh.lon[nx - 1][0]}\t{global_mesh.lat[nx - 1][0]}\n")
-            fp.write(f"{global_mesh.lon[nx - 1][ny - 1]}\t{global_mesh.lat[nx - 1][ny - 1]}\n")
-        logger.log("Velocity model corners file write complete.", logger.INFO)
+            fp.write(
+                f"{global_mesh.lon[nx - 1][ny - 1]}\t{global_mesh.lat[nx - 1][ny - 1]}\n"
+            )
+        logger.log(logging.INFO, "Velocity model corners file write complete.")
     except OSError as e:
-        logger.log(f"Failed to write velocity model corners: {e}", logger.ERROR)
-        raise OSError(f"Failed to write velocity model corners to {log_file_name}: {str(e)}")
+        logger.log(logging.ERROR, f"Failed to write velocity model corners: {e}")
+        raise OSError(
+            f"Failed to write velocity model corners to {log_file_name}: {str(e)}"
+        )
 
 
 @cli.from_docstring(app)
 def generate_velocity_model(
     nzvm_cfg_path: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
     out_dir: Annotated[Path, typer.Option(file_okay=False)],
-    nzvm_registry: Annotated[Path, typer.Option(exists=True, dir_okay=False)] = NZVM_REGISTRY_PATH,
+    nzvm_registry: Annotated[
+        Path, typer.Option(exists=True, dir_okay=False)
+    ] = NZVM_REGISTRY_PATH,
     model_version: Annotated[str, typer.Option()] = None,
     output_format: Annotated[str, typer.Option()] = WriteFormat.EMOD3D.name,
     smoothing: Annotated[bool, typer.Option()] = False,
     progress_interval: Annotated[int, typer.Option()] = 5,
+    log_level: Annotated[str, typer.Option()] = "INFO",
 ) -> None:
     """
     Generate a 3D velocity model and write it to disk.
@@ -155,6 +172,8 @@ def generate_velocity_model(
         Unsupported option for future smoothing implementation at model boundaries (default: False).
     progress_interval : int, optional
         How often (in %) to log progress updates (default: 5).
+    log_level : str, optional
+        Logging level for the script (default: "INFO").
 
     Raises
     ------
@@ -168,38 +187,41 @@ def generate_velocity_model(
     start_time = time.time()
 
     # Configure logging
-    log_level = VMLogger.INFO
-    logger = VMLogger(level=log_level)
-    logger.log(f"Logger initialized with level {log_level}", logger.DEBUG)
-    logger.log(f"Beginning velocity model generation in {out_dir}", logger.INFO)
+    numeric_level = getattr(logging, log_level.upper(), logging.INFO)
+    logger.setLevel(numeric_level)
+
+    logger.log(logging.DEBUG, f"Logger initialized with level {log_level}")
+    logger.log(logging.INFO, f"Beginning velocity model generation in {out_dir}")
 
     # Parse the config file
     try:
-        vm_params = parse_nzvm_config(nzvm_cfg_path)
+        vm_params = parse_nzvm_config(nzvm_cfg_path, logger)
         if vm_params.get("call_type") != "GENERATE_VELOCITY_MOD":
-            logger.log(f"Unsupported CALL_TYPE: {vm_params.get('call_type')}", logger.ERROR)
+            logger.log(
+                logging.ERROR, f"Unsupported CALL_TYPE: {vm_params.get('call_type')}"
+            )
             raise ValueError(f"Unsupported CALL_TYPE: {vm_params.get('call_type')}")
     except Exception as e:
         if isinstance(e, (SystemExit, KeyboardInterrupt)):
             raise  # Re-raise critical exceptions
-        logger.log(f"Failed to parse config file: {e}", logger.ERROR)
+        logger.log(logging.ERROR, f"Failed to parse config file: {e}")
         raise ValueError(f"Failed to parse config file {nzvm_cfg_path}: {str(e)}")
 
     # Use --model-version if provided, otherwise fall back to MODEL_VERSION from config
     if model_version and model_version != vm_params.get("model_version"):
         logger.log(
+            logging.INFO,
             f"Updating model_version from {vm_params['model_version']} to {model_version}",
-            logger.INFO,
         )
         vm_params["model_version"] = model_version
     else:
-        logger.log(f"Using model version: {vm_params['model_version']}", logger.INFO)
+        logger.log(logging.INFO, f"Using model version: {vm_params['model_version']}")
 
     # Validate and import the appropriate writer based on format
     try:
-        output_format_enum = WriteFormat[output_format.upper()]
+        _ = WriteFormat[output_format.upper()]
     except KeyError:
-        logger.log(f"Unsupported output format: {output_format}", logger.ERROR)
+        logger.log(logging.ERROR, f"Unsupported output format: {output_format}")
         raise ValueError(f"Unsupported output format: {output_format}")
 
     import importlib
@@ -208,9 +230,11 @@ def generate_velocity_model(
         module_name = f"velocity_modelling.cvm.write.{output_format.lower()}"
         writer_module = importlib.import_module(module_name)
         write_global_qualities = writer_module.write_global_qualities
-        logger.log(f"Using {output_format} writer module", logger.DEBUG)
+        logger.log(logging.DEBUG, f"Using {output_format} writer module")
     except ImportError as e:
-        logger.log(f"Failed to import writer module for {output_format}: {e}", logger.ERROR)
+        logger.log(
+            logging.ERROR, f"Failed to import writer module for {output_format}: {e}"
+        )
         raise ValueError(f"Unsupported output format: {output_format}")
 
     # Ensure output directory exists
@@ -218,38 +242,44 @@ def generate_velocity_model(
     try:
         out_dir.mkdir(exist_ok=True, parents=True)
     except OSError as e:
-        logger.log(f"Failed to create output directory {out_dir}: {e}", logger.ERROR)
+        logger.log(logging.ERROR, f"Failed to create output directory {out_dir}: {e}")
         raise OSError(f"Failed to create output directory {out_dir}: {str(e)}")
 
     # Initialize registry and generate model
     cvm_registry = CVMRegistry(vm_params["model_version"], logger, nzvm_registry)
 
     # Create model grid
-    logger.log("Generating model grid", logger.INFO)
+    logger.log(logging.INFO, "Generating model grid")
     global_mesh = gen_full_model_grid_great_circle(vm_params, logger)
     write_velo_mod_corners_text_file(global_mesh, out_dir, logger)
 
     # Load all required data
-    logger.log("Loading model data", logger.INFO)
+    logger.log(logging.INFO, "Loading model data")
     try:
         velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data_list = (
             cvm_registry.load_all_global_data()
         )
     except Exception as e:
-        logger.log(f"Failed to load model data: {e}", logger.ERROR)
+        if isinstance(e, (SystemExit, KeyboardInterrupt)):
+            raise  # Re-raise critical exceptions
+        logger.log(logging.ERROR, f"Failed to load model data: {e}")
         raise RuntimeError(f"Failed to load model data: {str(e)}")
 
     # Preprocess basin membership for efficiency
-    logger.log("Pre-processing basin membership", logger.INFO)
+    logger.log(logging.INFO, "Pre-processing basin membership")
     try:
-        in_basin_mesh, partial_global_mesh_list = InBasinGlobalMesh.preprocess_basin_membership(
-            global_mesh,
-            basin_data_list,
-            logger,
-            smooth_bound=nz_tomography_data.smooth_boundary,
+        in_basin_mesh, partial_global_mesh_list = (
+            InBasinGlobalMesh.preprocess_basin_membership(
+                global_mesh,
+                basin_data_list,
+                logger,
+                smooth_bound=nz_tomography_data.smooth_boundary,
+            )
         )
     except Exception as e:
-        logger.log(f"Error preprocessing basin membership: {e}", logger.ERROR)
+        if isinstance(e, (SystemExit, KeyboardInterrupt)):
+            raise  # Re-raise critical exceptions
+        logger.log(logging.ERROR, f"Error preprocessing basin membership: {e}")
         raise RuntimeError(f"Error preprocessing basin membership: {str(e)}")
 
     # Process each latitude slice
@@ -258,27 +288,38 @@ def generate_velocity_model(
     for j in range(total_slices):
         progress = j * 100 / total_slices
         if progress >= last_progress + progress_interval:
-            logger.log(f"Generating velocity model: {progress:.2f}% complete", logger.INFO)
+            logger.log(
+                logging.INFO, f"Generating velocity model: {progress:.2f}% complete"
+            )
             last_progress = progress
 
         partial_global_mesh = partial_global_mesh_list[j]
-        partial_global_qualities = PartialGlobalQualities(partial_global_mesh.nx, partial_global_mesh.nz)
+        partial_global_qualities = PartialGlobalQualities(
+            partial_global_mesh.nx, partial_global_mesh.nz
+        )
 
         for k in range(len(partial_global_mesh.x)):
-            partial_global_surface_depths = PartialGlobalSurfaceDepths(len(global_surfaces))
+            partial_global_surface_depths = PartialGlobalSurfaceDepths(
+                len(global_surfaces)
+            )
             partial_basin_surface_depths_list = [
                 PartialBasinSurfaceDepths(basin_data) for basin_data in basin_data_list
             ]
             qualities_vector = QualitiesVector(partial_global_mesh.nz)
 
             basin_indices = in_basin_mesh.get_basin_membership(k, j)
-            in_basin_list = [InBasin(basin_data, len(global_mesh.z)) for basin_data in basin_data_list]
+            in_basin_list = [
+                InBasin(basin_data, len(global_mesh.z))
+                for basin_data in basin_data_list
+            ]
             for basin_idx in basin_indices:
                 if basin_idx >= 0:
                     in_basin_list[basin_idx].in_basin_lat_lon = True
 
             if smoothing:
-                logger.log("Smoothing option selected but not implemented", logger.DEBUG)
+                logger.log(
+                    logging.DEBUG, "Smoothing option selected but not implemented"
+                )
                 # Placeholder for future implementation
             else:
                 try:
@@ -301,11 +342,22 @@ def generate_velocity_model(
                     partial_global_qualities.vs[k] = qualities_vector.vs
                     partial_global_qualities.inbasin[k] = qualities_vector.inbasin
                 except AttributeError as e:
-                    logger.log(f"Error accessing qualities vector attributes at j={j}, k={k}: {e}", logger.ERROR)
-                    raise RuntimeError(f"Error processing point at j={j}, k={k}: {str(e)}")
+                    logger.log(
+                        logging.ERROR,
+                        f"Error accessing qualities vector attributes at j={j}, k={k}: {e}",
+                    )
+                    raise RuntimeError(
+                        f"Error processing point at j={j}, k={k}: {str(e)}"
+                    )
                 except Exception as e:
-                    logger.log(f"Error processing point at j={j}, k={k}: {e}", logger.ERROR)
-                    raise RuntimeError(f"Error processing point at j={j}, k={k}: {str(e)}")
+                    if isinstance(e, (SystemExit, KeyboardInterrupt)):
+                        raise  # Re-raise critical exceptions
+                    logger.log(
+                        logging.ERROR, f"Error processing point at j={j}, k={k}: {e}"
+                    )
+                    raise RuntimeError(
+                        f"Error processing point at j={j}, k={k}: {str(e)}"
+                    )
 
         # Write this latitude slice to disk
         try:
@@ -318,31 +370,32 @@ def generate_velocity_model(
                 logger,
             )
         except Exception as e:
-            logger.log(f"Error writing slice j={j}: {e}", logger.ERROR)
+            if isinstance(e, (SystemExit, KeyboardInterrupt)):
+                raise  # Re-raise critical exceptions
+            logger.log(logging.ERROR, f"Error writing slice j={j}: {e}")
             raise OSError(f"Failed to write slice j={j} to {out_dir}: {str(e)}")
 
-    logger.log("Generation of velocity model 100% complete", logger.INFO)
+    logger.log(logging.INFO, "Generation of velocity model 100% complete")
     logger.log(
+        logging.INFO,
         f"Model (version: {vm_params['model_version']}) successfully generated and written to {out_dir}",
-        logger.INFO,
     )
     elapsed_time = time.time() - start_time
-    logger.log(f"Velocity model generation completed in {elapsed_time:.2f} seconds", logger.INFO)
+    logger.log(
+        logging.INFO,
+        f"Velocity model generation completed in {elapsed_time:.2f} seconds",
+    )
 
 
 @cli.from_docstring(app)
 def empty_command() -> None:
     """
     Empty command for testing purposes.
-
-    Returns
-    -------
-    None
     """
     pass
 
 
-def parse_nzvm_config(config_path: Path) -> dict:
+def parse_nzvm_config(config_path: Path, logger: Logger = None) -> dict:
     """
     Parse the NZVM config file and convert it to a dictionary format.
 
@@ -350,6 +403,8 @@ def parse_nzvm_config(config_path: Path) -> dict:
     ----------
     config_path : Path
         Path to the nzvm.cfg file.
+    logger : Logger, optional
+        Logger instance for logging messages.
 
     Returns
     -------
@@ -365,6 +420,9 @@ def parse_nzvm_config(config_path: Path) -> dict:
     KeyError
         If an invalid TOPO_TYPE is specified.
     """
+    if logger is None:
+        logger = Logger(name="velocity_model.parse_nzvm_config")
+
     vm_params = {}
     numeric_keys = {
         "ORIGIN_LAT",
@@ -402,14 +460,18 @@ def parse_nzvm_config(config_path: Path) -> dict:
                     try:
                         vm_params[dest_key] = TopoTypes[value]
                     except KeyError:
-                        VMLogger.error(f"Invalid topo type {value}")
+                        Logger.error(f"Invalid topo type {value}")
                         raise KeyError(f"Invalid topo type {value}")
                 elif key in numeric_keys:
                     if float_value is None:
-                        raise ValueError(f"Numeric value required for key {key}: {value}")
+                        raise ValueError(
+                            f"Numeric value required for key {key}: {value}"
+                        )
                     vm_params[dest_key] = float_value
                 else:
-                    vm_params[dest_key] = float_value if float_value is not None else value
+                    vm_params[dest_key] = (
+                        float_value if float_value is not None else value
+                    )
 
         # Calculate nx, ny, nz based on spacing and extent
         vm_params["nx"] = round(vm_params["extent_x"] / vm_params["h_lat_lon"])
@@ -418,10 +480,12 @@ def parse_nzvm_config(config_path: Path) -> dict:
             (vm_params["extent_zmax"] - vm_params["extent_zmin"]) / vm_params["h_depth"]
         )
     except FileNotFoundError:
-        VMLogger.error(f"Config file {config_path} not found")
+        logger.log(logging.ERROR, "Config file {config_path} not found")
         raise FileNotFoundError(f"Config file {config_path} not found")
     except Exception as e:
-        VMLogger.error(f"Error parsing config file {config_path}: {e}")
+        if isinstance(e, (SystemExit, KeyboardInterrupt)):
+            raise  # Re-raise critical exceptions
+        logger.log(logging.ERROR, f"Error parsing config file {config_path}: {e}")
         raise ValueError(f"Error parsing config file {config_path}: {str(e)}")
 
     return vm_params

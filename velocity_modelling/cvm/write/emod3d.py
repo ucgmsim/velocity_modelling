@@ -3,8 +3,10 @@ Module for writing a velocity model to file for EMOD3D.
 
 """
 
+import logging
 import struct
 import sys
+from logging import Logger
 from pathlib import Path
 
 import numpy as np
@@ -12,7 +14,6 @@ import numpy as np
 from velocity_modelling.cvm.geometry import (
     PartialGlobalMesh,
 )
-from velocity_modelling.cvm.logging import VMLogger
 from velocity_modelling.cvm.velocity3d import (
     PartialGlobalQualities,
 )
@@ -24,7 +25,7 @@ def write_global_qualities(
     partial_global_qualities: PartialGlobalQualities,
     lat_ind: int,
     min_vs: float = 0.0,
-    logger: VMLogger = None,
+    logger: Logger = None,
 ):
     """
     Write the full velocity model to file for EMOD3D
@@ -41,12 +42,12 @@ def write_global_qualities(
         Latitude index to determine the write mode (write or append).
     min_vs : float, optional
         Minimum Vs value to apply to the model.
-    logger : VMLogger, optional
+    logger : Logger, optional
         Logger instance for logging messages.
 
     """
     if logger is None:
-        logger = VMLogger("emod3d.wrote_global_qualities")
+        logger = Logger("emod3d.wrote_global_qualities")
 
     # perform endian check
     endianness = sys.byteorder
@@ -69,7 +70,7 @@ def write_global_qualities(
             vs3dfile.unlink(missing_ok=True)
             rho3dfile.unlink(missing_ok=True)
             in_basin_mask_file.unlink(missing_ok=True)
-            logger.log(f"Creating new VM files for emod3d: {output_dir}", logger.INFO)
+            logger.log(logging.INFO, f"Creating new VM files for emod3d: {output_dir}")
 
         # Flatten the arrays along the x and z dimensions. Write along x-axis first
         vp = partial_global_qualities.vp.T.flatten()
@@ -89,8 +90,8 @@ def write_global_qualities(
         )
 
         logger.log(
+            logging.DEBUG,
             f"Writing global qualities to file for latitude index {lat_ind}",
-            logger.DEBUG,
         )
 
         # Write the binary data to files
@@ -107,7 +108,7 @@ def write_global_qualities(
             fmask.write(inbasin_data)
 
     except Exception as e:
-        logger.log(f"Error writing emod3d data: {str(e)}", logger.ERROR)
+        logger.log(logging.ERROR, f"Error writing emod3d data: {str(e)}")
         raise
 
 

@@ -6,6 +6,9 @@ Eberhart-Phillips et al. (2010) for New Zealand. It provides depth and location-
 P-wave velocity, S-wave velocity, and density values derived from tomographic inversions.
 """
 
+import logging
+from logging import Logger
+
 import numpy as np
 
 from velocity_modelling.cvm.constants import VelocityTypes
@@ -18,7 +21,6 @@ from velocity_modelling.cvm.gtl import v30gtl_vectorized
 from velocity_modelling.cvm.interpolate import (
     linear_interpolation_vectorized,
 )
-from velocity_modelling.cvm.logging import VMLogger
 from velocity_modelling.cvm.submodel import canterbury1d_v1
 from velocity_modelling.cvm.velocity3d import (
     QualitiesVector,
@@ -98,7 +100,7 @@ def main_vectorized(
     in_any_basin_lat_lon: bool,
     on_boundary: bool,
     interpolated_global_surface_values: dict,
-    logger: VMLogger = None,
+    logger: Logger = None,
 ):
     """
     Calculate rho, vp, and vs values for multiple lat-long-depth points using the
@@ -126,13 +128,13 @@ def main_vectorized(
         Flag indicating if the point is on the boundary.
     interpolated_global_surface_values : dict
         Dictionary containing the interpolated values for vp, vs, and rho.
-    logger : VMLogger, optional
+    logger : Logger, optional
         Logger instance for logging messages.
 
     """
     if logger is not None:
         logger.log(
-            f"Applying EP tomo (2010) model to {len(z_indices)} points", logger.DEBUG
+            logging.DEBUG, f"Applying EP tomo (2010) model to {len(z_indices)} points"
         )
 
     # Convert surf_depth to meters (ascending order for searchsorted)
