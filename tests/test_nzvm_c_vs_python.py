@@ -77,7 +77,7 @@ OUTPUT_DIR={c_output_dir}
 
 
 
-
+@pytest.mark.repeat(5)
 def test_nzvm_c_vs_python(tmp_path: Path, c_binary_directory: Path, c_binary_path: Path):
     """Test C binary vs Python script with random config"""
     # Define output directories but don't create them yet
