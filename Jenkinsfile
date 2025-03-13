@@ -5,7 +5,7 @@ pipeline {
             // as the user with uid = 0. This user is, by default, the
             // root user. So it is effectively saying run the commands
             // as root.
-            args '-u 0'
+            args '-u 0 -v /home/jenkins/Data:/nzvm/Data'
         }
 
     }
