@@ -592,20 +592,8 @@ class PartialBasinSurfaceDepths:
             Tracks if a lat-lon is inside the basin.
         mesh_vector : MeshVector
             Coordinates for the point of interest.
-    
-    Raises
-    ---------
-    ValueError
-            If the mesh vector is not contained in the basin.
 
-        Raises
-            ---------
-            ValueError
-                    If the mesh vector is not contained in the basin.
         """
-        if not in_basin.in_basin_lat_lon:
-            raise ValueError("Point is not contained in basin")
-
         self.enforce_surface_depths()
         top_lim = self.depths[0]  # the depth of the first surface
         bot_lim = self.depths[-1]  # the depth of the last surface
@@ -628,7 +616,15 @@ class PartialBasinSurfaceDepths:
             Tracks whether the lat-lon is inside basin boundaries.
         mesh_vector : MeshVector
             Contains the lat-lon point and depths.
+
+        Raises
+        ------
+        ValueError
+            If the mesh vector is not contained in the basin.
         """
+        if not in_basin.in_basin_lat_lon:
+            raise ValueError("Point is not contained in basin")
+
         self.determine_basin_surface_depths(in_basin, mesh_vector)
         self.enforce_basin_surface_depths(in_basin, mesh_vector)
 

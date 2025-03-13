@@ -12,9 +12,10 @@ MAX_LAT_SURFACE_EXTENSION = 10  # value in degrees the global (Vs30, DEM, tomogr
 MAX_LON_SURFACE_EXTENSION = 10  # value in degrees the global (Vs30, DEM, tomography) surface files may be extended by
 EARTH_RADIUS_MEAN = 6378.139
 
+CVM_ROOT = Path(__file__).parent
 DATA_ROOT = Path(__file__).parent.parent / "Data"
-MODEL_VERSIONS_ROOT = DATA_ROOT / "model_versions"
-NZVM_REGISTRY_PATH = DATA_ROOT / "nzvm_registry.yaml"
+MODEL_VERSIONS_ROOT = CVM_ROOT / "model_versions"
+NZVM_REGISTRY_PATH = CVM_ROOT / "nzvm_registry.yaml"
 
 DEFAULT_OFFSHORE_1D_MODEL = "canterbury1d_v2"  # vm1d name for offshore 1D model
 DEFAULT_OFFSHORE_DISTANCE = "offshore"  # surface name for offshore distance
