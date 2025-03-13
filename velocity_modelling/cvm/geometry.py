@@ -8,7 +8,7 @@ grid generation, mesh slicing, and boundary calculations for various model compo
 
 import logging
 from logging import Logger
-from typing import Any,Self
+from typing import Any, Self
 
 import numpy as np
 from numba import njit
@@ -664,9 +664,9 @@ class AdjacentPoints:
     ----------
     in_surface_bounds : bool
         True if the point is within the surface bounds.
-    lat_ind : list[int]
+    lat_ind : np.ndarray
         Latitude indices.
-    lon_ind : list[int]
+    lon_ind : np.ndarray
         Longitude indices.
     in_lat_extension_zone : bool
         True if the point is in a latitude extension zone.
@@ -687,25 +687,67 @@ class AdjacentPoints:
     corner_lon_ind : int
         Corner longitude index.
 
+    Parameters
+    ----------
+    in_surface_bounds : bool
+        True if the point is within the surface bounds.
+    lat_ind : np.ndarray
+        Latitude indices.
+    lon_ind : np.ndarray
+        Longitude indices.
+    in_lat_extension_zone : bool
+        True if the point is in a latitude extension zone.
+    lat_extension_type : int
+        Latitude extension type code.
+    lon_edge_ind : int
+        Longitude edge index in extension scenario.
+    in_lon_extension_zone : bool
+        True if the point is in a longitude extension zone.
+    lon_extension_type : int
+        Longitude extension type code.
+    lat_edge_ind : int
+        Latitude edge index in extension scenario.
+    in_corner_zone : bool
+        True if the point is in a corner extension scenario.
+    corner_lat_ind : int
+        Corner latitude index.
+    corner_lon_ind : int
+        Corner longitude index.
+
+
     """
 
-    def __init__(self):
+    def __init__(
+        self,
+        in_surface_bounds: bool,
+        lat_ind: np.ndarray,
+        lon_ind: np.ndarray,
+        in_lat_extension_zone: bool,
+        lat_extension_type: int,
+        lon_edge_ind: int,
+        in_lon_extension_zone: bool,
+        lon_extension_type: int,
+        lat_edge_ind: int,
+        in_corner_zone: bool,
+        corner_lat_ind: int,
+        corner_lon_ind: int,
+    ):
         """
         Store bounding indices and flags to aid in interpolation checks.
         Use the find_basin_adjacent_points or find_global_adjacent_points class methods to populate.
         """
-        self.in_surface_bounds = False
-        self.lat_ind = [0, 0]
-        self.lon_ind = [0, 0]
-        self.in_lat_extension_zone = False
-        self.lat_extension_type = 0
-        self.lon_edge_ind = 0
-        self.in_lon_extension_zone = False
-        self.lon_extension_type = 0
-        self.lat_edge_ind = 0
-        self.in_corner_zone = False
-        self.corner_lat_ind = 0
-        self.corner_lon_ind = 0
+        self.in_surface_bounds = in_surface_bounds
+        self.lat_ind = lat_ind
+        self.lon_ind = lon_ind
+        self.in_lat_extension_zone = in_lat_extension_zone
+        self.lat_extension_type = lat_extension_type
+        self.lon_edge_ind = lon_edge_ind
+        self.in_lon_extension_zone = in_lon_extension_zone
+        self.lon_extension_type = lon_extension_type
+        self.lat_edge_ind = lat_edge_ind
+        self.in_corner_zone = in_corner_zone
+        self.corner_lat_ind = corner_lat_ind
+        self.corner_lon_ind = corner_lon_ind
 
     @classmethod
     def find_basin_adjacent_points(
@@ -735,19 +777,26 @@ class AdjacentPoints:
             lats, lons, lat, lon
         )
 
-        # Create and populate the AdjacentPoints object
-        adjacent_points = cls()
-        adjacent_points.in_surface_bounds = in_surface_bounds
-        adjacent_points.lat_ind = lat_ind.tolist()
-        adjacent_points.lon_ind = lon_ind.tolist()
-
-        # Print error if needed
-        if not adjacent_points.in_surface_bounds:
-            print(
-                f"Error, basin point lies outside of the extent of the basin surface ({lon}, {lat})."
+        if not in_surface_bounds:
+            raise ValueError(
+                f"Basin point lies outside of the extent of the basin surface . {lon} {lat}"
             )
 
-        return adjacent_points
+        # Create the AdjacentPoints object with defaults for unused fields
+        return cls(
+            in_surface_bounds=in_surface_bounds,
+            lat_ind=lat_ind,
+            lon_ind=lon_ind,
+            in_lat_extension_zone=False,
+            lat_extension_type=0,
+            lon_edge_ind=0,
+            in_lon_extension_zone=False,
+            lon_extension_type=0,
+            lat_edge_ind=0,
+            in_corner_zone=False,
+            corner_lat_ind=0,
+            corner_lon_ind=0,
+        )
 
     @classmethod
     def find_global_adjacent_points(
@@ -775,21 +824,8 @@ class AdjacentPoints:
         """
         # Call the Numba function
         result = find_global_adjacent_points_numba(lats, lons, lat, lon)
-
-        # Create and populate the AdjacentPoints object
-        adjacent_points = cls()
-        adjacent_points.in_surface_bounds = result[0]
-        adjacent_points.lat_ind = result[1].tolist()
-        adjacent_points.lon_ind = result[2].tolist()
-        adjacent_points.in_lat_extension_zone = result[3]
-        adjacent_points.lat_extension_type = result[4]
-        adjacent_points.lon_edge_ind = result[5]
-        adjacent_points.in_lon_extension_zone = result[6]
-        adjacent_points.lon_extension_type = result[7]
-        adjacent_points.lat_edge_ind = result[8]
-        adjacent_points.in_corner_zone = result[9]
-        adjacent_points.corner_lat_ind = result[10]
-        adjacent_points.corner_lon_ind = result[11]
+        # Unpack the result and create an AdjacentPoints object
+        adjacent_points = AdjacentPoints(*result)
 
         # Raise error if needed
         if not (
@@ -836,9 +872,13 @@ class SmoothingBoundary:
         self.lats = lats
         self.n_points = len(lons)
         if len(self.lons) != len(self.lats):
-            raise ValueError(f'Longitude length does not match latitude length ({len(self.lons)} != {len(self.lats)}')
+            raise ValueError(
+                f"Longitude length does not match latitude length ({len(self.lons)} != {len(self.lats)}"
+            )
 
-    def determine_if_lat_lon_within_smoothing_region(self, mesh_vector: MeshVector) -> tuple[int, float]:
+    def determine_if_lat_lon_within_smoothing_region(
+        self, mesh_vector: MeshVector
+    ) -> tuple[int, float]:
         """
         Find the closest boundary index and distance to the given mesh vector coordinates.
 

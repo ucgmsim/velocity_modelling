@@ -429,7 +429,7 @@ class PartialBasinSurfaceDepths:
     Attributes
     ----------
     depths : np.ndarray
-        Array of depths for each basin surface.
+        Array of depths for each basin surface. depths[i] is the depth of the i-th surfaces
     basin : BasinData
         BasinData object referencing boundaries, surfaces, submodels.
 
@@ -440,7 +440,6 @@ class PartialBasinSurfaceDepths:
         Initialize the PartialBasinSurfaceDepths object.
 
         """
-        # self.depths[i] is the depth of the i-th surfaces
         self.depths = np.full(len(basin_data.surfaces), np.nan, dtype=np.float64)
         self.basin = basin_data
 
@@ -467,7 +466,6 @@ class PartialBasinSurfaceDepths:
             adjacent_points = AdjacentPoints.find_basin_adjacent_points(
                 surface.lats, surface.lons, mesh_vector.lat, mesh_vector.lon
             )
-            # TODO: check if in_surface_bounds is True
             x1 = surface.lons[adjacent_points.lon_ind[0]]
             x2 = surface.lons[adjacent_points.lon_ind[1]]
             y1 = surface.lats[adjacent_points.lat_ind[0]]
