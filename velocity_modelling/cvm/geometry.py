@@ -835,7 +835,7 @@ class SmoothingBoundary:
         self.lons = lons
         self.lats = lats
         self.n_points = len(lons)
-        if len(self.lons) == len(self.lats):
+        if len(self.lons) != len(self.lats):
             raise ValueError(f'Longitude length does not match latitude length ({len(self.lons)} != {len(self.lats)}')
 
     def determine_if_lat_lon_within_smoothing_region(self, mesh_vector: MeshVector) -> tuple[int, float]:
