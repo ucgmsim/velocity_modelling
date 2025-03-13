@@ -13,12 +13,19 @@ from velocity_modelling.cvm.scripts.compare_emod3d import (
 BASE_DIR = Path(__file__).parent.parent  # project root directory
 SCRIPT_DIR = BASE_DIR / "velocity_modelling/cvm/scripts"
 TEST_DIR = BASE_DIR / "tests"
-OUTPUT_DIR = TEST_DIR / "test_output"
 C_BINARY_DIR = Path("/nzvm")  # C binary directory
-C_BINARY = C_BINARY_DIR / "NZVM"
 
+@pytest.fixture
+def c_binary_directory() -> Path:
+    if C_BINARY_DIR.exists():
+        return C_BINARY_DIR
+    return Path(os.environ['NZVM_BINARY_DIR'])
 
-def generate_random_nzvm_config(c_output_dir: Path) -> Path:
+@pytest.fixture
+def c_binary_path(c_binary_directory: Path) -> Path:
+    return c_binary_directory / "NZVM"
+
+def generate_random_nzvm_config(tmp_path: Path, c_output_dir: Path) -> Path:
     """Generate a random but sensible nzvm.cfg file with specified parameters"""
     # Sensible ranges and choices for parameters
     model_version = random.choice(["2.03", "2.07"])
@@ -55,7 +62,7 @@ OUTPUT_DIR={c_output_dir}
 """
 
     # Write config in C binary's directory
-    config_file = C_BINARY_DIR / "nzvm.cfg"
+    config_file = tmp_path / "nzvm.cfg"
     with open(config_file, "w") as f:
         f.write(config_content.strip())
         f.write("\n")
@@ -69,30 +76,25 @@ OUTPUT_DIR={c_output_dir}
     return config_file
 
 
-@pytest.fixture(scope="function")
-def setup_test_environment():
-    """Set up test environment without automatic cleanup"""
-    OUTPUT_DIR.mkdir(exist_ok=True)
-    yield
 
 
-def test_c_vs_python_velocity_model(setup_test_environment):
+def test_nzvm_c_vs_python(tmp_path: Path, c_binary_directory: Path, c_binary_path: Path):
     """Test C binary vs Python script with random config"""
     # Define output directories but don't create them yet
-    c_output_dir = OUTPUT_DIR / "C"
-    python_output_dir = OUTPUT_DIR / "Python"
+    c_output_dir = tmp_path / "C"
+    python_output_dir = tmp_path / "Python"
 
     # Ensure C output directory doesn't exist before running C binary
     if c_output_dir.exists():
         shutil.rmtree(c_output_dir)
 
     # Generate random config with C output directory
-    config_file = generate_random_nzvm_config(c_output_dir)
+    config_file = generate_random_nzvm_config(tmp_path, c_output_dir)
 
     # Run C binary from its directory with relative path
     c_result = subprocess.run(
-        ["/nzvm/NZVM", "nzvm.cfg"],  # Relative path since we're in C_BINARY_DIR
-        cwd=str(C_BINARY_DIR),
+        [c_binary_path, config_file],  # Relative path since we're in C_BINARY_DIR
+        cwd=str(c_binary_directory),
         capture_output=True,
         text=True,
     )
@@ -148,9 +150,6 @@ def test_c_vs_python_velocity_model(setup_test_environment):
             f"Std diff: {comparison_results[key]['std_diff']}"
         )
 
-    # Cleanup only if test passes
-    shutil.rmtree(OUTPUT_DIR)
-    config_file.unlink()
 
 
 if __name__ == "__main__":

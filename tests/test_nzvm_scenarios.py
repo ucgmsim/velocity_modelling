@@ -24,30 +24,18 @@ SCRIPT_DIR = BASE_DIR / "velocity_modelling/cvm/scripts"
 TEST_DIR = BASE_DIR / "tests"
 SCENARIO_DIR = TEST_DIR / "scenarios"
 BENCHMARK_DIR = TEST_DIR / "benchmarks"
-OUTPUT_DIR = TEST_DIR / "test_output"
 
 
-@pytest.fixture(scope="module", autouse=True)
-def setup_test_environment():
-    """Set up test environment and clean up after all tests"""
-    # Create output directory
-    OUTPUT_DIR.mkdir(exist_ok=True)
-
-    yield  # Run tests
-
-    # Cleanup
-    if OUTPUT_DIR.exists():
-        shutil.rmtree(OUTPUT_DIR)
 
 
 @pytest.fixture(params=SCENARIOS)
-def scenario(request):
+def scenario(tmp_path: Path, request):
     """Fixture to provide scenario data for each test"""
     scenario_name = request.param
     scenario_path = SCENARIO_DIR / scenario_name
     config_file = scenario_path / "nzvm.cfg"
     benchmark_path = BENCHMARK_DIR / scenario_name
-    output_path = OUTPUT_DIR / scenario_name
+    output_path = tmp_path / scenario_name
 
     return {
         "name": scenario_name,
@@ -57,7 +45,7 @@ def scenario(request):
     }
 
 
-def test_generate_velocity_model(scenario):
+def test_nzvm_scenarios(scenario):
     """
     Test generate_velocity_model.py with different scenarios
     and compare outputs with benchmarks
