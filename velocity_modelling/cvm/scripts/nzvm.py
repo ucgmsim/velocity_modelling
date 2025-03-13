@@ -81,7 +81,7 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[logging.StreamHandler(sys.stdout)],
 )
-logger = logging.getLogger("pynzcvm")
+logger = logging.getLogger("nzvm")
 
 app = typer.Typer(pretty_exceptions_enable=False)
 

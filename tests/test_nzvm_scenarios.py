@@ -112,7 +112,7 @@ def test_generate_velocity_model(scenario):
             f"Std diff: {comparison_results[key]['std_diff']}"
         )
 
-    # Note: We ignore inbasin comparison as per your instructions
+    # Note: We ignore inbasin comparison as the original C code saves incorrect values
 
 
 if __name__ == "__main__":
