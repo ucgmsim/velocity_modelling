@@ -8,7 +8,7 @@ grid generation, mesh slicing, and boundary calculations for various model compo
 
 import logging
 from logging import Logger
-from typing import Any
+from typing import Any,Self
 
 import numpy as np
 from numba import njit
@@ -116,7 +116,7 @@ class PartialGlobalMesh:
         self.lon = global_mesh.lon[:, lat_ind].copy()
 
     @property
-    def nx(self):
+    def nx(self) -> int:
         """
         Get the number of X points in the mesh.
 
@@ -129,7 +129,7 @@ class PartialGlobalMesh:
         return len(self.x)
 
     @property
-    def nz(self):
+    def nz(self) -> int:
         """
         Get the number of Z points in the mesh.
 
@@ -192,7 +192,7 @@ class MeshVector:
         """
         return len(self.z)
 
-    def copy(self):
+    def copy(self) -> Self:
         """
         Create a deep copy of this MeshVector instance.
 
@@ -264,7 +264,7 @@ def find_edge_inds(
     min_lat: float,
     max_lon: float,
     min_lon: float,
-):
+) -> tuple[int, int]:
     """
     Find the edge indices of the given latitude and longitude arrays.
 
@@ -710,7 +710,7 @@ class AdjacentPoints:
     @classmethod
     def find_basin_adjacent_points(
         cls, lats: np.ndarray, lons: np.ndarray, lat: float, lon: float
-    ):
+    ) -> Self:
         """
         Find basin‐related adjacent indices and flags for a given latitude/longitude.
 
@@ -752,7 +752,7 @@ class AdjacentPoints:
     @classmethod
     def find_global_adjacent_points(
         cls, lats: np.ndarray, lons: np.ndarray, lat: float, lon: float
-    ):
+    ) -> Self:
         """
         Find the adjacent points to the given latitude and longitude in the global surface.
         This is a wrapper around the Numba-optimized function.
@@ -835,9 +835,10 @@ class SmoothingBoundary:
         self.lons = lons
         self.lats = lats
         self.n_points = len(lons)
-        assert len(self.lons) == len(self.lats)
+        if len(self.lons) == len(self.lats):
+            raise ValueError(f'Longitude length does not match latitude length ({len(self.lons)} != {len(self.lats)}')
 
-    def determine_if_lat_lon_within_smoothing_region(self, mesh_vector: MeshVector):
+    def determine_if_lat_lon_within_smoothing_region(self, mesh_vector: MeshVector) -> tuple[int, float]:
         """
         Find the closest boundary index and distance to the given mesh vector coordinates.
 
