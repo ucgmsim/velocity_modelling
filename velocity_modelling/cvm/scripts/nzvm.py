@@ -81,7 +81,7 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[logging.StreamHandler(sys.stdout)],
 )
-logger = logging.getLogger("velocity_model")
+logger = logging.getLogger("pynzcvm")
 
 app = typer.Typer(pretty_exceptions_enable=False)
 
