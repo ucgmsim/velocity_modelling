@@ -5,7 +5,7 @@ from pathlib import Path
 import os
 import tempfile
 from hypothesis import given, settings, strategies as st, assume, Verbosity
-from velocity_modelling.cvm.scripts.compare_emod3d import (
+from velocity_modelling.cvm.tools.compare_emod3d import (
     compare_output_files,
     parse_nzvm_config,
 )

@@ -4,12 +4,10 @@ import subprocess
 from pathlib import Path
 import random
 import os
-from velocity_modelling.cvm.scripts.compare_emod3d import (
+from velocity_modelling.cvm.tools.compare_emod3d import (
     compare_output_files,
     parse_nzvm_config,
 )
-
-from velocity_modelling.cvm.constants import DATA_ROOT
 
 # Define paths
 BASE_DIR = Path(__file__).parent.parent  # project root directory

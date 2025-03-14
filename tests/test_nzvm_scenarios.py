@@ -1,14 +1,12 @@
 # tests/test_nzvm_scenarios.py
-import shutil
 import subprocess
 from pathlib import Path
 import pytest
 
-from velocity_modelling.cvm.scripts.compare_emod3d import (
+from velocity_modelling.cvm.tools.compare_emod3d import (
     compare_output_files,
     parse_nzvm_config,
 )
-from velocity_modelling.cvm.constants import DATA_ROOT
 
 # Define the scenarios
 SCENARIOS = [
