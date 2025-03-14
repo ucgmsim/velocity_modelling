@@ -1,4 +1,5 @@
 diffimg
+h5py
 hypothesis[numpy]
 numpy
 pandas[parquet]
