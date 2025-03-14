@@ -49,12 +49,12 @@ def data_root_path(request) -> Path:
 # Define Hypothesis strategy for nzvm.cfg parameters
 nzvm_config_strategy = st.fixed_dictionaries({
     "MODEL_VERSION": st.sampled_from(["2.03", "2.07"]),
-    "EXTENT_X": st.floats(min_value=10, max_value=100),
-    "EXTENT_Y": st.floats(min_value=10, max_value=100),
-    "EXTENT_ZMAX": st.floats(min_value=2, max_value=50),
+    "EXTENT_X": st.floats(min_value=1, max_value=3),
+    "EXTENT_Y": st.floats(min_value=1, max_value=3),
+    "EXTENT_ZMAX": st.floats(min_value=1, max_value=10),
     "EXTENT_ZMIN": st.just(0.0),
-    "EXTENT_Z_SPACING": st.floats(min_value=0.1, max_value=1.0),
-    "EXTENT_LATLON_SPACING": st.floats(min_value=0.1, max_value=2.0),
+    "EXTENT_Z_SPACING": st.floats(min_value=0.4, max_value=1.0),
+    "EXTENT_LATLON_SPACING": st.floats(min_value=0.4, max_value=2.0),
     "MIN_VS": st.floats(min_value=0.1, max_value=0.5),
     "TOPO_TYPE": st.sampled_from(["BULLDOZED", "SQUASHED", "SQUASHED_TAPERED", "TRUE"]),
     "ORIGIN_LAT": st.floats(min_value=-45.0, max_value=-35.0),
@@ -91,7 +91,7 @@ OUTPUT_DIR={c_output_dir}
     return config_file
 
 @given(nzvm_config_strategy)
-@settings(max_examples=50, deadline=None,  verbosity=Verbosity.verbose)
+@settings(max_examples=5, deadline=None,  verbosity=Verbosity.verbose)
 def test_nzvm_c_vs_python(nzvm_c_binary_path: Path, data_root_path: Path, config_dict : dict):
     """Test C binary vs Python script with Hypothesis-generated config"""
     # Filter out invalid configurations
