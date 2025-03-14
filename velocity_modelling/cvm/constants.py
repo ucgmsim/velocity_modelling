@@ -13,7 +13,9 @@ MAX_LON_SURFACE_EXTENSION = 10  # value in degrees the global (Vs30, DEM, tomogr
 EARTH_RADIUS_MEAN = 6378.139
 
 CVM_ROOT = Path(__file__).parent
-DATA_ROOT = Path(__file__).parent.parent / "Data"
+DATA_ROOT = (
+    CVM_ROOT.parent / "Data"
+)  # default value, can be overridden with --data-root argument
 MODEL_VERSIONS_ROOT = CVM_ROOT / "model_versions"
 NZVM_REGISTRY_PATH = CVM_ROOT / "nzvm_registry.yaml"
 

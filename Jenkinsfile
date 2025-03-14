@@ -5,7 +5,7 @@ pipeline {
             // as the user with uid = 0. This user is, by default, the
             // root user. So it is effectively saying run the commands
             // as root.
-            args "-u 0 -v /home/jenkins/Data:/nzvm/Data -v /home/jenkins/benchmarks:/home/jenkins/workspace/velocity_modelling/tests/benchmarks -v /home/jenkins/Data:/home/jenkins/workspace/velocity_modelling/velocity_modelling/Data"
+            args "-u 0 -v /home/jenkins/Data:/nzvm/Data -v /home/jenkins/benchmarks:/nzvm/benchmarks"
         }
 
     }
@@ -47,12 +47,13 @@ pipeline {
                 """
             }
         }
+
         stage('Run regression tests') {
             steps {
                 sh """
                     cd ${env.WORKSPACE}
                     source .venv/bin/activate
-                    pytest -s tests/
+                    pytest -s tests/ --benchmark-dir /nzvm/benchmarks --data-root /nzvm/Data --nzvm-binary-path /nzvm/NZVM
                 """
             }
         }

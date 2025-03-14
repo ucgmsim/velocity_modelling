@@ -1,13 +1,14 @@
+# tests/test_nzvm_scenarios.py
 import shutil
 import subprocess
 from pathlib import Path
-
 import pytest
 
 from velocity_modelling.cvm.scripts.compare_emod3d import (
     compare_output_files,
     parse_nzvm_config,
 )
+from velocity_modelling.cvm.constants import DATA_ROOT
 
 # Define the scenarios
 SCENARIOS = [
@@ -19,31 +20,54 @@ SCENARIOS = [
 ]
 
 # Define paths based on your directory structure
-BASE_DIR = Path(__file__).parent.parent  # # project root directory
+BASE_DIR = Path(__file__).parent.parent  # Project root directory
 SCRIPT_DIR = BASE_DIR / "velocity_modelling/cvm/scripts"
 TEST_DIR = BASE_DIR / "tests"
 SCENARIO_DIR = TEST_DIR / "scenarios"
-BENCHMARK_DIR = TEST_DIR / "benchmarks"
+BENCHMARK_DIR = TEST_DIR / "benchmarks"  # Default value, can be overridden
 
 
+@pytest.fixture
+def test_paths(request) -> tuple[Path,Path]:
+    """Configure BENCHMARK_DIR, DATA_ROOT based on command-line option."""
+    global BENCHMARK_DIR  # Use the global variable directly
+    benchmark_dir = request.config.getoption("--benchmark-dir")
+    # benchmark_dir is not None
+    new_benchmark_dir = Path(benchmark_dir).resolve()
+    if not new_benchmark_dir.exists():
+        raise ValueError(f"Provided BENCHMARK_DIR does not exist: {new_benchmark_dir}")
+    if not new_benchmark_dir.is_dir():
+        raise ValueError(f"Provided BENCHMARK_DIR is not a directory: {new_benchmark_dir}")
+    benchmark_dir = new_benchmark_dir
 
+    data_root = request.config.getoption("--data-root")
+    # data_root is not None
+    new_data_root = Path(data_root).resolve()
+    if not new_data_root.exists():
+        raise ValueError(f"Provided DATA_ROOT does not exist: {new_data_root}")
+    if not new_data_root.is_dir():
+        raise ValueError(f"Provided DATA_ROOT is not a directory: {new_data_root}")
+    data_root = new_data_root
+
+    return benchmark_dir, data_root
 
 @pytest.fixture(params=SCENARIOS)
-def scenario(tmp_path: Path, request):
+def scenario(tmp_path: Path, test_paths, request):
     """Fixture to provide scenario data for each test"""
     scenario_name = request.param
     scenario_path = SCENARIO_DIR / scenario_name
     config_file = scenario_path / "nzvm.cfg"
-    benchmark_path = BENCHMARK_DIR / scenario_name
+    benchmark_path = test_paths[0] / scenario_name
     output_path = tmp_path / scenario_name
+    data_root = test_paths[1]
 
     return {
         "name": scenario_name,
         "config_file": config_file,
         "benchmark_path": benchmark_path,
         "output_path": output_path,
+        "data_root": data_root,
     }
-
 
 def test_nzvm_scenarios(scenario):
     """
@@ -53,7 +77,7 @@ def test_nzvm_scenarios(scenario):
     # Create output directory for this scenario
     scenario["output_path"].mkdir(exist_ok=True)
 
-    # Run the generate_velocity_model.py script with --out_dir
+    # Run the generate_velocity_model.py script with --out-dir
     result = subprocess.run(
         [
             "python",
@@ -62,6 +86,8 @@ def test_nzvm_scenarios(scenario):
             str(scenario["config_file"]),
             "--out-dir",
             str(scenario["output_path"]),
+            "--data-root",
+            str(scenario["data_root"]),
         ],
         capture_output=True,
         text=True,
@@ -99,8 +125,7 @@ def test_nzvm_scenarios(scenario):
             f"Mean diff: {comparison_results[key]['mean_diff']}\n"
             f"Std diff: {comparison_results[key]['std_diff']}"
         )
-
-    # Note: We ignore inbasin comparison as the original C code saves incorrect values
+        # Note: We ignore inbasin comparison as the original C code saves incorrect values
 
 
 if __name__ == "__main__":

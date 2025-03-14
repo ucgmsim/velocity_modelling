@@ -17,11 +17,14 @@ pip install -e  .
     # To override output directory
     nzvm generate-velocity-model /path/to/nzvm.cfg --out-dir /path/to/output_dir
 
-    # With custom registry location:
-    nzvm generate-velocity-model /path/to/nzvm.cfg --nzvm-registry /path/to/registry.yaml
+    # To override DATA_ROOT directory
+    nzvm generate-velocity-model /path/to/nzvm.cfg --data-root /custom/data/path
 
     # To override "MODEL_VERSION" in nzvm.cfg to use a .yaml file for a custom model version
     nzvm generate-velocity-model /path/to/nzvm.cfg --model-version 2.07
+
+    # With custom registry location:
+    nzvm generate-velocity-model /path/to/nzvm.cfg --nzvm-registry /path/to/registry.yaml
 
     # With specific log level:
     nzvm generate-velocity-model /path/to/nzvm.cfg --log-level DEBUG
@@ -62,6 +65,7 @@ from velocity_modelling.cvm.basin_model import (
     PartialBasinSurfaceDepths,
 )
 from velocity_modelling.cvm.constants import (
+    DATA_ROOT,
     NZVM_REGISTRY_PATH,
     TopoTypes,
     WriteFormat,
@@ -143,7 +147,17 @@ def generate_velocity_model(
     ] = NZVM_REGISTRY_PATH,
     model_version: Annotated[str, typer.Option()] = None,
     output_format: Annotated[str, typer.Option()] = WriteFormat.EMOD3D.name,
-    smoothing: Annotated[bool, typer.Option()] = False,
+    data_root: Annotated[
+        Path,
+        typer.Option(
+            file_okay=False,
+            exists=True,
+            help="Override the default DATA_ROOT directory",
+        ),
+    ] = DATA_ROOT,
+    smoothing: Annotated[
+        bool, typer.Option()
+    ] = False,  # placeholder for smoothing, not implemented yet
     progress_interval: Annotated[int, typer.Option()] = 5,
     log_level: Annotated[str, typer.Option()] = "INFO",
 ) -> None:
@@ -168,6 +182,8 @@ def generate_velocity_model(
         Version of the model to use (overrides MODEL_VERSION in config file).
     output_format : str, optional
         Format to write the output. Options: "EMOD3D", "CSV" (default: "EMOD3D").
+    data_root : Path, optional
+        Override the default DATA_ROOT directory (default: derived from constants.py).
     smoothing : bool, optional
         Unsupported option for future smoothing implementation at model boundaries (default: False).
     progress_interval : int, optional
@@ -192,6 +208,20 @@ def generate_velocity_model(
 
     logger.log(logging.DEBUG, f"Logger initialized with level {log_level}")
     logger.log(logging.INFO, f"Beginning velocity model generation in {out_dir}")
+
+    # Override DATA_ROOT if provided
+
+    data_root = data_root.resolve()
+    logger.log(logging.INFO, f"data_root set to {data_root}")
+
+    # Validate DATA_ROOT (default or overridden)
+    if not data_root.exists():
+        logger.log(logging.ERROR, f"data_root path does not exist: {data_root}")
+        raise ValueError(f"data_root path does not exist: {data_root}")
+    if not data_root.is_dir():
+        logger.log(logging.ERROR, f"data_root is not a directory: {data_root}")
+        raise ValueError(f"data_root is not a directory: {data_root}")
+    logger.log(logging.DEBUG, f"data_root validated as {data_root}")
 
     # Parse the config file
     try:
@@ -246,7 +276,9 @@ def generate_velocity_model(
         raise OSError(f"Failed to create output directory {out_dir}: {str(e)}")
 
     # Initialize registry and generate model
-    cvm_registry = CVMRegistry(vm_params["model_version"], logger, nzvm_registry)
+    cvm_registry = CVMRegistry(
+        vm_params["model_version"], data_root, nzvm_registry, logger
+    )
 
     # Create model grid
     logger.log(logging.INFO, "Generating model grid")

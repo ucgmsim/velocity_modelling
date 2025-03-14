@@ -21,7 +21,6 @@ import numpy as np
 import yaml
 
 from velocity_modelling.cvm.constants import (
-    DATA_ROOT,
     DEFAULT_OFFSHORE_1D_MODEL,
     DEFAULT_OFFSHORE_DISTANCE,
     MODEL_VERSIONS_ROOT,
@@ -39,14 +38,6 @@ class CVMRegistry:
     Manages loading, caching, and access to various velocity model components,
     including 1D models, basin data, surfaces, and tomography information.
 
-    Parameters
-    ----------
-    version : str
-        The version of the velocity model.
-    logger : Logger, optional
-        Logger for logging information and errors.
-    registry_path : Path, optional
-        The path to the registry file.
 
     Attributes
     ----------
@@ -60,35 +51,44 @@ class CVMRegistry:
         Logger for logging information and errors.
     cache : dict
         Cache for storing loaded data to prevent redundant file operations.
+
+
+    Parameters
+    ----------
+    version : str
+        The version of the velocity model.
+    data_root : Path
+        Root directory for the velocity model data.
+    registry_path : Path, optional
+        Path to the registry YAML file.
+    logger : Logger, optional
+        Logger instance for logging; created if not provided.
+
+
+    Raises
+    ------
+    ValueError
+        If the model version file is not found or cannot be loaded.
+
     """
 
     def __init__(
         self,
         version: str,
-        logger: Logger = None,
+        data_root: Path,
         registry_path: Path = NZVM_REGISTRY_PATH,
+        logger: Logger = None,
     ):
         """
         Initialize the CVMRegistry.
 
-        Parameters
-        ----------
-        version : str
-            The version of the velocity model.
-        logger : Logger, optional
-            Logger instance for logging; created if not provided.
-        registry_path : Path, optional
-            Path to the registry YAML file.
-
-        Raises
-        ------
-        ValueError
-            If the model version file is not found or cannot be loaded.
         """
         # Initialize Logger if not provided
         self.logger = (
             logger if logger is not None else Logger(name="velocity_model.registry")
         )
+
+        self.data_root = data_root
 
         with open(registry_path, "r") as f:
             self.registry = yaml.safe_load(f)
@@ -190,7 +190,7 @@ class CVMRegistry:
             The resolved full path.
         """
         return (
-            DATA_ROOT / relative_path
+            self.data_root / relative_path
             if not Path(relative_path).is_absolute()
             else Path(relative_path)
         )
