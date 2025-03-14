@@ -17,6 +17,7 @@ from logging import Logger
 from pathlib import Path
 from typing import Optional, Union
 
+import h5py
 import numpy as np
 import yaml
 
@@ -508,34 +509,21 @@ class CVMRegistry:
         special_offshore_tapering = tomo["special_offshore_tapering"]
         vs30 = self.load_global_surface(tomo["vs30_path"])
 
+        data_format = tomo.get(
+            "data_format", "ASCII"
+        )  # Default to ASCII if not specified
         self.logger.log(
             logging.INFO,
-            f"Loading tomography data '{tomo_name}' with {len(surf_depth)} depth levels",
+            f"Loading tomography data '{tomo_name}' ({data_format}) format with {len(surf_depth)} depth levels",
         )
-        surfaces = []
-        for i, elev in enumerate(surf_depth):
-            surfaces.append({})
-            elev_name = (
-                f"{elev}" if elev == int(elev) else f"{elev:.2f}".replace(".", "p")
-            )
-            for vtype in VelocityTypes:
-                tomofile = (
-                    self.get_full_path(tomo["path"])
-                    / f"surf_tomography_{vtype.name}_elev{elev_name}.in"
-                )
-                if not tomofile.exists():
-                    self.logger.log(
-                        logging.ERROR, f"Error: Tomography file {tomofile} not found"
-                    )
-                    raise FileNotFoundError(
-                        f"Tomography file {tomofile} does not exist"
-                    )
-                surfaces[i][vtype.name] = self.load_global_surface(tomofile)
-                self.logger.log(
-                    logging.DEBUG,
-                    f"Loaded tomography surface for {vtype.name} at elevation {elev}",
-                )
 
+        # Load surfaces based on data format
+        if data_format == "HDF5":
+            surfaces = self._load_hdf5_surfaces(tomo["path"], tomo_name, surf_depth)
+        else:  # ASCII
+            surfaces = self._load_ascii_surfaces(tomo["path"], surf_depth)
+
+        # Load offshore data (unchanged)
         offshore_surface_info = self.get_info("surface", offshore_surface_name)
         if offshore_surface_info is None:
             self.logger.log(
@@ -567,6 +555,121 @@ class CVMRegistry:
             offshore_distance_surface=offshore_distance_surface,
             offshore_basin_model_1d=offshore_basin_model_1d,
         )
+
+    def _load_hdf5_surfaces(
+        self, path: str, tomo_name: str, surf_depth: list
+    ) -> list[dict[str, GlobalSurfaceRead]]:
+        """
+        Load tomography surfaces from an HDF5 file.
+
+        Parameters
+        ----------
+        path : str
+            The relative path to the HDF5 file.
+        tomo_name : str
+            The name of the tomography data.
+        surf_depth : list
+            List of elevation depths for the tomography surfaces.
+
+        Returns
+        -------
+        list[dict[str, GlobalSurfaceRead]]
+            List of dictionaries containing GlobalSurfaceRead objects per velocity type (ie. vp, vs, rho) for each elevation.
+        """
+        surfaces = []
+        hdf5_path = self.get_full_path(path) / f"{tomo_name}.h5"
+        if not hdf5_path.exists():
+            raise FileNotFoundError(f"HDF5 tomography file {hdf5_path} not found")
+
+        self.logger.log(
+            logging.INFO, f"Loading tomography surfaces from HDF5: {hdf5_path}"
+        )
+        with h5py.File(hdf5_path, "r") as h5f:
+            for i, elev in enumerate(surf_depth):
+                surfaces.append({})
+                elev_str = str(int(elev)) if elev == int(elev) else f"{elev:.2f}"
+
+                try:
+                    elev_group = h5f[elev_str]
+                    latitudes = elev_group["latitudes"][:]
+                    longitudes = elev_group["longitudes"][:]
+
+                    for vtype in VelocityTypes:
+                        try:
+                            data = elev_group[vtype.name][:]
+                            surfaces[i][vtype.name] = GlobalSurfaceRead(
+                                latitudes, longitudes, data.T
+                            )
+                            self.logger.log(
+                                logging.DEBUG,
+                                f"Loaded tomography surface for {vtype.name} at elevation {elev}",
+                            )
+                        except KeyError:
+                            self.logger.log(
+                                logging.ERROR,
+                                f"Error: Data for {vtype.name} at elevation {elev} not found in HDF5",
+                            )
+                            raise FileNotFoundError(
+                                f"Tomography data for {vtype.name} at elevation {elev} not found"
+                            )
+                except KeyError:
+                    self.logger.log(
+                        logging.ERROR, f"Error: Elevation {elev} not found in HDF5"
+                    )
+                    raise FileNotFoundError(f"Elevation {elev} not found in HDF5")
+
+        return surfaces
+
+    def _load_ascii_surfaces(
+        self, path: str, surf_depth: list
+    ) -> list[dict[str, GlobalSurfaceRead]]:
+        """
+        Load tomography surfaces from ASCII files.
+
+        Parameters
+        ----------
+        path : str
+            The relative path to the ASCII files.
+        surf_depth : list
+            List of elevation depths for the tomography surfaces.
+
+        Returns
+        -------
+        list[dict[str, GlobalSurfaceRead]]
+            List of dictionaries containing GlobalSurfaceRead objects per velocity type (ie. vp, vs, rho) for each elevation.
+
+        """
+        surfaces = []
+        base_path = self.get_full_path(path)
+
+        self.logger.log(
+            logging.INFO, f"Loading tomography surfaces from ASCII files in {base_path}"
+        )
+        for i, elev in enumerate(surf_depth):
+            surfaces.append({})
+            elev_name = (
+                f"{elev}" if elev == int(elev) else f"{elev:.2f}".replace(".", "p")
+            )
+
+            for vtype in VelocityTypes:
+                tomofile = (
+                    base_path / f"surf_tomography_{vtype.name}_elev{elev_name}.in"
+                )
+                if not tomofile.exists():
+                    self.logger.log(
+                        logging.ERROR, f"Error: Tomography file {tomofile} not found"
+                    )
+                    raise FileNotFoundError(
+                        f"Tomography file {tomofile} does not exist"
+                    )
+
+                surfaces[i][vtype.name] = self.load_global_surface(tomofile)
+                self.logger.log(
+                    logging.DEBUG,
+                    f"Loaded tomography surface for {vtype.name} at elevation {elev}",
+                )
+
+        return surfaces
 
     def load_all_global_data(self):
         """
