@@ -30,6 +30,7 @@ tomography:
     vs30_path: Global_Surfaces/NZ_Vs30_HD_With_Offshore.in
     special_offshore_tapering: true
     path: Tomography/2010_NZ
+    data_format: HDF5
 
 
   - name: 2020_NZ_OFFSHORE
@@ -38,6 +39,7 @@ tomography:
     vs30_path: Global_Surfaces/NZ_Vs30_HD_With_Offshore.in
     special_offshore_tapering: true
     path: Tomography/2020_NZ
+    data_format: HDF5
 
 
   - name: 2020_NZ_OFFSHORE_NO_BASIN
