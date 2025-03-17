@@ -4,12 +4,13 @@ The NZ Community Velocity Models (NZCVM) provide detailed 3D representations of 
 
 ## Overview
 
-The NZCVM incorporates various data sets amassed from numerous geophysical and geological studies. 
-- Multiple datasets of New Zealand-wide travel-time-derived tomography model:
+The NZCVM incorporates various data sets amassed from numerous geophysical and geological studies. Prescribes Vp, Vs and Rho (density) at a specified location in 3D grid.
+
+-  New Zealand-wide travel-time-derived seismic tomography model: ~10km length scale
     - 2010 NZ : based on Eberhart-Philips et al. (2010)
     - 2020 NZ : based on Eberhart-Philips et al. (2020)
 
-- Regional data incorporating 34 basins of varying degrees of characterization:
+-  Embedded subregion (sedimentary basin) models : 34 basins of varying degrees of characterization:
   - [Canterbury Pre Quaternary](basins/Canterbury_Pre_Quaternary.md)
   - [Canterbury North](basins/Canterbury_North.md)
   - [Banks Peninsula Volcanics](basins/Banks_Peninsula_Volcanics.md)
@@ -207,10 +208,17 @@ basin:
 ```
 Each basin needs 4 major items to define.
 
-boundary: a close-loop (ie. polygon)) of (lat, lon) coordinates (can have multiple boundary files)
-surface: depth at a grid point. Typically, the top surface is NZ_DEM (top-level surface), and the subsequent surfaces are the identified layers.
-submomdel: Each surface has an associated submodel that defines how to assign/compute vp,vs,rho for this surface. The above means we use canterbury1d_v2 (renamed from the widely used Cant1D_v2) for the layer between NZ_DEM and CheviotBasement. As the second surface has no submodel defined, it will be using the background values from the tomography.
-smoothing: Smoothing boundary that define where velocity models should be smoothly transitioned between basins and background model (ie. tomography)
+
+(1) `surface`: Bounding surfaces. Typically, the top surface is NZ_DEM. Multipe surfaces are allowed, where each surface data consists of depth at a grid point. 
+
+(2) `boundary`: a close-loop (ie. polygon)) of (lat, lon) coordinates (can have multiple boundary files)
+
+(3) `submomdel`: Velocity parameterization to apply, ie. how to assign/compute vp,vs,rho for a given grid point at certain depth. The above means we use canterbury1d_v2 (renamed from the widely used Cant1D_v2) for the layer between NZ_DEM and CheviotBasement. As the second surface has no submodel defined, it will be using the background values from the tomography.
+
+(4) `smoothing` (Optional): Smoothing boundary that define where velocity models should be smoothly transitioned between basins and background model (ie. tomography)
+
+![basin_modelling](images/basin_modelling.png)
+
 For the completeness, the below are the definition of CheviotBasement
 
 ```
