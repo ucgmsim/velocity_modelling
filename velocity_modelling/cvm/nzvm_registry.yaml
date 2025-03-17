@@ -22,7 +22,7 @@ tomography:
     vs30_path: Global_Surfaces/NZ_Vs30.in
     special_offshore_tapering: false
     path: Tomography/2010_NZ
-
+    format: HDF5
 
   - name: 2010_NZ_OFFSHORE
     nElev: 20
@@ -30,7 +30,7 @@ tomography:
     vs30_path: Global_Surfaces/NZ_Vs30_HD_With_Offshore.in
     special_offshore_tapering: true
     path: Tomography/2010_NZ
-    data_format: HDF5
+    format: HDF5
 
 
   - name: 2020_NZ_OFFSHORE
@@ -39,7 +39,7 @@ tomography:
     vs30_path: Global_Surfaces/NZ_Vs30_HD_With_Offshore.in
     special_offshore_tapering: true
     path: Tomography/2020_NZ
-    data_format: HDF5
+    format: HDF5
 
 
   - name: 2020_NZ_OFFSHORE_NO_BASIN
@@ -48,7 +48,7 @@ tomography:
     vs30_path: Global_Surfaces/NZ_Vs30_HD_With_Offshore.in
     special_offshore_tapering: false
     path: Tomography/2020_NZ
-
+    format: HDF5
 
   - name: 2020_NZ_OFFSHORE_EXTENDED
     nElev: 20
@@ -56,6 +56,7 @@ tomography:
     vs30_path: Global_Surfaces/NZ_Vs30_HD_With_Offshore_extended.in
     special_offshore_tapering: true
     path: Tomography/2020_NZ_EXTENDED
+    format: HDF5
 
   - name: 2023_Chow_NI
     nElev: 175
@@ -294,7 +295,7 @@ basin:
 
 
 
-  - name: Cantebury_North_v19p1
+  - name: Canterbury_North_v19p1
     boundaries:
       - SI_BASINS/NorthCanterbury_Polygon_WGS84.txt
     surfaces:

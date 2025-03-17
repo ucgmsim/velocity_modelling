@@ -6,7 +6,7 @@ tomography: 2020_NZ_OFFSHORE
 basin_edge_smoothing: true
 basins:
   - Canterbury_Pre_Quaternary_v19p1
-  - Cantebury_North_v19p1
+  - Canterbury_North_v19p1
   - Banks_Peninsula_Volcanics_v19p1
   - Kaikoura_v19p1
   - Cheviot_v19p1

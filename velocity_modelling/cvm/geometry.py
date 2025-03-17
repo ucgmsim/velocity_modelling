@@ -845,13 +845,6 @@ class SmoothingBoundary:
     """
     Handle boundary smoothing between points.
 
-    Parameters
-    ----------
-    lons : list[float]
-        longitude coordinates.
-    lats : list[float]
-        latitude coordinates.
-
     Attributes
     ----------
     lons : list[float]
@@ -861,6 +854,12 @@ class SmoothingBoundary:
     n_points : int
         Number of points in the boundary
 
+    Parameters
+    ----------
+    lons : list[float]
+        longitude coordinates.
+    lats : list[float]
+        latitude coordinates.
     """
 
     def __init__(self, lons: list[float], lats: list[float]):

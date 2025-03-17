@@ -510,7 +510,7 @@ class CVMRegistry:
         vs30 = self.load_global_surface(tomo["vs30_path"])
 
         data_format = tomo.get(
-            "data_format", "ASCII"
+            "format", "ASCII"
         )  # Default to ASCII if not specified
         self.logger.log(
             logging.INFO,
