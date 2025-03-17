@@ -47,6 +47,7 @@ The NZCVM incorporates various data sets amassed from numerous geophysical and g
   - [Whangaparoa](basins/Whangaparoa.md)
 
 ![nzvm_2p07_basin_map](https://github.com/user-attachments/assets/ef94b323-fb08-4f39-8666-ffaf12ae4db4)
+*Figure 1: 34 basin models currently integrated.*
 
 Through embedding discrete regional models into the lower resolution tomography data, we obtain a velocity model that incorporates data across multiple length scales and resolutions to give a unified representation of the velocity structure for use in broadband physics-based ground motion simulations and additional engineering applications. 
 
@@ -110,6 +111,10 @@ OUTPUT_DIR=/tmp
 - **MIN_VS**: Minimum shear wave velocity (in meter per second).
 - **TOPO_TYPE**: Type of topography to use. Possible values are `BULLDOZED`, `SQUASHED`,`SQUASHED_TAPERED` and `TRUE`. 
 - **OUTPUT_DIR**: Directory where the generated velocity model files will be saved.
+
+![TOPO_TYPE](images/topography_types.png)
+*Figure 2: Different types of topography used in the NZCVM, including BULLDOZED, SQUASHED, SQUASHED_TAPERED, and TRUE.*
+
 
 ### Model Versions
 
@@ -218,6 +223,8 @@ Each basin needs 4 major items to define.
 (4) `smoothing` (Optional): Smoothing boundary that define where velocity models should be smoothly transitioned between basins and background model (ie. tomography)
 
 ![basin_modelling](images/basin_modelling.png)
+*Figure 3: Three mandatory compoments (1) bounding surfaces (2) 2D boundary in the lat-lon plane (3) velocity parameterization to apply.*
+
 
 For the completeness, the below are the definition of CheviotBasement
 
