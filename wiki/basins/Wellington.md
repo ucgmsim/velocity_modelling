@@ -11,8 +11,10 @@
 
 
 ## Images
-![](../images/basins/NI_south.png) Location
-![](../images/basins/wellington_outline.png) Wellington Basement
+![](../images/basins/NI_south.png)
+*Figure 1 Location*
+![](../images/basins/wellington_outline.png)
+*Figure 2 Wellington Basement*
 
 ## Notes
 - {'v19.1, v19.6': 'Robin Lee (basement update)'}
@@ -30,4 +32,4 @@
 - [Wellington_v21p8.txt](../../velocity_modelling/Data/Boundaries/Smoothing/Wellington_v21p8.txt)
 
 ---
-*Page generated on: March 19, 2025, 12:34 NZST/NZDT*
+*Page generated on: March 19, 2025, 12:47 NZST/NZDT*

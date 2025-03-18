@@ -10,8 +10,10 @@
 
 
 ## Images
-![](../images/basins/NI_mideast.png) Location
-![](../images/basins/napier_outline.png) Napier Basement
+![](../images/basins/NI_mideast.png)
+*Figure 1 Location*
+![](../images/basins/napier_outline.png)
+*Figure 2 Napier Basement*
 
 ## Data
 ### Boundaries
@@ -30,4 +32,4 @@
 - [Napier1_v21p7.txt](../../velocity_modelling/Data/Boundaries/Smoothing/Napier1_v21p7.txt)
 
 ---
-*Page generated on: March 19, 2025, 12:34 NZST/NZDT*
+*Page generated on: March 19, 2025, 12:47 NZST/NZDT*

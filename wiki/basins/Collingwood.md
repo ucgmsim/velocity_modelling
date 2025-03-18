@@ -10,7 +10,8 @@
 
 
 ## Images
-![](../images/basins/SI_north.png) Image 1
+![](../images/basins/SI_north.png)
+*Figure 1 Image 1*
 
 ## Data
 ### Boundaries
@@ -26,4 +27,4 @@
 - [CollingwoodBasin1_v20p11.txt](../../velocity_modelling/Data/Boundaries/Smoothing/CollingwoodBasin1_v20p11.txt)
 
 ---
-*Page generated on: March 19, 2025, 12:34 NZST/NZDT*
+*Page generated on: March 19, 2025, 12:47 NZST/NZDT*

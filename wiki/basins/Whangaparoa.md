@@ -10,7 +10,8 @@
 
 
 ## Images
-![](../images/basins/motubay_whangaparoa.png) Image 1
+![](../images/basins/motubay_whangaparoa.png)
+*Figure 1 Image 1*
 
 ## Notes
 - See Motu Bay for additional notes
@@ -24,4 +25,4 @@
 - [WhangaparoaBasement](../../velocity_modelling/Data/USER20_BASINS/Whangaparoa_surface_WGS84.txt) (Submodel: N/A)
 
 ---
-*Page generated on: March 19, 2025, 12:34 NZST/NZDT*
+*Page generated on: March 19, 2025, 12:47 NZST/NZDT*

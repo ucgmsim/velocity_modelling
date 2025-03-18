@@ -10,8 +10,10 @@
 
 
 ## Images
-![](../images/basins/NI_south.png) Location
-![](../images/basins/greater_wellington_outline.png) GreaterWellington Basement
+![](../images/basins/NI_south.png)
+*Figure 1 Location*
+![](../images/basins/greater_wellington_outline.png)
+*Figure 2 GreaterWellington Basement*
 
 ## Data
 ### Boundaries
@@ -30,4 +32,4 @@
 - [GreaterWellington1_v21p7.txt](../../velocity_modelling/Data/Boundaries/Smoothing/GreaterWellington1_v21p7.txt)
 
 ---
-*Page generated on: March 19, 2025, 12:34 NZST/NZDT*
+*Page generated on: March 19, 2025, 12:47 NZST/NZDT*

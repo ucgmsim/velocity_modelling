@@ -10,7 +10,8 @@
 
 
 ## Images
-![](../images/basins/NI_south.png) Image 1
+![](../images/basins/NI_south.png)
+*Figure 1 Image 1*
 
 ## Notes
 - (Comment from the author) "Consider adding east coastal basins (e.g. Uruti Point)"
@@ -27,4 +28,4 @@
 - [Wairarapa_v21p12.txt](../../velocity_modelling/Data/Boundaries/Smoothing/Wairarapa_v21p12.txt)
 
 ---
-*Page generated on: March 19, 2025, 12:34 NZST/NZDT*
+*Page generated on: March 19, 2025, 12:47 NZST/NZDT*

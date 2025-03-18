@@ -10,8 +10,10 @@
 
 
 ## Images
-![](../images/basins/SI_mid.png) Location
-![](../images/basins/waitaki_hakataramea_outline.jpg) Hakataramea Basement
+![](../images/basins/SI_mid.png)
+*Figure 1 Location*
+![](../images/basins/waitaki_hakataramea_outline.jpg)
+*Figure 2 Hakataramea Basement*
 
 ## Data
 ### Boundaries
@@ -22,4 +24,4 @@
 - [HakatarameaBasement](../../velocity_modelling/Data/USER20_BASINS/wai-hak_WGS84.in) (Submodel: N/A)
 
 ---
-*Page generated on: March 19, 2025, 12:34 NZST/NZDT*
+*Page generated on: March 19, 2025, 12:47 NZST/NZDT*

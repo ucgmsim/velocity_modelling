@@ -126,14 +126,14 @@ for basin_name, versions in basin_versions.items():
         image_descriptions = (
             ["Location", f"{basin_name} Basement"] if len(images) >= 2 else ["Image 1"]
         )
-        for i, img in enumerate(images[:2]):  # Limit to 2 images
+        for i, img in enumerate(images):
             updated_img_path = f"../images/{img}"
             description = (
                 image_descriptions[i]
                 if i < len(image_descriptions)
                 else f"Image {i + 1}"
             )
-            md_content += f"![]({updated_img_path}) {description}\n"
+            md_content += f"![]({updated_img_path})\n*Figure {i+1} {description}*\n"
         md_content += "\n"
 
     # Notes Section

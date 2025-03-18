@@ -10,8 +10,12 @@
 
 
 ## Images
-![](../images/basins/NI_mideast.png) Location
-![](../images/basins/southern_hawkes_bay_outline.png) SouthernHawkesBay Basement
+![](../images/basins/NI_mideast.png)
+*Figure 1 Location*
+![](../images/basins/southern_hawkes_bay_outline.png)
+*Figure 2 SouthernHawkesBay Basement*
+![](../images/basins/southern_hawkes_bay_outline_extra.png)
+*Figure 3 Image 3*
 
 ## Notes
 - (Comment from the author) "Will be near the Wairarapa and Manawatu-Whanganui / Taranaki basins, but does not physically touch due to rock."
@@ -27,4 +31,4 @@
 - [SouthernHawkesBay](../../velocity_modelling/Data/Path not found) (Submodel: N/A)
 
 ---
-*Page generated on: March 19, 2025, 12:34 NZST/NZDT*
+*Page generated on: March 19, 2025, 12:47 NZST/NZDT*

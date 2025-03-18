@@ -10,8 +10,10 @@
 
 
 ## Images
-![](../images/basins/NI_mideast.png) Location
-![](../images/basins/grisborne_basement.png) Gisborne Basement
+![](../images/basins/NI_mideast.png)
+*Figure 1 Location*
+![](../images/basins/grisborne_basement.png)
+*Figure 2 Gisborne Basement*
 
 ## Notes
 - (Comment from the author) "Stop at Moto River, working around the East Cape from Gisborne. Haurere Point should be included in Whakatane"
@@ -28,4 +30,4 @@
 - [Gisborne_v21p11.txt](../../velocity_modelling/Data/Boundaries/Smoothing/Gisborne_v21p11.txt)
 
 ---
-*Page generated on: March 19, 2025, 12:34 NZST/NZDT*
+*Page generated on: March 19, 2025, 12:47 NZST/NZDT*

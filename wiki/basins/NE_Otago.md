@@ -10,8 +10,10 @@
 
 
 ## Images
-![](../images/basins/SI_se.png) Location
-![](../images/basins/ne_otago_basins_classification-page-001.jpg) NE_Otago Basement
+![](../images/basins/SI_se.png)
+*Figure 1 Location*
+![](../images/basins/ne_otago_basins_classification-page-001.jpg)
+*Figure 2 NE_Otago Basement*
 
 ## Data
 ### Boundaries
@@ -26,4 +28,4 @@
 - [RanAlexBasement](../../velocity_modelling/Data/USER20_BASINS/ran-alex_proj_WGS84.in) (Submodel: N/A)
 
 ---
-*Page generated on: March 19, 2025, 12:34 NZST/NZDT*
+*Page generated on: March 19, 2025, 12:47 NZST/NZDT*
