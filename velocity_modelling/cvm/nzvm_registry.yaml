@@ -111,7 +111,7 @@ surface:
   - name: DunedinBasement
     path: USER20_BASINS/dun_proj_WGS84.in
 
-  - name: Gisborne
+  - name: GisborneBasement
     path: Basins/Gisborne/v21p11/Gisborne_Surface_Export.in
 
   - name: GreaterWellingtonBasement
@@ -123,7 +123,7 @@ surface:
   - name: HanmerBasement
     path: SI_BASINS/Hanmer_Basement_WGS84_v0p0.in
 
-  - name: HawkesBay
+  - name: HawkesBayBasement
     path: Basins/Napier_Hawkes_Bay/v21p7/HawkesBay_Grid_WGS84_Export.in
 
   - name: KaikouraBasement
@@ -144,13 +144,13 @@ surface:
   - name: MosgielBasement
     path: USER20_BASINS/mos_proj_WGS84.in
 
-  - name: Motu_Bay
+  - name: MotuBayBasement
     path: Basins/East_Cape/v22p3/Motu_river_Surface_Export.in
 
   - name: MurchisonBasement
     path: USER20_BASINS/MurchisonBasin_WGS84_500m_v2020v07v15.in
 
-  - name: Napier
+  - name: NapierBasement
     path: Basins/Napier_Hawkes_Bay/v21p7/Napier_Grid_WGS84_Export.in
 
   - name: NelsonBasement
@@ -174,19 +174,19 @@ surface:
   - name: RanAlexBasement
     path: USER20_BASINS/ran-alex_proj_WGS84.in
 
-  - name: SouthernHawkesBay
+  - name: SouthernHawkesBayBasement
     path: Basins/Southern_Hawkes_Bay/v21p12/SHB_Surface_Export.in
 
   - name: SpringsJunctionBasement
     path: USER20_BASINS/SpringsJunctionBasin_WGS84_500m_v12v11v2020.in
 
-  - name: TeAnau
+  - name: TeAnauBasement
     path: STUDENTS_BASINS/TeAnau_surface_WGS84.txt
 
   - name: WaikatoHaurakiBasement
     path: NI_BASINS/WaikatoHaurakiBasin_WGS84_500m_v2019v07v05.in
 
-  - name: Wairarapa
+  - name: WairarapaBasement
     path: Basins/Wairarapa/v21p12/Wairarapa_Surface_Export.in
 
   - name: WaitakiBasement
@@ -207,10 +207,10 @@ surface:
   - name: WellingtonBasement_v21p8
     path: Basins/Wellington/v21p8/Wellington_Grid_WGS84_Hill20210823_100_extracted_d.in
 
-  - name: Westport
+  - name: WestportBasement
     path: STUDENTS_BASINS/Westport_surface_WGS84.txt
 
-  - name: Whangaparoa
+  - name: WhangaparoaBasement
     path: USER20_BASINS/Whangaparoa_surface_WGS84.txt
 
 
@@ -261,7 +261,7 @@ basin:
       - name: DEM
         submodel: canterbury1d_v2_pliocene_enforced
 
-      - name: PlioceneTop
+      - name: PlioceneTop_46_v8p9p18
         submodel: pliocene_submod_v1
 
       - name: MioceneTop
@@ -274,6 +274,10 @@ basin:
 
 
   - name: Canterbury_Pre_Quaternary_v19p1
+    type: 4
+    author: Robin Lee
+    images:
+      - basins/canterbury_region.png
     boundaries:
       - Boundaries/NewCanterburyBasinBoundary_WGS84_1m.txt
     surfaces:
@@ -296,6 +300,10 @@ basin:
 
 
   - name: Canterbury_North_v19p1
+    type: 4
+    author: Robin Lee
+    images:
+      - basins/canterbury_region.png
     boundaries:
       - SI_BASINS/NorthCanterbury_Polygon_WGS84.txt
     surfaces:
@@ -306,6 +314,10 @@ basin:
 
 
   - name: Banks_Peninsula_Volcanics_v19p1
+    type: 4
+    author: Robin Lee
+    images:
+      - basins/canterbury_region.png
     boundaries:
       - Boundaries/BPVBoundary.txt
     surfaces:
@@ -316,6 +328,11 @@ basin:
 
 
   - name: Kaikoura_v19p1
+    type: 2
+    author: Ethan Thomson
+    images:
+      - basins/kaikoura.png
+      - basins/kaikoura_basement.png
     boundaries:
       - SI_BASINS/Kaikoura_Polygon_WGS84.txt
     surfaces:
@@ -327,6 +344,10 @@ basin:
     smoothing: Boundaries/Smoothing/Kaikoura_v19p1.txt
 
   - name: Cheviot_v19p1
+    type: 1
+    author: Ethan Thomson
+    images:
+      - basins/cheviot_hanmer_northcanterbury.png
     boundaries:
       - SI_BASINS/Cheviot_Polygon_WGS84.txt
     surfaces:
@@ -338,6 +359,11 @@ basin:
     smoothing: Boundaries/Smoothing/Cheviot_v19p1.txt
 
   - name: Hanmer_v19p1
+    type: 2
+    author: Ethan Thomson
+    images:
+      - basins/cheviot_hanmer_northcanterbury.png
+      - basins/hanmer_basement.png
     boundaries:
       - SI_BASINS/Hanmer_Polygon_WGS84.txt
     surfaces:
@@ -349,6 +375,10 @@ basin:
 
 
   - name: Marlborough_v19p1
+    type: 2
+    author: Ethan Thomson
+    images:
+      - basins/SI_north.png
     boundaries:
       - SI_BASINS/Marlborough_Polygon_WGS84_v0p1.txt
     surfaces:
@@ -360,6 +390,12 @@ basin:
     smoothing: Boundaries/Smoothing/Marlborough_v19p1.txt
 
   - name: Nelson_v19p1
+    type: 2
+    author: Ethan Thomson
+    images:
+      - basins/SI_north.png
+    notes:
+      - https://nelson-richmond-geolmap.github.io/RGMap/ (for the geological map of the Nelson-Richmond area)
     boundaries:
       - SI_BASINS/Nelson_Polygon_WGS84.txt
     surfaces:
@@ -393,6 +429,15 @@ basin:
     smoothing: Boundaries/Smoothing/Wellington_v19p6.txt
 
   - name: Wellington_v21p8
+    type: 2
+    author: Robin Lee / Matt Hill
+    images:
+      - basins/NI_south.png
+      - basins/wellington_outline.png
+    notes:
+      - v19.1, v19.6 : Robin Lee (basement update)
+      - v21.8 : Matt Hill (basement update)
+
     boundaries:
       - Basins/Wellington/v21p8/Wellington_Polygon_Wainuiomata_WGS84.txt
     surfaces:
@@ -404,6 +449,11 @@ basin:
     smoothing: Boundaries/Smoothing/Wellington_v21p8.txt
 
   - name: WaikatoHauraki_v19p7
+    type: 1
+    author: Andrew Stolte
+    images:
+      - basins/waikato_hauraki_boundary.png
+      - basins/waikato_hauraki_outline.png
     boundaries:
       - Boundaries/WaikatoHaurakiBasinEdge_WGS84.txt
     surfaces:
@@ -415,6 +465,12 @@ basin:
     smoothing: Boundaries/Smoothing/WaikatoHauraki_v19p7.txt
 
   - name: Wanaka_v20p6
+    type: 1
+    author: Cameron Douglas (USER2020)
+    images:
+      - basins/SI_mid.png
+      - basins/wanaka_boundary.png
+
     boundaries:
       - USER20_BASINS/WanakaOutlineWGS84.txt
     surfaces:
@@ -425,6 +481,12 @@ basin:
 
 
   - name: MacKenzie_v20p6
+    type: 1
+    author: Cameron Douglas (USER2020)
+    images:
+      - basins/SI_mid.png
+      - basins/mackenzie_boundary.png
+
     boundaries:
       - USER20_BASINS/mackenzie_basin_outline_nzmg.txt
     surfaces:
@@ -444,6 +506,11 @@ basin:
       - name: WakatipuBasement
 
   - name: Alexandra_v20p7
+    type: 1
+    author: Cameron Douglas (USER2020)
+    images:
+      - basins/SI_mid.png
+      - basins/alexandra-ranfurly_basins_classification_v2-page-001.jpg
     boundaries:
       - USER20_BASINS/alexandra_outline.txt
     surfaces:
@@ -454,6 +521,11 @@ basin:
 
 
   - name: Ranfurly_v20p7
+    type: 1
+    author: Cameron Douglas (USER2020)
+    images:
+      - basins/SI_mid.png
+      - basins/alexandra-ranfurly_basins_classification_v2-page-001.jpg
     boundaries:
       - USER20_BASINS/ranfurly_outline.txt
     surfaces:
@@ -464,6 +536,11 @@ basin:
 
 
   - name: NE_Otago_v20p7
+    type: 1
+    author: Cameron Douglas (USER2020)
+    images:
+      - basins/SI_se.png
+      - basins/ne_otago_basins_classification-page-001.jpg
     boundaries:
       - USER20_BASINS/NE_otago/NE_otago_A_outline.txt
       - USER20_BASINS/NE_otago/NE_otago_B_outline.txt
@@ -479,6 +556,17 @@ basin:
 
 
   - name: Mosgiel_v20p7
+    type: 1
+    author: Cameron Douglas (USER2020)
+    images:
+      - basins/SI_se.png
+      - basins/green_class.png
+      - basins/green_rock.png
+    notes:
+      - Green area (in green_rock.png) tentatively regarded as a sedimentary rock (soft rock)
+      - Implemented as two separate basins (Mosgiel/Balclutha) joined by the sedimentary rock
+      - May need more rigorous classification
+
     boundaries:
       - USER20_BASINS/mos_outline_WGS84.txt
     surfaces:
@@ -490,6 +578,16 @@ basin:
 
 
   - name: Balclutha_v20p7
+    type: 1
+    author: Cameron Douglas (USER2020)
+    images:
+      - basins/SI_se.png
+      - basins/green_class.png
+      - basins/green_rock.png
+    notes:
+      - Green area (in green_rock.png) tentatively regarded as a sedimentary rock (soft rock)
+      - Implemented as two separate basins (Mosgiel/Balclutha) joined by the sedimentary rock
+      - May need more rigorous classification
     boundaries:
       - USER20_BASINS/bal_outline_WGS84.txt
     surfaces:
@@ -502,6 +600,15 @@ basin:
 
 
   - name: Dunedin_v20p7
+    type: 1
+    author: Cameron Douglas (USER2020)
+    images:
+      - basins/SI_se.png
+      - basins/dunedin_outline.png
+    notes:
+      - Port Chalmers needs an update.
+      - Inlets need to be modelled.
+
     boundaries:
       - USER20_BASINS/dun_outline_WGS84.txt
     surfaces:
@@ -514,6 +621,11 @@ basin:
 
 
   - name: Murchison_v20p7
+    type: 1
+    author: Tim Tuckey (USER2020)
+    images:
+      - basins/SI_north.png
+      - basins/murchison_outline.png
     boundaries:
       - USER20_BASINS/Murchison_Basin_Outline_v1_WGS84.txt
     surfaces:
@@ -524,6 +636,13 @@ basin:
 
 
   - name: Waitaki_v20p8
+    type: 1
+    author: Cameron Douglas (USER2020)
+    images:
+      - basins/SI_mid.png
+      - basins/waitaki_hakataramea_outline.jpg
+    notes:
+      - (Comment from the author) "Interects with the boundary of the Canterbury Basin.- Need to check boundary depth."
     boundaries:
       - USER20_BASINS/waitaki_outline_WGS84.txt
     surfaces:
@@ -535,6 +654,11 @@ basin:
     smoothing: Boundaries/Smoothing/Waitaki_v20p8.txt
 
   - name: Hakataramea_v20p8
+    type: 1
+    author: Cameron Douglas (USER2020)
+    images:
+      - basins/SI_mid.png
+      - basins/waitaki_hakataramea_outline.jpg
     boundaries:
       - USER20_BASINS/hakataramea_outline_WGS84.txt
     surfaces:
@@ -546,6 +670,10 @@ basin:
 
 
   - name: Karamea_v20p11
+    type: 1
+    author: Tim Tuckey (USER2020)
+    images:
+      - basins/SI_north.png
     boundaries:
       - USER20_BASINS/Karamea_basin_outline_v1_WGS84.txt
     surfaces:
@@ -556,7 +684,11 @@ basin:
 
     smoothing: Boundaries/Smoothing/Karamea_v20p11.txt
 
-  - name: CollingwoodBasin_v20p11
+  - name: Collingwood_v20p11
+    type: 1
+    author: Tim Tuckey (USER2020)
+    images:
+      - basins/SI_north.png
     boundaries:
       - USER20_BASINS/CollingwoodBasinOutline_1_WGS84_v1.txt
       - USER20_BASINS/CollingwoodBasinOutline_2_WGS84_v1.txt
@@ -570,6 +702,10 @@ basin:
     smoothing: Boundaries/Smoothing/CollingwoodBasin1_v20p11.txt
 
   - name: SpringsJunction_v20p11
+    type: 1
+    author: Tim Tuckey (USER2020)
+    images:
+      - basins/SI_north.png
     boundaries:
       - USER20_BASINS/SpringsJ_basin_outline_v1_WGS84.txt
     surfaces:
@@ -580,6 +716,14 @@ basin:
 
 
   - name: HawkesBay_v21p7
+    type: 1
+    author: William Lee (USER2021)
+    images:
+      - basins/NI_mideast.png
+      - basins/hawkes_bay_outline.png
+      - basins/hawkes_bay_outline_edited.png
+    notes:
+      - (Comment from the author) "The areas marked with black X's were either considered too shallow or sedimentary rock so weren't modelled as a basin."
     boundaries:
       - Basins/Napier_Hawkes_Bay/v21p7/HawkesBay1_Outline_WGS84_delim.dat
       - Basins/Napier_Hawkes_Bay/v21p7/HawkesBay2_Outline_WGS84_delim.dat
@@ -594,6 +738,11 @@ basin:
     smoothing: Boundaries/Smoothing/HawkesBay1_v21p7.txt
 
   - name: Napier_v21p7
+    type: 1
+    author: William Lee (USER2021)
+    images:
+      - basins/NI_mideast.png
+      - basins/napier_outline.png
     boundaries:
       - Basins/Napier_Hawkes_Bay/v21p7/Napier1_Outline_WGS84_delim.dat
       - Basins/Napier_Hawkes_Bay/v21p7/Napier2_Outline_WGS84_delim.dat
@@ -611,6 +760,11 @@ basin:
 
 
   - name: GreaterWellington_v21p7
+    type: 1
+    author: William Lee (USER2021)
+    images:
+      - basins/NI_south.png
+      - basins/greater_wellington_outline.png
     boundaries:
       - Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington1_Outline_WGS84.dat
       - Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington2_Outline_WGS84.dat
@@ -627,6 +781,11 @@ basin:
     smoothing: Boundaries/Smoothing/GreaterWellington1_v21p7.txt
 
   - name: Porirua_v21p7
+    type: 1
+    author: William Lee (USER2021)
+    images:
+      - basins/NI_south.png
+      - basins/porirua_outline.png
     boundaries:
       - Basins/Greater_Wellington_and_Porirua/v21p7/Porirua1_Outline_WGS84.dat
       - Basins/Greater_Wellington_and_Porirua/v21p7/Porirua2_Outline_WGS84.dat
@@ -639,17 +798,34 @@ basin:
     smoothing: Boundaries/Smoothing/Porirua1_v21p7.txt
 
   - name: Gisborne_v21p11
+    type: 1
+    author: William Lee (USER2021)
+    images:
+      - basins/NI_mideast.png
+      - basins/grisborne_basement.png
+    notes:
+      - (Comment from the author) "Stop at Moto River, working around the East Cape from Gisborne. Haurere Point should be included in Whakatane"
     boundaries:
       - Basins/Gisborne/v21p11/Gisborne_Outline_WGS84_delim.dat
     surfaces:
       - name: NZ_DEM
         submodel: canterbury1d_v2
 
-      - name: Gisborne
+      - name: GisborneBasement
 
     smoothing: Boundaries/Smoothing/Gisborne_v21p11.txt
 
   - name: SouthernHawkesBay_v21p12
+    type: 1
+    author: William Lee (USER2021)
+    images:
+      - basins/NI_mideast.png
+      - basins/southern_hawkes_bay_outline.png
+      - basins/southern_hawkes_bay_outline_extra.png
+    notes:
+      - (Comment from the author) "Will be near the Wairarapa and Manawatu-Whanganui / Taranaki basins, but does not physically touch due to rock."
+      - (Comment from the author) "Physically connects to Northern Hawkes Bay in the Ngaruroro River valley. Need to check consistency in the bedrock surfaces at the intersection."
+      - Missing some parts in the east coast.
     boundaries:
       - Basins/Southern_Hawkes_Bay/v21p12/SHB_Outline_WGS84_delim.dat
     surfaces:
@@ -660,17 +836,33 @@ basin:
 
 
   - name: Wairarapa_v21p12
+    type: 1
+    author: William Lee (USER2021)
+    images:
+      - basins/NI_south.png
+    notes:
+        - (Comment from the author) "Consider adding east coastal basins (e.g. Uruti Point)"
     boundaries:
       - Basins/Wairarapa/v21p12/Wairarapa_Outline_WGS84_delim.dat
     surfaces:
       - name: NZ_DEM
         submodel: canterbury1d_v2
 
-      - name: Wairarapa
+      - name: WairarapaBasement
 
     smoothing: Boundaries/Smoothing/Wairarapa_v21p12.txt
 
-  - name: Motu_Bay_v22p3
+  - name: MotuBay_v22p3
+    type: 1
+    author: Cameron Davis / Emma Coumbe (USER2022)
+    images:
+      - basins/motubay_whangaparoa.png
+      - basins/motubay_basement.png
+      - basins/moturiver_extended_outline.png
+      - basins/eastcape_coastal_river_valleys.png
+    notes:
+      - Rest of the coastal river valleys on the East Cape (Waiapu River, Hicks Bay, Waihau Bay, Motu River) to be added
+      - Tolaga bay/Omaio Bay to be included (pending acceptance): https://github.com/ucgmsim/Velocity-Model/pull/43/files
     boundaries:
       - Basins/East_Cape/v22p3/Motu_bay1_Outline_WGS84.txt
       - Basins/East_Cape/v22p3/Motu_bay2_Outline_WGS84.txt
@@ -679,18 +871,24 @@ basin:
       - name: NZ_DEM
         submodel: canterbury1d_v2
 
-      - name: Motu_Bay
+      - name: MotuBayBasement
 
     smoothing: Boundaries/Smoothing/Motu_Bay1_v22p3.txt
 
   - name: Whangaparoa_v23p4
+    type: 1
+    author: Cameron Davis / Emma Coumbe (USER2022)
+    images:
+      - basins/motubay_whangaparoa.png
+    notes:
+      - See Motu Bay for additional notes
     boundaries:
       - USER20_BASINS/Whangaparoa_outline_WGS84.txt
     surfaces:
       - name: NZ_DEM
         submodel: canterbury1d_v2
 
-      - name: Whangaparoa
+      - name: WhangaparoaBasement
 
 
   - name: TeAnau_v24p9
@@ -700,7 +898,7 @@ basin:
       - name: NZ_DEM
         submodel: canterbury1d_v2
 
-      - name: TeAnau
+      - name: TeAnauBasement
 
 
   - name: Westport_v24p9
@@ -710,7 +908,7 @@ basin:
       - name: NZ_DEM
         submodel: canterbury1d_v2
 
-      - name: Westport
+      - name: WestportBasement
 
 
 vm1d:

@@ -34,7 +34,7 @@ def main_vectorized(
     z_indices : np.ndarray
         Array of indices of the grid points to store the data at.
     depths : np.ndarray
-        Array of depths of the grid points of interest, in meters, negative values.
+        Array of depths of the grid points of interest, in metres, negative values.
     qualities_vector : QualitiesVector
         Object housing Vp, Vs, and Rho for one Lat-Lon value and multiple depths.
     velo_mod_1d_data : VelocityModel1D

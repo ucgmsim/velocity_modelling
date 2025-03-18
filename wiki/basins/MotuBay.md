@@ -1,0 +1,34 @@
+# Basin : MotuBay
+
+## Overview
+|         |                     |
+|---------|---------------------|
+| Version | 22p3           |
+| Type    | 1        |
+| Author  | Cameron Davis / Emma Coumbe (USER2022)            |
+| Created | 2022-03           |
+
+
+## Images
+![](../images/basins/motubay_whangaparoa.png) Location
+![](../images/basins/motubay_basement.png) MotuBay Basement
+
+## Notes
+- Rest of the coastal river valleys on the East Cape (Waiapu River, Hicks Bay, Waihau Bay, Motu River) to be added
+- {'Tolaga bay/Omaio Bay to be included (pending acceptance)': 'https://github.com/ucgmsim/Velocity-Model/pull/43/files'}
+
+## Data
+### Boundaries
+- [Motu_bay1_Outline_WGS84.txt](../../velocity_modelling/Data/Basins/East_Cape/v22p3/Motu_bay1_Outline_WGS84.txt)
+- [Motu_bay2_Outline_WGS84.txt](../../velocity_modelling/Data/Basins/East_Cape/v22p3/Motu_bay2_Outline_WGS84.txt)
+- [Motu_bay3_Outline_WGS84.txt](../../velocity_modelling/Data/Basins/East_Cape/v22p3/Motu_bay3_Outline_WGS84.txt)
+
+### Surfaces
+- [NZ_DEM](../../velocity_modelling/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [MotuBayBasement](../../velocity_modelling/Data/Basins/East_Cape/v22p3/Motu_river_Surface_Export.in) (Submodel: N/A)
+
+### Smoothing Boundaries
+- [Motu_Bay1_v22p3.txt](../../velocity_modelling/Data/Boundaries/Smoothing/Motu_Bay1_v22p3.txt)
+
+---
+*Page generated on: March 19, 2025, 12:34 NZST/NZDT*

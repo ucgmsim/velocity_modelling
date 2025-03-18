@@ -1,6 +1,24 @@
-# Banks Peninsula Volcanics
+# Basin : Banks_Peninsula_Volcanics
 
-**Version:** v19p1  
-**Type:** 1
+## Overview
+|         |                     |
+|---------|---------------------|
+| Version | 19p1           |
+| Type    | 4        |
+| Author  | Robin Lee            |
+| Created | 2019-01           |
 
-![Map Placeholder](#)
+
+## Images
+![](../images/basins/canterbury_region.png) Image 1
+
+## Data
+### Boundaries
+- [BPVBoundary.txt](../../velocity_modelling/Data/Boundaries/BPVBoundary.txt)
+
+### Surfaces
+- [BPVTop](../../velocity_modelling/Data/Canterbury_Basin/BPV/BPVTop.in) (Submodel: bpv_submod_v4)
+- [MioceneTop](../../velocity_modelling/Data/Canterbury_Basin/Pre_Quaternary/MioceneTop.in) (Submodel: N/A)
+
+---
+*Page generated on: March 19, 2025, 12:34 NZST/NZDT*

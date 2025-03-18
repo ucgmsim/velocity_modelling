@@ -6,7 +6,7 @@ Brocher correlations and the Ely (2010) GTL model. It includes both scalar and
 vectorized implementations for efficiency.
 
 All velocity values in this module use km/s as units unless otherwise specified.
-Depths are in meters, and densities are in g/cm³.
+Depths are in metres, and densities are in g/cm³.
 """
 
 import numba

@@ -1,6 +1,28 @@
-# Kaikoura
+# Basin : Kaikoura
 
-**Version:** v19p1  
-**Type:** 1
+## Overview
+|         |                     |
+|---------|---------------------|
+| Version | 19p1           |
+| Type    | 2        |
+| Author  | Ethan Thomson            |
+| Created | 2019-01           |
 
-![Map Placeholder](#)
+
+## Images
+![](../images/basins/kaikoura.png) Location
+![](../images/basins/kaikoura_basement.png) Kaikoura Basement
+
+## Data
+### Boundaries
+- [Kaikoura_Polygon_WGS84.txt](../../velocity_modelling/Data/SI_BASINS/Kaikoura_Polygon_WGS84.txt)
+
+### Surfaces
+- [NZ_DEM](../../velocity_modelling/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [KaikouraBasement](../../velocity_modelling/Data/SI_BASINS/Kaikoura_Basement_WGS84_v0p0.in) (Submodel: N/A)
+
+### Smoothing Boundaries
+- [Kaikoura_v19p1.txt](../../velocity_modelling/Data/Boundaries/Smoothing/Kaikoura_v19p1.txt)
+
+---
+*Page generated on: March 19, 2025, 12:34 NZST/NZDT*

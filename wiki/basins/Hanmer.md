@@ -1,6 +1,25 @@
-# Hanmer
+# Basin : Hanmer
 
-**Version:** v19p1  
-**Type:** 1
+## Overview
+|         |                     |
+|---------|---------------------|
+| Version | 19p1           |
+| Type    | 2        |
+| Author  | Ethan Thomson            |
+| Created | 2019-01           |
 
-![Map Placeholder](#)
+
+## Images
+![](../images/basins/cheviot_hanmer_northcanterbury.png) Location
+![](../images/basins/hanmer_basement.png) Hanmer Basement
+
+## Data
+### Boundaries
+- [Hanmer_Polygon_WGS84.txt](../../velocity_modelling/Data/SI_BASINS/Hanmer_Polygon_WGS84.txt)
+
+### Surfaces
+- [NZ_DEM](../../velocity_modelling/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [HanmerBasement](../../velocity_modelling/Data/SI_BASINS/Hanmer_Basement_WGS84_v0p0.in) (Submodel: N/A)
+
+---
+*Page generated on: March 19, 2025, 12:34 NZST/NZDT*

@@ -516,7 +516,7 @@ class QualitiesVector:
         submodel_names : np.ndarray
             Names of global submodels for each depth.
         depths : np.ndarray
-            Depths (m) to calculate properties for.
+            Depths (metres) to calculate properties for.
         z_indices : np.ndarray
             Indices of depths in the mesh.
         global_params : dict
@@ -630,7 +630,7 @@ class QualitiesVector:
         on_boundary : bool
             Whether this point is on a model boundary.
         depths : np.ndarray
-            Depths (m) to calculate properties for.
+            Depths (metres) to calculate properties for.
         ind_above : int
             Index of surface above these depths.
         basin_num : int
@@ -724,7 +724,7 @@ class QualitiesVector:
         on_boundary : bool
             Whether this point is on a model boundary.
         depths : np.ndarray
-            Depths (m) to calculate properties for.
+            Depths (metres) to calculate properties for.
         basin_num : int
             Basin identifier.
         z_indices : np.ndarray

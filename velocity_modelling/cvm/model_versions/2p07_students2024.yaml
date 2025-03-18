@@ -28,7 +28,7 @@ basins:
   - Waitaki_v20p8
   - Hakataramea_v20p8
   - Karamea_v20p11
-  - CollingwoodBasin_v20p11
+  - Collingwood_v20p11
   - SpringsJunction_v20p11
   - HawkesBay_v21p7
   - Napier_v21p7
@@ -37,7 +37,7 @@ basins:
   - Gisborne_v21p11
   - SouthernHawkesBay_v21p12
   - Wairarapa_v21p12
-  - Motu_Bay_v22p3
+  - MotuBay_v22p3
   - Whangaparoa_v23p4
   - Westport_v24p9
   - TeAnau_v24p9

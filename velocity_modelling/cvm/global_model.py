@@ -104,7 +104,7 @@ class PartialGlobalSurfaceDepths:
     Attributes
     ----------
     depths : np.ndarray
-        Array of global surface depths.
+        Array of global surface depths. (in metres)
 
     """
 
@@ -122,7 +122,7 @@ class PartialGlobalSurfaceDepths:
         Parameters
         ----------
         depths : np.ndarray
-            Array of depths (in m) to find the sub-velocity model indices for.
+            Array of depths (in metres) to find the sub-velocity model indices for.
 
         Returns
         -------
