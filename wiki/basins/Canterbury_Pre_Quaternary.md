@@ -12,7 +12,9 @@
 
 ## Images
 ![](../images/basins/canterbury_region.png)
+
 *Figure 1 Image 1*
+
 
 ## Data
 ### Boundaries
@@ -29,4 +31,4 @@
 - [Canterbury_Pre_Quaternary_v19p1.txt](../../velocity_modelling/Data/Boundaries/Smoothing/Canterbury_Pre_Quaternary_v19p1.txt)
 
 ---
-*Page generated on: March 19, 2025, 12:47 NZST/NZDT*
+*Page generated on: March 19, 2025, 12:54 NZST/NZDT*

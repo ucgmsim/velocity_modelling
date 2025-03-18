@@ -11,7 +11,9 @@
 
 ## Images
 ![](../images/basins/SI_north.png)
+
 *Figure 1 Image 1*
+
 
 ## Data
 ### Boundaries
@@ -22,4 +24,4 @@
 - [SpringsJunctionBasement](../../velocity_modelling/Data/USER20_BASINS/SpringsJunctionBasin_WGS84_500m_v12v11v2020.in) (Submodel: N/A)
 
 ---
-*Page generated on: March 19, 2025, 12:47 NZST/NZDT*
+*Page generated on: March 19, 2025, 12:54 NZST/NZDT*

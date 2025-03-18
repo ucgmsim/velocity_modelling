@@ -11,7 +11,9 @@
 
 ## Images
 ![](../images/basins/canterbury_region.png)
+
 *Figure 1 Image 1*
+
 
 ## Data
 ### Boundaries
@@ -22,4 +24,4 @@
 - [MioceneTop](../../velocity_modelling/Data/Canterbury_Basin/Pre_Quaternary/MioceneTop.in) (Submodel: N/A)
 
 ---
-*Page generated on: March 19, 2025, 12:47 NZST/NZDT*
+*Page generated on: March 19, 2025, 12:54 NZST/NZDT*

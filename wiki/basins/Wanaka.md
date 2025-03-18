@@ -11,9 +11,13 @@
 
 ## Images
 ![](../images/basins/SI_mid.png)
+
 *Figure 1 Location*
+
 ![](../images/basins/wanaka_boundary.png)
+
 *Figure 2 Wanaka Basement*
+
 
 ## Data
 ### Boundaries
@@ -24,4 +28,4 @@
 - [WanakaBasement](../../velocity_modelling/Data/USER20_BASINS/wanaka_basin_grid_WGS84_v2.in) (Submodel: N/A)
 
 ---
-*Page generated on: March 19, 2025, 12:47 NZST/NZDT*
+*Page generated on: March 19, 2025, 12:54 NZST/NZDT*

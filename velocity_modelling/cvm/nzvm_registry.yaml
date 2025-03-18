@@ -862,7 +862,7 @@ basin:
       - basins/eastcape_coastal_river_valleys.png
     notes:
       - Rest of the coastal river valleys on the East Cape (Waiapu River, Hicks Bay, Waihau Bay, Motu River) to be added
-      - Tolaga bay/Omaio Bay to be included (pending acceptance): https://github.com/ucgmsim/Velocity-Model/pull/43/files
+      - Tolaga bay/Omaio Bay to be included (pending acceptance) https://github.com/ucgmsim/Velocity-Model/pull/43/files
     boundaries:
       - Basins/East_Cape/v22p3/Motu_bay1_Outline_WGS84.txt
       - Basins/East_Cape/v22p3/Motu_bay2_Outline_WGS84.txt

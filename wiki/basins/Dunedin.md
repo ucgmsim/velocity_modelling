@@ -11,9 +11,13 @@
 
 ## Images
 ![](../images/basins/SI_se.png)
+
 *Figure 1 Location*
+
 ![](../images/basins/dunedin_outline.png)
+
 *Figure 2 Dunedin Basement*
+
 
 ## Notes
 - Port Chalmers needs an update.
@@ -31,4 +35,4 @@
 - [Dunedin_v20p7.txt](../../velocity_modelling/Data/Boundaries/Smoothing/Dunedin_v20p7.txt)
 
 ---
-*Page generated on: March 19, 2025, 12:47 NZST/NZDT*
+*Page generated on: March 19, 2025, 12:54 NZST/NZDT*

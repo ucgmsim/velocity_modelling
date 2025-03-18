@@ -11,9 +11,13 @@
 
 ## Images
 ![](../images/basins/waikato_hauraki_boundary.png)
+
 *Figure 1 Location*
+
 ![](../images/basins/waikato_hauraki_outline.png)
+
 *Figure 2 WaikatoHauraki Basement*
+
 
 ## Data
 ### Boundaries
@@ -27,4 +31,4 @@
 - [WaikatoHauraki_v19p7.txt](../../velocity_modelling/Data/Boundaries/Smoothing/WaikatoHauraki_v19p7.txt)
 
 ---
-*Page generated on: March 19, 2025, 12:47 NZST/NZDT*
+*Page generated on: March 19, 2025, 12:54 NZST/NZDT*

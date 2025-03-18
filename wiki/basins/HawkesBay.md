@@ -11,11 +11,17 @@
 
 ## Images
 ![](../images/basins/NI_mideast.png)
+
 *Figure 1 Location*
+
 ![](../images/basins/hawkes_bay_outline.png)
+
 *Figure 2 HawkesBay Basement*
+
 ![](../images/basins/hawkes_bay_outline_edited.png)
+
 *Figure 3 Image 3*
+
 
 ## Notes
 - (Comment from the author) "The areas marked with black X's were either considered too shallow or sedimentary rock so weren't modelled as a basin."
@@ -35,4 +41,4 @@
 - [HawkesBay1_v21p7.txt](../../velocity_modelling/Data/Boundaries/Smoothing/HawkesBay1_v21p7.txt)
 
 ---
-*Page generated on: March 19, 2025, 12:47 NZST/NZDT*
+*Page generated on: March 19, 2025, 12:54 NZST/NZDT*

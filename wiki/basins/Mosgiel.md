@@ -11,11 +11,17 @@
 
 ## Images
 ![](../images/basins/SI_se.png)
+
 *Figure 1 Location*
+
 ![](../images/basins/green_class.png)
+
 *Figure 2 Mosgiel Basement*
+
 ![](../images/basins/green_rock.png)
+
 *Figure 3 Image 3*
+
 
 ## Notes
 - Green area (in green_rock.png) tentatively regarded as a sedimentary rock (soft rock)
@@ -31,4 +37,4 @@
 - [MosgielBasement](../../velocity_modelling/Data/USER20_BASINS/mos_proj_WGS84.in) (Submodel: N/A)
 
 ---
-*Page generated on: March 19, 2025, 12:47 NZST/NZDT*
+*Page generated on: March 19, 2025, 12:54 NZST/NZDT*

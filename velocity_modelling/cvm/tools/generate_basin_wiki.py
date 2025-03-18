@@ -133,7 +133,7 @@ for basin_name, versions in basin_versions.items():
                 if i < len(image_descriptions)
                 else f"Image {i + 1}"
             )
-            md_content += f"![]({updated_img_path})\n*Figure {i+1} {description}*\n"
+            md_content += f"![]({updated_img_path})\n\n*Figure {i+1} {description}*\n\n"
         md_content += "\n"
 
     # Notes Section

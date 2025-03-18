@@ -11,9 +11,13 @@
 
 ## Images
 ![](../images/basins/SI_north.png)
+
 *Figure 1 Location*
+
 ![](../images/basins/murchison_outline.png)
+
 *Figure 2 Murchison Basement*
+
 
 ## Data
 ### Boundaries
@@ -24,4 +28,4 @@
 - [MurchisonBasement](../../velocity_modelling/Data/USER20_BASINS/MurchisonBasin_WGS84_500m_v2020v07v15.in) (Submodel: N/A)
 
 ---
-*Page generated on: March 19, 2025, 12:47 NZST/NZDT*
+*Page generated on: March 19, 2025, 12:54 NZST/NZDT*

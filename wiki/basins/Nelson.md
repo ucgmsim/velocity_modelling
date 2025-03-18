@@ -11,7 +11,9 @@
 
 ## Images
 ![](../images/basins/SI_north.png)
+
 *Figure 1 Image 1*
+
 
 ## Notes
 - https://nelson-richmond-geolmap.github.io/RGMap/ (for the geological map of the Nelson-Richmond area)
@@ -28,4 +30,4 @@
 - [Nelson_v19p1.txt](../../velocity_modelling/Data/Boundaries/Smoothing/Nelson_v19p1.txt)
 
 ---
-*Page generated on: March 19, 2025, 12:47 NZST/NZDT*
+*Page generated on: March 19, 2025, 12:54 NZST/NZDT*

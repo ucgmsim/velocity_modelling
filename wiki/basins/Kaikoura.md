@@ -11,9 +11,13 @@
 
 ## Images
 ![](../images/basins/kaikoura.png)
+
 *Figure 1 Location*
+
 ![](../images/basins/kaikoura_basement.png)
+
 *Figure 2 Kaikoura Basement*
+
 
 ## Data
 ### Boundaries
@@ -27,4 +31,4 @@
 - [Kaikoura_v19p1.txt](../../velocity_modelling/Data/Boundaries/Smoothing/Kaikoura_v19p1.txt)
 
 ---
-*Page generated on: March 19, 2025, 12:47 NZST/NZDT*
+*Page generated on: March 19, 2025, 12:54 NZST/NZDT*

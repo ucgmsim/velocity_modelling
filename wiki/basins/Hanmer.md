@@ -11,9 +11,13 @@
 
 ## Images
 ![](../images/basins/cheviot_hanmer_northcanterbury.png)
+
 *Figure 1 Location*
+
 ![](../images/basins/hanmer_basement.png)
+
 *Figure 2 Hanmer Basement*
+
 
 ## Data
 ### Boundaries
@@ -24,4 +28,4 @@
 - [HanmerBasement](../../velocity_modelling/Data/SI_BASINS/Hanmer_Basement_WGS84_v0p0.in) (Submodel: N/A)
 
 ---
-*Page generated on: March 19, 2025, 12:47 NZST/NZDT*
+*Page generated on: March 19, 2025, 12:54 NZST/NZDT*
