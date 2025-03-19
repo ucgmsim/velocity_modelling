@@ -11,11 +11,11 @@
 
 ## Data
 ### Boundaries
-- [Westport_outline_WGS84.txt](../../velocity_modelling/Data/STUDENTS_BASINS/Westport_outline_WGS84.txt)
+- [Westport_outline_WGS84.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/STUDENTS_BASINS/Westport_outline_WGS84.txt)
 
 ### Surfaces
-- [NZ_DEM](../../velocity_modelling/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [WestportBasement](../../velocity_modelling/Data/STUDENTS_BASINS/Westport_surface_WGS84.txt) (Submodel: N/A)
+- [NZ_DEM](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [WestportBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/STUDENTS_BASINS/Westport_surface_WGS84.txt) (Submodel: N/A)
 
 ---
-*Page generated on: March 19, 2025, 12:54 NZST/NZDT*
+*Page generated on: March 19, 2025, 13:02 NZST/NZDT*

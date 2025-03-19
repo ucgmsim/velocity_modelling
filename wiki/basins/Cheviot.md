@@ -17,14 +17,14 @@
 
 ## Data
 ### Boundaries
-- [Cheviot_Polygon_WGS84.txt](../../velocity_modelling/Data/SI_BASINS/Cheviot_Polygon_WGS84.txt)
+- [Cheviot_Polygon_WGS84.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/SI_BASINS/Cheviot_Polygon_WGS84.txt)
 
 ### Surfaces
-- [NZ_DEM](../../velocity_modelling/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [CheviotBasement](../../velocity_modelling/Data/SI_BASINS/Cheviot_Basement_WGS84_v0p0.in) (Submodel: N/A)
+- [NZ_DEM](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [CheviotBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/SI_BASINS/Cheviot_Basement_WGS84_v0p0.in) (Submodel: N/A)
 
 ### Smoothing Boundaries
-- [Cheviot_v19p1.txt](../../velocity_modelling/Data/Boundaries/Smoothing/Cheviot_v19p1.txt)
+- [Cheviot_v19p1.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Boundaries/Smoothing/Cheviot_v19p1.txt)
 
 ---
-*Page generated on: March 19, 2025, 12:54 NZST/NZDT*
+*Page generated on: March 19, 2025, 13:02 NZST/NZDT*

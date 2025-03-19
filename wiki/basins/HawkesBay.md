@@ -28,17 +28,17 @@
 
 ## Data
 ### Boundaries
-- [HawkesBay1_Outline_WGS84_delim.dat](../../velocity_modelling/Data/Basins/Napier_Hawkes_Bay/v21p7/HawkesBay1_Outline_WGS84_delim.dat)
-- [HawkesBay2_Outline_WGS84_delim.dat](../../velocity_modelling/Data/Basins/Napier_Hawkes_Bay/v21p7/HawkesBay2_Outline_WGS84_delim.dat)
-- [HawkesBay3_Outline_WGS84_delim.dat](../../velocity_modelling/Data/Basins/Napier_Hawkes_Bay/v21p7/HawkesBay3_Outline_WGS84_delim.dat)
-- [HawkesBay4_Outline_WGS84_delim.dat](../../velocity_modelling/Data/Basins/Napier_Hawkes_Bay/v21p7/HawkesBay4_Outline_WGS84_delim.dat)
+- [HawkesBay1_Outline_WGS84_delim.dat](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Napier_Hawkes_Bay/v21p7/HawkesBay1_Outline_WGS84_delim.dat)
+- [HawkesBay2_Outline_WGS84_delim.dat](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Napier_Hawkes_Bay/v21p7/HawkesBay2_Outline_WGS84_delim.dat)
+- [HawkesBay3_Outline_WGS84_delim.dat](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Napier_Hawkes_Bay/v21p7/HawkesBay3_Outline_WGS84_delim.dat)
+- [HawkesBay4_Outline_WGS84_delim.dat](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Napier_Hawkes_Bay/v21p7/HawkesBay4_Outline_WGS84_delim.dat)
 
 ### Surfaces
-- [NZ_DEM](../../velocity_modelling/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [HawkesBay](../../velocity_modelling/Data/Path not found) (Submodel: N/A)
+- [NZ_DEM](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [HawkesBay](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Path not found) (Submodel: N/A)
 
 ### Smoothing Boundaries
-- [HawkesBay1_v21p7.txt](../../velocity_modelling/Data/Boundaries/Smoothing/HawkesBay1_v21p7.txt)
+- [HawkesBay1_v21p7.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Boundaries/Smoothing/HawkesBay1_v21p7.txt)
 
 ---
-*Page generated on: March 19, 2025, 12:54 NZST/NZDT*
+*Page generated on: March 19, 2025, 13:02 NZST/NZDT*

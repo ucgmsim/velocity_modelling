@@ -21,11 +21,11 @@
 
 ## Data
 ### Boundaries
-- [mackenzie_basin_outline_nzmg.txt](../../velocity_modelling/Data/USER20_BASINS/mackenzie_basin_outline_nzmg.txt)
+- [mackenzie_basin_outline_nzmg.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/mackenzie_basin_outline_nzmg.txt)
 
 ### Surfaces
-- [NZ_DEM](../../velocity_modelling/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [MacKenzieBasement](../../velocity_modelling/Data/USER20_BASINS/mackenzie_proj_grid_WGS84.in) (Submodel: N/A)
+- [NZ_DEM](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [MacKenzieBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/mackenzie_proj_grid_WGS84.in) (Submodel: N/A)
 
 ---
-*Page generated on: March 19, 2025, 12:54 NZST/NZDT*
+*Page generated on: March 19, 2025, 13:02 NZST/NZDT*

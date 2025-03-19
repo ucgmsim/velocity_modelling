@@ -33,16 +33,16 @@
 
 ## Data
 ### Boundaries
-- [Motu_bay1_Outline_WGS84.txt](../../velocity_modelling/Data/Basins/East_Cape/v22p3/Motu_bay1_Outline_WGS84.txt)
-- [Motu_bay2_Outline_WGS84.txt](../../velocity_modelling/Data/Basins/East_Cape/v22p3/Motu_bay2_Outline_WGS84.txt)
-- [Motu_bay3_Outline_WGS84.txt](../../velocity_modelling/Data/Basins/East_Cape/v22p3/Motu_bay3_Outline_WGS84.txt)
+- [Motu_bay1_Outline_WGS84.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/East_Cape/v22p3/Motu_bay1_Outline_WGS84.txt)
+- [Motu_bay2_Outline_WGS84.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/East_Cape/v22p3/Motu_bay2_Outline_WGS84.txt)
+- [Motu_bay3_Outline_WGS84.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/East_Cape/v22p3/Motu_bay3_Outline_WGS84.txt)
 
 ### Surfaces
-- [NZ_DEM](../../velocity_modelling/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [MotuBayBasement](../../velocity_modelling/Data/Basins/East_Cape/v22p3/Motu_river_Surface_Export.in) (Submodel: N/A)
+- [NZ_DEM](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [MotuBayBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/East_Cape/v22p3/Motu_river_Surface_Export.in) (Submodel: N/A)
 
 ### Smoothing Boundaries
-- [Motu_Bay1_v22p3.txt](../../velocity_modelling/Data/Boundaries/Smoothing/Motu_Bay1_v22p3.txt)
+- [Motu_Bay1_v22p3.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Boundaries/Smoothing/Motu_Bay1_v22p3.txt)
 
 ---
-*Page generated on: March 19, 2025, 12:54 NZST/NZDT*
+*Page generated on: March 19, 2025, 13:02 NZST/NZDT*

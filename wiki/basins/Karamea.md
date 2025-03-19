@@ -17,14 +17,14 @@
 
 ## Data
 ### Boundaries
-- [Karamea_basin_outline_v1_WGS84.txt](../../velocity_modelling/Data/USER20_BASINS/Karamea_basin_outline_v1_WGS84.txt)
+- [Karamea_basin_outline_v1_WGS84.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/Karamea_basin_outline_v1_WGS84.txt)
 
 ### Surfaces
-- [NZ_DEM](../../velocity_modelling/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [KarameaBasement](../../velocity_modelling/Data/USER20_BASINS/KarameaBasin_WGS84_500m_v12v11v2020.in) (Submodel: N/A)
+- [NZ_DEM](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [KarameaBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/KarameaBasin_WGS84_500m_v12v11v2020.in) (Submodel: N/A)
 
 ### Smoothing Boundaries
-- [Karamea_v20p11.txt](../../velocity_modelling/Data/Boundaries/Smoothing/Karamea_v20p11.txt)
+- [Karamea_v20p11.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Boundaries/Smoothing/Karamea_v20p11.txt)
 
 ---
-*Page generated on: March 19, 2025, 12:54 NZST/NZDT*
+*Page generated on: March 19, 2025, 13:02 NZST/NZDT*

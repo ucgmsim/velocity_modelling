@@ -30,11 +30,11 @@
 
 ## Data
 ### Boundaries
-- [SHB_Outline_WGS84_delim.dat](../../velocity_modelling/Data/Basins/Southern_Hawkes_Bay/v21p12/SHB_Outline_WGS84_delim.dat)
+- [SHB_Outline_WGS84_delim.dat](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Southern_Hawkes_Bay/v21p12/SHB_Outline_WGS84_delim.dat)
 
 ### Surfaces
-- [NZ_DEM](../../velocity_modelling/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [SouthernHawkesBay](../../velocity_modelling/Data/Path not found) (Submodel: N/A)
+- [NZ_DEM](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [SouthernHawkesBay](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Path not found) (Submodel: N/A)
 
 ---
-*Page generated on: March 19, 2025, 12:54 NZST/NZDT*
+*Page generated on: March 19, 2025, 13:02 NZST/NZDT*

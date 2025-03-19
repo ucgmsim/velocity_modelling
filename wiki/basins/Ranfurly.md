@@ -21,11 +21,11 @@
 
 ## Data
 ### Boundaries
-- [ranfurly_outline.txt](../../velocity_modelling/Data/USER20_BASINS/ranfurly_outline.txt)
+- [ranfurly_outline.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/ranfurly_outline.txt)
 
 ### Surfaces
-- [NZ_DEM](../../velocity_modelling/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [RanAlexBasement](../../velocity_modelling/Data/USER20_BASINS/ran-alex_proj_WGS84.in) (Submodel: N/A)
+- [NZ_DEM](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [RanAlexBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/ran-alex_proj_WGS84.in) (Submodel: N/A)
 
 ---
-*Page generated on: March 19, 2025, 12:54 NZST/NZDT*
+*Page generated on: March 19, 2025, 13:02 NZST/NZDT*

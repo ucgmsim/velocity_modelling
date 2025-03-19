@@ -20,14 +20,14 @@
 
 ## Data
 ### Boundaries
-- [Wairarapa_Outline_WGS84_delim.dat](../../velocity_modelling/Data/Basins/Wairarapa/v21p12/Wairarapa_Outline_WGS84_delim.dat)
+- [Wairarapa_Outline_WGS84_delim.dat](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Wairarapa/v21p12/Wairarapa_Outline_WGS84_delim.dat)
 
 ### Surfaces
-- [NZ_DEM](../../velocity_modelling/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [WairarapaBasement](../../velocity_modelling/Data/Basins/Wairarapa/v21p12/Wairarapa_Surface_Export.in) (Submodel: N/A)
+- [NZ_DEM](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [WairarapaBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Wairarapa/v21p12/Wairarapa_Surface_Export.in) (Submodel: N/A)
 
 ### Smoothing Boundaries
-- [Wairarapa_v21p12.txt](../../velocity_modelling/Data/Boundaries/Smoothing/Wairarapa_v21p12.txt)
+- [Wairarapa_v21p12.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Boundaries/Smoothing/Wairarapa_v21p12.txt)
 
 ---
-*Page generated on: March 19, 2025, 12:54 NZST/NZDT*
+*Page generated on: March 19, 2025, 13:02 NZST/NZDT*

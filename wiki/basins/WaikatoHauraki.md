@@ -21,14 +21,14 @@
 
 ## Data
 ### Boundaries
-- [WaikatoHaurakiBasinEdge_WGS84.txt](../../velocity_modelling/Data/Boundaries/WaikatoHaurakiBasinEdge_WGS84.txt)
+- [WaikatoHaurakiBasinEdge_WGS84.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Boundaries/WaikatoHaurakiBasinEdge_WGS84.txt)
 
 ### Surfaces
-- [NZ_DEM](../../velocity_modelling/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [WaikatoHaurakiBasement](../../velocity_modelling/Data/NI_BASINS/WaikatoHaurakiBasin_WGS84_500m_v2019v07v05.in) (Submodel: N/A)
+- [NZ_DEM](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [WaikatoHaurakiBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/NI_BASINS/WaikatoHaurakiBasin_WGS84_500m_v2019v07v05.in) (Submodel: N/A)
 
 ### Smoothing Boundaries
-- [WaikatoHauraki_v19p7.txt](../../velocity_modelling/Data/Boundaries/Smoothing/WaikatoHauraki_v19p7.txt)
+- [WaikatoHauraki_v19p7.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Boundaries/Smoothing/WaikatoHauraki_v19p7.txt)
 
 ---
-*Page generated on: March 19, 2025, 12:54 NZST/NZDT*
+*Page generated on: March 19, 2025, 13:02 NZST/NZDT*

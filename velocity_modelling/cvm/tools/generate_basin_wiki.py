@@ -151,7 +151,7 @@ for basin_name, versions in basin_versions.items():
         md_content += "### Boundaries\n"
         for boundary in boundaries:
             filename = Path(boundary).name
-            updated_boundary_path = f"../../velocity_modelling/Data/{boundary}"
+            updated_boundary_path = f"https://github.com/ucgmsim/Velocity-Model/tree/main/Data/{boundary}"
             md_content += f"- [{filename}]({updated_boundary_path})\n"
         md_content += "\n"
 
@@ -165,7 +165,7 @@ for basin_name, versions in basin_versions.items():
                 (s for s in data["surface"] if s["name"] == surface_name), None
             )
             surface_path = surface_entry["path"] if surface_entry else "Path not found"
-            updated_surface_path = f"../../velocity_modelling/Data/{surface_path}"
+            updated_surface_path = f"https://github.com/ucgmsim/Velocity-Model/tree/main/Data/{surface_path}"
             md_content += (
                 f"- [{surface_name}]({updated_surface_path}) (Submodel: {submodel})\n"
             )
@@ -175,7 +175,7 @@ for basin_name, versions in basin_versions.items():
     if smoothing != "N/A":
         md_content += "### Smoothing Boundaries\n"
         smoothing_filename = Path(smoothing).name
-        updated_smoothing_path = f"../../velocity_modelling/Data/{smoothing}"
+        updated_smoothing_path = f"https://github.com/ucgmsim/Velocity-Model/tree/main/Data/{smoothing}"
         md_content += f"- [{smoothing_filename}]({updated_smoothing_path})\n"
         md_content += "\n"
 

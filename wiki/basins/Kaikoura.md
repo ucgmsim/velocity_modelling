@@ -21,14 +21,14 @@
 
 ## Data
 ### Boundaries
-- [Kaikoura_Polygon_WGS84.txt](../../velocity_modelling/Data/SI_BASINS/Kaikoura_Polygon_WGS84.txt)
+- [Kaikoura_Polygon_WGS84.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/SI_BASINS/Kaikoura_Polygon_WGS84.txt)
 
 ### Surfaces
-- [NZ_DEM](../../velocity_modelling/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [KaikouraBasement](../../velocity_modelling/Data/SI_BASINS/Kaikoura_Basement_WGS84_v0p0.in) (Submodel: N/A)
+- [NZ_DEM](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [KaikouraBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/SI_BASINS/Kaikoura_Basement_WGS84_v0p0.in) (Submodel: N/A)
 
 ### Smoothing Boundaries
-- [Kaikoura_v19p1.txt](../../velocity_modelling/Data/Boundaries/Smoothing/Kaikoura_v19p1.txt)
+- [Kaikoura_v19p1.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Boundaries/Smoothing/Kaikoura_v19p1.txt)
 
 ---
-*Page generated on: March 19, 2025, 12:54 NZST/NZDT*
+*Page generated on: March 19, 2025, 13:02 NZST/NZDT*
