@@ -10,7 +10,7 @@
 
 
 ## Images
-![](../images/basins/motubay_whangaparoa.png)
+<a href="../images/basins/motubay_whangaparoa.png"><img src="../images/basins/motubay_whangaparoa.png" width="50%"></a>
 
 *Figure 1 Image 1*
 
@@ -27,4 +27,4 @@
 - [WhangaparoaBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/Whangaparoa_surface_WGS84.txt) (Submodel: N/A)
 
 ---
-*Page generated on: March 19, 2025, 13:02 NZST/NZDT*
+*Page generated on: March 19, 2025, 14:20 NZST/NZDT*

@@ -10,19 +10,19 @@
 
 
 ## Images
-![](../images/basins/motubay_whangaparoa.png)
+<a href="../images/basins/motubay_whangaparoa.png"><img src="../images/basins/motubay_whangaparoa.png" width="50%"></a>
 
 *Figure 1 Location*
 
-![](../images/basins/motubay_basement.png)
+<a href="../images/basins/motubay_basement.png"><img src="../images/basins/motubay_basement.png" width="50%"></a>
 
 *Figure 2 MotuBay Basement*
 
-![](../images/basins/moturiver_extended_outline.png)
+<a href="../images/basins/moturiver_extended_outline.png"><img src="../images/basins/moturiver_extended_outline.png" width="50%"></a>
 
 *Figure 3 Image 3*
 
-![](../images/basins/eastcape_coastal_river_valleys.png)
+<a href="../images/basins/eastcape_coastal_river_valleys.png"><img src="../images/basins/eastcape_coastal_river_valleys.png" width="50%"></a>
 
 *Figure 4 Image 4*
 
@@ -45,4 +45,4 @@
 - [Motu_Bay1_v22p3.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Boundaries/Smoothing/Motu_Bay1_v22p3.txt)
 
 ---
-*Page generated on: March 19, 2025, 13:02 NZST/NZDT*
+*Page generated on: March 19, 2025, 14:20 NZST/NZDT*

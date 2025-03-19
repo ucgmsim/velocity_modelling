@@ -10,7 +10,7 @@
 
 
 ## Images
-![](../images/basins/canterbury_region.png)
+<a href="../images/basins/canterbury_region.png"><img src="../images/basins/canterbury_region.png" width="50%"></a>
 
 *Figure 1 Image 1*
 
@@ -24,4 +24,4 @@
 - [MioceneTop](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Canterbury_Basin/Pre_Quaternary/MioceneTop.in) (Submodel: N/A)
 
 ---
-*Page generated on: March 19, 2025, 13:02 NZST/NZDT*
+*Page generated on: March 19, 2025, 14:20 NZST/NZDT*

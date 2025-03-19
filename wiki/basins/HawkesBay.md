@@ -10,15 +10,15 @@
 
 
 ## Images
-![](../images/basins/NI_mideast.png)
+<a href="../images/basins/NI_mideast.png"><img src="../images/basins/NI_mideast.png" width="50%"></a>
 
 *Figure 1 Location*
 
-![](../images/basins/hawkes_bay_outline.png)
+<a href="../images/basins/hawkes_bay_outline.png"><img src="../images/basins/hawkes_bay_outline.png" width="50%"></a>
 
 *Figure 2 HawkesBay Basement*
 
-![](../images/basins/hawkes_bay_outline_edited.png)
+<a href="../images/basins/hawkes_bay_outline_edited.png"><img src="../images/basins/hawkes_bay_outline_edited.png" width="50%"></a>
 
 *Figure 3 Image 3*
 
@@ -41,4 +41,4 @@
 - [HawkesBay1_v21p7.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Boundaries/Smoothing/HawkesBay1_v21p7.txt)
 
 ---
-*Page generated on: March 19, 2025, 13:02 NZST/NZDT*
+*Page generated on: March 19, 2025, 14:20 NZST/NZDT*

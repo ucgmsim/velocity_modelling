@@ -10,11 +10,11 @@
 
 
 ## Images
-![](../images/basins/kaikoura.png)
+<a href="../images/basins/kaikoura.png"><img src="../images/basins/kaikoura.png" width="50%"></a>
 
 *Figure 1 Location*
 
-![](../images/basins/kaikoura_basement.png)
+<a href="../images/basins/kaikoura_basement.png"><img src="../images/basins/kaikoura_basement.png" width="50%"></a>
 
 *Figure 2 Kaikoura Basement*
 
@@ -31,4 +31,4 @@
 - [Kaikoura_v19p1.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Boundaries/Smoothing/Kaikoura_v19p1.txt)
 
 ---
-*Page generated on: March 19, 2025, 13:02 NZST/NZDT*
+*Page generated on: March 19, 2025, 14:20 NZST/NZDT*

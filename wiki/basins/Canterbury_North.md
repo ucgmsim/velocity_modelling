@@ -10,7 +10,7 @@
 
 
 ## Images
-![](../images/basins/canterbury_region.png)
+<a href="../images/basins/canterbury_region.png"><img src="../images/basins/canterbury_region.png" width="50%"></a>
 
 *Figure 1 Image 1*
 
@@ -24,4 +24,4 @@
 - [NorthCanterburyBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/SI_BASINS/NorthCanterbury_Basement_WGS84_v0p0.in) (Submodel: N/A)
 
 ---
-*Page generated on: March 19, 2025, 13:02 NZST/NZDT*
+*Page generated on: March 19, 2025, 14:20 NZST/NZDT*

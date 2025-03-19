@@ -10,11 +10,11 @@
 
 
 ## Images
-![](../images/basins/SI_north.png)
+<a href="../images/basins/SI_north.png"><img src="../images/basins/SI_north.png" width="50%"></a>
 
 *Figure 1 Location*
 
-![](../images/basins/murchison_outline.png)
+<a href="../images/basins/murchison_outline.png"><img src="../images/basins/murchison_outline.png" width="50%"></a>
 
 *Figure 2 Murchison Basement*
 
@@ -28,4 +28,4 @@
 - [MurchisonBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/MurchisonBasin_WGS84_500m_v2020v07v15.in) (Submodel: N/A)
 
 ---
-*Page generated on: March 19, 2025, 13:02 NZST/NZDT*
+*Page generated on: March 19, 2025, 14:20 NZST/NZDT*

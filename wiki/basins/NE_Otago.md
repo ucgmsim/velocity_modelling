@@ -10,11 +10,11 @@
 
 
 ## Images
-![](../images/basins/SI_se.png)
+<a href="../images/basins/SI_se.png"><img src="../images/basins/SI_se.png" width="50%"></a>
 
 *Figure 1 Location*
 
-![](../images/basins/ne_otago_basins_classification-page-001.jpg)
+<a href="../images/basins/ne_otago_basins_classification-page-001.jpg"><img src="../images/basins/ne_otago_basins_classification-page-001.jpg" width="50%"></a>
 
 *Figure 2 NE_Otago Basement*
 
@@ -32,4 +32,4 @@
 - [RanAlexBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/ran-alex_proj_WGS84.in) (Submodel: N/A)
 
 ---
-*Page generated on: March 19, 2025, 13:02 NZST/NZDT*
+*Page generated on: March 19, 2025, 14:20 NZST/NZDT*

@@ -10,15 +10,15 @@
 
 
 ## Images
-![](../images/basins/SI_se.png)
+<a href="../images/basins/SI_se.png"><img src="../images/basins/SI_se.png" width="50%"></a>
 
 *Figure 1 Location*
 
-![](../images/basins/green_class.png)
+<a href="../images/basins/green_class.png"><img src="../images/basins/green_class.png" width="50%"></a>
 
 *Figure 2 Balclutha Basement*
 
-![](../images/basins/green_rock.png)
+<a href="../images/basins/green_rock.png"><img src="../images/basins/green_rock.png" width="50%"></a>
 
 *Figure 3 Image 3*
 
@@ -40,4 +40,4 @@
 - [Balclutha_v20p7.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Boundaries/Smoothing/Balclutha_v20p7.txt)
 
 ---
-*Page generated on: March 19, 2025, 13:02 NZST/NZDT*
+*Page generated on: March 19, 2025, 14:20 NZST/NZDT*

@@ -18,4 +18,4 @@
 - [WakatipuBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/WakatipuBasin_WGS84_500m_v2020v07v06.in) (Submodel: N/A)
 
 ---
-*Page generated on: March 19, 2025, 13:02 NZST/NZDT*
+*Page generated on: March 19, 2025, 14:20 NZST/NZDT*

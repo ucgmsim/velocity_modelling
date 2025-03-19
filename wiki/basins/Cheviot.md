@@ -10,7 +10,7 @@
 
 
 ## Images
-![](../images/basins/cheviot_hanmer_northcanterbury.png)
+<a href="../images/basins/cheviot_hanmer_northcanterbury.png"><img src="../images/basins/cheviot_hanmer_northcanterbury.png" width="50%"></a>
 
 *Figure 1 Image 1*
 
@@ -27,4 +27,4 @@
 - [Cheviot_v19p1.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Boundaries/Smoothing/Cheviot_v19p1.txt)
 
 ---
-*Page generated on: March 19, 2025, 13:02 NZST/NZDT*
+*Page generated on: March 19, 2025, 14:20 NZST/NZDT*

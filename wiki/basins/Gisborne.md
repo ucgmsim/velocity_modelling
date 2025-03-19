@@ -10,11 +10,11 @@
 
 
 ## Images
-![](../images/basins/NI_mideast.png)
+<a href="../images/basins/NI_mideast.png"><img src="../images/basins/NI_mideast.png" width="50%"></a>
 
 *Figure 1 Location*
 
-![](../images/basins/grisborne_basement.png)
+<a href="../images/basins/grisborne_basement.png"><img src="../images/basins/grisborne_basement.png" width="50%"></a>
 
 *Figure 2 Gisborne Basement*
 
@@ -34,4 +34,4 @@
 - [Gisborne_v21p11.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Boundaries/Smoothing/Gisborne_v21p11.txt)
 
 ---
-*Page generated on: March 19, 2025, 13:02 NZST/NZDT*
+*Page generated on: March 19, 2025, 14:20 NZST/NZDT*

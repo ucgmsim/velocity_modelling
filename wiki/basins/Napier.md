@@ -10,11 +10,11 @@
 
 
 ## Images
-![](../images/basins/NI_mideast.png)
+<a href="../images/basins/NI_mideast.png"><img src="../images/basins/NI_mideast.png" width="50%"></a>
 
 *Figure 1 Location*
 
-![](../images/basins/napier_outline.png)
+<a href="../images/basins/napier_outline.png"><img src="../images/basins/napier_outline.png" width="50%"></a>
 
 *Figure 2 Napier Basement*
 
@@ -36,4 +36,4 @@
 - [Napier1_v21p7.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Boundaries/Smoothing/Napier1_v21p7.txt)
 
 ---
-*Page generated on: March 19, 2025, 13:02 NZST/NZDT*
+*Page generated on: March 19, 2025, 14:20 NZST/NZDT*

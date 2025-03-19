@@ -10,11 +10,11 @@
 
 
 ## Images
-![](../images/basins/waikato_hauraki_boundary.png)
+<a href="../images/basins/waikato_hauraki_boundary.png"><img src="../images/basins/waikato_hauraki_boundary.png" width="50%"></a>
 
 *Figure 1 Location*
 
-![](../images/basins/waikato_hauraki_outline.png)
+<a href="../images/basins/waikato_hauraki_outline.png"><img src="../images/basins/waikato_hauraki_outline.png" width="50%"></a>
 
 *Figure 2 WaikatoHauraki Basement*
 
@@ -31,4 +31,4 @@
 - [WaikatoHauraki_v19p7.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Boundaries/Smoothing/WaikatoHauraki_v19p7.txt)
 
 ---
-*Page generated on: March 19, 2025, 13:02 NZST/NZDT*
+*Page generated on: March 19, 2025, 14:20 NZST/NZDT*

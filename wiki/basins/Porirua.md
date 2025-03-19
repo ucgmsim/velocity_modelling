@@ -10,11 +10,11 @@
 
 
 ## Images
-![](../images/basins/NI_south.png)
+<a href="../images/basins/NI_south.png"><img src="../images/basins/NI_south.png" width="50%"></a>
 
 *Figure 1 Location*
 
-![](../images/basins/porirua_outline.png)
+<a href="../images/basins/porirua_outline.png"><img src="../images/basins/porirua_outline.png" width="50%"></a>
 
 *Figure 2 Porirua Basement*
 
@@ -32,4 +32,4 @@
 - [Porirua1_v21p7.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Boundaries/Smoothing/Porirua1_v21p7.txt)
 
 ---
-*Page generated on: March 19, 2025, 13:02 NZST/NZDT*
+*Page generated on: March 19, 2025, 14:20 NZST/NZDT*
