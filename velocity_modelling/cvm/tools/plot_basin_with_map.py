@@ -137,8 +137,8 @@ def plot_data(basement_file: Path, boundary_files: list[Path], smoothing_file: P
 
     # Add additional features for context
     #ax.add_feature(cfeature.COASTLINE, edgecolor='black', linewidth=0.5)
-    ax.add_feature(cfeature.LAKES, edgecolor='blue', facecolor='lightblue', alpha=0.5)
-    ax.add_feature(cfeature.RIVERS, edgecolor='lightblue', alpha=0.5)
+    #ax.add_feature(cfeature.LAKES, edgecolor='blue', facecolor='lightblue', alpha=0.5)
+    #ax.add_feature(cfeature.RIVERS, edgecolor='lightblue', alpha=0.5)
 
     # Add town names
     shp = shpreader.natural_earth(resolution='10m', category='cultural', name='populated_places')
@@ -164,13 +164,13 @@ def plot_data(basement_file: Path, boundary_files: list[Path], smoothing_file: P
                             transform=ccrs.PlateCarree(), alpha=0.8)
 
     # Adjust colorbar to match map height
-    cbar = plt.colorbar(heatmap, label='Basement Elevation (m)', aspect=20, pad=0.02)
+    cbar = plt.colorbar(heatmap, label='Elevation (m)', aspect=20, pad=0.02)
     cbar.ax.set_position([ax.get_position().x1 + 0.01, ax.get_position().y0,
                           0.02, ax.get_position().height])
 
     # Plot boundaries
     for i, (boundary_lons, boundary_lats) in enumerate(boundaries):
-        ax.plot(boundary_lons, boundary_lats, color='red', linewidth=1,
+        ax.plot(boundary_lons, boundary_lats, color='yellow', linewidth=1,
                 transform=ccrs.PlateCarree(), label=f'Basin outline' if i == 0 else None)
 
     # Plot smoothing (thinner and dashed)
