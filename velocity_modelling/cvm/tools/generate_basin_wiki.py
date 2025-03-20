@@ -5,9 +5,13 @@ This script reads the nzvm_registry.yaml file and generates a Markdown file for 
 The Markdown file contains details such as the basin type, author, images, notes, boundaries, surfaces, and smoothing boundaries. The generated files are saved in the wiki/basins directory.
 
 Usage:
-    python generate_basin_wiki.py nzvm_registry.yaml
+    python generate_basin_wiki.py [--registry <path>] [--scale-images]
 
-Output .md5 files are saved in the wiki/basins directory.
+By default, the script reads the nzvm_registry.yaml file from the parent directory.
+The --registry argument can be used to specify a different path.
+If the --scale-images flag is provided, images are scaled to 50% size with a clickable link to the full-size image.
+
+Output .md files are saved in the wiki/basins directory.
 
 """
 
@@ -23,11 +27,21 @@ import yaml
 parser = argparse.ArgumentParser(
     description="Generate Markdown files for basins from nzvm_registry.yaml"
 )
-parser.add_argument("yaml_file", type=Path, help="Path to the nzvm_registry.yaml file")
+parser.add_argument(
+    "--registry",
+    type=Path,
+    help="Path to the nzvm_registry.yaml file",
+    default="../nzvm_registry.yaml",
+)
+parser.add_argument(
+    "--scale-images",
+    action="store_true",
+    help="Scale images to 50% size with a clickable link to full size",
+)
 args = parser.parse_args()
 
 # Get the YAML file path from arguments
-yaml_file_path = args.yaml_file
+yaml_file_path = args.registry
 if not yaml_file_path.is_file():
     print(f"Error: {yaml_file_path} does not exist or is not a file")
     exit(1)
@@ -123,17 +137,18 @@ for basin_name, versions in basin_versions.items():
     # Images Section
     if images:
         md_content += "## Images\n"
-        image_descriptions = (
-            ["Location", f"{basin_name} Basement"] if len(images) >= 2 else ["Image 1"]
-        )
+
         for i, img in enumerate(images):
+            description = "Location" if i==0 else " ".join([s.capitalize() for s in Path(img).stem.split("_")]) # Use image filename as description
+
             updated_img_path = f"../images/{img}"
-            description = (
-                image_descriptions[i]
-                if i < len(image_descriptions)
-                else f"Image {i + 1}"
-            )
-            md_content += f"![]({updated_img_path})\n\n*Figure {i+1} {description}*\n\n"
+
+            if args.scale_images:
+                md_content += f'<a href="{updated_img_path}"><img src="{updated_img_path}" width="50%"></a>\n\n*Figure {i + 1} {description}*\n\n'
+            else:
+                md_content += (
+                    f"![]({updated_img_path})\n\n*Figure {i + 1} {description}*\n\n"
+                )
         md_content += "\n"
 
     # Notes Section
@@ -151,7 +166,9 @@ for basin_name, versions in basin_versions.items():
         md_content += "### Boundaries\n"
         for boundary in boundaries:
             filename = Path(boundary).name
-            updated_boundary_path = f"https://github.com/ucgmsim/Velocity-Model/tree/main/Data/{boundary}"
+            updated_boundary_path = (
+                f"https://github.com/ucgmsim/Velocity-Model/tree/main/Data/{boundary}"
+            )
             md_content += f"- [{filename}]({updated_boundary_path})\n"
         md_content += "\n"
 
@@ -175,7 +192,9 @@ for basin_name, versions in basin_versions.items():
     if smoothing != "N/A":
         md_content += "### Smoothing Boundaries\n"
         smoothing_filename = Path(smoothing).name
-        updated_smoothing_path = f"https://github.com/ucgmsim/Velocity-Model/tree/main/Data/{smoothing}"
+        updated_smoothing_path = (
+            f"https://github.com/ucgmsim/Velocity-Model/tree/main/Data/{smoothing}"
+        )
         md_content += f"- [{smoothing_filename}]({updated_smoothing_path})\n"
         md_content += "\n"
 

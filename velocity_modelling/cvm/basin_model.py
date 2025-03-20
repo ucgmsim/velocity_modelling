@@ -458,9 +458,6 @@ class PartialBasinSurfaceDepths:
         mesh_vector : MeshVector
             Contains the lat-lon point and depths.
         """
-        assert (
-            inbasin.in_basin_lat_lon
-        )  # this is only executed if inbasin.in_basin_lat_lon is True.
 
         for surface_ind, surface in enumerate(inbasin.basin_data.surfaces):
             adjacent_points = AdjacentPoints.find_basin_adjacent_points(

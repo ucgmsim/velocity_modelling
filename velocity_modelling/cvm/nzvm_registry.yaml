@@ -132,7 +132,7 @@ surface:
   - name: KarameaBasement
     path: USER20_BASINS/KarameaBasin_WGS84_500m_v12v11v2020.in
 
-  - name: MacKenzieBasement
+  - name: MackenzieBasement
     path: USER20_BASINS/mackenzie_proj_grid_WGS84.in
 
   - name: MarlboroughBasement
@@ -208,15 +208,15 @@ surface:
     path: Basins/Wellington/v21p8/Wellington_Grid_WGS84_Hill20210823_100_extracted_d.in
 
   - name: WestportBasement
-    path: STUDENTS_BASINS/Westport_surface_WGS84.txt
+    path: STUDENTS_BASINS/Westport_surface_WGS84.in
 
   - name: WhangaparoaBasement
-    path: USER20_BASINS/Whangaparoa_surface_WGS84.txt
+    path: USER20_BASINS/Whangaparoa_surface_WGS84.in
 
 
 
 basin:
-  - name: Canterbury_Pre_Quaternary_v18p1
+  - name: Canterbury_v18p1
     boundaries:
       - Boundaries/NewCanterburyBasinBoundary_WGS84_1m.txt
     surfaces:
@@ -235,7 +235,7 @@ basin:
       - name: BasementTopSurf
 
 
-  - name: Canterbury_Pre_Quaternary_v18p2
+  - name: Canterbury_v18p2
     boundaries:
       - Boundaries/NewCanterburyBasinBoundary_WGS84_1m.txt
     surfaces:
@@ -254,7 +254,7 @@ basin:
       - name: BasementTopSurf
 
 
-  - name: Canterbury_Pre_Quaternary_v18p3
+  - name: Canterbury_v18p3
     boundaries:
       - Boundaries/NewCanterburyBasinBoundary_WGS84_1m.txt
     surfaces:
@@ -273,11 +273,13 @@ basin:
       - name: BasementTopSurf
 
 
-  - name: Canterbury_Pre_Quaternary_v19p1
+  - name: Canterbury_v19p1
     type: 4
     author: Robin Lee
     images:
       - basins/canterbury_region.png
+    notes:
+      - Pre-Quaternary geology
     boundaries:
       - Boundaries/NewCanterburyBasinBoundary_WGS84_1m.txt
     surfaces:
@@ -299,7 +301,7 @@ basin:
 
 
 
-  - name: Canterbury_North_v19p1
+  - name: NorthCanterbury_v19p1
     type: 4
     author: Robin Lee
     images:
@@ -313,7 +315,7 @@ basin:
       - name: NorthCanterburyBasement
 
 
-  - name: Banks_Peninsula_Volcanics_v19p1
+  - name: BanksPeninsulaVolcanics_v19p1
     type: 4
     author: Robin Lee
     images:
@@ -391,11 +393,11 @@ basin:
 
   - name: Nelson_v19p1
     type: 2
-    author: Ethan Thomson
+    author: Robin Lee
     images:
       - basins/SI_north.png
     notes:
-      - https://nelson-richmond-geolmap.github.io/RGMap/ (for the geological map of the Nelson-Richmond area)
+      - Sourced from https://nelson-richmond-geolmap.github.io/RGMap/ (for the geological map of the Nelson-Richmond area)
     boundaries:
       - SI_BASINS/Nelson_Polygon_WGS84.txt
     surfaces:
@@ -435,8 +437,8 @@ basin:
       - basins/NI_south.png
       - basins/wellington_outline.png
     notes:
-      - v19.1, v19.6 : Robin Lee (basement update)
-      - v21.8 : Matt Hill (basement update)
+      - 19.1,19.6 Robin Lee (basement update)
+      - 21.8 Matt Hill (basement update)
 
     boundaries:
       - Basins/Wellington/v21p8/Wellington_Polygon_Wainuiomata_WGS84.txt
@@ -480,7 +482,7 @@ basin:
       - name: WanakaBasement
 
 
-  - name: MacKenzie_v20p6
+  - name: Mackenzie_v20p6
     type: 1
     author: Cameron Douglas (USER2020)
     images:
@@ -493,7 +495,7 @@ basin:
       - name: NZ_DEM
         submodel: canterbury1d_v2
 
-      - name: MacKenzieBasement
+      - name: MackenzieBasement
 
 
   - name: Wakatipu_v20p7
@@ -642,7 +644,8 @@ basin:
       - basins/SI_mid.png
       - basins/waitaki_hakataramea_outline.jpg
     notes:
-      - (Comment from the author) "Interects with the boundary of the Canterbury Basin.- Need to check boundary depth."
+      - (Comment from the author)
+      - Interacts with the boundary of the Canterbury Basin- Need to check boundary depth.
     boundaries:
       - USER20_BASINS/waitaki_outline_WGS84.txt
     surfaces:
@@ -804,7 +807,8 @@ basin:
       - basins/NI_mideast.png
       - basins/grisborne_basement.png
     notes:
-      - (Comment from the author) "Stop at Moto River, working around the East Cape from Gisborne. Haurere Point should be included in Whakatane"
+      - (Comment from the author)
+      - Stop at Moto River, working around the East Cape from Gisborne. Haurere Point should be included in Whakatane
     boundaries:
       - Basins/Gisborne/v21p11/Gisborne_Outline_WGS84_delim.dat
     surfaces:
@@ -823,8 +827,9 @@ basin:
       - basins/southern_hawkes_bay_outline.png
       - basins/southern_hawkes_bay_outline_extra.png
     notes:
-      - (Comment from the author) "Will be near the Wairarapa and Manawatu-Whanganui / Taranaki basins, but does not physically touch due to rock."
-      - (Comment from the author) "Physically connects to Northern Hawkes Bay in the Ngaruroro River valley. Need to check consistency in the bedrock surfaces at the intersection."
+      - (Comment from the author)
+      - Will be near the Wairarapa and Manawatu-Whanganui / Taranaki basins, but does not physically touch due to rock.
+      - Physically connects to Northern Hawkes Bay in the Ngaruroro River valley. Need to check consistency in the bedrock surfaces at the intersection.
       - Missing some parts in the east coast.
     boundaries:
       - Basins/Southern_Hawkes_Bay/v21p12/SHB_Outline_WGS84_delim.dat
@@ -881,7 +886,7 @@ basin:
     images:
       - basins/motubay_whangaparoa.png
     notes:
-      - See Motu Bay for additional notes
+      - See [MotuBay](MotuBay.md) for additional notes
     boundaries:
       - USER20_BASINS/Whangaparoa_outline_WGS84.txt
     surfaces:

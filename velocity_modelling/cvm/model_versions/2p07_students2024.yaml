@@ -5,9 +5,9 @@ surfaces:
 tomography: 2020_NZ_OFFSHORE
 basin_edge_smoothing: true
 basins:
-  - Canterbury_Pre_Quaternary_v19p1
-  - Canterbury_North_v19p1
-  - Banks_Peninsula_Volcanics_v19p1
+  - Canterbury_v19p1
+  - North_Canterbury_v19p1
+  - BanksPeninsulaVolcanics_v19p1
   - Kaikoura_v19p1
   - Cheviot_v19p1
   - Hanmer_v19p1
@@ -16,7 +16,7 @@ basins:
   - Wellington_v21p8
   - WaikatoHauraki_v19p7
   - Wanaka_v20p6
-  - MacKenzie_v20p6
+  - Mackenzie_v20p6
   - Wakatipu_v20p7
   - Alexandra_v20p7
   - Ranfurly_v20p7
