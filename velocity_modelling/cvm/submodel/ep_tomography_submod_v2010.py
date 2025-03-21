@@ -21,7 +21,7 @@ from velocity_modelling.cvm.gtl import v30gtl_vectorized
 from velocity_modelling.cvm.interpolate import (
     linear_interpolation_vectorized,
 )
-from velocity_modelling.cvm.submodel import canterbury1d_v1
+from velocity_modelling.cvm.submodel import canterbury1d_submod
 from velocity_modelling.cvm.velocity3d import (
     QualitiesVector,
 )
