@@ -10,17 +10,21 @@
 
 
 ## Images
-<a href="../images/basins/SI_se.png"><img src="../images/basins/SI_se.png" width="50%"></a>
+<a href="../images/maps/SI_se.png"><img src="../images/maps/SI_se.png" width="75%"></a>
 
 *Figure 1 Location*
 
-<a href="../images/basins/green_class.png"><img src="../images/basins/green_class.png" width="50%"></a>
+<a href="../images/regional/Balclutha_basin_map.png"><img src="../images/regional/Balclutha_basin_map.png" width="75%"></a>
 
-*Figure 2 Balclutha Basement*
+*Figure 2 Balclutha Basin Map*
 
-<a href="../images/basins/green_rock.png"><img src="../images/basins/green_rock.png" width="50%"></a>
+<a href="../images/basins/green_class.png"><img src="../images/basins/green_class.png" width="75%"></a>
 
-*Figure 3 Image 3*
+*Figure 3 Green Class*
+
+<a href="../images/basins/green_rock.png"><img src="../images/basins/green_rock.png" width="75%"></a>
+
+*Figure 4 Green Rock*
 
 
 ## Notes
@@ -30,14 +34,22 @@
 
 ## Data
 ### Boundaries
+- [Balclutha_outline_WGS84.txt](../../velocity_modelling/cvm/data/regional/Balclutha/Balclutha_outline_WGS84.txt)
+
+### Surfaces
+- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [Balclutha_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/Balclutha/Balclutha_basement_WGS84.in) (Submodel: N/A)
+
+### Smoothing Boundaries
+- [Balclutha_smoothing.txt](../../velocity_modelling/cvm/data/regional/Balclutha/Balclutha_smoothing.txt)
+
+## Data retrieved from
+### Boundaries
 - [bal_outline_WGS84.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/bal_outline_WGS84.txt)
 
 ### Surfaces
-- [NZ_DEM](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [BalcluthaBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/bal_proj_WGS84.in) (Submodel: N/A)
-
-### Smoothing Boundaries
-- [Balclutha_v20p7.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Boundaries/Smoothing/Balclutha_v20p7.txt)
+- [NZ_DEM_HD.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in)
+- [bal_proj_WGS84.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/bal_proj_WGS84.in)
 
 ---
-*Page generated on: March 19, 2025, 14:20 NZST/NZDT*
+*Page generated on: March 22, 2025, 19:41 NZST/NZDT*

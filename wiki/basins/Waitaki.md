@@ -10,28 +10,42 @@
 
 
 ## Images
-<a href="../images/basins/SI_mid.png"><img src="../images/basins/SI_mid.png" width="50%"></a>
+<a href="../images/maps/SI_mid.png"><img src="../images/maps/SI_mid.png" width="75%"></a>
 
 *Figure 1 Location*
 
-<a href="../images/basins/waitaki_hakataramea_outline.jpg"><img src="../images/basins/waitaki_hakataramea_outline.jpg" width="50%"></a>
+<a href="../images/regional/Waitaki_basin_map.png"><img src="../images/regional/Waitaki_basin_map.png" width="75%"></a>
 
-*Figure 2 Waitaki Basement*
+*Figure 2 Waitaki Basin Map*
+
+<a href="../images/basins/waitaki_hakataramea_outline.jpg"><img src="../images/basins/waitaki_hakataramea_outline.jpg" width="75%"></a>
+
+*Figure 3 Waitaki Hakataramea Outline*
 
 
 ## Notes
-- (Comment from the author) "Interects with the boundary of the Canterbury Basin.- Need to check boundary depth."
+- (Comment from the author)
+- Interacts with the boundary of the Canterbury Basin- Need to check boundary depth.
+- Hakataramea and Waitaki share the same basement data.
 
 ## Data
+### Boundaries
+- [Waitaki_outline_WGS84.txt](../../velocity_modelling/cvm/data/regional/Waitaki/Waitaki_outline_WGS84.txt)
+
+### Surfaces
+- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [Waitaki_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/Waitaki/Waitaki_basement_WGS84.in) (Submodel: N/A)
+
+### Smoothing Boundaries
+- [Waitaki_smoothing.txt](../../velocity_modelling/cvm/data/regional/Waitaki/Waitaki_smoothing.txt)
+
+## Data retrieved from
 ### Boundaries
 - [waitaki_outline_WGS84.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/waitaki_outline_WGS84.txt)
 
 ### Surfaces
-- [NZ_DEM](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [WaitakiBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/wai-hak_WGS84.in) (Submodel: N/A)
-
-### Smoothing Boundaries
-- [Waitaki_v20p8.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Boundaries/Smoothing/Waitaki_v20p8.txt)
+- [NZ_DEM_HD.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in)
+- [wai-hak_WGS84.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/wai-hak_WGS84.in)
 
 ---
-*Page generated on: March 19, 2025, 14:20 NZST/NZDT*
+*Page generated on: March 22, 2025, 19:41 NZST/NZDT*

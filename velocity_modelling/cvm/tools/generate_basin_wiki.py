@@ -36,7 +36,7 @@ parser.add_argument(
 parser.add_argument(
     "--scale-images",
     action="store_true",
-    help="Scale images to 50% size with a clickable link to full size",
+    help="Scale images to 75% size with a clickable link to full size",
 )
 args = parser.parse_args()
 
@@ -101,7 +101,7 @@ for basin_name, versions in basin_versions.items():
 
     basin_type = basin_data.get("type", "N/A")
     author = basin_data.get("author", "Unknown")
-    images = basin_data.get("images", [])
+    images = basin_data.get("wiki_images", [])
     notes = basin_data.get("notes", [])
     boundaries = basin_data.get("boundaries", [])
     surfaces = basin_data.get("surfaces", [])
@@ -144,7 +144,7 @@ for basin_name, versions in basin_versions.items():
             updated_img_path = f"../images/{img}"
 
             if args.scale_images:
-                md_content += f'<a href="{updated_img_path}"><img src="{updated_img_path}" width="50%"></a>\n\n*Figure {i + 1} {description}*\n\n'
+                md_content += f'<a href="{updated_img_path}"><img src="{updated_img_path}" width="75%"></a>\n\n*Figure {i + 1} {description}*\n\n'
             else:
                 md_content += (
                     f"![]({updated_img_path})\n\n*Figure {i + 1} {description}*\n\n"
@@ -166,9 +166,8 @@ for basin_name, versions in basin_versions.items():
         md_content += "### Boundaries\n"
         for boundary in boundaries:
             filename = Path(boundary).name
-            updated_boundary_path = (
-                f"https://github.com/ucgmsim/Velocity-Model/tree/main/Data/{boundary}"
-            )
+            # Use CVM_DATA path instead of GitHub URL
+            updated_boundary_path = f"../../velocity_modelling/cvm/data/{boundary}"
             md_content += f"- [{filename}]({updated_boundary_path})\n"
         md_content += "\n"
 
@@ -176,13 +175,12 @@ for basin_name, versions in basin_versions.items():
     if surfaces:
         md_content += "### Surfaces\n"
         for surface in surfaces:
-            surface_name = surface.get("name", "Unnamed Surface")
+            # Handle direct path to surface files
+            surface_path = surface.get("path", "Path not found")
+            surface_name = Path(surface_path).name if surface_path != "Path not found" else "Unnamed Surface"
             submodel = surface.get("submodel", "N/A")
-            surface_entry = next(
-                (s for s in data["surface"] if s["name"] == surface_name), None
-            )
-            surface_path = surface_entry["path"] if surface_entry else "Path not found"
-            updated_surface_path = f"https://github.com/ucgmsim/Velocity-Model/tree/main/Data/{surface_path}"
+            # Use CVM_DATA path instead of GitHub URL
+            updated_surface_path = f"../../velocity_modelling/cvm/data/{surface_path}"
             md_content += (
                 f"- [{surface_name}]({updated_surface_path}) (Submodel: {submodel})\n"
             )
@@ -192,11 +190,24 @@ for basin_name, versions in basin_versions.items():
     if smoothing != "N/A":
         md_content += "### Smoothing Boundaries\n"
         smoothing_filename = Path(smoothing).name
-        updated_smoothing_path = (
-            f"https://github.com/ucgmsim/Velocity-Model/tree/main/Data/{smoothing}"
-        )
+        # Use CVM_DATA path instead of GitHub URL
+        updated_smoothing_path = f"../../velocity_modelling/cvm/data/{smoothing}"
         md_content += f"- [{smoothing_filename}]({updated_smoothing_path})\n"
         md_content += "\n"
+
+    # Retrieved From Subsection
+    retrieved_from = basin_data.get("retrieved_from", {})
+    if retrieved_from:
+        md_content += "## Data retrieved from\n"
+        for item in retrieved_from:
+            for category, paths in item.items():
+                md_content += f"### {category.capitalize()}\n"
+                for path in paths:
+                    filename = Path(path).name
+                    # Use GitHub URL for retrieved_from paths
+                    updated_path = f"https://github.com/ucgmsim/Velocity-Model/tree/main/Data/{path}"
+                    md_content += f"- [{filename}]({updated_path})\n"
+                md_content += "\n"
 
     # Add timestamp at the bottom in NZ time
     nz_tz = pytz.timezone("Pacific/Auckland")

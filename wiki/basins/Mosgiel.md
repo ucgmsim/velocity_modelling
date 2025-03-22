@@ -10,17 +10,21 @@
 
 
 ## Images
-<a href="../images/basins/SI_se.png"><img src="../images/basins/SI_se.png" width="50%"></a>
+<a href="../images/maps/SI_se.png"><img src="../images/maps/SI_se.png" width="75%"></a>
 
 *Figure 1 Location*
 
-<a href="../images/basins/green_class.png"><img src="../images/basins/green_class.png" width="50%"></a>
+<a href="../images/regional/Mosgiel_basin_map.png"><img src="../images/regional/Mosgiel_basin_map.png" width="75%"></a>
 
-*Figure 2 Mosgiel Basement*
+*Figure 2 Mosgiel Basin Map*
 
-<a href="../images/basins/green_rock.png"><img src="../images/basins/green_rock.png" width="50%"></a>
+<a href="../images/basins/green_class.png"><img src="../images/basins/green_class.png" width="75%"></a>
 
-*Figure 3 Image 3*
+*Figure 3 Green Class*
+
+<a href="../images/basins/green_rock.png"><img src="../images/basins/green_rock.png" width="75%"></a>
+
+*Figure 4 Green Rock*
 
 
 ## Notes
@@ -30,11 +34,19 @@
 
 ## Data
 ### Boundaries
+- [Mosgiel_outline_WGS84.txt](../../velocity_modelling/cvm/data/regional/Mosgiel/Mosgiel_outline_WGS84.txt)
+
+### Surfaces
+- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [Mosgiel_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/Mosgiel/Mosgiel_basement_WGS84.in) (Submodel: N/A)
+
+## Data retrieved from
+### Boundaries
 - [mos_outline_WGS84.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/mos_outline_WGS84.txt)
 
 ### Surfaces
-- [NZ_DEM](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [MosgielBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/mos_proj_WGS84.in) (Submodel: N/A)
+- [NZ_DEM_HD.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in)
+- [mos_proj_WGS84.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/mos_proj_WGS84.in)
 
 ---
-*Page generated on: March 19, 2025, 14:20 NZST/NZDT*
+*Page generated on: March 22, 2025, 19:41 NZST/NZDT*

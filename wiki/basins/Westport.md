@@ -5,17 +5,26 @@
 |---------|---------------------|
 | Version | 24p9           |
 | Type    | N/A        |
-| Author  | Unknown            |
+| Author  | Kaleb Finn / Ayushi Tiwari (ENCN493)            |
 | Created | 2024-09           |
+
+
+## Images
+<a href="../images/regional/Westport_basin_map.png"><img src="../images/regional/Westport_basin_map.png" width="75%"></a>
+
+*Figure 1 Location*
 
 
 ## Data
 ### Boundaries
-- [Westport_outline_WGS84.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/STUDENTS_BASINS/Westport_outline_WGS84.txt)
+- [Westport_outline_WGS84.txt](../../velocity_modelling/cvm/data/regional/Westport/Westport_outline_WGS84.txt)
 
 ### Surfaces
-- [NZ_DEM](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [WestportBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/STUDENTS_BASINS/Westport_surface_WGS84.txt) (Submodel: N/A)
+- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [Westport_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/Westport/Westport_basement_WGS84.in) (Submodel: N/A)
+
+### Smoothing Boundaries
+- [Westport_smoothing.txt](../../velocity_modelling/cvm/data/regional/Westport/Westport_smoothing.txt)
 
 ---
-*Page generated on: March 19, 2025, 14:20 NZST/NZDT*
+*Page generated on: March 22, 2025, 19:41 NZST/NZDT*

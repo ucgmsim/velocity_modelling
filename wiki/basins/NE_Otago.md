@@ -10,16 +10,35 @@
 
 
 ## Images
-<a href="../images/basins/SI_se.png"><img src="../images/basins/SI_se.png" width="50%"></a>
+<a href="../images/maps/SI_se.png"><img src="../images/maps/SI_se.png" width="75%"></a>
 
 *Figure 1 Location*
 
-<a href="../images/basins/ne_otago_basins_classification-page-001.jpg"><img src="../images/basins/ne_otago_basins_classification-page-001.jpg" width="50%"></a>
+<a href="../images/regional/NE_Otago_basin_map.png"><img src="../images/regional/NE_Otago_basin_map.png" width="75%"></a>
 
-*Figure 2 NE_Otago Basement*
+*Figure 2 Ne Otago Basin Map*
 
+<a href="../images/basins/ne_otago_basins_classification-page-001.jpg"><img src="../images/basins/ne_otago_basins_classification-page-001.jpg" width="75%"></a>
+
+*Figure 3 Ne Otago Basins Classification-page-001*
+
+
+## Notes
+- Alexandra, Ranfurly and NE_Otago share the same basement
 
 ## Data
+### Boundaries
+- [NE_Otago_outline_WGS84_1.txt](../../velocity_modelling/cvm/data/regional/NE_Otago/NE_Otago_outline_WGS84_1.txt)
+- [NE_Otago_outline_WGS84_2.txt](../../velocity_modelling/cvm/data/regional/NE_Otago/NE_Otago_outline_WGS84_2.txt)
+- [NE_Otago_outline_WGS84_3.txt](../../velocity_modelling/cvm/data/regional/NE_Otago/NE_Otago_outline_WGS84_3.txt)
+- [NE_Otago_outline_WGS84_4.txt](../../velocity_modelling/cvm/data/regional/NE_Otago/NE_Otago_outline_WGS84_4.txt)
+- [NE_Otago_outline_WGS84_5.txt](../../velocity_modelling/cvm/data/regional/NE_Otago/NE_Otago_outline_WGS84_5.txt)
+
+### Surfaces
+- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [NE_Otago_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/NE_Otago/NE_Otago_basement_WGS84.in) (Submodel: N/A)
+
+## Data retrieved from
 ### Boundaries
 - [NE_otago_A_outline.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/NE_otago/NE_otago_A_outline.txt)
 - [NE_otago_B_outline.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/NE_otago/NE_otago_B_outline.txt)
@@ -28,8 +47,8 @@
 - [NE_otago_E_outline.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/NE_otago/NE_otago_E_outline.txt)
 
 ### Surfaces
-- [NZ_DEM](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [RanAlexBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/ran-alex_proj_WGS84.in) (Submodel: N/A)
+- [NZ_DEM_HD.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in)
+- [ran-alex_proj_WGS84.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/ran-alex_proj_WGS84.in)
 
 ---
-*Page generated on: March 19, 2025, 14:20 NZST/NZDT*
+*Page generated on: March 22, 2025, 19:41 NZST/NZDT*

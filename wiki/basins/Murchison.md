@@ -10,22 +10,34 @@
 
 
 ## Images
-<a href="../images/basins/SI_north.png"><img src="../images/basins/SI_north.png" width="50%"></a>
+<a href="../images/maps/SI_north.png"><img src="../images/maps/SI_north.png" width="75%"></a>
 
 *Figure 1 Location*
 
-<a href="../images/basins/murchison_outline.png"><img src="../images/basins/murchison_outline.png" width="50%"></a>
+<a href="../images/regional/Murchison_basin_map.png"><img src="../images/regional/Murchison_basin_map.png" width="75%"></a>
 
-*Figure 2 Murchison Basement*
+*Figure 2 Murchison Basin Map*
+
+<a href="../images/basins/murchison_outline.png"><img src="../images/basins/murchison_outline.png" width="75%"></a>
+
+*Figure 3 Murchison Outline*
 
 
 ## Data
 ### Boundaries
+- [Murchison_outline_WGS84.txt](../../velocity_modelling/cvm/data/regional/Murchison/Murchison_outline_WGS84.txt)
+
+### Surfaces
+- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [Murchison_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/Murchison/Murchison_basement_WGS84.in) (Submodel: N/A)
+
+## Data retrieved from
+### Boundaries
 - [Murchison_Basin_Outline_v1_WGS84.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/Murchison_Basin_Outline_v1_WGS84.txt)
 
 ### Surfaces
-- [NZ_DEM](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [MurchisonBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/MurchisonBasin_WGS84_500m_v2020v07v15.in) (Submodel: N/A)
+- [NZ_DEM_HD.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in)
+- [MurchisonBasin_WGS84_500m_v2020v07v15.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/MurchisonBasin_WGS84_500m_v2020v07v15.in)
 
 ---
-*Page generated on: March 19, 2025, 14:20 NZST/NZDT*
+*Page generated on: March 22, 2025, 19:41 NZST/NZDT*
