@@ -139,7 +139,11 @@ for basin_name, versions in basin_versions.items():
         md_content += "## Images\n"
 
         for i, img in enumerate(images):
-            description = "Location" if i==0 else " ".join([s.capitalize() for s in Path(img).stem.split("_")]) # Use image filename as description
+            description = (
+                "Location"
+                if i == 0
+                else " ".join([s.capitalize() for s in Path(img).stem.split("_")])
+            )  # Use image filename as description
 
             updated_img_path = f"../images/{img}"
 
@@ -177,7 +181,11 @@ for basin_name, versions in basin_versions.items():
         for surface in surfaces:
             # Handle direct path to surface files
             surface_path = surface.get("path", "Path not found")
-            surface_name = Path(surface_path).name if surface_path != "Path not found" else "Unnamed Surface"
+            surface_name = (
+                Path(surface_path).name
+                if surface_path != "Path not found"
+                else "Unnamed Surface"
+            )
             submodel = surface.get("submodel", "N/A")
             # Use CVM_DATA path instead of GitHub URL
             updated_surface_path = f"../../velocity_modelling/cvm/data/{surface_path}"

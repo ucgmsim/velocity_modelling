@@ -81,7 +81,7 @@ def offshore_basinmodel_vectorized(
     z_indices_offshore = z_indices[offshore_apply_mask]
     depths_offshore = depths[offshore_apply_mask]
     if z_indices_offshore.size > 0:
-        canterbury1d_v1.main_vectorized(
+        canterbury1d_submod.main_vectorized(
             z_indices_offshore,
             depths_offshore,
             qualities_vector,

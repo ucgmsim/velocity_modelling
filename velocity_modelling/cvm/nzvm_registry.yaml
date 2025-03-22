@@ -1010,6 +1010,7 @@ submodel:
     - name: canterbury1d_v2_pliocene_enforced
       type: vm1d
       module: canterbury1d_submod
+      data: global/vm1d/Cant1D_v2_Pliocene_Enforced.fd_modfile
 
     - name: ep_tomography_submod_v2010
       type: tomography

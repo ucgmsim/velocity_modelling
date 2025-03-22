@@ -588,10 +588,10 @@ class QualitiesVector:
                     on_boundary,
                     interpolated_global_surface_values,
                 )
-            elif name == "canterbury1d_v1":
+            elif name == "canterbury1d_v2":
                 from velocity_modelling.cvm.submodel import canterbury1d_submod
 
-                canterbury1d_v1.main_vectorized(
+                canterbury1d_submod.main_vectorized(
                     index_subset, depth_subset, self, velo_mod_1d_data
                 )
             else:
@@ -654,7 +654,7 @@ class QualitiesVector:
         ]:
             from velocity_modelling.cvm.submodel import canterbury1d_submod
 
-            canterbury1d_v1.main_vectorized(z_indices, depths, self, submodel_data)
+            canterbury1d_submod.main_vectorized(z_indices, depths, self, submodel_data)
         elif submodel_name == "paleogene_submod_v1":
             from velocity_modelling.cvm.submodel import paleogene_submod_v1
 

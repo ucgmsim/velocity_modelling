@@ -116,20 +116,28 @@ class CVMRegistry:
             global_surfaces_list = []
 
         # Check if posInfSurf and negInfSurf paths are present
-        has_pos_inf = any(s.get("path") == "global/surface/posInf.in" for s in global_surfaces_list)
-        has_neg_inf = any(s.get("path") == "global/surface/negInf.in" for s in global_surfaces_list)
-        
+        has_pos_inf = any(
+            s.get("path") == "global/surface/posInf.in" for s in global_surfaces_list
+        )
+        has_neg_inf = any(
+            s.get("path") == "global/surface/negInf.in" for s in global_surfaces_list
+        )
+
         # Add posInfSurf and negInfSurf if needed
         if not has_pos_inf:
-            global_surfaces_list.insert(0, {"path": "global/surface/posInf.in", "submodel": "nan_submod"})
+            global_surfaces_list.insert(
+                0, {"path": "global/surface/posInf.in", "submodel": "nan_submod"}
+            )
         if not has_neg_inf:
-            global_surfaces_list.append({"path": "global/surface/negInf.in", "submodel": None})
-            
+            global_surfaces_list.append(
+                {"path": "global/surface/negInf.in", "submodel": None}
+            )
+
         self.global_params["surfaces"] = global_surfaces_list
 
         # Create unique identifiers for surfaces (using paths)
         self.global_params["surface_paths"] = [
-            d.get("path") for d in self.global_params["surfaces"]
+            Path(d.get("path")) for d in self.global_params["surfaces"]
         ]
         self.global_params["submodels"] = [
             d.get("submodel") for d in self.global_params["surfaces"]
@@ -357,12 +365,17 @@ class CVMRegistry:
             raise KeyError(f"Submodel {submodel_name} not found")
 
         if submodel["type"] == "vm1d":
-            vm1d = self.get_info("vm1d", submodel["name"])
+            vm1d = self.get_info("submodel", submodel["name"])
             if vm1d is None:
                 self.logger.log(
                     logging.ERROR, f"Error: vm1d {submodel['name']} not found."
                 )
                 raise KeyError(f"vm1d {submodel['name']} not found")
+            if vm1d["type"] != "vm1d":
+                self.logger.log(
+                    logging.ERROR, f"Error: {submodel['name']} is not a 1D model."
+                )
+                raise KeyError(f"{submodel['name']} is not a 1D model")
             return (submodel_name, self.load_1d_velo_sub_model(vm1d["data"]))
         elif submodel["type"] in {"relation", "perturbation"}:
             self.logger.log(
@@ -401,15 +414,14 @@ class CVMRegistry:
             _ = basin_surface["path"]
         except KeyError:
             self.logger.log(
-                logging.ERROR, f"Error: Basin surface lacks required 'path' field."
+                logging.ERROR, "Error: Basin surface lacks required 'path' field."
             )
             raise KeyError("Basin surface definition must include 'path' field")
-        
 
         self.logger.log(
             logging.DEBUG, f"Loading basin surface file {basin_surface['path']}"
         )
-        basin_surface_path = self.get_full_path(basin_surface['path'])
+        basin_surface_path = self.get_full_path(basin_surface["path"])
         if basin_surface_path in self.cache:
             self.logger.log(logging.DEBUG, f"{basin_surface_path} loaded from cache")
             return self.cache[basin_surface_path]
@@ -470,7 +482,7 @@ class CVMRegistry:
     def load_tomo_surface_data(
         self,
         tomo_name: str,
-        offshore_surface_name: str = DEFAULT_OFFSHORE_DISTANCE,
+        offshore_surface_path: Path = DEFAULT_OFFSHORE_DISTANCE,
         offshore_v1d_name: str = DEFAULT_OFFSHORE_1D_MODEL,
     ):
         """
@@ -480,8 +492,8 @@ class CVMRegistry:
         ----------
         tomo_name : str
             The name of the tomography data in the registry.
-        offshore_surface_name : str, optional
-            The name of the offshore distance surface in the registry.
+        offshore_surface_path : Path, optional
+            The path to the offshore distance surface.
         offshore_v1d_name : str, optional
             The name of the offshore 1D velocity model in the registry.
 
@@ -511,11 +523,11 @@ class CVMRegistry:
 
         # Determine format based on the path rather than an explicit format attribute
         tomo_path = self.get_full_path(tomo["path"])
-        if tomo_path.is_file() and tomo_path.suffix == '.h5':
+        if tomo_path.is_file() and tomo_path.suffix == ".h5":
             data_format = "HDF5"
         else:
             data_format = "ASCII"
-            
+
         self.logger.log(
             logging.INFO,
             f"Loading tomography data '{tomo_name}' ({data_format} format) with {len(surf_depth)} depth levels",
@@ -528,27 +540,26 @@ class CVMRegistry:
             surfaces = self._load_ascii_surfaces(tomo["path"], surf_depth)
 
         # Load offshore data (unchanged)
-        offshore_surface_info = self.get_info("surface", offshore_surface_name)
-        if offshore_surface_info is None:
-            self.logger.log(
-                logging.ERROR,
-                f"Error: Offshore distance surface {offshore_surface_name} not found",
-            )
-            raise KeyError(
-                f"Offshore distance surface {offshore_surface_name} not found"
-            )
-        offshore_distance_surface = self.load_global_surface(
-            offshore_surface_info["path"]
+        self.logger.log(
+            logging.INFO,
+            f"Loading offshore distance surface: {offshore_surface_path}",
         )
+        offshore_distance_surface = self.load_global_surface(offshore_surface_path)
 
-        offshore_v1d_info = self.get_info("vm1d", offshore_v1d_name)
+        offshore_v1d_info = self.get_info("submodel", offshore_v1d_name)
         if offshore_v1d_info is None:
             self.logger.log(
                 logging.ERROR,
                 f"Error: Offshore 1D model {offshore_v1d_name} not found",
             )
             raise KeyError(f"Offshore 1D model {offshore_v1d_name} not found")
-        offshore_basin_model_1d = self.load_1d_velo_sub_model(offshore_v1d_info["path"])
+        if offshore_v1d_info["type"] != "vm1d":
+            self.logger.log(
+                logging.ERROR,
+                f"Error: Offshore 1D model {offshore_v1d_name} is not a 1D model",
+            )
+            raise KeyError(f"Offshore 1D model {offshore_v1d_name} is not a 1D model")
+        offshore_basin_model_1d = self.load_1d_velo_sub_model(offshore_v1d_info["data"])
 
         return TomographyData(
             name=tomo_name,
@@ -704,7 +715,7 @@ class CVMRegistry:
 
         self.logger.log(logging.INFO, "Loading global surfaces")
         global_surfaces = self.load_global_surface_data(
-            self.global_params["surface_names"]
+            self.global_params["surface_paths"]
         )
 
         self.logger.log(logging.INFO, "Loading global velocity submodel data")
@@ -820,15 +831,15 @@ class CVMRegistry:
             )
 
     def load_global_surface_data(
-        self, global_surface_names: list[str]
+        self, global_surface_paths: list[Path]
     ) -> list[GlobalSurfaceRead]:
         """
         Load multiple global surfaces from the registry.
 
         Parameters
         ----------
-        global_surface_names : list[str]
-            List of global surface names defined in the registry.
+        global_surface_paths : list[Path]
+            List of global surface paths defined in the registry.
 
         Returns
         -------
@@ -836,18 +847,14 @@ class CVMRegistry:
             List of GlobalSurfaceRead objects containing the loaded surface data.
         """
         surfaces = []
-        for name in global_surface_names:
-            surface_info = self.get_info("surface", name)
-            if surface_info:
-                self.logger.log(logging.DEBUG, f"Loading global surface: {name}")
-                surfaces.append(self.load_global_surface(surface_info["path"]))
-            else:
-                self.logger.log(
-                    logging.WARNING,
-                    f"Warning: Surface {name} not found in registry",
-                )
+        for surface_path in global_surface_paths:
+            self.logger.log(
+                logging.DEBUG, f"Loading global surface: {surface_path.name}"
+            )
+            surfaces.append(self.load_global_surface(surface_path))
+
         self.logger.log(
-            logging.INFO, f"Loaded {len(global_surface_names)} global surfaces"
+            logging.INFO, f"Loaded {len(global_surface_paths)} global surfaces"
         )
         return surfaces
 

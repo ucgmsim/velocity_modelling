@@ -1,7 +1,6 @@
 import os
-import shutil
-from pathlib import Path
 import re
+import shutil
 
 # Base paths
 source_base = "~/Velocity-Model/Data"  # Where the original files are located
@@ -48,85 +47,93 @@ surface_paths = {
     "MotuBayBasement": "Basins/East_Cape/v22p3/Motu_river_Surface_Export.in",
     "WhangaparoaBasement": "USER20_BASINS/Whangaparoa_surface_WGS84.txt",
     "TeAnauBasement": "STUDENTS_BASINS/TeAnau_surface_WGS84.in",
-    "WestportBasement": "STUDENTS_BASINS/Westport_surface_WGS84.in"
+    "WestportBasement": "STUDENTS_BASINS/Westport_surface_WGS84.in",
 }
 
 # Basin data (latest versions only)
 basins = {
     "Canterbury_Pre_Quaternary_v19p1": {
         "boundaries": ["Boundaries/NewCanterburyBasinBoundary_WGS84_1m.txt"],
-        "surfaces": ["CantDEM", "PlioceneTop_46_v8p9p18", "MioceneTop", "PaleogeneTop", "BasementTopSurf"],
-        "smoothing": "Boundaries/Smoothing/Canterbury_Pre_Quaternary_v19p1.txt"
+        "surfaces": [
+            "CantDEM",
+            "PlioceneTop_46_v8p9p18",
+            "MioceneTop",
+            "PaleogeneTop",
+            "BasementTopSurf",
+        ],
+        "smoothing": "Boundaries/Smoothing/Canterbury_Pre_Quaternary_v19p1.txt",
     },
     "Canterbury_North_v19p1": {
         "boundaries": ["SI_BASINS/NorthCanterbury_Polygon_WGS84.txt"],
         "surfaces": ["NZ_DEM", "NorthCanterburyBasement"],
-        "smoothing": None
+        "smoothing": None,
     },
     "Banks_Peninsula_Volcanics_v19p1": {
         "boundaries": ["Boundaries/BPVBoundary.txt"],
         "surfaces": ["BPVTop", "MioceneTop"],
-        "smoothing": None
+        "smoothing": None,
     },
     "Kaikoura_v19p1": {
         "boundaries": ["SI_BASINS/Kaikoura_Polygon_WGS84.txt"],
         "surfaces": ["NZ_DEM", "KaikouraBasement"],
-        "smoothing": "Boundaries/Smoothing/Kaikoura_v19p1.txt"
+        "smoothing": "Boundaries/Smoothing/Kaikoura_v19p1.txt",
     },
     "Cheviot_v19p1": {
         "boundaries": ["SI_BASINS/Cheviot_Polygon_WGS84.txt"],
         "surfaces": ["NZ_DEM", "CheviotBasement"],
-        "smoothing": "Boundaries/Smoothing/Cheviot_v19p1.txt"
+        "smoothing": "Boundaries/Smoothing/Cheviot_v19p1.txt",
     },
     "Hanmer_v19p1": {
         "boundaries": ["SI_BASINS/Hanmer_Polygon_WGS84.txt"],
         "surfaces": ["NZ_DEM", "HanmerBasement"],
-        "smoothing": None
+        "smoothing": None,
     },
     "Marlborough_v19p1": {
         "boundaries": ["SI_BASINS/Marlborough_Polygon_WGS84_v0p1.txt"],
         "surfaces": ["NZ_DEM", "MarlboroughBasement"],
-        "smoothing": "Boundaries/Smoothing/Marlborough_v19p1.txt"
+        "smoothing": "Boundaries/Smoothing/Marlborough_v19p1.txt",
     },
     "Nelson_v19p1": {
         "boundaries": ["SI_BASINS/Nelson_Polygon_WGS84.txt"],
         "surfaces": ["NZ_DEM", "NelsonBasement"],
-        "smoothing": "Boundaries/Smoothing/Nelson_v19p1.txt"
+        "smoothing": "Boundaries/Smoothing/Nelson_v19p1.txt",
     },
     "Wellington_v21p8": {
-        "boundaries": ["Basins/Wellington/v21p8/Wellington_Polygon_Wainuiomata_WGS84.txt"],
+        "boundaries": [
+            "Basins/Wellington/v21p8/Wellington_Polygon_Wainuiomata_WGS84.txt"
+        ],
         "surfaces": ["NZ_DEM", "WellingtonBasement_v21p8"],
-        "smoothing": "Boundaries/Smoothing/Wellington_v21p8.txt"
+        "smoothing": "Boundaries/Smoothing/Wellington_v21p8.txt",
     },
     "WaikatoHauraki_v19p7": {
         "boundaries": ["Boundaries/WaikatoHaurakiBasinEdge_WGS84.txt"],
         "surfaces": ["NZ_DEM", "WaikatoHaurakiBasement"],
-        "smoothing": "Boundaries/Smoothing/WaikatoHauraki_v19p7.txt"
+        "smoothing": "Boundaries/Smoothing/WaikatoHauraki_v19p7.txt",
     },
     "Wanaka_v20p6": {
         "boundaries": ["USER20_BASINS/WanakaOutlineWGS84.txt"],
         "surfaces": ["NZ_DEM", "WanakaBasement"],
-        "smoothing": None
+        "smoothing": None,
     },
     "MacKenzie_v20p6": {
         "boundaries": ["USER20_BASINS/mackenzie_basin_outline_nzmg.txt"],
         "surfaces": ["NZ_DEM", "MacKenzieBasement"],
-        "smoothing": None
+        "smoothing": None,
     },
     "Wakatipu_v20p7": {
         "boundaries": ["USER20_BASINS/WakatipuBasinOutlineWGS84.txt"],
         "surfaces": ["NZ_DEM", "WakatipuBasement"],
-        "smoothing": None
+        "smoothing": None,
     },
     "Alexandra_v20p7": {
         "boundaries": ["USER20_BASINS/alexandra_outline.txt"],
         "surfaces": ["NZ_DEM", "RanAlexBasement"],
-        "smoothing": None
+        "smoothing": None,
     },
     "Ranfurly_v20p7": {
         "boundaries": ["USER20_BASINS/ranfurly_outline.txt"],
         "surfaces": ["NZ_DEM", "RanAlexBasement"],
-        "smoothing": None
+        "smoothing": None,
     },
     "NE_Otago_v20p7": {
         "boundaries": [
@@ -134,69 +141,69 @@ basins = {
             "USER20_BASINS/NE_otago/NE_otago_B_outline.txt",
             "USER20_BASINS/NE_otago/NE_otago_C_outline.txt",
             "USER20_BASINS/NE_otago/NE_otago_D_outline.txt",
-            "USER20_BASINS/NE_otago/NE_otago_E_outline.txt"
+            "USER20_BASINS/NE_otago/NE_otago_E_outline.txt",
         ],
         "surfaces": ["NZ_DEM", "RanAlexBasement"],
-        "smoothing": None
+        "smoothing": None,
     },
     "Mosgiel_v20p7": {
         "boundaries": ["USER20_BASINS/mos_outline_WGS84.txt"],
         "surfaces": ["NZ_DEM", "MosgielBasement"],
-        "smoothing": None
+        "smoothing": None,
     },
     "Balclutha_v20p7": {
         "boundaries": ["USER20_BASINS/bal_outline_WGS84.txt"],
         "surfaces": ["NZ_DEM", "BalcluthaBasement"],
-        "smoothing": "Boundaries/Smoothing/Balclutha_v20p7.txt"
+        "smoothing": "Boundaries/Smoothing/Balclutha_v20p7.txt",
     },
     "Dunedin_v20p7": {
         "boundaries": ["USER20_BASINS/dun_outline_WGS84.txt"],
         "surfaces": ["NZ_DEM", "DunedinBasement"],
-        "smoothing": "Boundaries/Smoothing/Dunedin_v20p7.txt"
+        "smoothing": "Boundaries/Smoothing/Dunedin_v20p7.txt",
     },
     "Murchison_v20p7": {
         "boundaries": ["USER20_BASINS/Murchison_Basin_Outline_v1_WGS84.txt"],
         "surfaces": ["NZ_DEM", "MurchisonBasement"],
-        "smoothing": None
+        "smoothing": None,
     },
     "Waitaki_v20p8": {
         "boundaries": ["USER20_BASINS/waitaki_outline_WGS84.txt"],
         "surfaces": ["NZ_DEM", "WaitakiBasement"],
-        "smoothing": "Boundaries/Smoothing/Waitaki_v20p8.txt"
+        "smoothing": "Boundaries/Smoothing/Waitaki_v20p8.txt",
     },
     "Hakataramea_v20p8": {
         "boundaries": ["USER20_BASINS/hakataramea_outline_WGS84.txt"],
         "surfaces": ["NZ_DEM", "HakatarameaBasement"],
-        "smoothing": None
+        "smoothing": None,
     },
     "Karamea_v20p11": {
         "boundaries": ["USER20_BASINS/Karamea_basin_outline_v1_WGS84.txt"],
         "surfaces": ["NZ_DEM", "KarameaBasement"],
-        "smoothing": "Boundaries/Smoothing/Karamea_v20p11.txt"
+        "smoothing": "Boundaries/Smoothing/Karamea_v20p11.txt",
     },
     "Collingwood_v20p11": {
         "boundaries": [
             "USER20_BASINS/CollingwoodBasinOutline_1_WGS84_v1.txt",
             "USER20_BASINS/CollingwoodBasinOutline_2_WGS84_v1.txt",
-            "USER20_BASINS/CollingwoodBasinOutline_3_WGS84_v1.txt"
+            "USER20_BASINS/CollingwoodBasinOutline_3_WGS84_v1.txt",
         ],
         "surfaces": ["NZ_DEM", "CollingwoodBasement"],
-        "smoothing": "Boundaries/Smoothing/CollingwoodBasin1_v20p11.txt"
+        "smoothing": "Boundaries/Smoothing/CollingwoodBasin1_v20p11.txt",
     },
     "SpringsJunction_v20p11": {
         "boundaries": ["USER20_BASINS/SpringsJ_basin_outline_v1_WGS84.txt"],
         "surfaces": ["NZ_DEM", "SpringsJunctionBasement"],
-        "smoothing": None
+        "smoothing": None,
     },
     "HawkesBay_v21p7": {
         "boundaries": [
             "Basins/Napier_Hawkes_Bay/v21p7/HawkesBay1_Outline_WGS84_delim.dat",
             "Basins/Napier_Hawkes_Bay/v21p7/HawkesBay2_Outline_WGS84_delim.dat",
             "Basins/Napier_Hawkes_Bay/v21p7/HawkesBay3_Outline_WGS84_delim.dat",
-            "Basins/Napier_Hawkes_Bay/v21p7/HawkesBay4_Outline_WGS84_delim.dat"
+            "Basins/Napier_Hawkes_Bay/v21p7/HawkesBay4_Outline_WGS84_delim.dat",
         ],
         "surfaces": ["NZ_DEM", "HawkesBayBasement"],
-        "smoothing": "Boundaries/Smoothing/HawkesBay1_v21p7.txt"
+        "smoothing": "Boundaries/Smoothing/HawkesBay1_v21p7.txt",
     },
     "Napier_v21p7": {
         "boundaries": [
@@ -205,10 +212,10 @@ basins = {
             "Basins/Napier_Hawkes_Bay/v21p7/Napier3_Outline_WGS84_delim.dat",
             "Basins/Napier_Hawkes_Bay/v21p7/Napier4_Outline_WGS84_delim.dat",
             "Basins/Napier_Hawkes_Bay/v21p7/Napier5_Outline_WGS84_delim.dat",
-            "Basins/Napier_Hawkes_Bay/v21p7/Napier6_Outline_WGS84_delim.dat"
+            "Basins/Napier_Hawkes_Bay/v21p7/Napier6_Outline_WGS84_delim.dat",
         ],
         "sur Surfaces": ["NZ_DEM", "NapierBasement"],
-        "smoothing": "Boundaries/Smoothing/Napier1_v21p7.txt"
+        "smoothing": "Boundaries/Smoothing/Napier1_v21p7.txt",
     },
     "GreaterWellington_v21p7": {
         "boundaries": [
@@ -217,62 +224,64 @@ basins = {
             "Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington3_Outline_WGS84.dat",
             "Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington4_Outline_WGS84.dat",
             "Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington5_Outline_WGS84.dat",
-            "Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington6_Outline_WGS84.dat"
+            "Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington6_Outline_WGS84.dat",
         ],
         "surfaces": ["NZ_DEM", "GreaterWellingtonBasement"],
-        "smoothing": "Boundaries/Smoothing/GreaterWellington1_v21p7.txt"
+        "smoothing": "Boundaries/Smoothing/GreaterWellington1_v21p7.txt",
     },
     "Porirua_v21p7": {
         "boundaries": [
             "Basins/Greater_Wellington_and_Porirua/v21p7/Porirua1_Outline_WGS84.dat",
-            "Basins/Greater_Wellington_and_Porirua/v21p7/Porirua2_Outline_WGS84.dat"
+            "Basins/Greater_Wellington_and_Porirua/v21p7/Porirua2_Outline_WGS84.dat",
         ],
         "surfaces": ["NZ_DEM", "PoriruaBasement"],
-        "smoothing": "Boundaries/Smoothing/Porirua1_v21p7.txt"
+        "smoothing": "Boundaries/Smoothing/Porirua1_v21p7.txt",
     },
     "Gisborne_v21p11": {
         "boundaries": ["Basins/Gisborne/v21p11/Gisborne_Outline_WGS84_delim.dat"],
         "surfaces": ["NZ_DEM", "GisborneBasement"],
-        "smoothing": "Boundaries/Smoothing/Gisborne_v21p11.txt"
+        "smoothing": "Boundaries/Smoothing/Gisborne_v21p11.txt",
     },
     "SouthernHawkesBay_v21p12": {
         "boundaries": ["Basins/Southern_Hawkes_Bay/v21p12/SHB_Outline_WGS84_delim.dat"],
         "surfaces": ["NZ_DEM", "SouthernHawkesBayBasement"],
-        "smoothing": None
+        "smoothing": None,
     },
     "Wairarapa_v21p12": {
         "boundaries": ["Basins/Wairarapa/v21p12/Wairarapa_Outline_WGS84_delim.dat"],
         "surfaces": ["NZ_DEM", "WairarapaBasement"],
-        "smoothing": "Boundaries/Smoothing/Wairarapa_v21p12.txt"
+        "smoothing": "Boundaries/Smoothing/Wairarapa_v21p12.txt",
     },
     "MotuBay_v22p3": {
         "boundaries": [
             "Basins/East_Cape/v22p3/Motu_bay1_Outline_WGS84.txt",
             "Basins/East_Cape/v22p3/Motu_bay2_Outline_WGS84.txt",
-            "Basins/East_Cape/v22p3/Motu_bay3_Outline_WGS84.txt"
+            "Basins/East_Cape/v22p3/Motu_bay3_Outline_WGS84.txt",
         ],
         "surfaces": ["NZ_DEM", "MotuBayBasement"],
-        "smoothing": "Boundaries/Smoothing/Motu_Bay1_v22p3.txt"
+        "smoothing": "Boundaries/Smoothing/Motu_Bay1_v22p3.txt",
     },
     "Whangaparoa_v23p4": {
         "boundaries": ["USER20_BASINS/Whangaparoa_outline_WGS84.txt"],
         "surfaces": ["NZ_DEM", "WhangaparoaBasement"],
-        "smoothing": None
+        "smoothing": None,
     },
     "TeAnau_v24p9": {
         "boundaries": ["STUDENTS_BASINS/TeAnau_outline_WGS84.txt"],
         "surfaces": ["NZ_DEM", "TeAnauBasement"],
-        "smoothing": None
+        "smoothing": None,
     },
     "Westport_v24p9": {
         "boundaries": ["STUDENTS_BASINS/Westport_outline_WGS84.txt"],
         "surfaces": ["NZ_DEM", "WestportBasement"],
-        "smoothing": None
-    }
+        "smoothing": None,
+    },
 }
 
+
 def remove_version(basin_name):
-    return re.sub(r'_v\d+p\d+$', '', basin_name)
+    return re.sub(r"_v\d+p\d+$", "", basin_name)
+
 
 # Process each basin
 for basin_name, data in basins.items():
@@ -285,8 +294,10 @@ for basin_name, data in basins.items():
 
         # Prepare README content
         readme_content = f"{basin_name}\n"
-        readme_content += ("="*len(basin_name))+"\n\n"
-        readme_content += f"Data have been retrieved from the following remote sources\n\n"
+        readme_content += ("=" * len(basin_name)) + "\n\n"
+        readme_content += (
+            "Data have been retrieved from the following remote sources\n\n"
+        )
         readme_content += "Boundary Files:\n"
         for boundary in data["boundaries"]:
             remote_path = f"{remote_base}/{boundary}"
@@ -299,11 +310,10 @@ for basin_name, data in basins.items():
 
         readme_content += "\nSurface Files:\n"
         for surface in data["surfaces"]:
-
             surface_path = surface_paths.get(surface, "Unknown path")
             remote_path = f"{remote_base}/{surface_path}"
             readme_content += f"  {surface}: {remote_path}\n"
-            if 'DEM' in surface: # skip file copy
+            if "DEM" in surface:  # skip file copy
                 continue
             # Copy surface file
             src_path = os.path.expanduser(os.path.join(source_base, surface_path))
@@ -314,7 +324,9 @@ for basin_name, data in basins.items():
         readme_content += "\nSmoothing File:\n"
         if data["smoothing"]:
             remote_path = f"{remote_base}/{data['smoothing']}"
-            smoothing_filename = os.path.basename(data["smoothing"]).replace(".txt", "_smoothing.txt")
+            smoothing_filename = os.path.basename(data["smoothing"]).replace(
+                ".txt", "_smoothing.txt"
+            )
             readme_content += f"  {smoothing_filename}: {remote_path}\n"
             # Copy smoothing file with suffix
             src_path = os.path.expanduser(os.path.join(source_base, data["smoothing"]))
