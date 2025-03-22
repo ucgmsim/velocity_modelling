@@ -115,27 +115,25 @@ class CVMRegistry:
         if not global_surfaces_list:
             global_surfaces_list = []
 
-        # Adjust surfaces to include posInfSurf and negInfSurf
-        first_surface_name = (
-            global_surfaces_list[0]["name"] if global_surfaces_list else None
-        )
-        last_surface_name = (
-            global_surfaces_list[-1]["name"] if global_surfaces_list else None
-        )
-        if first_surface_name != "posInfSurf" or last_surface_name != "negInfSurf":
-            self.global_params["surfaces"] = (
-                [{"name": "posInfSurf", "submodel": "nan_submod"}]
-                + global_surfaces_list
-                + [{"name": "negInfSurf", "submodel": None}]
-            )
+        # Check if posInfSurf and negInfSurf paths are present
+        has_pos_inf = any(s.get("path") == "global/surface/posInf.in" for s in global_surfaces_list)
+        has_neg_inf = any(s.get("path") == "global/surface/negInf.in" for s in global_surfaces_list)
+        
+        # Add posInfSurf and negInfSurf if needed
+        if not has_pos_inf:
+            global_surfaces_list.insert(0, {"path": "global/surface/posInf.in", "submodel": "nan_submod"})
+        if not has_neg_inf:
+            global_surfaces_list.append({"path": "global/surface/negInf.in", "submodel": None})
+            
+        self.global_params["surfaces"] = global_surfaces_list
 
-        # Separate surface names and submodels
-        self.global_params["surface_names"] = [
-            d["name"] for d in self.global_params["surfaces"]
+        # Create unique identifiers for surfaces (using paths)
+        self.global_params["surface_paths"] = [
+            d.get("path") for d in self.global_params["surfaces"]
         ]
         self.global_params["submodels"] = [
-            d["submodel"] for d in self.global_params["surfaces"]
-        ][:-1]
+            d.get("submodel") for d in self.global_params["surfaces"]
+        ][:-1]  # Exclude the last submodel as before
 
         self.cache = {}  # Initialize cache
 
@@ -365,7 +363,7 @@ class CVMRegistry:
                     logging.ERROR, f"Error: vm1d {submodel['name']} not found."
                 )
                 raise KeyError(f"vm1d {submodel['name']} not found")
-            return (submodel_name, self.load_1d_velo_sub_model(vm1d["path"]))
+            return (submodel_name, self.load_1d_velo_sub_model(vm1d["data"]))
         elif submodel["type"] in {"relation", "perturbation"}:
             self.logger.log(
                 logging.DEBUG,
@@ -381,7 +379,7 @@ class CVMRegistry:
         Parameters
         ----------
         basin_surface : dict
-            Dictionary with keys 'name' and 'submodel' specifying the basin surface.
+            Dictionary with keys 'path' and optionally 'submodel' specifying the basin surface.
 
         Returns
         -------
@@ -391,7 +389,7 @@ class CVMRegistry:
         Raises
         ------
         KeyError
-            If the surface name is not found in the registry.
+            If the basin_surface lacks a path field.
         FileNotFoundError
             If the surface file cannot be found.
         RuntimeError
@@ -399,17 +397,19 @@ class CVMRegistry:
         """
         from velocity_modelling.cvm.basin_model import BasinSurfaceRead
 
-        surface_info = self.get_info("surface", basin_surface["name"])
-        if surface_info is None:
+        try:
+            _ = basin_surface["path"]
+        except KeyError:
             self.logger.log(
-                logging.ERROR, f"Error: Surface {basin_surface['name']} not found."
+                logging.ERROR, f"Error: Basin surface lacks required 'path' field."
             )
-            raise KeyError(f"Surface {basin_surface['name']} not found")
+            raise KeyError("Basin surface definition must include 'path' field")
+        
 
         self.logger.log(
-            logging.DEBUG, f"Loading basin surface file {surface_info['path']}"
+            logging.DEBUG, f"Loading basin surface file {basin_surface['path']}"
         )
-        basin_surface_path = self.get_full_path(surface_info["path"])
+        basin_surface_path = self.get_full_path(basin_surface['path'])
         if basin_surface_path in self.cache:
             self.logger.log(logging.DEBUG, f"{basin_surface_path} loaded from cache")
             return self.cache[basin_surface_path]
@@ -509,10 +509,16 @@ class CVMRegistry:
         special_offshore_tapering = tomo["special_offshore_tapering"]
         vs30 = self.load_global_surface(tomo["vs30_path"])
 
-        data_format = tomo.get("format", "ASCII")  # Default to ASCII if not specified
+        # Determine format based on the path rather than an explicit format attribute
+        tomo_path = self.get_full_path(tomo["path"])
+        if tomo_path.is_file() and tomo_path.suffix == '.h5':
+            data_format = "HDF5"
+        else:
+            data_format = "ASCII"
+            
         self.logger.log(
             logging.INFO,
-            f"Loading tomography data '{tomo_name}' ({data_format}) format with {len(surf_depth)} depth levels",
+            f"Loading tomography data '{tomo_name}' ({data_format} format) with {len(surf_depth)} depth levels",
         )
 
         # Load surfaces based on data format
@@ -555,14 +561,14 @@ class CVMRegistry:
         )
 
     def _load_hdf5_surfaces(
-        self, path: str, tomo_name: str, surf_depth: list
+        self, path: Path, tomo_name: str, surf_depth: list
     ) -> list[dict[str, GlobalSurfaceRead]]:
         """
         Load tomography surfaces from an HDF5 file.
 
         Parameters
         ----------
-        path : str
+        path : Path
             The relative path to the HDF5 file.
         tomo_name : str
             The name of the tomography data.
@@ -575,58 +581,64 @@ class CVMRegistry:
             List of dictionaries containing GlobalSurfaceRead objects per velocity type (ie. vp, vs, rho) for each elevation.
         """
         surfaces = []
-        hdf5_path = self.get_full_path(path) / f"{tomo_name}.h5"
+        hdf5_path = self.get_full_path(path)
         if not hdf5_path.exists():
             raise FileNotFoundError(f"HDF5 tomography file {hdf5_path} not found")
 
         self.logger.log(
             logging.INFO, f"Loading tomography surfaces from HDF5: {hdf5_path}"
         )
-        with h5py.File(hdf5_path, "r") as h5f:
-            for i, elev in enumerate(surf_depth):
-                surfaces.append({})
-                elev_str = str(int(elev)) if elev == int(elev) else f"{elev:.2f}"
+        try:
+            with h5py.File(hdf5_path, "r") as h5f:
+                for i, elev in enumerate(surf_depth):
+                    surfaces.append({})
+                    elev_str = str(int(elev)) if elev == int(elev) else f"{elev:.2f}"
 
-                try:
-                    elev_group = h5f[elev_str]
-                    latitudes = elev_group["latitudes"][:]
-                    longitudes = elev_group["longitudes"][:]
+                    try:
+                        elev_group = h5f[elev_str]
+                        latitudes = elev_group["latitudes"][:]
+                        longitudes = elev_group["longitudes"][:]
 
-                    for vtype in VelocityTypes:
-                        try:
-                            data = elev_group[vtype.name][:]
-                            surfaces[i][vtype.name] = GlobalSurfaceRead(
-                                latitudes, longitudes, data.T
-                            )
-                            self.logger.log(
-                                logging.DEBUG,
-                                f"Loaded tomography surface for {vtype.name} at elevation {elev}",
-                            )
-                        except KeyError:
-                            self.logger.log(
-                                logging.ERROR,
-                                f"Error: Data for {vtype.name} at elevation {elev} not found in HDF5",
-                            )
-                            raise FileNotFoundError(
-                                f"Tomography data for {vtype.name} at elevation {elev} not found"
-                            )
-                except KeyError:
-                    self.logger.log(
-                        logging.ERROR, f"Error: Elevation {elev} not found in HDF5"
-                    )
-                    raise FileNotFoundError(f"Elevation {elev} not found in HDF5")
+                        for vtype in VelocityTypes:
+                            try:
+                                data = elev_group[vtype.name][:]
+                                surfaces[i][vtype.name] = GlobalSurfaceRead(
+                                    latitudes, longitudes, data.T
+                                )
+                                self.logger.log(
+                                    logging.DEBUG,
+                                    f"Loaded tomography surface for {vtype.name} at elevation {elev}",
+                                )
+                            except KeyError:
+                                self.logger.log(
+                                    logging.ERROR,
+                                    f"Error: Data for {vtype.name} at elevation {elev} not found in HDF5",
+                                )
+                                raise FileNotFoundError(
+                                    f"Tomography data for {vtype.name} at elevation {elev} not found"
+                                )
+                    except KeyError:
+                        self.logger.log(
+                            logging.ERROR, f"Error: Elevation {elev} not found in HDF5"
+                        )
+                        raise FileNotFoundError(f"Elevation {elev} not found in HDF5")
+        except (IOError, OSError, RuntimeError) as e:
+            self.logger.log(
+                logging.ERROR, f"Error opening or reading HDF5 file {hdf5_path}: {e}"
+            )
+            raise RuntimeError(f"Failed to load HDF5 file {hdf5_path}: {str(e)}")
 
         return surfaces
 
     def _load_ascii_surfaces(
-        self, path: str, surf_depth: list
+        self, path: Path, surf_depth: list
     ) -> list[dict[str, GlobalSurfaceRead]]:
         """
         Load tomography surfaces from ASCII files.
 
         Parameters
         ----------
-        path : str
+        path : Path
             The relative path to the ASCII files.
         surf_depth : list
             List of elevation depths for the tomography surfaces.
@@ -709,7 +721,7 @@ class CVMRegistry:
                     logging.DEBUG, "nan submodel recognized (no data to load)"
                 )
             elif submodel_info["type"] == "vm1d":
-                velo_mod_1d_data = self.load_1d_velo_sub_model(submodel_info["name"])
+                velo_mod_1d_data = self.load_1d_velo_sub_model(submodel_info["data"])
                 self.logger.log(logging.INFO, "Loaded 1D velocity model data")
             elif submodel_info["type"] == "tomography":
                 if self.global_params.get("tomography"):

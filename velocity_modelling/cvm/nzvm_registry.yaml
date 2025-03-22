@@ -69,7 +69,7 @@ basin:
         submodel: miocene_submod_v1
       - path: regional/Canterbury/Canterbury_Paleogene_WGS84.in
         submodel: paleogene_submod_v1
-      - name: regional/Canterbury/Canterbury_Basement_WGS84.in
+      - path: regional/Canterbury/Canterbury_Basement_WGS84.in
     retrieved_from:
       - boundaries: 
         - Boundaries/NewCanterburyBasinBoundary_WGS84_1m.txt
@@ -991,15 +991,6 @@ basin:
         submodel: canterbury1d_v2
       - path: regional/Westport/Westport_basement_WGS84.in
     smoothing: regional/Westport/Westport_smoothing.txt
-
-vm1d:
-  - name: canterbury1d_v1
-    path: global/vm1d/Cant1D_v1.fd_modfile
-    module:
-  - name: canterbury1d_v2
-    path: global/vm1d/Cant1D_v2.fd_modfile
-  - name: canterbury1d_v2_pliocene_enforced
-    path: global/vm1d/Cant1D_v2_Pliocene_Enforced.fd_modfile
 
 
 submodel:

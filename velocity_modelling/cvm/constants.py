@@ -14,7 +14,7 @@ EARTH_RADIUS_MEAN = 6378.139
 
 CVM_ROOT = Path(__file__).parent
 DATA_ROOT = (
-    CVM_ROOT.parent / "Data"
+    CVM_ROOT / "data"
 )  # default value, can be overridden with --data-root argument
 MODEL_VERSIONS_ROOT = CVM_ROOT / "model_versions"
 NZVM_REGISTRY_PATH = CVM_ROOT / "nzvm_registry.yaml"
