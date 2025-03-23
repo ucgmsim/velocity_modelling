@@ -11,29 +11,41 @@
 
 
 ## Images
-<a href="../images/basins/NI_south.png"><img src="../images/basins/NI_south.png" width="50%"></a>
+<a href="../images/maps/NI_south.png"><img src="../images/maps/NI_south.png" width="75%"></a>
 
 *Figure 1 Location*
 
-<a href="../images/basins/wellington_outline.png"><img src="../images/basins/wellington_outline.png" width="50%"></a>
+<a href="../images/regional/Wellington_basin_map.png"><img src="../images/regional/Wellington_basin_map.png" width="75%"></a>
 
-*Figure 2 Wellington Basement*
+*Figure 2 Wellington Basin Map*
+
+<a href="../images/basins/wellington_outline.png"><img src="../images/basins/wellington_outline.png" width="75%"></a>
+
+*Figure 3 Wellington Outline*
 
 
 ## Notes
-- {'v19.1, v19.6': 'Robin Lee (basement update)'}
-- {'v21.8': 'Matt Hill (basement update)'}
+- 19.1,19.6 Robin Lee (basement update)
+- 21.8 Matt Hill (basement update)
 
 ## Data
+### Boundaries
+- [Wellington_outline_WGS84.txt](../../velocity_modelling/cvm/data/regional/Wellington/Wellington_outline_WGS84.txt)
+
+### Surfaces
+- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [Wellington_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/Wellington/Wellington_basement_WGS84.in) (Submodel: N/A)
+
+### Smoothing Boundaries
+- [Wellington_smoothing.txt](../../velocity_modelling/cvm/data/regional/Wellington/Wellington_smoothing.txt)
+
+## Data retrieved from
 ### Boundaries
 - [Wellington_Polygon_Wainuiomata_WGS84.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Wellington/v21p8/Wellington_Polygon_Wainuiomata_WGS84.txt)
 
 ### Surfaces
-- [NZ_DEM](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [WellingtonBasement_v21p8](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Wellington/v21p8/Wellington_Grid_WGS84_Hill20210823_100_extracted_d.in) (Submodel: N/A)
-
-### Smoothing Boundaries
-- [Wellington_v21p8.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Boundaries/Smoothing/Wellington_v21p8.txt)
+- [NZ_DEM_HD.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in)
+- [Wellington_Grid_WGS84_Hill20210823_100_extracted_d.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Wellington/v21p8/Wellington_Grid_WGS84_Hill20210823_100_extracted_d.in)
 
 ---
-*Page generated on: March 19, 2025, 14:20 NZST/NZDT*
+*Page generated on: March 22, 2025, 19:41 NZST/NZDT*

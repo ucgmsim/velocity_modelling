@@ -10,16 +10,36 @@
 
 
 ## Images
-<a href="../images/basins/NI_south.png"><img src="../images/basins/NI_south.png" width="50%"></a>
+<a href="../images/maps/NI_south.png"><img src="../images/maps/NI_south.png" width="75%"></a>
 
 *Figure 1 Location*
 
-<a href="../images/basins/greater_wellington_outline.png"><img src="../images/basins/greater_wellington_outline.png" width="50%"></a>
+<a href="../images/regional/GreaterWellington_basin_map.png"><img src="../images/regional/GreaterWellington_basin_map.png" width="75%"></a>
 
-*Figure 2 GreaterWellington Basement*
+*Figure 2 Greaterwellington Basin Map*
+
+<a href="../images/basins/greater_wellington_outline.png"><img src="../images/basins/greater_wellington_outline.png" width="75%"></a>
+
+*Figure 3 Greater Wellington Outline*
 
 
 ## Data
+### Boundaries
+- [GreaterWellington_outline_WGS84_1.txt](../../velocity_modelling/cvm/data/regional/GreaterWellington/GreaterWellington_outline_WGS84_1.txt)
+- [GreaterWellington_outline_WGS84_2.txt](../../velocity_modelling/cvm/data/regional/GreaterWellington/GreaterWellington_outline_WGS84_2.txt)
+- [GreaterWellington_outline_WGS84_3.txt](../../velocity_modelling/cvm/data/regional/GreaterWellington/GreaterWellington_outline_WGS84_3.txt)
+- [GreaterWellington_outline_WGS84_4.txt](../../velocity_modelling/cvm/data/regional/GreaterWellington/GreaterWellington_outline_WGS84_4.txt)
+- [GreaterWellington_outline_WGS84_5.txt](../../velocity_modelling/cvm/data/regional/GreaterWellington/GreaterWellington_outline_WGS84_5.txt)
+- [GreaterWellington_outline_WGS84_6.txt](../../velocity_modelling/cvm/data/regional/GreaterWellington/GreaterWellington_outline_WGS84_6.txt)
+
+### Surfaces
+- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [GreaterWellington_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/GreaterWellington/GreaterWellington_basement_WGS84.in) (Submodel: N/A)
+
+### Smoothing Boundaries
+- [GreaterWellington_smoothing.txt](../../velocity_modelling/cvm/data/regional/GreaterWellington/GreaterWellington_smoothing.txt)
+
+## Data retrieved from
 ### Boundaries
 - [GreaterWellington1_Outline_WGS84.dat](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington1_Outline_WGS84.dat)
 - [GreaterWellington2_Outline_WGS84.dat](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington2_Outline_WGS84.dat)
@@ -29,11 +49,8 @@
 - [GreaterWellington6_Outline_WGS84.dat](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington6_Outline_WGS84.dat)
 
 ### Surfaces
-- [NZ_DEM](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [GreaterWellingtonBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Greater_Wellington_and_Porirua/v21p7/Greater_Wellington_Elevation_WGS84.in) (Submodel: N/A)
-
-### Smoothing Boundaries
-- [GreaterWellington1_v21p7.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Boundaries/Smoothing/GreaterWellington1_v21p7.txt)
+- [NZ_DEM_HD.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in)
+- [Greater_Wellington_Elevation_WGS84.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Greater_Wellington_and_Porirua/v21p7/Greater_Wellington_Elevation_WGS84.in)
 
 ---
-*Page generated on: March 19, 2025, 14:20 NZST/NZDT*
+*Page generated on: March 22, 2025, 19:41 NZST/NZDT*

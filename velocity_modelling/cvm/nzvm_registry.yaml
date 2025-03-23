@@ -58,8 +58,6 @@ tomography:
 
 basin:
   - name: Canterbury_v18p1
-    outline_source:
-      - Boundaries/NewCanterburyBasinBoundary_WGS84_1m.txt
     boundaries:
       - regional/Canterbury/Canterbury_outline_WGS84.txt
     surfaces:
@@ -71,12 +69,18 @@ basin:
         submodel: miocene_submod_v1
       - path: regional/Canterbury/Canterbury_Paleogene_WGS84.in
         submodel: paleogene_submod_v1
-      - name: regional/Canterbury/Canterbury_Basement_WGS84.in
-
+      - path: regional/Canterbury/Canterbury_Basement_WGS84.in
+    retrieved_from:
+      - boundaries: 
+        - Boundaries/NewCanterburyBasinBoundary_WGS84_1m.txt
+      - surfaces:
+        - DEM/DEM.in
+        - Canterbury_Basin/Pre_Quaternary/PlioceneTop.in
+        - Canterbury_Basin/Pre_Quaternary/MioceneTop.in
+        - Canterbury_Basin/Pre_Quaternary/PaleogeneTop.in
+        - Canterbury_Basin/Quaternary/BasementTop.in
 
   - name: Canterbury_v18p2
-    outline_source:
-      - Boundaries/NewCanterburyBasinBoundary_WGS84_1m.txt
     boundaries:
       - regional/Canterbury/Canterbury_outline_WGS84.txt
     surfaces:
@@ -89,11 +93,17 @@ basin:
       - path: regional/Canterbury/Canterbury_Paleogene_WGS84.in
         submodel: paleogene_submod_v1
       - path: regional/Canterbury/Canterbury_Basement_WGS84.in
-
+    retrieved_from:
+      - boundaries: 
+        - Boundaries/NewCanterburyBasinBoundary_WGS84_1m.txt
+      - surfaces:
+        - DEM/DEM.in
+        - Canterbury_Basin/Pre_Quaternary/PlioceneTop.in
+        - Canterbury_Basin/Pre_Quaternary/MioceneTop.in
+        - Canterbury_Basin/Pre_Quaternary/PaleogeneTop.in
+        - Canterbury_Basin/Quaternary/BasementTop.in
 
   - name: Canterbury_v18p3
-    outline_source:
-      - Boundaries/NewCanterburyBasinBoundary_WGS84_1m.txt
     boundaries:
       - regional/Canterbury/Canterbury_outline_WGS84.txt
     surfaces:
@@ -106,16 +116,25 @@ basin:
       - path: regional/Canterbury/Canterbury_Paleogene_WGS84.in
         submodel: paleogene_submod_v1
       - path: regional/Canterbury/Canterbury_Basement_WGS84.in
+    retrieved_from:
+      - boundaries: 
+        - Boundaries/NewCanterburyBasinBoundary_WGS84_1m.txt
+      - surfaces:
+        - DEM/DEM.in
+        - Canterbury_Basin/Pre_Quaternary/Pliocene_46_v8p9p18.in
+        - Canterbury_Basin/Pre_Quaternary/MioceneTop.in
+        - Canterbury_Basin/Pre_Quaternary/PaleogeneTop.in
+        - Canterbury_Basin/Quaternary/BasementTop.in
 
   - name: Canterbury_v19p1
     type: 4
     author: Robin Lee
     wiki_images:
-      - basins/canterbury_region.png
+      - maps/canterbury_region.png
+      - regional/Canterbury_basin_map.png
     notes:
       - Pre-Quaternary geology
-    outline_source:
-      - Boundaries/NewCanterburyBasinBoundary_WGS84_1m.txt
+
     boundaries:
       - regional/Canterbury/Canterbury_outline_WGS84.txt
     surfaces:
@@ -129,49 +148,65 @@ basin:
         submodel: paleogene_submod_v1
       - path: regional/Canterbury/Canterbury_basement_WGS84.in
     smoothing: regional/Canterbury/Canterbury_smoothing.txt
-
+    retrieved_from:
+      - boundaries: 
+        - Boundaries/NewCanterburyBasinBoundary_WGS84_1m.txt
+      - surfaces:
+        - DEM/CantDEM.in
+        - Canterbury_Basin/Pre_Quaternary/Pliocene_46_v8p9p18.in
+        - Canterbury_Basin/Pre_Quaternary/MioceneTop.in
+        - Canterbury_Basin/Pre_Quaternary/PaleogeneTop.in
+        - Canterbury_Basin/Quaternary/BasementTop.in
 
 
   - name: NorthCanterbury_v19p1
     type: 4
     author: Robin Lee
     wiki_images:
-      - basins/canterbury_region.png
-    outline_source:
-      - SI_BASINS/NorthCanterbury_Polygon_WGS84.txt
+      - maps/canterbury_region.png
+      - regional/NorthCanterbury_basin_map.png
     boundaries:
       - regional/NorthCanterbury/NorthCanterbury_outline_WGS84.txt
     surfaces:
       - path: global/surface/NZ_DEM_HD.in
         submodel: canterbury1d_v2
       - path: regional/NorthCanterbury/NorthCanterbury_basement_WGS84.in
+    retrieved_from:
+      - boundaries: 
+        - SI_BASINS/NorthCanterbury_Polygon_WGS84.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - SI_BASINS/NorthCanterbury_Basement_WGS84_v0p0.in
 
 
   - name: BanksPeninsulaVolcanics_v19p1
     type: 4
     author: Robin Lee
     wiki_images:
-      - basins/canterbury_region.png
+      - maps/canterbury_region.png
+      - regional/BanksPeninsulaVolcanics_basin_map.png
     notes:
       - Miocene surface is the same as Canterbury
-    outline_source:
-      - Boundaries/BPVBoundary.txt
     boundaries:
       - regional/BanksPeninsulaVolcanics/BanksPeninsulaVolcanics_outline_WGS84.txt
     surfaces:
       - path: regional/BanksPeninsulaVolcanics/BanksPeninsulaVolcanics_basement_WGS84.in
         submodel: bpv_submod_v4
       - path: regional/BanksPeninsulaVolcanics/BanksPeninsulaVolcanics_Miocene_WGS84.in
-
+    retrieved_from:
+      - boundaries: 
+        - Boundaries/BPVBoundary.txt
+      - surfaces:
+        - Canterbury_Basin/BPV/BPVTop.in
+        - Canterbury_Basin/Pre_Quaternary/MioceneTop.in
 
   - name: Kaikoura_v19p1
     type: 2
     author: Ethan Thomson
     wiki_images:
-      - basins/kaikoura.png
+      - maps/kaikoura.png
+      - regional/Kaikoura_basin_map.png
       - basins/kaikoura_basement.png
-    outline_source:
-      - SI_BASINS/Kaikoura_Polygon_WGS84.txt
     boundaries:
       - regional/Kaikoura/Kaikoura_outline_WGS84.txt
     surfaces:
@@ -179,14 +214,19 @@ basin:
         submodel: canterbury1d_v2
       - path: regional/Kaikoura/Kaikoura_basement_WGS84.in
     smoothing: regional/Kaikoura/Kaikoura_smoothing.txt
+    retrieved_from:
+      - boundaries: 
+        - SI_BASINS/Kaikoura_Polygon_WGS84.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - SI_BASINS/Kaikoura_Basement_WGS84_v0p0.in
 
   - name: Cheviot_v19p1
     type: 1
     author: Ethan Thomson
     wiki_images:
-      - basins/cheviot_hanmer_northcanterbury.png
-    outline_source:
-      - SI_BASINS/Cheviot_Polygon_WGS84.txt
+      - maps/cheviot_hanmer_northcanterbury.png
+      - regional/Cheviot_basin_map.png
     boundaries:
       - regional/Cheviot/Cheviot_outline_WGS84.txt
     surfaces:
@@ -194,30 +234,39 @@ basin:
         submodel: canterbury1d_v2
       - path: regional/Cheviot/Cheviot_basement_WGS84.in
     smoothing: regional/Cheviot/Cheviot_smoothing.txt
+    retrieved_from:
+      - boundaries: 
+        - SI_BASINS/Cheviot_Polygon_WGS84.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - SI_BASINS/Cheviot_Basement_WGS84_v0p0.in
 
   - name: Hanmer_v19p1
     type: 2
     author: Ethan Thomson
     wiki_images:
-      - basins/cheviot_hanmer_northcanterbury.png
+      - maps/cheviot_hanmer_northcanterbury.png
+      - regional/Hanmer_basin_map.png
       - basins/hanmer_basement.png
-    outline_source:
-      - SI_BASINS/Hanmer_Polygon_WGS84.txt
     boundaries:
       - regional/Hanmer/Hanmer_outline_WGS84.txt
     surfaces:
       - path: global/surface/NZ_DEM_HD.in
         submodel: canterbury1d_v2
       - path: regional/Hanmer/Hanmer_basement_WGS84.in
-
+    retrieved_from:
+      - boundaries: 
+        - SI_BASINS/Hanmer_Polygon_WGS84.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - SI_BASINS/Hanmer_Basement_WGS84_v0p0.in
 
   - name: Marlborough_v19p1
     type: 2
     author: Ethan Thomson
     wiki_images:
-      - basins/SI_north.png
-    outline_source:
-      - SI_BASINS/Marlborough_Polygon_WGS84_v0p1.txt
+      - maps/SI_north.png
+      - regional/Marlborough_basin_map.png
     boundaries:
       - regional/Marlborough/Marlborough_outline_WGS84.txt
     surfaces:
@@ -225,28 +274,36 @@ basin:
         submodel: canterbury1d_v2
       - path: regional/Marlborough/Marlborough_basement_WGS84.in
     smoothing: regional/Marlborough/Marlborough_smoothing.txt
+    retrieved_from:
+      - boundaries: 
+        - SI_BASINS/Marlborough_Polygon_WGS84_v0p1.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - SI_BASINS/Marlborough_Basement_WGS84_v0p1.in
 
   - name: Nelson_v19p1
     type: 2
     author: Robin Lee
     wiki_images:
-      - basins/SI_north.png
+      - maps/SI_north.png
+      - regional/Nelson_basin_map.png
     notes:
       - Sourced from https://nelson-richmond-geolmap.github.io/RGMap/ (for the geological map of the Nelson-Richmond area)
-    outline_source:
-      - SI_BASINS/Nelson_Polygon_WGS84.txt
     boundaries:
       - regional/Nelson/Nelson_outline_WGS84.txt
     surfaces:
       - path: global/surface/NZ_DEM_HD.in
         submodel: canterbury1d_v2
       - path: regional/Nelson/Nelson_basement_WGS84.in
-
     smoothing: regional/Nelson/Nelson_smoothing.txt
+    retrieved_from:
+      - boundaries: 
+        - SI_BASINS/Nelson_Polygon_WGS84.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - SI_BASINS/Nelson_Basement_WGS84_v0p0.in
 
   - name: Wellington_v19p1
-    outline_source:
-      - Basins/Wellington/v19p1/Wellington_Polygon_WGS84.txt
     boundaries:
       - regional/Wellington/Wellington_outline_WGS84.txt
     surfaces:
@@ -254,10 +311,14 @@ basin:
         submodel: canterbury1d_v2
       - path: regional/Wellington/Wellington_basement_v0p0_WGS84.in
     smoothing: regional/Wellington/Wellington_smoothing.txt
-
+    retrieved_from:
+      - boundaries: 
+        - Basins/Wellington/v19p1/Wellington_Polygon_WGS84.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - Basins/Wellington/v19p1/Wellington_Basement_WGS84_v0p0.in
+  
   - name: Wellington_v19p6
-    outline_source:
-      - Basins/Wellington/v19p6/Wellington_Polygon_Wainuiomata_WGS84.txt
     boundaries:
       - regional/Wellington/Wellington_outline_WGS84.txt
     surfaces:
@@ -265,18 +326,26 @@ basin:
         submodel: canterbury1d_v2
       - path : regional/Wellington/Wellington_basement_v19p5p6_100_hybrid10_WGS84.in
     smoothing: regional/Wellington/Wellington_smoothing.txt
+    retrieved_from:
+      - boundaries: 
+        - Basins/Wellington/v19p6/Wellington_Polygon_Wainuiomata_WGS84.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - Basins/Wellington/v19p6/Wellington_Grid_WGS84_v19p5p6_100_hybrid10.in
+
 
   - name: Wellington_v21p8
     type: 2
     author: Robin Lee / Matt Hill
     wiki_images:
-      - basins/NI_south.png
+      - maps/NI_south.png
+      - regional/Wellington_basin_map.png
       - basins/wellington_outline.png
     notes:
       - 19.1,19.6 Robin Lee (basement update)
       - 21.8 Matt Hill (basement update)
 
-    outline_source:
+    retrieved_from:
       - Basins/Wellington/v21p8/Wellington_Polygon_Wainuiomata_WGS84.txt
     boundaries:
       - regional/Wellington/Wellington_outline_WGS84.txt
@@ -285,15 +354,20 @@ basin:
         submodel: canterbury1d_v2
       - path: regional/Wellington/Wellington_basement_WGS84.in
     smoothing: regional/Wellington/Wellington_smoothing.txt
+    retrieved_from:
+      - boundaries: 
+        - Basins/Wellington/v21p8/Wellington_Polygon_Wainuiomata_WGS84.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - Basins/Wellington/v21p8/Wellington_Grid_WGS84_Hill20210823_100_extracted_d.in
 
   - name: WaikatoHauraki_v19p7
     type: 1
     author: Andrew Stolte
     wiki_images:
-      - basins/waikato_hauraki_boundary.png
+      - maps/waikato_hauraki_boundary.png
+      - regional/WaikatoHauraki_basin_map.png
       - basins/waikato_hauraki_outline.png
-    outline_source:
-      - Boundaries/WaikatoHaurakiBasinEdge_WGS84.txt
     boundaries:
       - regional/WaikatoHauraki/WaikatoHauraki_outline_WGS84.txt
     surfaces:
@@ -301,101 +375,126 @@ basin:
         submodel: canterbury1d_v2
       - path: regional/WaikatoHauraki/WaikatoHauraki_basement_WGS84.in
     smoothing: regional/WaikatoHauraki/WaikatoHauraki_smoothing.txt
+    retrieved_from:
+      - boundaries: 
+        - Boundaries/WaikatoHaurakiBasinEdge_WGS84.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - NI_BASINS/WaikatoHaurakiBasin_WGS84_500m_v2019v07v05.in
 
   - name: Wanaka_v20p6
     type: 1
     author: Cameron Douglas (USER2020)
     wiki_images:
-      - basins/SI_mid.png
+      - maps/SI_mid.png
+      - regional/Wanaka_basin_map.png
       - basins/wanaka_boundary.png
-    outline_source:
-      - USER20_BASINS/WanakaOutlineWGS84.txt
     boundaries:
       - regional/Wanaka/Wanaka_outline_WGS84.txt
     surfaces:
       - path: global/surface/NZ_DEM_HD.in
         submodel: canterbury1d_v2
       - path: regional/Wanaka/Wanaka_basement_WGS84.in
+    retrieved_from:
+      - boundaries: 
+        - USER20_BASINS/WanakaOutlineWGS84.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - USER20_BASINS/wanaka_basin_grid_WGS84_v2.in
 
 
   - name: Mackenzie_v20p6
     type: 1
     author: Cameron Douglas (USER2020)
     wiki_images:
-      - basins/SI_mid.png
+      - maps/SI_mid.png
+      - regional/Mackenzie_basin_map.png
       - basins/mackenzie_boundary.png
-    outline_source:
-      - USER20_BASINS/mackenzie_basin_outline_nzmg.txt
     boundaries:
       - regional/Mackenzie/Mackenzie_outline_WGS84.txt
     surfaces:
       - path: global/surface/NZ_DEM_HD.in
         submodel: canterbury1d_v2
       - path: regional/Mackenzie/Mackenzie_basement_WGS84.in
+    retrieved_from:
+      - boundaries: 
+        - USER20_BASINS/mackenzie_basin_outline_nzmg.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - USER20_BASINS/mackenzie_proj_grid_WGS84.in  
 
   - name: Wakatipu_v20p7
     type: 1
     author: Tim Tuckey (USER2020)
     wiki_images:
-      - basins/SI_mid.png
-    outline_source:
-      - USER20_BASINS/WakatipuBasinOutlineWGS84.txt
+      - maps/SI_mid.png
+      - regional/Wakatipu_basin_map.png
     boundaries:
       - regional/Wakatipu/Wakatipu_outline_WGS84.txt
     surfaces:
       - path: global/surface/NZ_DEM_HD.in
         submodel: canterbury1d_v2
       - path: regional/Wakatipu/Wakatipu_basement_WGS84.in
+    retrieved_from:
+      - boundaries: 
+        - USER20_BASINS/WakatipuBasinOutlineWGS84.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - USER20_BASINS/WakatipuBasin_WGS84_500m_v2020v07v06.in
 
   - name: Alexandra_v20p7
     type: 1
     author: Cameron Douglas (USER2020)
     wiki_images:
-      - basins/SI_mid.png
+      - maps/SI_mid.png
+      - regional/Alexandra_basin_map.png
       - basins/alexandra-ranfurly_basins_classification_v2-page-001.jpg
     notes:
       - Alexandra, Ranfurly and NE_Otago share the same basement
-    outline_source:
-      - USER20_BASINS/alexandra_outline.txt
     boundaries:
       - regional/Alexandra/Alexandra_outline_WGS84.txt
     surfaces:
       - path: global/surface/NZ_DEM_HD.in
         submodel: canterbury1d_v2
       - path: regional/Alexandra/Alexandra_basement_WGS84.in
+    retrieved_from:
+      - boundaries: 
+        - USER20_BASINS/alexandra_outline.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - USER20_BASINS/ran-alex_proj_WGS84.in
 
   - name: Ranfurly_v20p7
     type: 1
     author: Cameron Douglas (USER2020)
     wiki_images:
-      - basins/SI_mid.png
+      - maps/SI_mid.png
+      - regional/Ranfurly_basin_map.png
       - basins/alexandra-ranfurly_basins_classification_v2-page-001.jpg
     notes:
       - Alexandra, Ranfurly and NE_Otago share the same basement
-    outline_source:
-      - USER20_BASINS/ranfurly_outline.txt
     boundaries:
       - regional/Ranfurly/Ranfurly_outline_WGS84.txt
     surfaces:
       - path: global/surface/NZ_DEM_HD.in
         submodel: canterbury1d_v2
       - path: regional/Ranfurly/Ranfurly_basement_WGS84.in
-
+    retrieved_from:
+      - boundaries: 
+        - USER20_BASINS/ranfurly_outline.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - USER20_BASINS/ran-alex_proj_WGS84.in
 
   - name: NE_Otago_v20p7
     type: 1
     author: Cameron Douglas (USER2020)
     wiki_images:
-      - basins/SI_se.png
+      - maps/SI_se.png
+      - regional/NE_Otago_basin_map.png
       - basins/ne_otago_basins_classification-page-001.jpg
     notes:
       - Alexandra, Ranfurly and NE_Otago share the same basement
-    outline_source:
-      - USER20_BASINS/NE_otago/NE_otago_A_outline.txt
-      - USER20_BASINS/NE_otago/NE_otago_B_outline.txt
-      - USER20_BASINS/NE_otago/NE_otago_C_outline.txt
-      - USER20_BASINS/NE_otago/NE_otago_D_outline.txt
-      - USER20_BASINS/NE_otago/NE_otago_E_outline.txt
     boundaries:
       - regional/NE_Otago/NE_Otago_outline_WGS84_1.txt
       - regional/NE_Otago/NE_Otago_outline_WGS84_2.txt
@@ -406,13 +505,24 @@ basin:
       - path: global/surface/NZ_DEM_HD.in
         submodel: canterbury1d_v2
       - path: regional/NE_Otago/NE_Otago_basement_WGS84.in
+    retrieved_from:
+      - boundaries: 
+        - USER20_BASINS/NE_otago/NE_otago_A_outline.txt
+        - USER20_BASINS/NE_otago/NE_otago_B_outline.txt
+        - USER20_BASINS/NE_otago/NE_otago_C_outline.txt
+        - USER20_BASINS/NE_otago/NE_otago_D_outline.txt
+        - USER20_BASINS/NE_otago/NE_otago_E_outline.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - USER20_BASINS/ran-alex_proj_WGS84.in
 
 
   - name: Mosgiel_v20p7
     type: 1
     author: Cameron Douglas (USER2020)
     wiki_images:
-      - basins/SI_se.png
+      - maps/SI_se.png
+      - regional/Mosgiel_basin_map.png
       - basins/green_class.png
       - basins/green_rock.png
     notes:
@@ -420,29 +530,32 @@ basin:
       - Implemented as two separate basins (Mosgiel/Balclutha) joined by the sedimentary rock
       - May need more rigorous classification
 
-    outline_source:
-      - USER20_BASINS/mos_outline_WGS84.txt
     boundaries:
       - regional/Mosgiel/Mosgiel_outline_WGS84.txt
     surfaces:
       - path: global/surface/NZ_DEM_HD.in
         submodel: canterbury1d_v2
       - path: regional/Mosgiel/Mosgiel_basement_WGS84.in
+    retrieved_from:
+      - boundaries: 
+        - USER20_BASINS/mos_outline_WGS84.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - USER20_BASINS/mos_proj_WGS84.in
 
 
   - name: Balclutha_v20p7
     type: 1
     author: Cameron Douglas (USER2020)
     wiki_images:
-      - basins/SI_se.png
+      - maps/SI_se.png
+      - regional/Balclutha_basin_map.png
       - basins/green_class.png
       - basins/green_rock.png
     notes:
       - Green area (in green_rock.png) tentatively regarded as a sedimentary rock (soft rock)
       - Implemented as two separate basins (Mosgiel/Balclutha) joined by the sedimentary rock
       - May need more rigorous classification
-    outline_source:
-      - USER20_BASINS/bal_outline_WGS84.txt
     boundaries:
       - regional/Balclutha/Balclutha_outline_WGS84.txt
     surfaces:
@@ -450,19 +563,24 @@ basin:
         submodel: canterbury1d_v2
       - path: regional/Balclutha/Balclutha_basement_WGS84.in
     smoothing: regional/Balclutha/Balclutha_smoothing.txt
+    retrieved_from:
+      - boundaries: 
+        - USER20_BASINS/bal_outline_WGS84.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - USER20_BASINS/bal_proj_WGS84.in
 
 
   - name: Dunedin_v20p7
     type: 1
     author: Cameron Douglas (USER2020)
     wiki_images:
-      - basins/SI_se.png
+      - maps/SI_se.png
+      - regional/Dunedin_basin_map.png
       - basins/dunedin_outline.png
     notes:
       - Port Chalmers needs an update.
       - Inlets need to be modelled.
-    outline_source:
-      - USER20_BASINS/dun_outline_WGS84.txt
     boundaries:
       - regional/Dunedin/Dunedin_outline_WGS84.txt
     surfaces:
@@ -470,36 +588,46 @@ basin:
         submodel: canterbury1d_v2
       - path: regional/Dunedin/Dunedin_basement_WGS84.in
     smoothing: regional/Dunedin/Dunedin_smoothing.txt
+    retrieved_from:
+      - boundaries: 
+        - USER20_BASINS/dun_outline_WGS84.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - USER20_BASINS/dun_proj_WGS84.in 
 
 
   - name: Murchison_v20p7
     type: 1
     author: Tim Tuckey (USER2020)
     wiki_images:
-      - basins/SI_north.png
+      - maps/SI_north.png
+      - regional/Murchison_basin_map.png
       - basins/murchison_outline.png
-    outline_source:
-      - USER20_BASINS/Murchison_Basin_Outline_v1_WGS84.txt
     boundaries:
       - regional/Murchison/Murchison_outline_WGS84.txt
     surfaces:
       - path: global/surface/NZ_DEM_HD.in
         submodel: canterbury1d_v2
       - path: regional/Murchison/Murchison_basement_WGS84.in
+    retrieved_from:
+      - boundaries: 
+        - USER20_BASINS/Murchison_Basin_Outline_v1_WGS84.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - USER20_BASINS/MurchisonBasin_WGS84_500m_v2020v07v15.in
 
 
   - name: Waitaki_v20p8
     type: 1
     author: Cameron Douglas (USER2020)
     wiki_images:
-      - basins/SI_mid.png
+      - maps/SI_mid.png
+      - regional/Waitaki_basin_map.png
       - basins/waitaki_hakataramea_outline.jpg
     notes:
       - (Comment from the author)
       - Interacts with the boundary of the Canterbury Basin- Need to check boundary depth.
       - Hakataramea and Waitaki share the same basement data.
-    outline_source:
-      - USER20_BASINS/waitaki_outline_WGS84.txt
     boundaries:
       - regional/Waitaki/Waitaki_outline_WGS84.txt
     surfaces:
@@ -507,31 +635,41 @@ basin:
         submodel: canterbury1d_v2
       - path: regional/Waitaki/Waitaki_basement_WGS84.in
     smoothing: regional/Waitaki/Waitaki_smoothing.txt
+    retrieved_from:
+      - boundaries: 
+        - USER20_BASINS/waitaki_outline_WGS84.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - USER20_BASINS/wai-hak_WGS84.in
 
   - name: Hakataramea_v20p8
     type: 1
     author: Cameron Douglas (USER2020)
     wiki_images:
-      - basins/SI_mid.png
+      - maps/SI_mid.png
+      - regional/Hakataramea_basin_map.png
       - basins/waitaki_hakataramea_outline.jpg
     notes:
       - Hakataramea and Waitaki share the same basement data.
-    outline_source:
-      - USER20_BASINS/hakataramea_outline_WGS84.txt
     boundaries:
       - regional/Hakataramea/Hakataramea_outline_WGS84.txt
     surfaces:
       - path: global/surface/NZ_DEM_HD.in
         submodel: canterbury1d_v2
       - path: regional/Hakataramea/Hakataramea_basement_WGS84.in
+    retrieved_from:
+      - boundaries: 
+        - USER20_BASINS/hakataramea_outline_WGS84.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - USER20_BASINS/wai-hak_WGS84.in      
 
   - name: Karamea_v20p11
     type: 1
     author: Tim Tuckey (USER2020)
     wiki_images:
-      - basins/SI_north.png
-    outline_source:
-      - USER20_BASINS/Karamea_basin_outline_v1_WGS84.txt
+      - maps/SI_north.png
+      - regional/Karamea_basin_map.png
     boundaries:
       - regional/Karamea/Karamea_outline_WGS84.txt
     surfaces:
@@ -539,16 +677,19 @@ basin:
         submodel: canterbury1d_v2
       - path: regional/Karamea/Karamea_basement_WGS84.in
     smoothing: regional/Karamea/Karamea_smoothing.txt
+    retrieved_from:
+      - boundaries: 
+        - USER20_BASINS/Karamea_basin_outline_v1_WGS84.txt  
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - USER20_BASINS/KarameaBasin_WGS84_500m_v12v11v2020.in
 
   - name: Collingwood_v20p11
     type: 1
     author: Tim Tuckey (USER2020)
     wiki_images:
-      - basins/SI_north.png
-    outline_source:
-      - USER20_BASINS/CollingwoodBasinOutline_1_WGS84_v1.txt
-      - USER20_BASINS/CollingwoodBasinOutline_2_WGS84_v1.txt
-      - USER20_BASINS/CollingwoodBasinOutline_3_WGS84_v1.txt
+      - maps/SI_north.png
+      - regional/Collingwood_basin_map.png
     boundaries:
       - regional/Collingwood/Collingwood_outline_WGS84_1.txt
       - regional/Collingwood/Collingwood_outline_WGS84_2.txt
@@ -558,35 +699,44 @@ basin:
         submodel: canterbury1d_v2
       - path: regional/Collingwood/Collingwood_basement_WGS84.in
     smoothing: regional/Collingwood/Collingwood_smoothing.txt
+    retrieved_from:
+      - boundaries: 
+        - USER20_BASINS/CollingwoodBasinOutline_1_WGS84_v1.txt
+        - USER20_BASINS/CollingwoodBasinOutline_2_WGS84_v1.txt
+        - USER20_BASINS/CollingwoodBasinOutline_3_WGS84_v1.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - USER20_BASINS/CollTakBasin_WGS84_500m_v11v11v2020.in
 
   - name: SpringsJunction_v20p11
     type: 1
     author: Tim Tuckey (USER2020)
     wiki_images:
-      - basins/SI_north.png
-    outline_source:
-      - USER20_BASINS/SpringsJ_basin_outline_v1_WGS84.txt
+      - maps/SI_north.png
+      - regional/SpringsJunction_basin_map.png
     boundaries:
       - regional/SpringsJunction/SpringsJunction_outline_WGS84.txt
     surfaces:
       - path: global/surface/NZ_DEM_HD.in
         submodel: canterbury1d_v2
       - path: regional/SpringsJunction/SpringsJunction_basement_WGS84.in
+    retrieved_from:
+      - boundaries: 
+        - USER20_BASINS/SpringsJ_basin_outline_v1_WGS84.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - USER20_BASINS/SpringsJunctionBasin_WGS84_500m_v12v11v2020.in
 
   - name: HawkesBay_v21p7
     type: 1
     author: William Lee (USER2021)
     wiki_images:
-      - basins/NI_mideast.png
+      - maps/NI_mideast.png
+      - regional/HawkesBay_basin_map.png
       - basins/hawkes_bay_outline.png
       - basins/hawkes_bay_outline_edited.png
     notes:
       - (Comment from the author) "The areas marked with black X's were either considered too shallow or sedimentary rock so weren't modelled as a basin."
-    outline_source:
-      - Basins/Napier_Hawkes_Bay/v21p7/HawkesBay1_Outline_WGS84_delim.dat
-      - Basins/Napier_Hawkes_Bay/v21p7/HawkesBay2_Outline_WGS84_delim.dat
-      - Basins/Napier_Hawkes_Bay/v21p7/HawkesBay3_Outline_WGS84_delim.dat
-      - Basins/Napier_Hawkes_Bay/v21p7/HawkesBay4_Outline_WGS84_delim.dat
     boundaries:
       - regional/HawkesBay/HawkesBay_outline_WGS84_1.txt
       - regional/HawkesBay/HawkesBay_outline_WGS84_2.txt
@@ -597,20 +747,24 @@ basin:
         submodel: canterbury1d_v2
       - path: regional/HawkesBay/HawkesBay_basement_WGS84.in
     smoothing: regional/HawkesBay/HawkesBay_smoothing.txt
+    retrieved_from:
+      - boundaries: 
+        - Basins/Napier_Hawkes_Bay/v21p7/HawkesBay1_Outline_WGS84_delim.dat
+        - Basins/Napier_Hawkes_Bay/v21p7/HawkesBay2_Outline_WGS84_delim.dat
+        - Basins/Napier_Hawkes_Bay/v21p7/HawkesBay3_Outline_WGS84_delim.dat
+        - Basins/Napier_Hawkes_Bay/v21p7/HawkesBay4_Outline_WGS84_delim.dat
+        - USER20_BASINS/SpringsJ_basin_outline_v1_WGS84.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - Basins/Napier_Hawkes_Bay/v21p7/HawkesBay_Grid_WGS84_Export.in
 
   - name: Napier_v21p7
     type: 1
     author: William Lee (USER2021)
     wiki_images:
-      - basins/NI_mideast.png
+      - maps/NI_mideast.png
+      - regional/Napier_basin_map.png
       - basins/napier_outline.png
-    outline_source:
-      - Basins/Napier_Hawkes_Bay/v21p7/Napier1_Outline_WGS84_delim.dat
-      - Basins/Napier_Hawkes_Bay/v21p7/Napier2_Outline_WGS84_delim.dat
-      - Basins/Napier_Hawkes_Bay/v21p7/Napier3_Outline_WGS84_delim.dat
-      - Basins/Napier_Hawkes_Bay/v21p7/Napier4_Outline_WGS84_delim.dat
-      - Basins/Napier_Hawkes_Bay/v21p7/Napier5_Outline_WGS84_delim.dat
-      - Basins/Napier_Hawkes_Bay/v21p7/Napier6_Outline_WGS84_delim.dat
     boundaries:
       - regional/Napier/Napier_outline_WGS84_1.txt
       - regional/Napier/Napier_outline_WGS84_2.txt
@@ -623,20 +777,25 @@ basin:
         submodel: canterbury1d_v2
       - path: regional/Napier/Napier_basement_WGS84.in
     smoothing: regional/Napier/Napier_smoothing.txt
+    retrieved_from:
+      - boundaries: 
+        - Basins/Napier_Hawkes_Bay/v21p7/Napier1_Outline_WGS84_delim.dat
+        - Basins/Napier_Hawkes_Bay/v21p7/Napier2_Outline_WGS84_delim.dat
+        - Basins/Napier_Hawkes_Bay/v21p7/Napier3_Outline_WGS84_delim.dat
+        - Basins/Napier_Hawkes_Bay/v21p7/Napier4_Outline_WGS84_delim.dat
+        - Basins/Napier_Hawkes_Bay/v21p7/Napier5_Outline_WGS84_delim.dat
+        - Basins/Napier_Hawkes_Bay/v21p7/Napier6_Outline_WGS84_delim.dat
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - Basins/Napier_Hawkes_Bay/v21p7/Napier_Grid_WGS84_Export.in
 
   - name: GreaterWellington_v21p7
     type: 1
     author: William Lee (USER2021)
     wiki_images:
-      - basins/NI_south.png
+      - maps/NI_south.png
+      - regional/GreaterWellington_basin_map.png
       - basins/greater_wellington_outline.png
-    outline_source:
-      - Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington1_Outline_WGS84.dat
-      - Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington2_Outline_WGS84.dat
-      - Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington3_Outline_WGS84.dat
-      - Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington4_Outline_WGS84.dat
-      - Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington5_Outline_WGS84.dat
-      - Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington6_Outline_WGS84.dat
     boundaries:
       - regional/GreaterWellington/GreaterWellington_outline_WGS84_1.txt
       - regional/GreaterWellington/GreaterWellington_outline_WGS84_2.txt
@@ -649,16 +808,25 @@ basin:
         submodel: canterbury1d_v2
       - path: regional/GreaterWellington/GreaterWellington_basement_WGS84.in
     smoothing: regional/GreaterWellington/GreaterWellington_smoothing.txt
+    retrieved_from:
+      - boundaries: 
+        - Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington1_Outline_WGS84.dat
+        - Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington2_Outline_WGS84.dat
+        - Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington3_Outline_WGS84.dat
+        - Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington4_Outline_WGS84.dat
+        - Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington5_Outline_WGS84.dat
+        - Basins/Greater_Wellington_and_Porirua/v21p7/GreaterWellington6_Outline_WGS84.dat
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - Basins/Greater_Wellington_and_Porirua/v21p7/Greater_Wellington_Elevation_WGS84.in
 
   - name: Porirua_v21p7
     type: 1
     author: William Lee (USER2021)
     wiki_images:
-      - basins/NI_south.png
+      - maps/NI_south.png
+      - regional/Porirua_basin_map.png
       - basins/porirua_outline.png
-    outline_source:
-      - Basins/Greater_Wellington_and_Porirua/v21p7/Porirua1_Outline_WGS84.dat
-      - Basins/Greater_Wellington_and_Porirua/v21p7/Porirua2_Outline_WGS84.dat
     boundaries:
       - regional/Porirua/Porirua_outline_WGS84_1.txt
       - regional/Porirua/Porirua_outline_WGS84_2.txt
@@ -667,18 +835,24 @@ basin:
         submodel: canterbury1d_v2
       - path: regional/Porirua/Porirua_basement_WGS84.in
     smoothing: regional/Porirua/Porirua_smoothing.txt
+    retrieved_from:
+      - boundaries: 
+        - Basins/Greater_Wellington_and_Porirua/v21p7/Porirua1_Outline_WGS84.dat
+        - Basins/Greater_Wellington_and_Porirua/v21p7/Porirua2_Outline_WGS84.dat
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - Basins/Greater_Wellington_and_Porirua/v21p7/Porirua_Elevation_WGS84.in
 
   - name: Gisborne_v21p11
     type: 1
     author: William Lee (USER2021)
     wiki_images:
-      - basins/NI_mideast.png
+      - maps/NI_mideast.png
+      - regional/Gisborne_basin_map.png
       - basins/grisborne_basement.png
     notes:
       - (Comment from the author)
       - Stop at Moto River, working around the East Cape from Gisborne. Haurere Point should be included in Whakatane
-    outline_source:
-      - Basins/Gisborne/v21p11/Gisborne_Outline_WGS84_delim.dat
     boundaries:
       - regional/Gisborne/Gisborne_outline_WGS84.txt
     surfaces:
@@ -686,12 +860,19 @@ basin:
         submodel: canterbury1d_v2
       - path: regional/Gisborne/Gisborne_basement_WGS84.in
     smoothing: regional/Gisborne/Gisborne_smoothing.txt
+    retrieved_from:
+      - boundaries: 
+        - Basins/Gisborne/v21p11/Gisborne_Outline_WGS84_delim.dat
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - Basins/Gisborne/v21p11/Gisborne_Surface_Export.in
 
   - name: SouthernHawkesBay_v21p12
     type: 1
     author: William Lee (USER2021)
     wiki_images:
-      - basins/NI_mideast.png
+      - maps/NI_mideast.png
+      - regional/SouthernHawkesBay_basin_map.png
       - basins/southern_hawkes_bay_outline.png
       - basins/southern_hawkes_bay_outline_extra.png
     notes:
@@ -699,25 +880,28 @@ basin:
       - Will be near the Wairarapa and Manawatu-Whanganui / Taranaki basins, but does not physically touch due to rock.
       - Physically connects to Northern Hawkes Bay in the Ngaruroro River valley. Need to check consistency in the bedrock surfaces at the intersection.
       - Missing some parts in the east coast.
-    outline_source:
-      - Basins/Southern_Hawkes_Bay/v21p12/SHB_Outline_WGS84_delim.dat
     boundaries:
       - regional/SouthernHawkesBay/SouthernHawkesBay_outline_WGS84.txt
     surfaces:
       - path: global/surface/NZ_DEM_HD.in
         submodel: canterbury1d_v2
       - path: regional/SouthernHawkesBay/SouthernHawkesBay_basement_WGS84.in
+    retrieved_from:
+      - boundaries: 
+        - Basins/Southern_Hawkes_Bay/v21p12/SHB_Outline_WGS84_delim.dat
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - Basins/Southern_Hawkes_Bay/v21p12/SHB_Surface_Export.in
 
 
   - name: Wairarapa_v21p12
     type: 1
     author: William Lee (USER2021)
     wiki_images:
-      - basins/NI_south.png
+      - maps/NI_south.png
+      - regional/Wairarapa_basin_map.png
     notes:
         - (Comment from the author) "Consider adding east coastal basins (e.g. Uruti Point)"
-    outline_source:
-      - Basins/Wairarapa/v21p12/Wairarapa_Outline_WGS84_delim.dat
     boundaries:
       - regional/Wairarapa/Wairarapa_outline_WGS84.txt
     surfaces:
@@ -725,22 +909,25 @@ basin:
         submodel: canterbury1d_v2
       - path: regional/Wairarapa/Wairarapa_basement_WGS84.in
     smoothing: regional/Wairarapa/Wairarapa_smoothing.txt
+    retrieved_from:
+      - boundaries: 
+        - Basins/Wairarapa/v21p12/Wairarapa_Outline_WGS84_delim.dat
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - Basins/Wairarapa/v21p12/Wairarapa_Surface_Export.in
 
   - name: MotuBay_v22p3
     type: 1
     author: Cameron Davis / Emma Coumbe (USER2022)
     wiki_images:
-      - basins/motubay_whangaparoa.png
+      - maps/motubay_whangaparoa.png
+      - regional/MotuBay_basin_map.png
       - basins/motubay_basement.png
       - basins/moturiver_extended_outline.png
       - basins/eastcape_coastal_river_valleys.png
     notes:
       - Rest of the coastal river valleys on the East Cape (Waiapu River, Hicks Bay, Waihau Bay, Motu River) to be added
       - Tolaga bay/Omaio Bay to be included (pending acceptance) https://github.com/ucgmsim/Velocity-Model/pull/43/files
-    outline_source:
-      - Basins/East_Cape/v22p3/Motu_bay1_Outline_WGS84.txt
-      - Basins/East_Cape/v22p3/Motu_bay2_Outline_WGS84.txt
-      - Basins/East_Cape/v22p3/Motu_bay3_Outline_WGS84.txt
     boundaries:
       - regional/MotuBay/MotuBay_outline_WGS84_1.txt
       - regional/MotuBay/MotuBay_outline_WGS84_2.txt
@@ -750,15 +937,24 @@ basin:
         submodel: canterbury1d_v2
       - path: regional/MotuBay/MotuBay_basement_WGS84.in
     smoothing: regional/MotuBay/MotuBay_smoothing.txt
+    retrieved_from:
+      - boundaries: 
+        - Basins/East_Cape/v22p3/Motu_bay1_Outline_WGS84.txt
+        - Basins/East_Cape/v22p3/Motu_bay2_Outline_WGS84.txt
+        - Basins/East_Cape/v22p3/Motu_bay3_Outline_WGS84.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - Basins/East_Cape/v22p3/Motu_river_Surface_Export.in 
 
   - name: Whangaparoa_v23p4
     type: 1
     author: Cameron Davis / Emma Coumbe (USER2022)
     wiki_images:
-      - basins/motubay_whangaparoa.png
+      - maps/motubay_whangaparoa.png
+      - regional/Whangaparoa_basin_map.png
     notes:
       - See [MotuBay](MotuBay.md) for additional notes
-    outline_source:
+    retrieved_from:
       - USER20_BASINS/Whangaparoa_outline_WGS84.txt
     boundaries:
       - regional/Whangaparoa/Whangaparoa_outline_WGS84.txt
@@ -766,23 +962,28 @@ basin:
       - path: global/surface/NZ_DEM_HD.in
         submodel: canterbury1d_v2
       - path: regional/Whangaparoa/Whangaparoa_basement_WGS84.in
+    retrieved_from:
+      - boundaries: 
+        - USER20_BASINS/Whangaparoa_outline_WGS84.txt
+      - surfaces:
+        - DEM/NZ_DEM_HD.in
+        - USER20_BASINS/Whangaparoa_surface_WGS84.txt   
 
   - name: TeAnau_v24p9
-    author: Jackson Turner / Ayushi Tiwari
-    outline_source:
-      - STUDENTS_BASINS/TeAnau_outline_WGS84.txt
+    author: Jackson Turner / Ayushi Tiwari (ENCN493)
+    wiki_images:
+      - regional/TeAnau_basin_map.png
     boundaries:
       - regional/TeAnau/TeAnau_outline_WGS84.txt
     surfaces:
       - path: global/surface/NZ_DEM_HD.in
         submodel: canterbury1d_v2
       - path: regional/TeAnau/TeAnau_basement_WGS84.in
-
-
+  
   - name: Westport_v24p9
-    author: Kaleb Finn / Ayushi Tiwari
-    outline_source:
-      - STUDENTS_BASINS/Westport_outline_WGS84.txt
+    author: Kaleb Finn / Ayushi Tiwari (ENCN493)
+    wiki_images:
+      - regional/Westport_basin_map.png
     boundaries:
       - regional/Westport/Westport_outline_WGS84.txt
     surfaces:
@@ -790,16 +991,6 @@ basin:
         submodel: canterbury1d_v2
       - path: regional/Westport/Westport_basement_WGS84.in
     smoothing: regional/Westport/Westport_smoothing.txt
-
-
-vm1d:
-  - name: canterbury1d_v1
-    path: global/vm1d/Cant1D_v1.fd_modfile
-    module:
-  - name: canterbury1d_v2
-    path: global/vm1d/Cant1D_v2.fd_modfile
-  - name: canterbury1d_v2_pliocene_enforced
-    path: global/vm1d/Cant1D_v2_Pliocene_Enforced.fd_modfile
 
 
 submodel:
@@ -819,6 +1010,7 @@ submodel:
     - name: canterbury1d_v2_pliocene_enforced
       type: vm1d
       module: canterbury1d_submod
+      data: global/vm1d/Cant1D_v2_Pliocene_Enforced.fd_modfile
 
     - name: ep_tomography_submod_v2010
       type: tomography

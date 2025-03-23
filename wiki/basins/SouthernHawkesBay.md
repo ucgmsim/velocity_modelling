@@ -10,31 +10,44 @@
 
 
 ## Images
-<a href="../images/basins/NI_mideast.png"><img src="../images/basins/NI_mideast.png" width="50%"></a>
+<a href="../images/maps/NI_mideast.png"><img src="../images/maps/NI_mideast.png" width="75%"></a>
 
 *Figure 1 Location*
 
-<a href="../images/basins/southern_hawkes_bay_outline.png"><img src="../images/basins/southern_hawkes_bay_outline.png" width="50%"></a>
+<a href="../images/regional/SouthernHawkesBay_basin_map.png"><img src="../images/regional/SouthernHawkesBay_basin_map.png" width="75%"></a>
 
-*Figure 2 SouthernHawkesBay Basement*
+*Figure 2 Southernhawkesbay Basin Map*
 
-<a href="../images/basins/southern_hawkes_bay_outline_extra.png"><img src="../images/basins/southern_hawkes_bay_outline_extra.png" width="50%"></a>
+<a href="../images/basins/southern_hawkes_bay_outline.png"><img src="../images/basins/southern_hawkes_bay_outline.png" width="75%"></a>
 
-*Figure 3 Image 3*
+*Figure 3 Southern Hawkes Bay Outline*
+
+<a href="../images/basins/southern_hawkes_bay_outline_extra.png"><img src="../images/basins/southern_hawkes_bay_outline_extra.png" width="75%"></a>
+
+*Figure 4 Southern Hawkes Bay Outline Extra*
 
 
 ## Notes
-- (Comment from the author) "Will be near the Wairarapa and Manawatu-Whanganui / Taranaki basins, but does not physically touch due to rock."
-- (Comment from the author) "Physically connects to Northern Hawkes Bay in the Ngaruroro River valley. Need to check consistency in the bedrock surfaces at the intersection."
+- (Comment from the author)
+- Will be near the Wairarapa and Manawatu-Whanganui / Taranaki basins, but does not physically touch due to rock.
+- Physically connects to Northern Hawkes Bay in the Ngaruroro River valley. Need to check consistency in the bedrock surfaces at the intersection.
 - Missing some parts in the east coast.
 
 ## Data
 ### Boundaries
+- [SouthernHawkesBay_outline_WGS84.txt](../../velocity_modelling/cvm/data/regional/SouthernHawkesBay/SouthernHawkesBay_outline_WGS84.txt)
+
+### Surfaces
+- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [SouthernHawkesBay_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/SouthernHawkesBay/SouthernHawkesBay_basement_WGS84.in) (Submodel: N/A)
+
+## Data retrieved from
+### Boundaries
 - [SHB_Outline_WGS84_delim.dat](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Southern_Hawkes_Bay/v21p12/SHB_Outline_WGS84_delim.dat)
 
 ### Surfaces
-- [NZ_DEM](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [SouthernHawkesBay](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Path not found) (Submodel: N/A)
+- [NZ_DEM_HD.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in)
+- [SHB_Surface_Export.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Southern_Hawkes_Bay/v21p12/SHB_Surface_Export.in)
 
 ---
-*Page generated on: March 19, 2025, 14:20 NZST/NZDT*
+*Page generated on: March 22, 2025, 19:41 NZST/NZDT*

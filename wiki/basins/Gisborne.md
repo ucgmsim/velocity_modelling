@@ -10,28 +10,41 @@
 
 
 ## Images
-<a href="../images/basins/NI_mideast.png"><img src="../images/basins/NI_mideast.png" width="50%"></a>
+<a href="../images/maps/NI_mideast.png"><img src="../images/maps/NI_mideast.png" width="75%"></a>
 
 *Figure 1 Location*
 
-<a href="../images/basins/grisborne_basement.png"><img src="../images/basins/grisborne_basement.png" width="50%"></a>
+<a href="../images/regional/Gisborne_basin_map.png"><img src="../images/regional/Gisborne_basin_map.png" width="75%"></a>
 
-*Figure 2 Gisborne Basement*
+*Figure 2 Gisborne Basin Map*
+
+<a href="../images/basins/grisborne_basement.png"><img src="../images/basins/grisborne_basement.png" width="75%"></a>
+
+*Figure 3 Grisborne Basement*
 
 
 ## Notes
-- (Comment from the author) "Stop at Moto River, working around the East Cape from Gisborne. Haurere Point should be included in Whakatane"
+- (Comment from the author)
+- Stop at Moto River, working around the East Cape from Gisborne. Haurere Point should be included in Whakatane
 
 ## Data
+### Boundaries
+- [Gisborne_outline_WGS84.txt](../../velocity_modelling/cvm/data/regional/Gisborne/Gisborne_outline_WGS84.txt)
+
+### Surfaces
+- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [Gisborne_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/Gisborne/Gisborne_basement_WGS84.in) (Submodel: N/A)
+
+### Smoothing Boundaries
+- [Gisborne_smoothing.txt](../../velocity_modelling/cvm/data/regional/Gisborne/Gisborne_smoothing.txt)
+
+## Data retrieved from
 ### Boundaries
 - [Gisborne_Outline_WGS84_delim.dat](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Gisborne/v21p11/Gisborne_Outline_WGS84_delim.dat)
 
 ### Surfaces
-- [NZ_DEM](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [GisborneBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Gisborne/v21p11/Gisborne_Surface_Export.in) (Submodel: N/A)
-
-### Smoothing Boundaries
-- [Gisborne_v21p11.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Boundaries/Smoothing/Gisborne_v21p11.txt)
+- [NZ_DEM_HD.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in)
+- [Gisborne_Surface_Export.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Gisborne/v21p11/Gisborne_Surface_Export.in)
 
 ---
-*Page generated on: March 19, 2025, 14:20 NZST/NZDT*
+*Page generated on: March 22, 2025, 19:41 NZST/NZDT*

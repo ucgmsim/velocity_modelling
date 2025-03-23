@@ -10,9 +10,13 @@
 
 
 ## Images
-<a href="../images/basins/NI_south.png"><img src="../images/basins/NI_south.png" width="50%"></a>
+<a href="../images/maps/NI_south.png"><img src="../images/maps/NI_south.png" width="75%"></a>
 
-*Figure 1 Image 1*
+*Figure 1 Location*
+
+<a href="../images/regional/Wairarapa_basin_map.png"><img src="../images/regional/Wairarapa_basin_map.png" width="75%"></a>
+
+*Figure 2 Wairarapa Basin Map*
 
 
 ## Notes
@@ -20,14 +24,22 @@
 
 ## Data
 ### Boundaries
+- [Wairarapa_outline_WGS84.txt](../../velocity_modelling/cvm/data/regional/Wairarapa/Wairarapa_outline_WGS84.txt)
+
+### Surfaces
+- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [Wairarapa_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/Wairarapa/Wairarapa_basement_WGS84.in) (Submodel: N/A)
+
+### Smoothing Boundaries
+- [Wairarapa_smoothing.txt](../../velocity_modelling/cvm/data/regional/Wairarapa/Wairarapa_smoothing.txt)
+
+## Data retrieved from
+### Boundaries
 - [Wairarapa_Outline_WGS84_delim.dat](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Wairarapa/v21p12/Wairarapa_Outline_WGS84_delim.dat)
 
 ### Surfaces
-- [NZ_DEM](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [WairarapaBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Wairarapa/v21p12/Wairarapa_Surface_Export.in) (Submodel: N/A)
-
-### Smoothing Boundaries
-- [Wairarapa_v21p12.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Boundaries/Smoothing/Wairarapa_v21p12.txt)
+- [NZ_DEM_HD.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in)
+- [Wairarapa_Surface_Export.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Wairarapa/v21p12/Wairarapa_Surface_Export.in)
 
 ---
-*Page generated on: March 19, 2025, 14:20 NZST/NZDT*
+*Page generated on: March 22, 2025, 19:41 NZST/NZDT*

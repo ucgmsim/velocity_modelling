@@ -10,26 +10,39 @@
 
 
 ## Images
-<a href="../images/basins/NI_south.png"><img src="../images/basins/NI_south.png" width="50%"></a>
+<a href="../images/maps/NI_south.png"><img src="../images/maps/NI_south.png" width="75%"></a>
 
 *Figure 1 Location*
 
-<a href="../images/basins/porirua_outline.png"><img src="../images/basins/porirua_outline.png" width="50%"></a>
+<a href="../images/regional/Porirua_basin_map.png"><img src="../images/regional/Porirua_basin_map.png" width="75%"></a>
 
-*Figure 2 Porirua Basement*
+*Figure 2 Porirua Basin Map*
+
+<a href="../images/basins/porirua_outline.png"><img src="../images/basins/porirua_outline.png" width="75%"></a>
+
+*Figure 3 Porirua Outline*
 
 
 ## Data
+### Boundaries
+- [Porirua_outline_WGS84_1.txt](../../velocity_modelling/cvm/data/regional/Porirua/Porirua_outline_WGS84_1.txt)
+- [Porirua_outline_WGS84_2.txt](../../velocity_modelling/cvm/data/regional/Porirua/Porirua_outline_WGS84_2.txt)
+
+### Surfaces
+- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [Porirua_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/Porirua/Porirua_basement_WGS84.in) (Submodel: N/A)
+
+### Smoothing Boundaries
+- [Porirua_smoothing.txt](../../velocity_modelling/cvm/data/regional/Porirua/Porirua_smoothing.txt)
+
+## Data retrieved from
 ### Boundaries
 - [Porirua1_Outline_WGS84.dat](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Greater_Wellington_and_Porirua/v21p7/Porirua1_Outline_WGS84.dat)
 - [Porirua2_Outline_WGS84.dat](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Greater_Wellington_and_Porirua/v21p7/Porirua2_Outline_WGS84.dat)
 
 ### Surfaces
-- [NZ_DEM](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [PoriruaBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Greater_Wellington_and_Porirua/v21p7/Porirua_Elevation_WGS84.in) (Submodel: N/A)
-
-### Smoothing Boundaries
-- [Porirua1_v21p7.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Boundaries/Smoothing/Porirua1_v21p7.txt)
+- [NZ_DEM_HD.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in)
+- [Porirua_Elevation_WGS84.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Greater_Wellington_and_Porirua/v21p7/Porirua_Elevation_WGS84.in)
 
 ---
-*Page generated on: March 19, 2025, 14:20 NZST/NZDT*
+*Page generated on: March 22, 2025, 19:41 NZST/NZDT*

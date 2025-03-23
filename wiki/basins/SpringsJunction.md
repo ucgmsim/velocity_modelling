@@ -10,18 +10,30 @@
 
 
 ## Images
-<a href="../images/basins/SI_north.png"><img src="../images/basins/SI_north.png" width="50%"></a>
+<a href="../images/maps/SI_north.png"><img src="../images/maps/SI_north.png" width="75%"></a>
 
-*Figure 1 Image 1*
+*Figure 1 Location*
+
+<a href="../images/regional/SpringsJunction_basin_map.png"><img src="../images/regional/SpringsJunction_basin_map.png" width="75%"></a>
+
+*Figure 2 Springsjunction Basin Map*
 
 
 ## Data
 ### Boundaries
+- [SpringsJunction_outline_WGS84.txt](../../velocity_modelling/cvm/data/regional/SpringsJunction/SpringsJunction_outline_WGS84.txt)
+
+### Surfaces
+- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [SpringsJunction_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/SpringsJunction/SpringsJunction_basement_WGS84.in) (Submodel: N/A)
+
+## Data retrieved from
+### Boundaries
 - [SpringsJ_basin_outline_v1_WGS84.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/SpringsJ_basin_outline_v1_WGS84.txt)
 
 ### Surfaces
-- [NZ_DEM](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [SpringsJunctionBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/SpringsJunctionBasin_WGS84_500m_v12v11v2020.in) (Submodel: N/A)
+- [NZ_DEM_HD.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in)
+- [SpringsJunctionBasin_WGS84_500m_v12v11v2020.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/SpringsJunctionBasin_WGS84_500m_v12v11v2020.in)
 
 ---
-*Page generated on: March 19, 2025, 14:20 NZST/NZDT*
+*Page generated on: March 22, 2025, 19:41 NZST/NZDT*

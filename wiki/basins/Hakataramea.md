@@ -10,22 +10,37 @@
 
 
 ## Images
-<a href="../images/basins/SI_mid.png"><img src="../images/basins/SI_mid.png" width="50%"></a>
+<a href="../images/maps/SI_mid.png"><img src="../images/maps/SI_mid.png" width="75%"></a>
 
 *Figure 1 Location*
 
-<a href="../images/basins/waitaki_hakataramea_outline.jpg"><img src="../images/basins/waitaki_hakataramea_outline.jpg" width="50%"></a>
+<a href="../images/regional/Hakataramea_basin_map.png"><img src="../images/regional/Hakataramea_basin_map.png" width="75%"></a>
 
-*Figure 2 Hakataramea Basement*
+*Figure 2 Hakataramea Basin Map*
 
+<a href="../images/basins/waitaki_hakataramea_outline.jpg"><img src="../images/basins/waitaki_hakataramea_outline.jpg" width="75%"></a>
+
+*Figure 3 Waitaki Hakataramea Outline*
+
+
+## Notes
+- Hakataramea and Waitaki share the same basement data.
 
 ## Data
+### Boundaries
+- [Hakataramea_outline_WGS84.txt](../../velocity_modelling/cvm/data/regional/Hakataramea/Hakataramea_outline_WGS84.txt)
+
+### Surfaces
+- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [Hakataramea_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/Hakataramea/Hakataramea_basement_WGS84.in) (Submodel: N/A)
+
+## Data retrieved from
 ### Boundaries
 - [hakataramea_outline_WGS84.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/hakataramea_outline_WGS84.txt)
 
 ### Surfaces
-- [NZ_DEM](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [HakatarameaBasement](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/wai-hak_WGS84.in) (Submodel: N/A)
+- [NZ_DEM_HD.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in)
+- [wai-hak_WGS84.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/wai-hak_WGS84.in)
 
 ---
-*Page generated on: March 19, 2025, 14:20 NZST/NZDT*
+*Page generated on: March 22, 2025, 19:41 NZST/NZDT*

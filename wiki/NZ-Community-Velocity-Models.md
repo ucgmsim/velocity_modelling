@@ -123,15 +123,15 @@ The `model_versions` section defines different versions of the velocity models. 
 ```yaml
 GTL: true
 surfaces:
-  - name: NZ_DEM
+  - path: global/surface/NZ_DEM_HD.in
     submodel: ep_tomography_submod_v2010
 
 tomography: 2010_NZ_OFFSHORE
 basin_edge_smoothing: true
 basins:
-  - Canterbury_Pre_Quaternary_v19p1
-  - Canterbury_North_v19p1
-  - Banks_Peninsula_Volcanics_v19p1
+  - Canterbury_v19p1
+  - NorthCanterbury_v19p1
+  - BanksPeninsulaVolcanics_v19p1
   - Kaikoura_v19p1
   - Cheviot_v19p1
   - Hanmer_v19p1
@@ -143,7 +143,7 @@ basins:
 
 - **GTL**: Indicates whether the Geotechnical Layer (GTL) is included (`true` or `false`).
 - **surfaces**: Lists the surfaces used in the model. Each surface has a `name` and an associated `submodel`.
-  - **name**: The name of the surface.
+  - **path**: The path to the surface data
   - **submodel**: The submodel associated with the surface. The submodel defines how to compute/assign vp,vs, and rho values
 - **tomography**: Specifies the tomography model used.
 - **basin_edge_smoothing**: Indicates whether basin edge smoothing is applied (`true` or `false`).
@@ -155,31 +155,28 @@ User can create a custom model version by placing a .yaml file in `model_version
 `nzvm_registry.yaml` contains the details of surface, tomography, basin and submodel data.
 Let us explore the registry using the `2p03.yaml` example.
 
-The "surfaces" for `model_version 2.03` was defined as 
+The "global" portion for `model_version 2.03` is defined as 
 
 ```
+GTL: true
 surfaces:
-  - name: NZ_DEM
-    submodel: ep_tomography_submod_v2010
-```
-`NZ_DEM` lives in the registry as:
-
-```
-surface:
-  - name: NZ_DEM
-    path: DEM/NZ_DEM_HD.in
+    - path: global/surface/NZ_DEM_HD.in
+      submodel: ep_tomography_submod_v2010
+tomography: 2010_NZ_OFFSHORE
 ```
 
-The associated submodel `ep_tomography_submod_v2010` is defined as:
+The `NZ_DEM_HD.in` contains the elevation data on a 2D grid across the New Zealand. The associated submodel `ep_tomography_submod_v2010` is defined as:
 
 ```
 submodel:
 ...
     - name: ep_tomography_submod_v2010
       type: tomography
+      module: ep_tomography_submod_v2010
 ...      
 ```
-As this is of `tomography` type, it will partner with the value for "tomography" (ie. `tomography: 2010_NZ_OFFSHORE`)
+This is a type of `tomography`, and it will retrieve more information and associated with the `tomography` value from the registry, in this case, `2010_NZ_OFFSHORE`.
+The `module` is the name of accompanied Python code that prescribes how to calculate velocity at the location within the region below the `surface`.
 
 `2010_NZ_OFFSHORE` is defined as 
 ```
@@ -188,10 +185,9 @@ tomography:
   - name: 2010_NZ_OFFSHORE
     nElev: 20
     elev: [ 15, 1, -3, -8, -15, -23, -30, -38, -48, -65, -85, -105, -130, -155, -185, -225, -275, -370, -620, -750 ]
-    vs30_path: Global_Surfaces/NZ_Vs30_HD_With_Offshore.in
+    vs30_path: global/vs30/NZ_Vs30_HD_With_Offshore.in
     special_offshore_tapering: true
-    path: Tomography/2010_NZ
-    format: HDF5
+    path: global/tomography/2010_NZ.h5
 ```
 The format of `tomography` data is given in [Tomography](../format/Tomography.md).
 
@@ -201,15 +197,16 @@ An example of basin model is:
 basin:
 ...
   - name: Cheviot_v19p1
+    type: 1
+ ...
     boundaries:
-      - SI_BASINS/Cheviot_Polygon_WGS84.txt
+      - regional/Cheviot/Cheviot_outline_WGS84.txt
     surfaces:
-      - name: NZ_DEM
+      - path: global/surface/NZ_DEM_HD.in
         submodel: canterbury1d_v2
-
-      - name: CheviotBasement
-
-    smoothing: Boundaries/Smoothing/Cheviot_v19p1.txt
+      - path: regional/Cheviot/Cheviot_basement_WGS84.in
+    smoothing: regional/Cheviot/Cheviot_smoothing.txt
+...
 ```
 Each basin needs 4 major items to define.
 
@@ -218,21 +215,16 @@ Each basin needs 4 major items to define.
 
 (2) `boundary`: a close-loop (ie. polygon)) of (lat, lon) coordinates (can have multiple boundary files)
 
-(3) `submomdel`: Velocity parameterization to apply, ie. how to assign/compute vp,vs,rho for a given grid point at certain depth. The above means we use canterbury1d_v2 (renamed from the widely used Cant1D_v2) for the layer between NZ_DEM and CheviotBasement. As the second surface has no submodel defined, it will be using the background values from the tomography.
+(3) `submomdel`: Velocity parameterization to apply, ie. how to assign/compute vp,vs,rho for a given grid point at certain depth. The above means we use `canterbury1d_v2`  for the layer between NZ_DEM and CheviotBasement. As the second surface has no submodel defined, it will be using the background values from the tomography.
 
-(4) `smoothing` (Optional): Smoothing boundary that define where velocity models should be smoothly transitioned between basins and background model (ie. tomography)
+(4) `smoothing` (Optional): Smoothing boundary in offshore region that defines where velocity models should be smoothly transitioned between basins and background model (ie. tomography)
 
 ![basin_modelling](images/basin_modelling.png)
 *Figure 3: Three mandatory compoments (1) bounding surfaces (2) 2D boundary in the lat-lon plane (3) velocity parameterization to apply.*
 
 
-For the completeness, the below are the definition of CheviotBasement
+For the completeness, the below are the definition of `canterbury1d_v2`
 
-```
-surface:
-  - name: CheviotBasement
-    path: SI_BASINS/Cheviot_Basement_WGS84_v0p0.in
-```
 
 and canterbury1d_v2
 
@@ -240,14 +232,10 @@ and canterbury1d_v2
 submodel:
     - name: canterbury1d_v2
       type: vm1d
+      module: canterbury1d_submod
+      data: global/vm1d/Cant1D_v2.fd_modfile
 ```
-as it is vm1d type, it has a separate definition in the registry for the path to the data.
-
-```
-vm1d:
-  - name: canterbury1d_v2
-    path: 1D_Velocity_Model/Cant1D_v2.fd_modfile
-```
+This is a `vm1d` (1D velocity model) type. Its data is at `global/vm1d/Cant1D_v2.fd_modfile` and we use the accompanied `canterbury1d_submod` Python code in `submodel` folder of the code base. 
 
 Why canterbury1d_v2 model for most basins not in Canterbury region? It is the most widely used 1D velocity model and considered a good representation for other parts of New Zealand.
 
