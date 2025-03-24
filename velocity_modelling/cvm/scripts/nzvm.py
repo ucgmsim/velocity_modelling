@@ -317,7 +317,6 @@ def generate_velocity_model(
 
     # Process each latitude slice
     total_slices = len(global_mesh.y)
-    last_progress = -progress_interval
     for j in tqdm(range(total_slices), desc="Generating velocity model", unit="slice"):
         partial_global_mesh = partial_global_mesh_list[j]
         partial_global_qualities = PartialGlobalQualities(
