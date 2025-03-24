@@ -1,5 +1,19 @@
+"""
+Plot basement heatmap, boundaries, and optional smoothing with online basemap.
+
+This script reads basement, boundary, and optional smoothing files and plots them on a map with an online basemap from Esri World Imagery.
+- The basement file should contain a 2D array of basement depths with corresponding latitude and longitude values.
+- The boundary files should contain a list of latitude and longitude coordinates that define the basin boundary. Can supply multiple boundary files.
+- The smoothing file should contain a list of latitude and longitude coordinates that define the smoothing boundary.
+
+Usage:
+    python plot_basin_with_map.py <basin_name> <data_path> <basement> <boundary1> [<boundary2>,...]  [--smoothing <smoothing>] [--out-dir <out_dir>]
+
+"""
+
 import argparse
 from pathlib import Path
+from typing import Optional
 
 import cartopy.crs as ccrs
 import cartopy.io.img_tiles as cimgt
@@ -11,13 +25,48 @@ from cartopy.mpl.gridliner import LATITUDE_FORMATTER, LONGITUDE_FORMATTER
 
 # Custom tile class for Esri World Imagery
 class EsriWorldImageryTiles(cimgt.GoogleTiles):
-    def _image_url(self, tile):
+    """
+    Esri World Imagery tile source.
+
+    This class provides the tile URL for Esri World Imagery basemap.
+    """
+
+    def _image_url(self, tile: tuple) -> str:
+        """
+        Get the URL for the tile.
+
+        Parameters
+        ----------
+        tile : tuple
+            Tuple of (x, y, z) tile coordinates.
+
+        Returns
+        -------
+        str
+            URL for the tile.
+
+        """
         x, y, z = tile
         url = f"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
         return url
 
 
-def load_basement(file_path: Path):
+def load_basement(file_path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Load basement file containing latitude, longitude, and raster data.
+
+    Parameters
+    ----------
+    file_path : Path
+        Path to basement file.
+
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray, np.ndarray]
+        Tuple of latitude, longitude, and raster data arrays.
+
+    """
     file_path = Path(file_path)
     if not file_path.exists():
         print(f"Error: Basement file {file_path} does not exist.")
@@ -65,17 +114,37 @@ def load_basement(file_path: Path):
         return lats, lons, raster
 
     except Exception as e:
-        print(f"Error loading basement file {file_path}: {e}")
-        return None, None, None
+        if isinstance(e, (SystemExit, KeyboardInterrupt)):
+            raise  # Re-raise critical exceptions
+        raise ValueError(f"Error loading basement file {file_path}: {e}")
 
 
-def load_boundary(file_path: Path, is_boundary=True):
+def load_boundary(
+    file_path: Path, is_boundary: Optional[bool] = True
+) -> tuple[list[float], list[float]]:
+    """
+    Load boundary or smoothing file containing latitude and longitude coordinates.
+
+    Parameters
+    ----------
+    file_path : Path
+        Path to boundary or smoothing file.
+
+    is_boundary : bool
+        True if the file is a boundary file and enforce it to close. False if it is a smoothing file.
+
+    Returns
+    -------
+    tuple[list[float], list[float]]
+        Tuple of longitude and latitude lists.
+
+    """
     file_path = Path(file_path)
     if not file_path.exists():
-        print(
+        raise ValueError(
             f"Error: {'Boundary' if is_boundary else 'Smoothing'} file {file_path} does not exist."
         )
-        return None, None
+
     try:
         with file_path.open("r") as f:
             lines = f.readlines()
@@ -89,17 +158,14 @@ def load_boundary(file_path: Path, is_boundary=True):
             coords.append(coords[0])
             lons.append(lons[0])
             lats.append(lats[0])
-            with file_path.open("w") as f:
-                for lon, lat in coords:
-                    f.write(f"{lon} {lat}\n")
-
         return lons, lats
 
     except Exception as e:
-        print(
+        if isinstance(e, (SystemExit, KeyboardInterrupt)):
+            raise  # Re-raise critical exceptions
+        raise ValueError(
             f"Error loading {'boundary' if is_boundary else 'smoothing'} file {file_path}: {e}"
         )
-        return None, None
 
 
 def plot_data(
@@ -109,6 +175,23 @@ def plot_data(
     basin_name: str,
     out_dir: Path,
 ):
+    """
+    Plot basement heatmap, boundaries, and optional smoothing with online basemap. Save the map to out_dir.
+
+    Parameters
+    ----------
+    basement_file : Path
+        Path to basement file.
+    boundary_files : list[Path]
+        List of paths to boundary files.
+    smoothing_file : Path
+        Path to smoothing file.
+    basin_name : str
+        Name of the basin for the map title.
+    out_dir : Path
+        Directory to save the output map.
+
+    """
     # Load basement data
     lats, lons, raster = load_basement(basement_file)
     if lats is None:
@@ -157,10 +240,11 @@ def plot_data(
     ax.set_extent(extent, crs=ccrs.PlateCarree())
 
     # Add Esri World Imagery basemap using custom tile class
+    # Tested a few other tile classes, but Esri World Imagery looks the best and processes quickly
     esri_imagery = EsriWorldImageryTiles()
     ax.add_image(esri_imagery, 12)  # Zoom level 12 for high detail
 
-    # Add additional features for context
+    # Add additional features for context/ Uncomment the following if needed
     # ax.add_feature(cfeature.COASTLINE, edgecolor='black', linewidth=0.5)
     # ax.add_feature(cfeature.LAKES, edgecolor='blue', facecolor='lightblue', alpha=0.5)
     # ax.add_feature(cfeature.RIVERS, edgecolor='lightblue', alpha=0.5)
@@ -195,11 +279,11 @@ def plot_data(
     gl.yformatter = LATITUDE_FORMATTER
 
     # Plot heatmap with 'Spectral' colormap centered at 0
-    X, Y = np.meshgrid(lons, lats)
+    x, y = np.meshgrid(lons, lats)
     max_abs_elevation = np.max(np.abs(raster))  # Symmetric range around 0
     heatmap = ax.pcolormesh(
-        X,
-        Y,
+        x,
+        y,
         raster,
         cmap="seismic",
         vmin=-max_abs_elevation,
@@ -255,6 +339,11 @@ def plot_data(
 
 
 def main():
+    """
+    Parse command-line arguments and plot basement heatmap, boundaries, and optional smoothing with online basemap.
+
+
+    """
     parser = argparse.ArgumentParser(
         description="Plot basement heatmap, boundaries, and optional smoothing with online basemap."
     )
