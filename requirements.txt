@@ -20,7 +20,7 @@ pytest-cov
 pytest-repeat
 
 # Project dependencies
-numpa
+numba
 qcore @ git+https://github.com/ucgmsim/qcore.git
 pyyaml
 tqdm
