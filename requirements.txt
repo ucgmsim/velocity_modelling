@@ -2,7 +2,6 @@
 numpy
 h5py
 pandas[parquet]
-scipy
 
 # Visualization
 diffimg
@@ -13,7 +12,6 @@ matplotlib
 
 # Geospatial
 shapely
-geopandas
 
 # Testing
 hypothesis[numpy]
@@ -22,12 +20,16 @@ pytest-cov
 pytest-repeat
 
 # Project dependencies
+numpa
 qcore @ git+https://github.com/ucgmsim/qcore.git
 pyyaml
 tqdm
 typer
 
-# Optional - may help with performance
-numba
-dask[dataframe]
+# Tool dependencies
+cartropy
+pytz
+requests
+
+
 
