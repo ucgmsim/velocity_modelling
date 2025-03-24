@@ -13,6 +13,7 @@ complex scenarios like basin boundaries and smooth transitions between models.
 
 import logging
 from logging import Logger
+from typing import Optional
 
 import numpy as np
 
@@ -97,7 +98,7 @@ class QualitiesVector:
         Logger instance for logging messages.
     """
 
-    def __init__(self, n_depth: int, logger: Logger = None):
+    def __init__(self, n_depth: int, logger: Optional[Logger] = None):
         """
         Initialize arrays for velocity and density data.
 

@@ -7,6 +7,7 @@ Used for locations where no valid velocity model can be applied.
 
 import logging
 from logging import Logger
+from typing import Optional
 
 import numpy as np
 
@@ -18,7 +19,7 @@ from velocity_modelling.cvm.velocity3d import (
 def main_vectorized(
     z_indices: np.ndarray,
     qualities_vector: QualitiesVector,
-    logger: Logger = None,
+    logger: Optional[Logger] = None,
 ):
     """
     Assign NaN values to velocities and density at specified depth indices.

@@ -8,6 +8,7 @@ values for all points within the BPV boundaries.
 
 import logging
 from logging import Logger
+from typing import Optional
 
 import numpy as np
 
@@ -24,7 +25,7 @@ rho_full = 2.393  # rho at the full (g/cm³)
 def main_vectorized(
     z_indices: np.ndarray,
     qualities_vector: QualitiesVector,
-    logger: Logger = None,
+    logger: Optional[Logger] = None,
 ):
     """
     Calculate rho, vp, and vs values for multiple lat-long-depth points.

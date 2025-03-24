@@ -77,8 +77,8 @@ class CVMRegistry:
         self,
         version: str,
         data_root: Path,
-        registry_path: Path = NZVM_REGISTRY_PATH,
-        logger: Logger = None,
+        registry_path: Optional[Path] = NZVM_REGISTRY_PATH,
+        logger: Optional[Logger] = None,
     ):
         """
         Initialize the CVMRegistry.
@@ -482,8 +482,8 @@ class CVMRegistry:
     def load_tomo_surface_data(
         self,
         tomo_name: str,
-        offshore_surface_path: Path = DEFAULT_OFFSHORE_DISTANCE,
-        offshore_v1d_name: str = DEFAULT_OFFSHORE_1D_MODEL,
+        offshore_surface_path: Optional[Path] = DEFAULT_OFFSHORE_DISTANCE,
+        offshore_v1d_name: Optional[str] = DEFAULT_OFFSHORE_1D_MODEL,
     ):
         """
         Load tomography surface data from registry.

@@ -8,7 +8,7 @@ grid generation, mesh slicing, and boundary calculations for various model compo
 
 import logging
 from logging import Logger
-from typing import Any, Self
+from typing import Any, Optional, Self
 
 import numpy as np
 from numba import njit
@@ -972,9 +972,9 @@ def great_circle_projection(
     x: np.ndarray,
     y: np.ndarray,
     amat: np.ndarray,
-    erad: float = ERAD,
-    g0: float = 0,
-    b0: float = 0,
+    erad: Optional[float] = ERAD,
+    g0: Optional[float] = 0,
+    b0: Optional[float] = 0,
 ) -> tuple[np.ndarray, Any]:
     """
     Project x, y coordinates to geographic coordinates (longitude, latitude) using a great circle projection.
@@ -1029,7 +1029,7 @@ def great_circle_projection(
 
 
 def gen_full_model_grid_great_circle(
-    vm_params: dict, logger: Logger = None
+    vm_params: dict, logger: Optional[Logger] = None
 ) -> GlobalMesh:
     """
     Generate a global mesh grid using great-circle projection.
@@ -1038,7 +1038,7 @@ def gen_full_model_grid_great_circle(
     ----------
     vm_params : dict
         Defines the model's dimensions and origin.
-    logger : Logger
+    logger : Logger, optional
         Logger instance for reporting progress.
 
     Returns

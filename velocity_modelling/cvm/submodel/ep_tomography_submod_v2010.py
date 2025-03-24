@@ -8,6 +8,7 @@ P-wave velocity, S-wave velocity, and density values derived from tomographic in
 
 import logging
 from logging import Logger
+from typing import Optional
 
 import numpy as np
 
@@ -100,7 +101,7 @@ def main_vectorized(
     in_any_basin_lat_lon: bool,
     on_boundary: bool,
     interpolated_global_surface_values: dict,
-    logger: Logger = None,
+    logger: Optional[Logger] = None,
 ):
     """
     Calculate rho, vp, and vs values for multiple lat-long-depth points using the

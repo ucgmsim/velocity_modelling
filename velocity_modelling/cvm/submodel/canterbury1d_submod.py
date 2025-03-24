@@ -8,6 +8,7 @@ using a predefined 1D velocity profile.
 
 import logging
 from logging import Logger
+from typing import Optional
 
 import numpy as np
 
@@ -24,7 +25,7 @@ def main_vectorized(
     depths: np.ndarray,
     qualities_vector: QualitiesVector,
     velo_mod_1d_data: VelocityModel1D,
-    logger: Logger = None,
+    logger: Optional[Logger] = None,
 ):
     """
     Calculate rho, vp, and vs values for multiple lat-long-depth points.

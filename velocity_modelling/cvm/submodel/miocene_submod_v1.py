@@ -8,6 +8,7 @@ for sedimentary rocks of Miocene age in the Canterbury basin.
 
 import logging
 from logging import Logger
+from typing import Optional
 
 import numpy as np
 
@@ -19,7 +20,7 @@ from velocity_modelling.cvm.velocity3d import (
 def main_vectorized(
     z_indices: np.ndarray,
     qualities_vector: QualitiesVector,
-    logger: Logger = None,
+    logger: Optional[Logger] = None,
 ):
     """
     Calculate rho, vp, and vs values for multiple lat-long-depth points in the Miocene layer.

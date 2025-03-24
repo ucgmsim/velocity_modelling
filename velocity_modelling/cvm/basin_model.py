@@ -8,7 +8,7 @@ with proper logging throughout the processing workflow.
 
 import logging
 from logging import Logger
-from typing import Self
+from typing import Optional, Self
 
 import numpy as np
 from numba import njit
@@ -58,7 +58,10 @@ class BasinData:
     """
 
     def __init__(
-        self, cvm_registry: CVMRegistry, basin_name: str, logger: Logger = None
+        self,
+        cvm_registry: CVMRegistry,
+        basin_name: str,
+        logger: Optional[Logger] = None,
     ):
         """
         Initialize the BasinData object.
@@ -177,7 +180,7 @@ class InBasinGlobalMesh:
         self,
         global_mesh: GlobalMesh,
         basin_data_list: list[BasinData],
-        logger: Logger = None,
+        logger: Optional[Logger] = None,
     ):
         """
         Private constructor. Use preprocess_basin_membership() instead to create instances.
@@ -205,8 +208,8 @@ class InBasinGlobalMesh:
         cls,
         global_mesh: GlobalMesh,
         basin_data_list: list[BasinData],
-        logger: Logger = None,
-        smooth_bound: SmoothingBoundary = None,
+        logger: Optional[Logger] = None,
+        smooth_bound: Optional[SmoothingBoundary] = None,
     ) -> tuple[Self, list[PartialGlobalMesh]]:
         """
         Preprocess basin membership for a given global mesh to speed up the velocity model generation

@@ -54,7 +54,7 @@ import sys
 import time
 from logging import Logger
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Optional
 
 import typer
 
@@ -427,7 +427,7 @@ def empty_command() -> None:
     pass
 
 
-def parse_nzvm_config(config_path: Path, logger: Logger = None) -> dict:
+def parse_nzvm_config(config_path: Path, logger: Optional[Logger] = None) -> dict:
     """
     Parse the NZVM config file and convert it to a dictionary format.
 

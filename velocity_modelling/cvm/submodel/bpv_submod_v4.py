@@ -9,6 +9,7 @@ to better represent the geology of the area. The model includes a GTL component 
 
 import logging
 from logging import Logger
+from typing import Optional
 
 import numpy as np
 
@@ -35,7 +36,7 @@ def main_vectorized(
     qualities_vector: QualitiesVector,
     partial_basin_surface_depths: PartialBasinSurfaceDepths,
     partial_global_surface_depths: PartialGlobalSurfaceDepths,
-    logger: Logger = None,
+    logger: Optional[Logger] = None,
 ):
     """
     Calculate the rho, vp, and vs values for multiple lat-long-depth points.

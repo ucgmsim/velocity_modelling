@@ -8,6 +8,7 @@ providing a more realistic representation of volcanic rock properties.
 
 import logging
 from logging import Logger
+from typing import Optional
 
 import numpy as np
 
@@ -32,7 +33,7 @@ def main_vectorized(
     depths: np.ndarray,
     qualities_vector: QualitiesVector,
     partial_basin_surface_depths: PartialBasinSurfaceDepths,
-    logger: Logger = None,
+    logger: Optional[Logger] = None,
 ):
     """
     Calculate the rho, vp, and vs values for multiple lat-long-depth points.
