@@ -1,13 +1,13 @@
 """
-Generate Markdown files for basins from nzvm_registry.yaml
+Generate Markdown files for basins from nzcvm_registry.yaml
 
-This script reads the nzvm_registry.yaml file and generates a Markdown file for each unique basin name.
+This script reads the nzcvm_registry.yaml file and generates a Markdown file for each unique basin name.
 The Markdown file contains details such as the basin type, author, images, notes, boundaries, surfaces, and smoothing boundaries. The generated files are saved in the wiki/basins directory.
 
 Usage:
     python generate_basin_wiki.py [--registry <path>] [--scale-images]
 
-By default, the script reads the nzvm_registry.yaml file from the parent directory.
+By default, the script reads the nzcvm_registry.yaml file from the parent directory.
 The --registry argument can be used to specify a different path.
 If the --scale-images flag is provided, images are scaled to 50% size with a clickable link to the full-size image.
 
@@ -25,13 +25,13 @@ import yaml
 
 # Set up argument parser
 parser = argparse.ArgumentParser(
-    description="Generate Markdown files for basins from nzvm_registry.yaml"
+    description="Generate Markdown files for basins from nzcvm_registry.yaml"
 )
 parser.add_argument(
     "--registry",
     type=Path,
-    help="Path to the nzvm_registry.yaml file",
-    default="../nzvm_registry.yaml",
+    help="Path to the nzcvm_registry.yaml file",
+    default="../nzcvm_registry.yaml",
 )
 parser.add_argument(
     "--scale-images",

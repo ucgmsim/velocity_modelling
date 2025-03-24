@@ -17,7 +17,7 @@ DATA_ROOT = (
     CVM_ROOT / "data"
 )  # default value, can be overridden with --data-root argument
 MODEL_VERSIONS_ROOT = CVM_ROOT / "model_versions"
-NZVM_REGISTRY_PATH = CVM_ROOT / "nzvm_registry.yaml"
+NZVM_REGISTRY_PATH = CVM_ROOT / "nzcvm_registry.yaml"
 
 DEFAULT_OFFSHORE_1D_MODEL = "canterbury1d_v2"  # vm1d name for offshore 1D model
 DEFAULT_OFFSHORE_DISTANCE = (

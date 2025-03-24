@@ -4,76 +4,69 @@ The NZ Community Velocity Models (NZCVM) provide detailed 3D representations of 
 
 ## Overview
 
-The NZCVM incorporates various data sets amassed from numerous geophysical and geological studies. Prescribes Vp, Vs and Rho (density) at a specified location in 3D grid.
+The NZCVM incorporates various data sets amassed from numerous geophysical and geological studies. It prescribes Vp, Vs and Rho (density) at specified locations in a 3D grid.
 
--  New Zealand-wide travel-time-derived seismic tomography model: ~10km length scale
-    - 2010 NZ : based on Eberhart-Philips et al. (2010)
-    - 2020 NZ : based on Eberhart-Philips et al. (2020)
+The model consists of the following components:
 
--  Embedded subregion (sedimentary basin) models : 34 basins of varying degrees of characterization:
-  - [Canterbury Pre Quaternary](basins/Canterbury_Pre_Quaternary.md)
-  - [Canterbury North](basins/Canterbury_North.md)
-  - [Banks Peninsula Volcanics](basins/Banks_Peninsula_Volcanics.md)
-  - [Kaikoura](basins/Kaikoura.md)
-  - [Cheviot](basins/Cheviot.md)
-  - [Hanmer](basins/Hanmer.md)
-  - [Marlborough](basins/Marlborough.md)
-  - [Nelson](basins/Nelson.md)
-  - [Wellington](basins/Wellington.md)
-  - [Waikato Hauraki](basins/WaikatoHauraki.md)
-  - [Wanaka](basins/Wanaka.md)
-  - [MacKenzie](basins/MacKenzie.md)
-  - [Wakatipu](basins/Wakatipu.md)
-  - [Alexandra](basins/Alexandra.md)
-  - [Ranfurly](basins/Ranfurly.md)
-  - [NE Otago](basins/NE_Otago.md)
-  - [Mosgiel](basins/Mosgiel.md)
-  - [Balclutha](basins/Balclutha.md)
-  - [Dunedin](basins/Dunedin.md)
-  - [Murchison](basins/Murchison.md)
-  - [Waitaki](basins/Waitaki.md)
-  - [Hakataramea](basins/Hakataramea.md)
-  - [Karamea](basins/Karamea.md)
-  - [Collingwood Basin](basins/CollingwoodBasin.md)
-  - [Springs Junction](basins/SpringsJunction.md)
-  - [Hawkes Bay](basins/HawkesBay.md)
-  - [Napier](basins/Napier.md)
-  - [Greater Wellington](basins/GreaterWellington.md)
-  - [Porirua](basins/Porirua.md)
-  - [Gisborne](basins/Gisborne.md)
-  - [Southern Hawkes Bay](basins/SouthernHawkesBay.md)
-  - [Wairarapa](basins/Wairarapa.md)
-  - [Motu Bay](basins/Motu_Bay.md)
-  - [Whangaparoa](basins/Whangaparoa.md)
+-  **New Zealand-wide travel-time-derived seismic tomography model**: ~10km length scale
+    - 2010 NZ: based on Eberhart-Philips et al. (2010)
+    - 2020 NZ: based on Eberhart-Philips et al. (2020)
 
-![nzvm_2p07_basin_map](https://github.com/user-attachments/assets/ef94b323-fb08-4f39-8666-ffaf12ae4db4)
-*Figure 1: 34 basin models currently integrated.*
+-  **Embedded subregion (sedimentary basin) models**: 34 basins of varying degrees of characterization
 
-Through embedding discrete regional models into the lower resolution tomography data, we obtain a velocity model that incorporates data across multiple length scales and resolutions to give a unified representation of the velocity structure for use in broadband physics-based ground motion simulations and additional engineering applications. 
+Through embedding discrete regional models into the lower resolution tomography data, we obtain a velocity model that incorporates data across multiple length scales and resolutions to give a unified representation of the velocity structure for use in broadband physics-based ground motion simulations and additional engineering applications.
+
+## Key Components
+
+- [**Basins**](Basins.md): Detailed information about the 34 basin models integrated into NZCVM
+- [**Tomography**](Tomography.md): Information about available tomography models
+- [**Data Formats**](DataFormats.md): Explanation of formats for surface, boundary, tomography, 1D velocity models, and smoothing data
+- [**Output Formats**](OutputFormats.md): Details about the output formats including emod3d format
+
+## Requirements and Installation
+
+### Prerequisites
+
+- Python 3.8 or later
+- Git (for cloning the repository)
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/ucgmsim/velocity_modelling.git
+   cd velocity_modelling
+   ```
+
+2. Install the required dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+For detailed installation instructions, see the [Installation Guide](Installation.md).
 
 ## Using the `nzvm.py` Script
 
 The `nzvm.py` script is a tool for generating velocity models based on the NZCVM. It allows users to specify configuration files and output directories to customize the generated models.
 
-### Prerequisites
-
-- Python 3.12 or later
-- Required Python packages (install via `requirements.txt`)
-
 ### Running the Script
 
-To run the `nzvm.py` script, you need to provide specific arguments, including the configuration file and the output directory. Below are examples of how to run the script with different configurations.
+To run the `nzvm.py` script, you need to provide specific arguments, including the configuration file and the output directory.
+
+```sh
+python cvm/scripts/nzvm.py generate-velocity-model /path/to/config/nzvm.cfg --out-dir /path/to/output
+```
 
 #### Example 1: Wellington 2p07
 
 ```sh
-/path/to/python /path/to/velocity_modelling/cvm/scripts/nzvm.py generate-velocity-model /path/to/velocity_modelling/tests/scenarios/Wellington_2p07/nzvm.cfg --out-dir /path/to/velocity_modelling/OutDir/Wellington_2p07/Python
+python cvm/scripts/nzvm.py generate-velocity-model tests/scenarios/Wellington_2p07/nzvm.cfg --out-dir OutDir/Wellington_2p07/Python
 ```
 
 #### Example 2: Cant1D 2p07
 
 ```sh
-/path/to/python /path/to/velocity_modelling/cvm/scripts/nzvm.py generate-velocity-model /path/to/velocity_modelling/tests/scenarios/Cant1D_2p07/nzvm.cfg --out-dir /path/to/velocity_modelling/OutDir/Cant1D_2p07/Python
+python cvm/scripts/nzvm.py generate-velocity-model tests/scenarios/Cant1D_2p07/nzvm.cfg --out-dir OutDir/Cant1D_2p07/Python
 ```
 
 ### Configuration File: `nzvm.cfg`
@@ -108,138 +101,16 @@ OUTPUT_DIR=/tmp
 - **EXTENT_ZMIN**: Minimum depth of the model grid (in kilometers).
 - **EXTENT_Z_SPACING**: Spacing between grid points in the Z direction (in kilometers).
 - **EXTENT_LATLON_SPACING**: Spacing between grid points in the latitude and longitude directions (in degrees).
-- **MIN_VS**: Minimum shear wave velocity (in metre per second).
-- **TOPO_TYPE**: Type of topography to use. Possible values are `BULLDOZED`, `SQUASHED`,`SQUASHED_TAPERED` and `TRUE`. 
+- **MIN_VS**: Minimum shear wave velocity (in meter per second).
+- **TOPO_TYPE**: Type of topography to use. Possible values are `BULLDOZED`, `SQUASHED`, `SQUASHED_TAPERED` and `TRUE`. 
 - **OUTPUT_DIR**: Directory where the generated velocity model files will be saved.
 
 ![TOPO_TYPE](images/topography_types.png)
-*Figure 2: Different types of topography used in the NZCVM, including BULLDOZED, SQUASHED, SQUASHED_TAPERED, and TRUE.*
+*Figure 1: Different types of topography used in the NZCVM, including BULLDOZED, SQUASHED, SQUASHED_TAPERED, and TRUE.*
 
+### Output Files
 
-### Model Versions
-
-The `model_versions` section defines different versions of the velocity models. Each version is specified in a YAML file that contains detailed parameters and settings for that version. Below is an example of a `2p03.yaml` file:
-
-```yaml
-GTL: true
-surfaces:
-  - path: global/surface/NZ_DEM_HD.in
-    submodel: ep_tomography_submod_v2010
-
-tomography: 2010_NZ_OFFSHORE
-basin_edge_smoothing: true
-basins:
-  - Canterbury_v19p1
-  - NorthCanterbury_v19p1
-  - BanksPeninsulaVolcanics_v19p1
-  - Kaikoura_v19p1
-  - Cheviot_v19p1
-  - Hanmer_v19p1
-  - Marlborough_v19p1
-  - Nelson_v19p1
-  - Wellington_v19p6
-  - WaikatoHauraki_v19p7
-```
-
-- **GTL**: Indicates whether the Geotechnical Layer (GTL) is included (`true` or `false`).
-- **surfaces**: Lists the surfaces used in the model. Each surface has a `name` and an associated `submodel`.
-  - **path**: The path to the surface data
-  - **submodel**: The submodel associated with the surface. The submodel defines how to compute/assign vp,vs, and rho values
-- **tomography**: Specifies the tomography model used.
-- **basin_edge_smoothing**: Indicates whether basin edge smoothing is applied (`true` or `false`).
-- **basins**: Lists the basins included in the model. Each basin is identified by its name.
-
-User can create a custom model version by placing a .yaml file in `model_version` folder. Our convention is to use `p` in place of `.`.  Edit the `MODEL_VERION` field in `nzvm.cfg` or `--model-version` argument when executing `nzvm` command.
-
-## NZVM Registry
-`nzvm_registry.yaml` contains the details of surface, tomography, basin and submodel data.
-Let us explore the registry using the `2p03.yaml` example.
-
-The "global" portion for `model_version 2.03` is defined as 
-
-```
-GTL: true
-surfaces:
-    - path: global/surface/NZ_DEM_HD.in
-      submodel: ep_tomography_submod_v2010
-tomography: 2010_NZ_OFFSHORE
-```
-
-The `NZ_DEM_HD.in` contains the elevation data on a 2D grid across the New Zealand. The associated submodel `ep_tomography_submod_v2010` is defined as:
-
-```
-submodel:
-...
-    - name: ep_tomography_submod_v2010
-      type: tomography
-      module: ep_tomography_submod_v2010
-...      
-```
-This is a type of `tomography`, and it will retrieve more information and associated with the `tomography` value from the registry, in this case, `2010_NZ_OFFSHORE`.
-The `module` is the name of accompanied Python code that prescribes how to calculate velocity at the location within the region below the `surface`.
-
-`2010_NZ_OFFSHORE` is defined as 
-```
-tomography:
-...
-  - name: 2010_NZ_OFFSHORE
-    nElev: 20
-    elev: [ 15, 1, -3, -8, -15, -23, -30, -38, -48, -65, -85, -105, -130, -155, -185, -225, -275, -370, -620, -750 ]
-    vs30_path: global/vs30/NZ_Vs30_HD_With_Offshore.in
-    special_offshore_tapering: true
-    path: global/tomography/2010_NZ.h5
-```
-The format of `tomography` data is given in [Tomography](../format/Tomography.md).
-
-An example of basin model is:
-
-```
-basin:
-...
-  - name: Cheviot_v19p1
-    type: 1
- ...
-    boundaries:
-      - regional/Cheviot/Cheviot_outline_WGS84.txt
-    surfaces:
-      - path: global/surface/NZ_DEM_HD.in
-        submodel: canterbury1d_v2
-      - path: regional/Cheviot/Cheviot_basement_WGS84.in
-    smoothing: regional/Cheviot/Cheviot_smoothing.txt
-...
-```
-Each basin needs 4 major items to define.
-
-
-(1) `surface`: Bounding surfaces. Typically, the top surface is NZ_DEM. Multipe surfaces are allowed, where each surface data consists of depth at a grid point. 
-
-(2) `boundary`: a close-loop (ie. polygon)) of (lat, lon) coordinates (can have multiple boundary files)
-
-(3) `submomdel`: Velocity parameterization to apply, ie. how to assign/compute vp,vs,rho for a given grid point at certain depth. The above means we use `canterbury1d_v2`  for the layer between NZ_DEM and CheviotBasement. As the second surface has no submodel defined, it will be using the background values from the tomography.
-
-(4) `smoothing` (Optional): Smoothing boundary in offshore region that defines where velocity models should be smoothly transitioned between basins and background model (ie. tomography)
-
-![basin_modelling](images/basin_modelling.png)
-*Figure 3: Three mandatory compoments (1) bounding surfaces (2) 2D boundary in the lat-lon plane (3) velocity parameterization to apply.*
-
-
-For the completeness, the below are the definition of `canterbury1d_v2`
-
-
-and canterbury1d_v2
-
-```
-submodel:
-    - name: canterbury1d_v2
-      type: vm1d
-      module: canterbury1d_submod
-      data: global/vm1d/Cant1D_v2.fd_modfile
-```
-This is a `vm1d` (1D velocity model) type. Its data is at `global/vm1d/Cant1D_v2.fd_modfile` and we use the accompanied `canterbury1d_submod` Python code in `submodel` folder of the code base. 
-
-Why canterbury1d_v2 model for most basins not in Canterbury region? It is the most widely used 1D velocity model and considered a good representation for other parts of New Zealand.
-
-
+After successful execution, the output files will be located in the specified output directory. See [Output Formats](OutputFormats.md) for details on the format and contents of these files.
 
 ## References
 
@@ -247,6 +118,6 @@ Ethan M. Thomson, Brendon A. Bradley & Robin L. Lee (2020) Methodology and compu
 
 Donna Eberhart-Phillips, Martin Reyners, Stephen Bannister, Mark Chadwick, Susan Ellis; Establishing a Versatile 3-D Seismic Velocity Model for New Zealand. Seismological Research Letters 2010; 81 (6): 992–1000. doi: https://doi.org/10.1785/gssrl.81.6.992
 
-Donna Eberhart-Phillips, Stephen Bannister, Martin Reyners, and Stuart Henrys. “New Zealand Wide Model 2.2 Seismic Velocity and Qs and Qp Models for New Zealand”. Zenodo, May 1, 2020. https://doi.org/10.5281/zenodo.3779523.
+Donna Eberhart-Phillips, Stephen Bannister, Martin Reyners, and Stuart Henrys. "New Zealand Wide Model 2.2 Seismic Velocity and Qs and Qp Models for New Zealand". Zenodo, May 1, 2020. https://doi.org/10.5281/zenodo.3779523.
 
 
