@@ -24,7 +24,7 @@ pip install -e  .
     nzvm generate-velocity-model /path/to/nzvm.cfg --model-version 2.07
 
     # With custom registry location:
-    nzvm generate-velocity-model /path/to/nzvm.cfg --nzvm-registry /path/to/registry.yaml
+    nzvm generate-velocity-model /path/to/nzvm.cfg --nzcvm-registry /path/to/registry.yaml
 
     # With specific log level:
     nzvm generate-velocity-model /path/to/nzvm.cfg --log-level DEBUG
@@ -143,7 +143,7 @@ def write_velo_mod_corners_text_file(
 def generate_velocity_model(
     nzvm_cfg_path: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
     out_dir: Annotated[Path, typer.Option(file_okay=False)],
-    nzvm_registry: Annotated[
+    nzcvm_registry: Annotated[
         Path, typer.Option(exists=True, dir_okay=False)
     ] = NZVM_REGISTRY_PATH,
     model_version: Annotated[str, typer.Option()] = None,
@@ -177,7 +177,7 @@ def generate_velocity_model(
         Path to the nzvm.cfg configuration file.
     out_dir : Path
         Path to the output directory where the velocity model files will be written.
-    nzvm_registry : Path, optional
+    nzcvm_registry : Path, optional
         Path to the model registry file (default: NZVM_REGISTRY_PATH).
     model_version : str, optional
         Version of the model to use (overrides MODEL_VERSION in config file).
@@ -278,7 +278,7 @@ def generate_velocity_model(
 
     # Initialize registry and generate model
     cvm_registry = CVMRegistry(
-        vm_params["model_version"], data_root, nzvm_registry, logger
+        vm_params["model_version"], data_root, nzcvm_registry, logger
     )
 
     # Create model grid

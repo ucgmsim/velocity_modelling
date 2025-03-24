@@ -5,7 +5,7 @@ pipeline {
             // as the user with uid = 0. This user is, by default, the
             // root user. So it is effectively saying run the commands
             // as root.
-            args "-u 0 -v /home/jenkins/Data:/nzvm/Data -v /home/jenkins/benchmarks:/nzvm/benchmarks"
+            args "-u 0 -v /home/jenkins/Data:/nzvm/Data -v /home/jenkins/benchmarks:/nzvm/benchmarks -v /home/jenkins/global:/nzvm/global"
         }
 
     }
@@ -53,6 +53,7 @@ pipeline {
                 sh """
                     cd ${env.WORKSPACE}
                     source .venv/bin/activate
+                    ln -s /nzvm/global ${env.WORKSPACE}/velocity-modelling/cvm/data/global 
                     pytest -s tests/ --benchmark-dir /nzvm/benchmarks --nzvm-binary-path /nzvm/NZVM
                 """
             }
