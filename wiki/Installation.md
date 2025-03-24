@@ -49,7 +49,7 @@ Some data files may need to be downloaded separately due to their size:
 
 ```bash
 # Example script to download data (if provided)
-python tools/download_data.py
+python cvm/tools/download_data.py
 ```
 
 Alternatively, contact the project maintainers for access to the complete dataset.
