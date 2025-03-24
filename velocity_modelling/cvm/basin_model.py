@@ -92,7 +92,7 @@ class BasinData:
 
         self.perturbation_data = None
 
-        self.logger.log(logging.INFO, f"Basin {basin_name} fully loaded.")
+        self.logger.log(logging.DEBUG, f"Basin {basin_name} fully loaded.")
 
 
 @njit

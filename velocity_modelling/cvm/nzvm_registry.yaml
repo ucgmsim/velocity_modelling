@@ -202,7 +202,7 @@ basin:
 
   - name: Kaikoura_v19p1
     type: 2
-    author: Ethan Thomson
+    author: Robin Lee
     wiki_images:
       - maps/kaikoura.png
       - regional/Kaikoura_basin_map.png
@@ -223,7 +223,7 @@ basin:
 
   - name: Cheviot_v19p1
     type: 1
-    author: Ethan Thomson
+    author: Robin Lee
     wiki_images:
       - maps/cheviot_hanmer_northcanterbury.png
       - regional/Cheviot_basin_map.png
@@ -243,7 +243,7 @@ basin:
 
   - name: Hanmer_v19p1
     type: 2
-    author: Ethan Thomson
+    author: Robin Lee
     wiki_images:
       - maps/cheviot_hanmer_northcanterbury.png
       - regional/Hanmer_basin_map.png
@@ -263,7 +263,7 @@ basin:
 
   - name: Marlborough_v19p1
     type: 2
-    author: Ethan Thomson
+    author: Robin Lee
     wiki_images:
       - maps/SI_north.png
       - regional/Marlborough_basin_map.png
@@ -335,7 +335,7 @@ basin:
 
 
   - name: Wellington_v21p8
-    type: 2
+    type: 3
     author: Robin Lee / Matt Hill
     wiki_images:
       - maps/NI_south.png

@@ -1,16 +1,33 @@
-diffimg
-h5py
-hypothesis[numpy]
+# Core scientific packages
 numpy
+h5py
 pandas[parquet]
+scipy
+
+# Visualization
+diffimg
 pygmt
 pygmt_helper @ git+https://github.com/ucgmsim/pygmt_helper.git
+pyvista
+matplotlib
+
+# Geospatial
+shapely
+geopandas
+
+# Testing
+hypothesis[numpy]
 pytest
 pytest-cov
 pytest-repeat
-pyvista
-pyyaml
+
+# Project dependencies
 qcore @ git+https://github.com/ucgmsim/qcore.git
-shapely
+pyyaml
+tqdm
 typer
+
+# Optional - may help with performance
+numba
+dask[dataframe]
 

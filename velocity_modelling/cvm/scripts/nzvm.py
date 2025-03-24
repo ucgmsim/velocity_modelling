@@ -57,6 +57,7 @@ from pathlib import Path
 from typing import Annotated, Optional
 
 import typer
+from tqdm import tqdm
 
 from qcore import cli
 from velocity_modelling.cvm.basin_model import (
@@ -317,14 +318,7 @@ def generate_velocity_model(
     # Process each latitude slice
     total_slices = len(global_mesh.y)
     last_progress = -progress_interval
-    for j in range(total_slices):
-        progress = j * 100 / total_slices
-        if progress >= last_progress + progress_interval:
-            logger.log(
-                logging.INFO, f"Generating velocity model: {progress:.2f}% complete"
-            )
-            last_progress = progress
-
+    for j in tqdm(range(total_slices), desc="Generating velocity model", unit="slice"):
         partial_global_mesh = partial_global_mesh_list[j]
         partial_global_qualities = PartialGlobalQualities(
             partial_global_mesh.nx, partial_global_mesh.nz

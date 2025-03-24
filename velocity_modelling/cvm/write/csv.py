@@ -51,7 +51,7 @@ def write_global_qualities(
     mode = "w" if lat_ind == 0 else "a"
 
     if lat_ind == 0:
-        logger.log(logging.INFO, f"Creating new CSV file: {output_file}")
+        logger.log(logging.DEBUG, f"Creating new CSV file: {output_file}")
 
     logger.log(logging.DEBUG, f"Writing CSV output for latitude index {lat_ind}")
 
