@@ -509,9 +509,7 @@ class CVMRegistry:
         special_offshore_tapering = tomo["special_offshore_tapering"]
         vs30 = self.load_global_surface(tomo["vs30_path"])
 
-        data_format = tomo.get(
-            "format", "ASCII"
-        )  # Default to ASCII if not specified
+        data_format = tomo.get("format", "ASCII")  # Default to ASCII if not specified
         self.logger.log(
             logging.INFO,
             f"Loading tomography data '{tomo_name}' ({data_format}) format with {len(surf_depth)} depth levels",

@@ -70,7 +70,7 @@ def write_global_qualities(
             vs3dfile.unlink(missing_ok=True)
             rho3dfile.unlink(missing_ok=True)
             in_basin_mask_file.unlink(missing_ok=True)
-            logger.log(logging.INFO, f"Creating new VM files for emod3d: {output_dir}")
+            logger.log(logging.DEBUG, f"Creating new VM files for emod3d: {output_dir}")
 
         # Flatten the arrays along the x and z dimensions. Write along x-axis first
         vp = partial_global_qualities.vp.T.flatten()
