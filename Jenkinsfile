@@ -53,7 +53,7 @@ pipeline {
                 sh """
                     cd ${env.WORKSPACE}
                     source .venv/bin/activate
-                    pytest -s tests/ --benchmark-dir /nzvm/benchmarks --data-root /nzvm/Data --nzvm-binary-path /nzvm/NZVM
+                    pytest -s tests/ --benchmark-dir /nzvm/benchmarks --nzvm-binary-path /nzvm/NZVM
                 """
             }
         }

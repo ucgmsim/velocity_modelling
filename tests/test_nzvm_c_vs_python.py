@@ -113,9 +113,6 @@ def test_nzvm_c_vs_python(tmp_path: Path, nzvm_c_binary_path: Path, data_root_pa
     config_file = generate_random_nzvm_config(tmp_path, c_output_dir)
 
 
-    if nzvm_c_binary_path.parent != data_root_path.parent:
-        raise ValueError("NZVM binary should be in the same directory as the data root")
-
     # Run C binary from its directory with relative path
     c_result = subprocess.run(
         [nzvm_c_binary_path, config_file],  # Relative path since we're in C_BINARY_DIR
