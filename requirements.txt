@@ -27,7 +27,7 @@ tqdm
 typer
 
 # Tool dependencies
-cartropy
+cartopy
 pytz
 requests
 
