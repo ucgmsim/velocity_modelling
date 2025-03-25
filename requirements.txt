@@ -4,10 +4,6 @@ h5py
 pandas[parquet]
 
 # Visualization
-diffimg
-pygmt
-pygmt_helper @ git+https://github.com/ucgmsim/pygmt_helper.git
-pyvista
 matplotlib
 
 # Geospatial
@@ -30,6 +26,3 @@ typer
 cartopy
 pytz
 requests
-
-
-
