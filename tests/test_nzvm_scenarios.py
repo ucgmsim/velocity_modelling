@@ -1,6 +1,8 @@
 # tests/test_nzvm_scenarios.py
 import subprocess
 from pathlib import Path
+from typing import TypedDict
+
 import pytest
 
 from velocity_modelling.cvm.tools.compare_emod3d import (
@@ -17,6 +19,19 @@ SCENARIOS = [
     "Multi_Boundary",
 ]
 
+
+class ScenarioDict(TypedDict):
+    """
+    TypedDict for a scenario dictionary
+    """
+
+    name: str
+    config_file: Path
+    benchmark_path: Path
+    output_path: Path
+    data_root: Path
+
+
 # Define paths based on your directory structure
 BASE_DIR = Path(__file__).parent.parent  # Project root directory
 SCRIPT_DIR = BASE_DIR / "velocity_modelling/cvm/scripts"
@@ -26,7 +41,7 @@ BENCHMARK_DIR = TEST_DIR / "benchmarks"  # Default value, can be overridden
 
 
 @pytest.fixture
-def test_paths(request) -> tuple[Path,Path]:
+def test_paths(request: pytest.FixtureRequest) -> tuple[Path, Path]:
     """Configure BENCHMARK_DIR, DATA_ROOT based on command-line option."""
     global BENCHMARK_DIR  # Use the global variable directly
     benchmark_dir = request.config.getoption("--benchmark-dir")
@@ -35,7 +50,9 @@ def test_paths(request) -> tuple[Path,Path]:
     if not new_benchmark_dir.exists():
         raise ValueError(f"Provided BENCHMARK_DIR does not exist: {new_benchmark_dir}")
     if not new_benchmark_dir.is_dir():
-        raise ValueError(f"Provided BENCHMARK_DIR is not a directory: {new_benchmark_dir}")
+        raise ValueError(
+            f"Provided BENCHMARK_DIR is not a directory: {new_benchmark_dir}"
+        )
     benchmark_dir = new_benchmark_dir
 
     data_root = request.config.getoption("--data-root")
@@ -49,8 +66,11 @@ def test_paths(request) -> tuple[Path,Path]:
 
     return benchmark_dir, data_root
 
+
 @pytest.fixture(params=SCENARIOS)
-def scenario(tmp_path: Path, test_paths, request):
+def scenario(
+    tmp_path: Path, test_paths: tuple[Path, Path], request: pytest.FixtureRequest
+) -> ScenarioDict:
     """Fixture to provide scenario data for each test"""
     scenario_name = request.param
     scenario_path = SCENARIO_DIR / scenario_name
@@ -59,19 +79,21 @@ def scenario(tmp_path: Path, test_paths, request):
     output_path = tmp_path / scenario_name
     data_root = test_paths[1]
 
-    return {
-        "name": scenario_name,
-        "config_file": config_file,
-        "benchmark_path": benchmark_path,
-        "output_path": output_path,
-        "data_root": data_root,
-    }
+    return ScenarioDict(
+        name=scenario_name,
+        config_file=config_file,
+        benchmark_path=benchmark_path,
+        output_path=output_path,
+        data_root=data_root,
+    )
 
-def test_nzvm_scenarios(scenario):
+
+def test_nzvm_scenarios(scenario: ScenarioDict):
     """
     Test generate_velocity_model.py with different scenarios
     and compare outputs with benchmarks
     """
+
     # Create output directory for this scenario
     scenario["output_path"].mkdir(exist_ok=True)
 
@@ -92,9 +114,9 @@ def test_nzvm_scenarios(scenario):
     )
 
     # Check if the script ran successfully
-    assert (
-        result.returncode == 0
-    ), f"Script failed for {scenario['name']}: {result.stderr}"
+    assert result.returncode == 0, (
+        f"Script failed for {scenario['name']}: {result.stderr}"
+    )
 
     # Parse the config file to get nx, ny, nz
     vm_params = parse_nzvm_config(scenario["config_file"])
@@ -114,9 +136,9 @@ def test_nzvm_scenarios(scenario):
 
     # Check critical files (vp, vs, rho) are allclose
     for key in ["vp", "vs", "rho"]:
-        assert (
-            key in comparison_results
-        ), f"Missing {key} in comparison results for {scenario['name']}"
+        assert key in comparison_results, (
+            f"Missing {key} in comparison results for {scenario['name']}"
+        )
         assert comparison_results[key]["allclose"], (
             f"{key} data not close enough for {scenario['name']}:\n"
             f"Max diff: {comparison_results[key]['max_diff']}\n"

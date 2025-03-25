@@ -69,7 +69,7 @@ known-first-party = [
 
 [tool.coverage.run]
 # Ignore the velocity model viewer because there is no way to test it,
-# and even if their were it would be too slow.
+# and even if there were, it would be too slow.
 omit = [
   "velocity_modelling/scripts/view_velocity_model.py"
 ]

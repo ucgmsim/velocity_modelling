@@ -1,9 +1,11 @@
-import pytest
+import os
+import random
 import shutil
 import subprocess
 from pathlib import Path
-import random
-import os
+
+import pytest
+
 from velocity_modelling.cvm.tools.compare_emod3d import (
     compare_output_files,
     parse_nzvm_config,
@@ -14,14 +16,17 @@ BASE_DIR = Path(__file__).parent.parent  # project root directory
 SCRIPT_DIR = BASE_DIR / "velocity_modelling/cvm/scripts"
 TEST_DIR = BASE_DIR / "tests"
 
+
 @pytest.fixture
-def nzvm_c_binary_path(request) -> Path:
+def nzvm_c_binary_path(request: pytest.FixtureRequest) -> Path:
     """
     Get the path to the NZVM C binary from the command-line option or environment variable.
     """
     nzvm_path = request.config.getoption("--nzvm-binary-path")
     if nzvm_path is None:
-        raise ValueError("NZVM binary path not provided. Use --nzvm-binary-path or NZVM_BINARY_PATH environment variable.")
+        raise ValueError(
+            "NZVM binary path not provided. Use --nzvm-binary-path or NZVM_BINARY_PATH environment variable."
+        )
     new_nzvm_path = Path(nzvm_path).resolve()
     if not new_nzvm_path.exists():
         raise ValueError(f"Provided NZVM binary path does not exist: {new_nzvm_path}")
@@ -31,7 +36,7 @@ def nzvm_c_binary_path(request) -> Path:
 
 
 @pytest.fixture
-def data_root_path(request) -> Path:
+def data_root_path(request: pytest.FixtureRequest) -> Path:
     """Configure DATA_ROOT based on command-line option."""
     data_root = request.config.getoption("--data-root")
 
@@ -97,9 +102,10 @@ OUTPUT_DIR={c_output_dir}
     return config_file
 
 
-
 @pytest.mark.repeat(5)
-def test_nzvm_c_vs_python(tmp_path: Path, nzvm_c_binary_path: Path, data_root_path: Path):
+def test_nzvm_c_vs_python(
+    tmp_path: Path, nzvm_c_binary_path: Path, data_root_path: Path
+):
     """Test C binary vs Python script with random config"""
     # Define output directories but don't create them yet
     c_output_dir = tmp_path / "C"
@@ -112,7 +118,6 @@ def test_nzvm_c_vs_python(tmp_path: Path, nzvm_c_binary_path: Path, data_root_pa
     # Generate random config with C output directory
     config_file = generate_random_nzvm_config(tmp_path, c_output_dir)
 
-
     # Run C binary from its directory with relative path
     c_result = subprocess.run(
         [nzvm_c_binary_path, config_file],  # Relative path since we're in C_BINARY_DIR
@@ -123,15 +128,15 @@ def test_nzvm_c_vs_python(tmp_path: Path, nzvm_c_binary_path: Path, data_root_pa
     print(f"C binary return code: {c_result.returncode}")
     print(f"C binary stdout: {c_result.stdout}")
     print(f"C binary stderr: {c_result.stderr}")
-    assert (
-        c_result.returncode == 0
-    ), f"C binary failed with return code {c_result.returncode}: {c_result.stderr} (stdout: {c_result.stdout})"
+    assert c_result.returncode == 0, (
+        f"C binary failed with return code {c_result.returncode}: {c_result.stderr} (stdout: {c_result.stdout})"
+    )
 
     # Check C binary output
     c_velocity_model_dir = c_output_dir / "Velocity_Model"
-    assert c_velocity_model_dir.exists() and any(
-        c_velocity_model_dir.iterdir()
-    ), f"No output found in {c_velocity_model_dir}"
+    assert c_velocity_model_dir.exists() and any(c_velocity_model_dir.iterdir()), (
+        f"No output found in {c_velocity_model_dir}"
+    )
     print(f"C binary wrote to expected directory: {c_velocity_model_dir}")
 
     # Run Python script, overriding output directory
@@ -149,9 +154,9 @@ def test_nzvm_c_vs_python(tmp_path: Path, nzvm_c_binary_path: Path, data_root_pa
         capture_output=True,
         text=True,
     )
-    assert (
-        python_result.returncode == 0
-    ), f"Python script failed: {python_result.stderr}"
+    assert python_result.returncode == 0, (
+        f"Python script failed: {python_result.stderr}"
+    )
 
     # Parse config for nx, ny, nz (dynamically determined)
     vm_params = parse_nzvm_config(config_file)
@@ -173,7 +178,6 @@ def test_nzvm_c_vs_python(tmp_path: Path, nzvm_c_binary_path: Path, data_root_pa
             f"Mean diff: {comparison_results[key]['mean_diff']}\n"
             f"Std diff: {comparison_results[key]['std_diff']}"
         )
-
 
 
 if __name__ == "__main__":
