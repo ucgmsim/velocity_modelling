@@ -35,6 +35,11 @@ from qcore import coordinates, geo
 class BoundingBox:
     """Represents a 2D bounding box with properties and methods for calculations.
 
+    Parameters
+    ----------
+    bounds : npt.NDArray[np.float64]
+        The bounds of the box in NZTM coordinates.
+
     Attributes
     ----------
     corners : np.ndarray
@@ -62,7 +67,7 @@ class BoundingBox:
         self.bounds = np.vstack([bounds[0], bounds[indices]])
 
     @property
-    def corners(self) -> np.ndarray:
+    def corners(self) -> np.ndarray:  # numpydoc ignore=RT01
         """np.ndarray: the corners of the bounding box in (lat, lon) format."""
         return coordinates.nztm_to_wgs_depth(self.bounds)
 
@@ -241,22 +246,22 @@ class BoundingBox:
         return cls(np.asarray(coordinates.wgs_depth_to_nztm(corner_coordinates)))
 
     @property
-    def origin(self) -> npt.NDArray[np.float64]:
+    def origin(self) -> npt.NDArray[np.float64]:  # numpydoc ignore=RT01
         """np.ndarray: The origin of the bounding box."""
         return coordinates.nztm_to_wgs_depth(np.mean(self.bounds, axis=0))
 
     @property
-    def extent_x(self) -> np.float64:
+    def extent_x(self) -> np.float64:  # numpydoc ignore=RT01
         """float: The extent along the x-axis of the bounding box (in km)."""
         return np.linalg.norm(self.bounds[1] - self.bounds[0]) / 1000
 
     @property
-    def extent_y(self) -> np.float64:
+    def extent_y(self) -> np.float64:  # numpydoc ignore=RT01
         """float: The extent along the y-axis of the bounding box (in km)."""
         return np.linalg.norm(self.bounds[2] - self.bounds[1]) / 1000
 
     @property
-    def bearing(self) -> np.float64:
+    def bearing(self) -> np.float64:  # numpydoc ignore=RT01
         """float: The bearing of the bounding box."""
         north_direction = np.array([1, 0, 0])
         up_direction = np.array([0, 0, 1])
@@ -266,7 +271,7 @@ class BoundingBox:
         )
 
     @property
-    def great_circle_bearing(self) -> np.float64:
+    def great_circle_bearing(self) -> np.float64:  # numpydoc ignore=RT01
         """float: The great-circle bearing of the bounding box.
 
         This returns the bearing of the bounding box in WGS84
@@ -277,12 +282,12 @@ class BoundingBox:
         )
 
     @property
-    def area(self) -> np.float64:
+    def area(self) -> np.float64:  # numpydoc ignore=RT01
         """float: The area of the bounding box."""
         return self.extent_x * self.extent_y
 
     @property
-    def polygon(self) -> Polygon:
+    def polygon(self) -> Polygon:  # numpydoc ignore=RT01
         """Polygon: The shapely geometry for the bounding box."""
         return Polygon(np.append(self.bounds, np.atleast_2d(self.bounds[0]), axis=0))
 
@@ -316,7 +321,7 @@ class BoundingBox:
 
     def local_coordinates_to_wgs_depth(
         self,
-        local_coords: npt.ArrayLike,
+        local_coordinates: npt.ArrayLike,
     ) -> npt.NDArray[np.float64]:
         """Convert bounding box coordinates to global coordinates.
 
@@ -338,6 +343,7 @@ class BoundingBox:
                 └─────────────────────┘ │
              0 0   ─────────────────>
                          +x
+
         Returns
         -------
         np.ndarray
@@ -346,11 +352,11 @@ class BoundingBox:
         frame = np.array(
             [self.bounds[1] - self.bounds[0], self.bounds[-1] - self.bounds[0]]
         )
-        nztm_coords = self.bounds[0] + local_coords @ frame
+        nztm_coords = self.bounds[0] + local_coordinates @ frame
         return coordinates.nztm_to_wgs_depth(nztm_coords)
 
     def wgs_depth_coordinates_to_local_coordinates(
-        self, global_coords: npt.ArrayLike
+        self, global_coordinates: npt.ArrayLike
     ) -> npt.NDArray[np.float64]:
         """Convert coordinates (lat, lon) to bounding box coordinates (x, y).
 
@@ -373,12 +379,12 @@ class BoundingBox:
         ValueError
             If the given coordinates do not lie in the bounding box.
         """
-        global_coords = np.asarray(global_coords)
+        global_coordinates = np.asarray(global_coordinates)
 
         frame = np.array(
             [self.bounds[1] - self.bounds[0], self.bounds[-1] - self.bounds[0]]
         )
-        offset = coordinates.wgs_depth_to_nztm(global_coords) - self.bounds[0]
+        offset = coordinates.wgs_depth_to_nztm(global_coordinates) - self.bounds[0]
         if offset.ndim > 1:
             offset = offset.T
         local_coordinates = np.linalg.solve(frame.T, offset)
