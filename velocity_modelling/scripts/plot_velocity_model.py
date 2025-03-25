@@ -1,3 +1,5 @@
+"""Plot velocity model layers from a velocity model params yaml file (vm_params.yaml)."""
+
 from enum import Enum
 from pathlib import Path
 from typing import Annotated, Optional
