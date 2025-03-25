@@ -1,0 +1,39 @@
+# Basin : NorthCanterbury
+
+## Overview
+|         |                     |
+|---------|---------------------|
+| Version | 19p1           |
+| Type    | 4        |
+| Author  | Robin Lee            |
+| Created | 2019-01           |
+
+
+## Images
+<a href="../images/maps/canterbury_region.png"><img src="../images/maps/canterbury_region.png" width="75%"></a>
+
+*Figure 1 Location*
+
+<a href="../images/regional/NorthCanterbury_basin_map.png"><img src="../images/regional/NorthCanterbury_basin_map.png" width="75%"></a>
+
+*Figure 2 Northcanterbury Basin Map*
+
+
+## Data
+### Boundaries
+- [NorthCanterbury_outline_WGS84.txt](../../velocity_modelling/cvm/data/regional/NorthCanterbury/NorthCanterbury_outline_WGS84.txt)
+
+### Surfaces
+- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [NorthCanterbury_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/NorthCanterbury/NorthCanterbury_basement_WGS84.in) (Submodel: N/A)
+
+## Data retrieved from
+### Boundaries
+- [NorthCanterbury_Polygon_WGS84.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/SI_BASINS/NorthCanterbury_Polygon_WGS84.txt)
+
+### Surfaces
+- [NZ_DEM_HD.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in)
+- [NorthCanterbury_Basement_WGS84_v0p0.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/SI_BASINS/NorthCanterbury_Basement_WGS84_v0p0.in)
+
+---
+*Page generated on: March 22, 2025, 19:41 NZST/NZDT*
