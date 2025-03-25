@@ -6,6 +6,7 @@ import csv
 import logging
 from logging import Logger
 from pathlib import Path
+from typing import Optional
 
 from velocity_modelling.cvm.geometry import (
     PartialGlobalMesh,
@@ -20,8 +21,8 @@ def write_global_qualities(
     partial_global_mesh: PartialGlobalMesh,
     partial_global_qualities: PartialGlobalQualities,
     lat_ind: int,
-    min_vs: float = 0.0,
-    logger: Logger = None,
+    vm_params: dict,
+    logger: Optional[Logger] = None,
 ):
     """
     Write the velocity model to CSV format.
@@ -36,14 +37,18 @@ def write_global_qualities(
         Structure containing Vp, Vs, and Rho for all grid points.
     lat_ind : int
         Latitude index to determine the write mode (write or append).
-    min_vs : float, optional
-        Minimum Vs value to apply to the model.
+    vm_params : dict, optional
+        Dictionary containing velocity model parameters from nzvm.cfg.
     logger : Logger
         Logger instance for logging messages.
 
     """
     if logger is None:
         logger = Logger("csv.wrote_global_qualities")
+
+    min_vs = vm_params.get(
+        "min_vs", 0.0
+    )  # Get the minimum Vs value from the parameters
 
     output_dir.mkdir(parents=True, exist_ok=True)
     output_file = output_dir / "velocity_model.csv"

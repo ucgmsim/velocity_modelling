@@ -121,10 +121,10 @@ python cvm/scripts/nzvm.py generate-velocity-model /path/to/custom/nzvm.cfg --ou
 After successful execution, the output files will be located in the specified output directory. The main output files include:
 
 - **EMOD3D Files**: Binary files containing velocity and density values
-  - `<model_name>.v_p`: P-wave velocity values
-  - `<model_name>.v_s`: S-wave velocity values
-  - `<model_name>.rho`: Density values
-  - `<model_name>.info`: Model metadata
+  - `vp3dfile.p`: P-wave velocity values
+  - `vs3dfile.s`: S-wave velocity values
+  - `rho3dfile.d`: Density values
+  - `in_basin_mask.b`: Basin membership (ie. ID of the basin the grid point belongs to. -1 indicates not inside any basin)
 
 - **CSV Files** (if requested): Text files containing velocity and density values in a tabular format
   - `<model_name>.csv`: CSV file with grid points and their properties

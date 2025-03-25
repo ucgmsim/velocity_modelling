@@ -8,10 +8,11 @@ The EMOD3D format is the primary output format of the NZCVM. It is used by the E
 
 ### File Structure
 
-The EMOD3D output consists of three binary files:
-- `<model_name>.v_p`: P-wave velocity values
-- `<model_name>.v_s`: S-wave velocity values
-- `<model_name>.rho`: Density values
+The EMOD3D output consists of three binary files: 
+- `vp3dfile.p`: P-wave velocity values
+- `vs3dfile.s`: S-wave velocity values
+- `rho3dfile.d`: Density values
+- `in_basin_mask.b`: Basin membership (ie. ID of the basin the grid point belongs to. -1 indicates not inside any basin)
 
 Each file contains a 3D grid of values in a binary format, with values arranged in column-major order (Fortran order).
 
@@ -108,6 +109,101 @@ vp = point['vp'].values[0]
 vs = point['vs'].values[0]
 rho = point['rho'].values[0]
 ```
+
+HDF5 (Hierarchical Data Format version 5) is an efficient binary format for storing large scientific datasets with metadata. This format offers several advantages:
+
+- **Single consolidated file**: All velocity model data is stored in one file
+- **Efficient storage with compression**: Reduces file size compared to uncompressed formats
+- **Self-describing format with embedded metadata**: Units, model version, and other metadata stored with the data
+- **High-performance I/O**: Supports fast reading of specific data regions
+- **Cross-platform compatibility**: Works across different operating systems and environments
+- **Supports parallel I/O**: Beneficial for high-performance computing applications
+
+### Using HDF5 Format
+
+To generate a velocity model in HDF5 format:
+
+```bash
+nzvm generate-velocity-model /path/to/nzvm.cfg --output-format HDF5
+```
+
+### HDF5 File Structure
+
+The HDF5 output consists of a single file:
+- Location: `<output_dir>/velocity_model.h5`
+
+The file structure is organized as follows:
+
+- **Root attributes**:
+  - `total_y_slices`: Total number of latitude slices in the model
+  - `format_version`: Version of the HDF5 format specification
+  - `complete`: Boolean flag indicating if the model is complete
+  - `model_version`: Version of the velocity model being used
+
+- **`/mesh` group**:
+  - `x`: Array of X coordinates (km)
+  - `y`: Array of Y coordinates (km) 
+  - `z`: Array of Z (depth) coordinates (km)
+  - `lon`: 2D array of longitude values
+  - `lat`: 2D array of latitude values
+
+- **`/properties` group**:
+  - `vp`: 3D array of P-wave velocities (km/s) [shape: (nx, ny, nz)]
+  - `vs`: 3D array of S-wave velocities (km/s) [shape: (nx, ny, nz)]
+  - `rho`: 3D array of densities (g/cm³) [shape: (nx, ny, nz)]
+  - `inbasin`: 3D array of basin membership flags [shape: (nx, ny, nz)]
+
+Each property dataset includes attributes describing units and constraints (e.g., minimum Vs values).
+
+### Reading HDF5 Files
+
+The generated HDF5 files can be easily accessed using various programming languages:
+
+**Python example:**
+```python
+import h5py
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Open the HDF5 file
+with h5py.File('velocity_model.h5', 'r') as f:
+    # Access metadata
+    model_version = f.attrs.get('model_version', 'unknown')
+    print(f"Model version: {model_version}")
+    
+    # Get depth slice of Vs at a specific depth index
+    vs = f['properties/vs'][:, :, 100]  # depth slice at index 100
+    
+    # Get coordinates
+    x = f['mesh/x'][:]
+    y = f['mesh/y'][0]  # y values are repeated, just take first set
+    
+    # Create a plot
+    plt.figure(figsize=(10, 8))
+    plt.pcolormesh(x, y, vs.T, shading='auto', cmap='viridis')
+    plt.colorbar(label='Vs (km/s)')
+    plt.title(f'S-wave velocity at depth slice 100 - Model v{model_version}')
+    plt.xlabel('X (km)')
+    plt.ylabel('Y (km)')
+    plt.savefig('vs_slice.png')
+```
+### ParaView Visualization
+
+To visualize the HDF5 model in ParaView:
+
+1. Open ParaView
+2. Use "File > Open" and select the generated XDMF file (`velocity_model.xdmf`)
+3. Click "Apply" in the Properties panel
+4. Use the "Slice" filter to create cross-sections of the model
+
+For HDF5 files without an XDMF companion:
+
+1. Use "File > Open" and select the HDF5 file
+2. In the Properties panel, select "XDMF Reader" or "HDF5 Raw Reader"
+3. Manually specify the dimensions and coordinate information:
+   - Select the datasets for x, y, and z coordinates
+   - Select the property datasets (vp, vs, rho) as point data
+4. Click "Apply" and proceed with visualization
 
 ## Other Output Files
 

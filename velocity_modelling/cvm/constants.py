@@ -3,7 +3,7 @@ Constants for the velocity modelling package.
 
 """
 
-from enum import Enum
+from enum import Enum, auto
 from pathlib import Path
 
 MAX_DIST_SMOOTH = 10  # distance in KM to smooth tomography over
@@ -67,8 +67,9 @@ class WriteFormat(Enum):
 
     0: EMOD3D
     1: CSV
-
+    2: HDF5
     """
 
-    EMOD3D = 0
-    CSV = 1
+    EMOD3D = auto()
+    CSV = auto()
+    HDF5 = auto()

@@ -31,6 +31,7 @@ pip install -e  .
 
     # With specific output format:
     nzvm generate-velocity-model /path/to/nzvm.cfg --output-format CSV  (default: EMOD3D)
+    nzvm generate-velocity-model /path/to/nzvm.cfg --output-format HDF5
 
     [example] nzvm.cfg
     CALL_TYPE=GENERATE_VELOCITY_MOD
@@ -182,7 +183,7 @@ def generate_velocity_model(
     model_version : str, optional
         Version of the model to use (overrides MODEL_VERSION in config file).
     output_format : str, optional
-        Format to write the output. Options: "EMOD3D", "CSV" (default: "EMOD3D").
+        Format to write the output. Options: "EMOD3D", "CSV", "HDF5" (default: "EMOD3D").
     data_root : Path, optional
         Override the default DATA_ROOT directory (default: derived from constants.py).
     smoothing : bool, optional
@@ -386,12 +387,13 @@ def generate_velocity_model(
 
         # Write this latitude slice to disk
         try:
+            # Use a single function call format for all writer modules
             write_global_qualities(
                 out_dir,
                 partial_global_mesh,
                 partial_global_qualities,
                 j,
-                vm_params["min_vs"],
+                vm_params,
                 logger,
             )
         except Exception as e:

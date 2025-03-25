@@ -8,6 +8,7 @@ import struct
 import sys
 from logging import Logger
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 
@@ -24,8 +25,8 @@ def write_global_qualities(
     partial_global_mesh: PartialGlobalMesh,
     partial_global_qualities: PartialGlobalQualities,
     lat_ind: int,
-    min_vs: float = 0.0,
-    logger: Logger = None,
+    vm_params: dict,
+    logger: Optional[Logger] = None,
 ):
     """
     Write the full velocity model to file for EMOD3D
@@ -40,14 +41,18 @@ def write_global_qualities(
         Structure containing Vp, Vs, and Rho for all grid points.
     lat_ind : int
         Latitude index to determine the write mode (write or append).
-    min_vs : float, optional
-        Minimum Vs value to apply to the model.
+    vm_params : dict
+        Dictionary containing velocity model parameters from nzvm.cfg.
     logger : Logger, optional
         Logger instance for logging messages.
 
     """
     if logger is None:
         logger = Logger("emod3d.wrote_global_qualities")
+
+    min_vs = vm_params.get(
+        "min_vs", 0.0
+    )  # Get the minimum Vs value from the parameters
 
     # perform endian check
     endianness = sys.byteorder
