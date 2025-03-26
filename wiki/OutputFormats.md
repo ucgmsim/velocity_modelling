@@ -14,19 +14,7 @@ The EMOD3D output consists of three binary files:
 - `rho3dfile.d`: Density values
 - `in_basin_mask.b`: Basin membership (ie. ID of the basin the grid point belongs to. -1 indicates not inside any basin)
 
-Each file contains a 3D grid of values in a binary format, with values arranged in column-major order (Fortran order).
-
-### Header Information
-
-The header information for the model is stored in a separate text file named `<model_name>.info`. This file contains:
-
-```
-hh: Grid spacing (in kilometers)
-nx, ny, nz: Number of grid points in x, y, and z directions
-modellon, modellat: Longitude and latitude of the model origin
-modelrot: Rotation angle of the model grid (in degrees)
-topo_type: Type of topography used (BULLDOZED, SQUASHED, etc.)
-```
+Each file contains a 3D grid of values in a binary format, which can be read using the following Python code.
 
 ### Reading EMOD3D Files
 
@@ -34,6 +22,8 @@ Here's an example of how to read EMOD3D files in Python:
 
 ```python
 import numpy as np
+import struct
+import sys
 
 def read_emod3d_file(filename, nx, ny, nz):
     """
@@ -46,8 +36,16 @@ def read_emod3d_file(filename, nx, ny, nz):
     Returns:
     numpy.ndarray: 3D array of values
     """
+    endianness = sys.byteorder
+    endian_format = "<" if endianness == "little" else ">"
+    
     with open(filename, 'rb') as f:
-        data = np.fromfile(f, dtype=np.float32)
+        file_content = f.read()
+        num_elements = len(file_content) // 4
+        data = np.array(
+            struct.unpack(f"{endian_format}{num_elements}f", file_content),
+            dtype=np.float32
+        )
     
     # Reshape to 3D grid (Fortran order)
     data = data.reshape((nx, ny, nz), order='F')
@@ -64,9 +62,10 @@ with open('model.info', 'r') as f:
     topo_type = lines[4].strip()
 
 # Read velocity and density files
-vp = read_emod3d_file('model.v_p', nx, ny, nz)
-vs = read_emod3d_file('model.v_s', nx, ny, nz)
-rho = read_emod3d_file('model.rho', nx, ny, nz)
+vp = read_emod3d_file('vp3dfile.p', nx, ny, nz)
+vs = read_emod3d_file('vs3dfile.s', nx, ny, nz)
+rho = read_emod3d_file('rho3dfile.d', nx, ny, nz)
+inbasin = read_emod3d_file('in_basin_mask.b', nx, ny, nz)
 ```
 
 ## CSV Format
@@ -76,19 +75,22 @@ In addition to the EMOD3D format, the NZCVM can also output velocity models in C
 ### Format Specification
 
 The CSV output contains one row per grid point, with the following columns:
-- `x`, `y`, `z`: Grid coordinates (in kilometers)
-- `lon`, `lat`, `depth`: Geographic coordinates
-- `vp`: P-wave velocity (in meters per second)
-- `vs`: S-wave velocity (in meters per second)
-- `rho`: Density (in kilograms per cubic meter)
+- `y`, `x`, `z`: Grid coordinates (in kilometers)
+- `lon`, `lat`, `depth`: Geographic coordinates. `depth` is negative for depths below the surface (in meters)
+- `vp`: P-wave velocity (in km/s)
+- `vs`: S-wave velocity (in km/s)
+- `rho`: Density (in g/cm³)
 
 ### Example
 
 ```
-x,y,z,lon,lat,depth,vp,vs,rho
-0.0,0.0,0.0,172.5000,-43.5000,0.0,1500.0,500.0,2000.0
-0.2,0.0,0.0,172.5020,-43.5000,0.0,1520.0,510.0,2010.0
-0.4,0.0,0.0,172.5040,-43.5000,0.0,1540.0,520.0,2020.0
+y,x,z,lat,lon,depth,vp,vs,rho,inbasin
+0,0,0,-40.7843951540506,173.21166935182586,-125.0,1.8,0.58,1.81,-1
+0,0,1,-40.7843951540506,173.21166935182586,-375.0,1.8,0.83,1.81,-1
+0,0,2,-40.7843951540506,173.21166935182586,-625.0,2.03,1.0,1.92,-1
+0,0,3,-40.7843951540506,173.21166935182586,-875.0,2.14,1.05,1.97,-1
+0,0,4,-40.7843951540506,173.21166935182586,-1125.0,2.2,1.1,1.99,-1
+0,0,5,-40.7843951540506,173.21166935182586,-1375.0,2.4,1.15,2.06,-1
 ...
 ```
 
@@ -193,17 +195,23 @@ To visualize the HDF5 model in ParaView:
 
 1. Open ParaView
 2. Use "File > Open" and select the generated XDMF file (`velocity_model.xdmf`)
-3. Click "Apply" in the Properties panel
-4. Use the "Slice" filter to create cross-sections of the model
+3. If ParaView asks which reader to use, select "Xdmf3ReaderS" (XdmfReader for old XDMF version2 files and less robust)
+4. Go to "Properties" panel, and select "Points" in the "Representation" dropdown
+<img src="images/paraview_point_view.png" width="75%">
+5. Select "P-wave velocity" or other properties in the "Coloring" dropdown
+6. For best colour range, click on the "Rescale to data range" button in the "Coloring" panel
+7. In the "Styling" panel, adjust Point Size and Opacity as needed (e.g., increase Point Size for better visibility)
+8. Click "Apply" at the top of the Properties panel
+<img src="images/paraview_pipeline_viewer.png" width="75%">
 
-For HDF5 files without an XDMF companion:
+9. Make sure you have "velocity_model_xdmf" selected in the Pipeline Browser (Eye icon should be visible on the left)
+<img src="images/paraview_cross_section.png" width="100%">
+10. To see a cross-section, use the "Clip" filter (search for "Clip" in the Filter search box or click on the "Clip" 
+icon in the toolbar). Adjust the clip plane as needed, and click "Apply" in the Properties panel. 
+11. Ensure the "Clip" filter (most likely named as "Clip1") is selected in the Pipeline Browser and click on the "Eye" icon to see the clip.
+You may wish to turn off the "Eye" icon of the original data to see the clip more clearly.
 
-1. Use "File > Open" and select the HDF5 file
-2. In the Properties panel, select "XDMF Reader" or "HDF5 Raw Reader"
-3. Manually specify the dimensions and coordinate information:
-   - Select the datasets for x, y, and z coordinates
-   - Select the property datasets (vp, vs, rho) as point data
-4. Click "Apply" and proceed with visualization
+
 
 ## Other Output Files
 
