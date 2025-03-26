@@ -46,40 +46,40 @@ def create_xdmf_file(hdf5_file: Path, vm_params: dict, logger: logging.Logger) -
 <Xdmf Version="3.0">
   <Domain>
     <Grid Name="Velocity_Model" GridType="Uniform">
-      <Topology TopologyType="3DRectMesh" Dimensions="{nz} {ny} {nx}"/>
+      <Topology TopologyType="3DRectMesh" Dimensions="{nx} {ny} {nz}"/>
       <Geometry GeometryType="VXVYVZ">
-        <DataItem Dimensions="{nx}" NumberType="Float" Precision="4" Format="HDF">
+        <DataItem Dimensions="{nx}" NumberType="Float" Precision="8" Format="HDF">
           {hdf5_relative}:/mesh/x
         </DataItem>
-        <DataItem Dimensions="{ny}" NumberType="Float" Precision="4" Format="HDF">
+        <DataItem Dimensions="{ny}" NumberType="Float" Precision="8" Format="HDF">
           {hdf5_relative}:/mesh/y
         </DataItem>
-        <DataItem Dimensions="{nz}" NumberType="Float" Precision="4" Format="HDF">
+        <DataItem Dimensions="{nz}" NumberType="Float" Precision="8" Format="HDF">
           {hdf5_relative}:/mesh/z
         </DataItem>
       </Geometry>
       <Attribute Name="P-wave Velocity" AttributeType="Scalar" Center="Node">
-        <DataItem Dimensions="{nx} {ny} {nz}" NumberType="Float" Precision="4" Format="HDF">
+        <DataItem Dimensions="{nz} {ny} {nx}" NumberType="Float" Precision="4" Format="HDF">
           {hdf5_relative}:/properties/vp
         </DataItem>
       </Attribute>
       <Attribute Name="S-wave Velocity" AttributeType="Scalar" Center="Node">
-        <DataItem Dimensions="{nx} {ny} {nz}" NumberType="Float" Precision="4" Format="HDF">
+        <DataItem Dimensions="{nz} {ny} {nx}" NumberType="Float" Precision="4" Format="HDF">
           {hdf5_relative}:/properties/vs
         </DataItem>
       </Attribute>
       <Attribute Name="Density" AttributeType="Scalar" Center="Node">
-        <DataItem Dimensions="{nx} {ny} {nz}" NumberType="Float" Precision="4" Format="HDF">
+        <DataItem Dimensions="{nz} {ny} {nx}" NumberType="Float" Precision="4" Format="HDF">
           {hdf5_relative}:/properties/rho
         </DataItem>
       </Attribute>
       <Attribute Name="Basin Membership" AttributeType="Scalar" Center="Node">
-        <DataItem Dimensions="{nx} {ny} {nz}" NumberType="Int" Precision="1" Format="HDF">
+        <DataItem Dimensions="{nz} {ny} {nx}" NumberType="Int" Precision="1" Format="HDF">
           {hdf5_relative}:/properties/inbasin
         </DataItem>
       </Attribute>
     </Grid>
-  </Domain>
+  </Domain>c
 </Xdmf>
 """
 
@@ -88,7 +88,10 @@ def create_xdmf_file(hdf5_file: Path, vm_params: dict, logger: logging.Logger) -
             f.write(xdmf_content)
         logger.log(logging.INFO, f"Created ParaView-compatible XDMF file: {xdmf_file}")
     except Exception as e:
-        logger.log(logging.ERROR, f"Failed to create XDMF file: {e}")
+        if isinstance(e, (SystemExit, KeyboardInterrupt)):
+            raise  # Re-raise critical exceptions
+        logger.log(logging.ERROR, f"Error creating XDMF file: {e}")
+        raise RuntimeError(f"Failed to create XDMF file: {e}")
 
 
 def write_global_qualities(
@@ -184,18 +187,24 @@ def write_global_qualities(
                 props_group = f["properties"]
                 nx, nz = partial_global_qualities.vp.shape
 
-                # Create datasets with compression
+                # Log the dimensions for debugging
+                logger.log(
+                    logging.DEBUG,
+                    f"Creating datasets with shape (nz={nz}, ny={ny}, nx={nx})",
+                )
+
+                # Create datasets with shape (nz, ny, nx): Paraview demands this order
                 props_group.create_dataset(
-                    "vp", shape=(nx, ny, nz), dtype="f4", compression="gzip"
+                    "vp", shape=(nz, ny, nx), dtype="f4", compression="gzip"
                 )
                 props_group.create_dataset(
-                    "vs", shape=(nx, ny, nz), dtype="f4", compression="gzip"
+                    "vs", shape=(nz, ny, nx), dtype="f4", compression="gzip"
                 )
                 props_group.create_dataset(
-                    "rho", shape=(nx, ny, nz), dtype="f4", compression="gzip"
+                    "rho", shape=(nz, ny, nx), dtype="f4", compression="gzip"
                 )
                 props_group.create_dataset(
-                    "inbasin", shape=(nx, ny, nz), dtype="i1", compression="gzip"
+                    "inbasin", shape=(nz, ny, nx), dtype="i1", compression="gzip"
                 )
 
                 # Add metadata
@@ -215,26 +224,44 @@ def write_global_qualities(
             if lat_ind == ny - 1:
                 # Now that we have all slices, write the complete mesh data
                 mesh_group = f["mesh"]
-                mesh_group.create_dataset("x", data=partial_global_mesh.x)
-                # Create y as a linear space from -y to y, as partial_global_mesh.y is a scalar, has no range of all y values
                 mesh_group.create_dataset(
-                    "y",
-                    data=np.linspace(
-                        -1 * partial_global_mesh.y, partial_global_mesh.y, ny
-                    ),
+                    "x", data=np.arange(partial_global_mesh.nx, dtype=np.float64)
                 )
-                mesh_group.create_dataset("z", data=partial_global_mesh.z)
+                mesh_group.create_dataset("y", data=np.arange(ny, dtype=np.float64))
+                # Depth is negative: -nz to 0
+                mesh_group.create_dataset(
+                    "z",
+                    data=np.arange(-1 * partial_global_mesh.nz, 0, dtype=np.float64),
+                )
                 mesh_group.create_dataset("lon", data=partial_global_mesh.lon)
                 mesh_group.create_dataset("lat", data=partial_global_mesh.lat)
 
                 # Mark file as complete
                 f.attrs["complete"] = True
 
-            # Write property data for this slice
-            f["properties/vp"][:, lat_ind, :] = partial_global_qualities.vp
-            f["properties/vs"][:, lat_ind, :] = vs_data
-            f["properties/rho"][:, lat_ind, :] = partial_global_qualities.rho
-            f["properties/inbasin"][:, lat_ind, :] = partial_global_qualities.inbasin
+            # Write property data for this slice to make this Paraview compatible
+            # partial_global_qualities.vp is (nx, nz), need to transpose to (nz, nx) for (z, x)
+            # Dataset is (nz, ny, nx), so [:, lat_ind, :] expects (nz, nx)
+            vp_slice = np.transpose(partial_global_qualities.vp)  # (nx, nz) -> (nz, nx)
+            vs_slice = np.transpose(vs_data)  # (nz, nx)
+            rho_slice = np.transpose(partial_global_qualities.rho)  # (nz, nx)
+            inbasin_slice = np.transpose(partial_global_qualities.inbasin)  # (nz, nx)
+
+            # Verify shapes
+            expected_shape = (partial_global_mesh.nz, partial_global_mesh.nx)
+            if vp_slice.shape != expected_shape:
+                logger.log(
+                    logging.ERROR,
+                    f"Shape mismatch: vp_slice has shape {vp_slice.shape}, expected {expected_shape}",
+                )
+                raise ValueError(
+                    f"Shape mismatch: vp_slice has shape {vp_slice.shape}, expected {expected_shape}"
+                )
+
+            f["properties/vp"][:, lat_ind, :] = vp_slice
+            f["properties/vs"][:, lat_ind, :] = vs_slice
+            f["properties/rho"][:, lat_ind, :] = rho_slice
+            f["properties/inbasin"][:, lat_ind, :] = inbasin_slice
 
             # Update progress attribute
             f.attrs["last_slice_written"] = lat_ind
