@@ -48,7 +48,7 @@ The requirements include:
 Some data files may need to be downloaded separately due to their size:
 
 ```bash
-# Example script to download data (if provided)
+# Example script to download data (if not provided)
 python cvm/tools/download_data.py
 ```
 
