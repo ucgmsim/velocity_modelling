@@ -17,9 +17,7 @@ from velocity_modelling.cvm.interpolate import (
     bi_linear_interpolation,
     linear_interpolation,
 )
-from velocity_modelling.cvm.velocity1d import (
-    VelocityModel1D,
-)
+from velocity_modelling.cvm.velocity1d import VelocityModel1D
 
 
 class GlobalSurfaceRead:

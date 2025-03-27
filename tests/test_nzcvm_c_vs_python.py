@@ -164,6 +164,7 @@ def test_nzcvm_c_vs_python(
     ny = vm_params["ny"]
     nz = vm_params["nz"]
 
+
     # Compare outputs
     comparison_results = compare_output_files(
         c_velocity_model_dir, python_output_dir, nx, ny, nz, threshold=1e-5
@@ -172,6 +173,9 @@ def test_nzcvm_c_vs_python(
     # Check critical files (vp, vs, rho) are allclose
     for key in ["vp", "vs", "rho"]:
         assert key in comparison_results, f"Missing {key} in comparison results"
+        assert comparison_results[key]["size_check"], (
+            f"Size check failed for {key}"
+        )
         assert comparison_results[key]["allclose"], (
             f"{key} data not close enough between C and Python:\n"
             f"Max diff: {comparison_results[key]['max_diff']}\n"

@@ -139,6 +139,9 @@ def test_nzcvm_scenarios(scenario: ScenarioDict):
         assert key in comparison_results, (
             f"Missing {key} in comparison results for {scenario['name']}"
         )
+        assert comparison_results[key]["size_check"], (
+            f"Size check failed for {key} in {scenario['name']}"
+        )
         assert comparison_results[key]["allclose"], (
             f"{key} data not close enough for {scenario['name']}:\n"
             f"Max diff: {comparison_results[key]['max_diff']}\n"

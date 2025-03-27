@@ -68,6 +68,8 @@ class VelocityModel1D:
         self.vp = vp
         self.vs = vs
         self.rho = rho
+        self.qp = qp
+        self.qs = qs
         self.depth = depth
         self.n_depth = len(depth)
         if not (len(vp) == len(vs) == len(rho) == len(qp) == len(qs) == len(depth)):

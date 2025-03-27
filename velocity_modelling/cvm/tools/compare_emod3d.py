@@ -76,6 +76,25 @@ def compare_output_files(
     data1 = read_emomd3d_vm(dir1)
     data2 = read_emomd3d_vm(dir2)
 
+    # Calculate expected grid size
+    expected_size = nx * ny * nz
+    print(f"Expected grid size (nx * ny * nz): {expected_size}")
+
+    # Check if data sizes match expected grid size
+    size_checks = {}
+    for key in data1:
+        data1_size = len(data1[key])
+        size_check_1 = data1_size == expected_size
+
+        data2_size = len(data2.get(key, [])) if key in data2 else 0
+        size_check_2 = data2_size == expected_size
+
+        size_checks[key] = data1_size == data2_size == expected_size
+
+        print(f"Size check for {key}:")
+        print(f"  Data1: {data1_size} elements, matches expected size: {size_check_1}")
+        print(f"  Data2: {data2_size} elements, matches expected size: {size_check_2}")
+
     comparison = {}
     for key in data1:
         if key in data2:
@@ -116,6 +135,7 @@ def compare_output_files(
                 "x_index": x_index,
                 "y_index": y_index,
                 "z_index": z_index,
+                "size_check": size_checks[key],
             }
 
         else:

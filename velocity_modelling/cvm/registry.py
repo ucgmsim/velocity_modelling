@@ -202,7 +202,7 @@ class CVMRegistry:
             else Path(relative_path)
         )
 
-    def load_1d_velo_sub_model(self, v1d_path: Path):
+    def load_vm1d_submodel(self, v1d_path: Path):
         """
         Load a 1D velocity submodel into memory.
 
@@ -234,10 +234,10 @@ class CVMRegistry:
             # Load data directly with skiprows parameter and use array transposition for cleaner column extraction
             data = np.loadtxt(v1d_path, skiprows=1)
             vp, vs, rho, qp, qs, depth = data.T
-            velo_mod_1d_data = VelocityModel1D(vp, vs, rho, qp, qs, depth)
-            self.cache[v1d_path] = velo_mod_1d_data
+            vm1d_data = VelocityModel1D(vp, vs, rho, qp, qs, depth)
+            self.cache[v1d_path] = vm1d_data
             self.logger.log(logging.INFO, f"Loaded 1D velocity model from {v1d_path}")
-            return velo_mod_1d_data
+            return vm1d_data
         except FileNotFoundError:
             self.logger.log(
                 logging.ERROR, f"Error: 1D velocity model file {v1d_path} not found."
@@ -372,7 +372,7 @@ class CVMRegistry:
                     logging.ERROR, f"Error: {submodel['name']} is not a 1D model."
                 )
                 raise KeyError(f"{submodel['name']} is not a 1D model")
-            return (submodel_name, self.load_1d_velo_sub_model(vm1d["data"]))
+            return (submodel_name, self.load_vm1d_submodel(vm1d["data"]))
         elif submodel["type"] in {"relation", "perturbation"}:
             self.logger.log(
                 logging.DEBUG,
@@ -555,7 +555,7 @@ class CVMRegistry:
                 f"Error: Offshore 1D model {offshore_v1d_name} is not a 1D model",
             )
             raise KeyError(f"Offshore 1D model {offshore_v1d_name} is not a 1D model")
-        offshore_basin_model_1d = self.load_1d_velo_sub_model(offshore_v1d_info["data"])
+        offshore_basin_model_1d = self.load_vm1d_submodel(offshore_v1d_info["data"])
 
         return TomographyData(
             name=tomo_name,
@@ -706,8 +706,8 @@ class CVMRegistry:
         KeyError
             If required submodel or tomography data is not found.
         """
-        velo_mod_1d_data = None
-        nz_tomography_data = None
+        vm1d_data = None
+        tomography_data = None
 
         self.logger.log(logging.INFO, "Loading global surfaces")
         global_surfaces = self.load_global_surface_data(
@@ -728,11 +728,11 @@ class CVMRegistry:
                     logging.DEBUG, "nan submodel recognized (no data to load)"
                 )
             elif submodel_info["type"] == "vm1d":
-                velo_mod_1d_data = self.load_1d_velo_sub_model(submodel_info["data"])
+                vm1d_data = self.load_vm1d_submodel(submodel_info["data"])
                 self.logger.log(logging.INFO, "Loaded 1D velocity model data")
             elif submodel_info["type"] == "tomography":
                 if self.global_params.get("tomography"):
-                    nz_tomography_data = self.load_tomo_surface_data(
+                    tomography_data = self.load_tomo_surface_data(
                         self.global_params["tomography"]
                     )
                 else:
@@ -749,12 +749,12 @@ class CVMRegistry:
                     f"Error: Unknown submodel type {submodel_info['type']} to be ignored.",
                 )
 
-        if nz_tomography_data:
+        if tomography_data:
             self.logger.log(
                 logging.INFO,
                 "Loading smooth boundaries for tomography transitions",
             )
-            nz_tomography_data.smooth_boundary = self.load_smooth_boundaries(
+            tomography_data.smooth_boundary = self.load_smooth_boundaries(
                 self.global_params["basins"]
             )
 
@@ -762,7 +762,7 @@ class CVMRegistry:
         basin_data = self.load_basin_data(self.global_params["basins"])
 
         self.logger.log(logging.INFO, "All global data successfully loaded")
-        return velo_mod_1d_data, nz_tomography_data, global_surfaces, basin_data
+        return vm1d_data, tomography_data, global_surfaces, basin_data
 
     def load_global_surface(self, surface_file: Path | str) -> GlobalSurfaceRead:
         """
