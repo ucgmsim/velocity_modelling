@@ -8,10 +8,15 @@ This document outlines the development history, current status, and future roadm
 - Translation of the original [C code](https://github.com/ucgmsim/Velocity-Model)
 - Performance matching/superior to the original C code (using 1 CPU)
 - Data files are curated and renamed to follow consistent naming scheme
-- Performance improvements for loading tomography data
+- Performance improvements for loading tomography data using HDF5 format (25s -> 0.4s)
 - Support of CSV, HDF5 output formats
 - Automated testing directly comparing with the output from the original C code
 - Comprehensive documentation and tools for generating basin pages
+- Difference from the C code
+    - Each basin can have multiple boundaries. Previously we treated a basin with multiple boundaries as separate basins. (eg. Napier_1, Napier_2, Napier_3 etc -> Napier)
+    - Basin membership for all mesh grid points is pre-processed for speed
+    - in_basin_mask.b has -1 for a point not in any basin. Original C code incorrectly gave 0 to such points, but 0 means it belongs to the basin id 0, when it was meant to be not within any basins
+
 
 ## Current Development
 
@@ -19,6 +24,7 @@ Our team is currently working on:
 
 - Expanding documentation and examples
 - Extensive testing and verification
+- Submodel plug-and-play
 
 ## Future Roadmap
 
