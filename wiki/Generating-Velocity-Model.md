@@ -12,17 +12,21 @@
 
 (3) `nzcvm.cfg`: The details of the velocity model to generate. In most scenarios, this is the only file users may need to provide to `nzvm.py`
 
+
 The simplest command will look like:
 
 ```bash
 python cvm/scripts/nzcvm.py generate-velocity-model /path/to/config/nzcvm.cfg
 ```
 
+
 #### Required Arguments
 
 - **Configuration File**: Path to the `nzcvm.cfg` file that defines the model parameters
 
+
 #### Optional Arguments
+
 - **--out-dir**: Directory where the output files will be saved. If not supplied, `OUTPUT_DIR` from nzcvm.cfg will be used
 - **--nzcvm-registry**: Path to the model registry file. If not specified, the default `nzcvm_registry.yaml` is used
 - **--model-version**: Override the model version specified in the configuration file
@@ -30,6 +34,7 @@ python cvm/scripts/nzcvm.py generate-velocity-model /path/to/config/nzcvm.cfg
 - **--data-root**: Override the default DATA_ROOT directory. If not specified, the default `cvm/data` is used
 - **--smoothing**: Enable smoothing at model boundaries (not currently implemented)
 - **--log-level**: Set the logging level (DEBUG, INFO, WARNING, ERROR)
+
 
 ### Example Usage Scenarios
 
@@ -67,22 +72,27 @@ OUTPUT_DIR=/tmp
 - **TOPO_TYPE**: Type of topography to use. Possible values are `BULLDOZED`, `SQUASHED`, `SQUASHED_TAPERED` and `TRUE`. 
 - **OUTPUT_DIR**: Directory where the generated velocity model files will be saved.
 
+
 <img src="images/topography_types.png" width="70%">
+
 *Figure 1: Different types of topography used in the NZCVM, including BULLDOZED, SQUASHED, SQUASHED_TAPERED, and TRUE.*
 
 
 
 An nzcvm.cfg file can be configured and downloaded via a web-based interface at https://quakecoresoft.canterbury.ac.nz/nzcvm_config/
 
+
 <img src="images/nzcvm_config.png" width="100%">
 
-*Figure 2: Web interface for nzcvm.cfg generation and download *
+*Figure 2: Web interface for nzcvm.cfg generation and download*
+
 
 2. Run the script with the custom configuration:
 
 ```bash
 python cvm/scripts/nzcvm.py generate-velocity-model /path/to/custom/nzcvm.cfg --out-dir /path/to/output
 ```
+
 
 ## Output Files
 
@@ -92,11 +102,12 @@ After successful execution, the output files will be located in the specified ou
   - `vp3dfile.p`: P-wave velocity values
   - `vs3dfile.s`: S-wave velocity values
   - `rho3dfile.d`: Density values
-  - `in_basin_mask.b`: Basin membership (ie. ID of the basin the grid point belongs to. -1 indicates not inside any basin)
+  - `in_basin_mask.b`: Basin membership (ID of the basin the grid point belongs to; -1 indicates not inside any basin)
 
 CSV and HDF5 formats are also supported with `--output-format CSV` or `--output-format HDF5` option.
 
 For more details on the output formats, see the [Output Formats](OutputFormats.md) page.
+
 
 
 ## Detailed Configuration Guide
@@ -104,6 +115,7 @@ For more details on the output formats, see the [Output Formats](OutputFormats.m
 ### Model Version System
 
 The NZCVM uses a model version system to define different configurations of the velocity model. This allows users to select different combinations of tomography models, basins, and other parameters.
+
 
 #### Relationship Between nzcvm.cfg and Model Version Files
 
@@ -121,6 +133,7 @@ You can also override the model version at runtime using the `--model-version` p
 ```bash
 python cvm/scripts/nzcvm.py generate-velocity-model /path/to/nzcvm.cfg --out-dir /path/to/output --model-version 2.07
 ```
+
 
 #### Explaining 2p03.yaml
 
@@ -147,6 +160,7 @@ basins:
   - WaikatoHauraki_v19p7
 ```
 
+
 **Explanation of key components:**
 
 1. **GTL** (Geotechnical Layer): When set to `true`, enables the use of a geotechnical layer that models near-surface velocity structures based on Vs30 values.
@@ -162,6 +176,7 @@ basins:
 4. **basin_edge_smoothing**: When set to `true`, applies smoothing at basin edges to avoid sharp transitions between basin and non-basin regions.
 
 5. **basins**: Lists all the basin models incorporated into this version. Each basin is defined in the `nzcvm_registry.yaml` file with its own surfaces, boundaries, and submodels.
+
 
 ### Creating Custom Model Versions
 
@@ -192,12 +207,14 @@ basins:
 
 This custom version uses the 2020 tomography model and only includes the Wellington and Greater Wellington basins.
 
+
 ## Running the Model
 
 To generate a velocity model using a specific configuration:
 
 1. Prepare your nzcvm.cfg file with the desired parameters, including MODEL_VERSION
 2. Run the nzcvm.py script with the necessary arguments
+
 
 ### Complete Example: Wellington Model with Version 2.07
 
