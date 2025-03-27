@@ -18,21 +18,21 @@ TEST_DIR = BASE_DIR / "tests"
 
 
 @pytest.fixture
-def nzcvm_c_binary_path(request: pytest.FixtureRequest) -> Path:
+def nzvm_c_binary_path(request: pytest.FixtureRequest) -> Path:
     """
     Get the path to the nzcvm C binary from the command-line option or environment variable.
     """
-    nzcvm_path = request.config.getoption("--nzcvm-binary-path")
-    if nzcvm_path is None:
+    nzvm_path = request.config.getoption("--nzvm-binary-path")
+    if nzvm_path is None:
         raise ValueError(
-            "nzcvm binary path not provided. Use --nzcvm-binary-path or nzcvm_BINARY_PATH environment variable."
+            "nzcvm binary path not provided. Use --nzvm-binary-path or NZVM_BINARY_PATH environment variable."
         )
-    new_nzcvm_path = Path(nzcvm_path).resolve()
-    if not new_nzcvm_path.exists():
-        raise ValueError(f"Provided nzcvm binary path does not exist: {new_nzcvm_path}")
-    if not new_nzcvm_path.is_file():
-        raise ValueError(f"Provided nzcvm binary path is not a file: {new_nzcvm_path}")
-    return new_nzcvm_path
+    new_nzvm_path = Path(nzvm_path).resolve()
+    if not new_nzvm_path.exists():
+        raise ValueError(f"Provided nzcvm binary path does not exist: {new_nzvm_path}")
+    if not new_nzvm_path.is_file():
+        raise ValueError(f"Provided nzcvm binary path is not a file: {new_nzvm_path}")
+    return new_nzvm_path
 
 
 @pytest.fixture
@@ -104,7 +104,7 @@ OUTPUT_DIR={c_output_dir}
 
 @pytest.mark.repeat(5)
 def test_nzcvm_c_vs_python(
-    tmp_path: Path, nzcvm_c_binary_path: Path, data_root_path: Path
+    tmp_path: Path, nzvm_c_binary_path: Path, data_root_path: Path
 ):
     """Test C binary vs Python script with random config"""
     # Define output directories but don't create them yet
@@ -120,8 +120,8 @@ def test_nzcvm_c_vs_python(
 
     # Run C binary from its directory with relative path
     c_result = subprocess.run(
-        [nzcvm_c_binary_path, config_file],  # Relative path since we're in C_BINARY_DIR
-        cwd=str(nzcvm_c_binary_path.parent),
+        [nzvm_c_binary_path, config_file],  # Relative path since we're in C_BINARY_DIR
+        cwd=str(nzvm_c_binary_path.parent),
         capture_output=True,
         text=True,
     )
