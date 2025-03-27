@@ -972,9 +972,9 @@ def great_circle_projection(
     x: np.ndarray,
     y: np.ndarray,
     amat: np.ndarray,
-    erad: Optional[float] = ERAD,
-    g0: Optional[float] = 0,
-    b0: Optional[float] = 0,
+    erad: float = ERAD,
+    g0: float = 0,
+    b0: float = 0,
 ) -> tuple[np.ndarray, Any]:
     """
     Project x, y coordinates to geographic coordinates (longitude, latitude) using a great circle projection.
@@ -987,11 +987,11 @@ def great_circle_projection(
         Y-coordinates.
     amat : np.ndarray
         Transformation matrix.
-    erad : float, optional
+    erad : float
         Earth's radius (default is ERAD).
-    g0 : float, optional
+    g0 : float
         Initial longitude (default is 0).
-    b0 : float, optional
+    b0 : float
         Initial latitude (default is 0).
 
     Returns

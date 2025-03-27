@@ -17,18 +17,18 @@ DATA_ROOT = (
     CVM_ROOT / "data"
 )  # default value, can be overridden with --data-root argument
 MODEL_VERSIONS_ROOT = CVM_ROOT / "model_versions"
-nzcvm_REGISTRY_PATH = CVM_ROOT / "nzcvm_registry.yaml"
+NZCVM_REGISTRY_PATH = CVM_ROOT / "nzcvm_registry.yaml"
 
 DEFAULT_OFFSHORE_1D_MODEL = "canterbury1d_v2"  # vm1d name for offshore 1D model
 DEFAULT_OFFSHORE_DISTANCE = (
     "global/surface/shoreline_distance_2k.in"  # surface for offshore distance
 )
-LON_GRID_DIM_MAX = 10260
-LAT_GRID_DIM_MAX = 19010
-DEP_GRID_DIM_MAX = 4500
-FLAT_CONST = 298.256
+LON_GRID_DIM_MAX = 10260  # Maximum number of grid points in longitude dimension
+LAT_GRID_DIM_MAX = 19010  # Maximum number of grid points in latitude dimension
+DEP_GRID_DIM_MAX = 4500  # Maximum number of grid points in depth dimension
+FLAT_CONST = 298.256  # Earth's flattening constant (1/f)
 ERAD = 6378.139  # Earth's radius in km
-RPERD = 0.017453292
+RPERD = 0.017453292  # Radians per degree (π/180) conversion factor
 
 
 class VelocityTypes(Enum):

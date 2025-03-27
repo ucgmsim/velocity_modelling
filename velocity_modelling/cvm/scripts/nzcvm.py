@@ -20,7 +20,7 @@ pip install -e  .
     # To override DATA_ROOT directory
     nzcvm generate-velocity-model /path/to/nzcvm.cfg --data-root /custom/data/path
 
-    # To override "MODEL_VERSION" in nzcvm.cfg to use a .yaml file for a custom model version. 
+    # To override "MODEL_VERSION" in nzcvm.cfg to use a .yaml file for a custom model version.
     # Requires a .yaml file with the model version under the "model_versions" directory. (eg. 2p07.yaml for model version 2.07)
     nzcvm generate-velocity-model /path/to/nzcvm.cfg --model-version 2.07
 
@@ -69,7 +69,7 @@ from velocity_modelling.cvm.basin_model import (
 )
 from velocity_modelling.cvm.constants import (
     DATA_ROOT,
-    nzcvm_REGISTRY_PATH,
+    NZCVM_REGISTRY_PATH,
     TopoTypes,
     WriteFormat,
 )
@@ -147,7 +147,7 @@ def generate_velocity_model(
     out_dir: Annotated[Optional[Path], typer.Option(file_okay=False)] = None,
     nzcvm_registry: Annotated[
         Path, typer.Option(exists=True, dir_okay=False)
-    ] = nzcvm_REGISTRY_PATH,
+    ] = NZCVM_REGISTRY_PATH,
     model_version: Annotated[str, typer.Option()] = None,
     output_format: Annotated[str, typer.Option()] = WriteFormat.EMOD3D.name,
     data_root: Annotated[
@@ -179,7 +179,7 @@ def generate_velocity_model(
     out_dir : Path
         Path to the output directory where the velocity model files will be written.
     nzcvm_registry : Path, optional
-        Path to the model registry file (default: nzcvm_REGISTRY_PATH).
+        Path to the model registry file (default: NZCVM_REGISTRY_PATH).
     model_version : str, optional
         Version of the model to use (overrides MODEL_VERSION in config file).
     output_format : str, optional
@@ -208,7 +208,7 @@ def generate_velocity_model(
     logger.setLevel(numeric_level)
 
     logger.log(logging.DEBUG, f"Logger initialized with level {log_level}")
-    logger.log(logging.INFO, f"Beginning velocity model generation")
+    logger.log(logging.INFO, "Beginning velocity model generation")
 
     # Override DATA_ROOT if provided
 
@@ -237,7 +237,7 @@ def generate_velocity_model(
             raise  # Re-raise critical exceptions
         logger.log(logging.ERROR, f"Failed to parse config file: {e}")
         raise ValueError(f"Failed to parse config file {nzcvm_cfg_path}: {str(e)}")
-        
+
     # If out_dir is not provided, use output_dir from vm_params if available
     if out_dir is None:
         if "output_dir" in vm_params:

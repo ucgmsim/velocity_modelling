@@ -53,7 +53,13 @@ class VelocityModel1D:
     """
 
     def __init__(
-        self, vp: np.ndarray, vs: np.ndarray, rho: np.ndarray, qp: np.ndarray, qs: np.ndarray, depth: np.ndarray
+        self,
+        vp: np.ndarray,
+        vs: np.ndarray,
+        rho: np.ndarray,
+        qp: np.ndarray,
+        qs: np.ndarray,
+        depth: np.ndarray,
     ):
         """
         Initialize the VelocityModel1D.

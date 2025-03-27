@@ -90,8 +90,27 @@ def offshore_basinmodel_vectorized(
         )
 
 
-def _apply_gtl(z_indices, relative_depths, qualities_vector, mesh_vector):
-    """Helper function to apply the GTL model to a set of points."""
+def _apply_gtl(
+    z_indices: np.ndarray,
+    relative_depths: np.ndarray,
+    qualities_vector: QualitiesVector,
+    mesh_vector: MeshVector,
+):
+    """
+    Helper function to apply the GTL model to a set of points.
+
+    Parameters
+    ----------
+    z_indices : np.ndarray
+        Array of indices of the depth points.
+    relative_depths : np.ndarray
+        Array of relative depth values.
+    qualities_vector : QualitiesVector
+        Struct containing vp, vs, and rho values.
+    mesh_vector : MeshVector
+        Struct containing mesh information such as latitude, longitude, and vs30.
+
+    """
     gtl_mask = relative_depths <= 350.0
     if np.any(gtl_mask):
         z_indices_gtl = z_indices[gtl_mask]

@@ -8,7 +8,7 @@ The NZ Community Velocity Models (NZCVM) provide detailed 3D representations of 
 
 ## Overview
 
-The NZCVM incorporates various data sets amassed from numerous geophysical and geological studies. It prescribes Vp, Vs and Rho (density) at specified locations in a 3D grid.
+The NZCVM incorporates various data sets amassed from numerous geophysical and geological studies. It prescribes the compression or primary wave velocity (Vp), the shear or secondary wave velocity (Vs) and density (Rho) at specified locations in a 3D grid.
 
 The model consists of the following components:
 
@@ -22,7 +22,7 @@ Through embedding discrete regional models into the lower resolution tomography 
 
 ## Key Components
 
-- [**Basins**](wiki/Basins.md): Detailed information about the 34 basin models integrated into NZCVM
+- [**Basins**](wiki/Basins.md): Detailed information about the 34 basin models integrated into the NZCVM
 - [**Tomography**](wiki/Tomography.md): Information about available tomography models
 - [**Data Formats**](wiki/DataFormats.md): Explanation of formats for surface, boundary, tomography, 1D velocity models, and smoothing data
 - [**Output Formats**](wiki/OutputFormats.md): Details about the output formats including emod3d format

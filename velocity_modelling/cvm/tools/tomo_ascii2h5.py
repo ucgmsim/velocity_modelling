@@ -40,6 +40,11 @@ def get_elevations_from_files(input_dir: Path) -> set[float]:
     set[float]
         Set of unique elevation values found in file names.
 
+    Raises
+    ------
+    ValueError
+        If no elevation files are found for any velocity type, or if elevations do not match
+        across all velocity types.
 
     """
     vtypes = ["vp", "vs", "rho"]

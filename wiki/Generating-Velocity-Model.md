@@ -61,7 +61,7 @@ OUTPUT_DIR=/tmp
 - **MODEL_VERSION**: Indicates the version of the velocity model. Will use 2p03.yaml from `model_version` folder
 - **ORIGIN_LAT**: Latitude of the origin point for the model grid.
 - **ORIGIN_LON**: Longitude of the origin point for the model grid.
-- **ORIGIN_ROT**: Rotation angle of the model grid in degrees.
+- **ORIGIN_ROT**: Rotation angle of the model grid in degrees,  as a bearing measured clockwise from north.
 - **EXTENT_X**: Extent of the model grid in the X direction (in kilometers).
 - **EXTENT_Y**: Extent of the model grid in the Y direction (in kilometers).
 - **EXTENT_ZMAX**: Maximum depth of the model grid (in kilometers).
@@ -75,7 +75,7 @@ OUTPUT_DIR=/tmp
 
 <img src="images/topography_types.png" width="70%">
 
-*Figure 1: Different types of topography used in the NZCVM, including BULLDOZED, SQUASHED, SQUASHED_TAPERED, and TRUE.*
+*Figure 1: Different types of topography used in the NZCVM, including TRUE (top left), BULLDOZED (top right), SQUASHED (bottom left), and SQUASHED_TAPERED (bottom right).*
 
 
 

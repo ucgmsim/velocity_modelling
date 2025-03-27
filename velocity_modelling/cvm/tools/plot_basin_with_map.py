@@ -61,10 +61,17 @@ def load_basement(file_path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         Path to basement file.
 
 
+
     Returns
     -------
     tuple[np.ndarray, np.ndarray, np.ndarray]
         Tuple of latitude, longitude, and raster data arrays.
+
+    Raises
+    ------
+    ValueError
+        If the file does not exist or if there are issues reading the file.
+
 
     """
     file_path = Path(file_path)
@@ -243,11 +250,6 @@ def plot_data(
     # Tested a few other tile classes, but Esri World Imagery looks the best and processes quickly
     esri_imagery = EsriWorldImageryTiles()
     ax.add_image(esri_imagery, 12)  # Zoom level 12 for high detail
-
-    # Add additional features for context/ Uncomment the following if needed
-    # ax.add_feature(cfeature.COASTLINE, edgecolor='black', linewidth=0.5)
-    # ax.add_feature(cfeature.LAKES, edgecolor='blue', facecolor='lightblue', alpha=0.5)
-    # ax.add_feature(cfeature.RIVERS, edgecolor='lightblue', alpha=0.5)
 
     # Add town names
     shp = shpreader.natural_earth(
