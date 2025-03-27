@@ -53,7 +53,7 @@ pipeline {
                 sh """
                     cd ${env.WORKSPACE}
                     source .venv/bin/activate
-                    ln -s /nzcvm/global ${env.WORKSPACE}/velocity_modelling/cvm/data/global
+                    cp -r /nzcvm/global/* ${env.WORKSPACE}/velocity_modelling/cvm/data/global
                     pytest -s tests/ --benchmark-dir /nzcvm/benchmarks --nzvm-binary-path /nzcvm/NZVM
                 """
             }
