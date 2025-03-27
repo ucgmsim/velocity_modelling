@@ -104,7 +104,7 @@ class PartialGlobalSurfaceDepths:
     Attributes
     ----------
     depths : np.ndarray
-        Array of global surface depths. (in metres)
+        Array of global surface depths (in metres).
 
     """
 
