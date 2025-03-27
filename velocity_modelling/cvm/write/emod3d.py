@@ -42,7 +42,7 @@ def write_global_qualities(
     lat_ind : int
         Latitude index to determine the write mode (write or append).
     vm_params : dict
-        Dictionary containing velocity model parameters from nzvm.cfg.
+        Dictionary containing velocity model parameters from nzcvm.cfg.
     logger : Logger, optional
         Logger instance for logging messages.
 

@@ -119,7 +119,7 @@ def write_global_qualities(
     lat_ind : int
         Latitude index to determine the write mode (write or append).
     vm_params : dict
-        Dictionary containing velocity model parameters from nzvm.cfg.
+        Dictionary containing velocity model parameters from nzcvm.cfg.
     logger : Logger, optional
         Logger instance for logging messages.
 
@@ -153,7 +153,7 @@ def write_global_qualities(
                 f.attrs["format_version"] = "1.0"
                 f.attrs["creation_date"] = datetime.datetime.now().isoformat()
 
-                # Add all velocity model parameters from nzvm.cfg as root attributes
+                # Add all velocity model parameters from nzcvm.cfg as root attributes
                 if vm_params:
                     config_group = f.create_group("config")
                     for key, value in vm_params.items():

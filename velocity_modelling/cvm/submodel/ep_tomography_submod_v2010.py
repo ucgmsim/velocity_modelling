@@ -90,6 +90,21 @@ def offshore_basinmodel_vectorized(
         )
 
 
+def _apply_gtl(z_indices, relative_depths, qualities_vector, mesh_vector):
+    """Helper function to apply the GTL model to a set of points."""
+    gtl_mask = relative_depths <= 350.0
+    if np.any(gtl_mask):
+        z_indices_gtl = z_indices[gtl_mask]
+        vs_gtl = qualities_vector.vs[z_indices_gtl]
+        relative_depths_gtl = relative_depths[gtl_mask]
+        vs_new, vp_new, rho_new = v30gtl_vectorized(
+            mesh_vector.vs30, vs_gtl, relative_depths_gtl, 350.0
+        )
+        qualities_vector.vs[z_indices_gtl] = vs_new
+        qualities_vector.vp[z_indices_gtl] = vp_new
+        qualities_vector.rho[z_indices_gtl] = rho_new
+
+
 def main_vectorized(
     z_indices: np.ndarray,
     depths: np.ndarray,
@@ -184,46 +199,25 @@ def main_vectorized(
     relative_depths = partial_global_surface_depths.depths[1] - depths
 
     # Apply GTL and offshore smoothing
-    if gtl and not nz_tomography_data.special_offshore_tapering:
-        gtl_mask = relative_depths <= 350.0
-        if np.any(gtl_mask):
-            z_indices_gtl = z_indices[gtl_mask]
-            vs_gtl = qualities_vector.vs[z_indices_gtl]
-            relative_depths_gtl = relative_depths[gtl_mask]
-            vs_new, vp_new, rho_new = v30gtl_vectorized(
-                mesh_vector.vs30, vs_gtl, relative_depths_gtl, 350.0
-            )
-            qualities_vector.vs[z_indices_gtl] = vs_new
-            qualities_vector.vp[z_indices_gtl] = vp_new
-            qualities_vector.rho[z_indices_gtl] = rho_new
-    elif gtl and nz_tomography_data.special_offshore_tapering:
-        # Determine if the offshore model should be applied (point-level condition)
-        apply_offshore = (
-            (mesh_vector.vs30 < 100)
-            and (not in_any_basin_lat_lon)
-            and (not on_boundary)
-            and (mesh_vector.distance_from_shoreline > 0)
-        )
-
-        if apply_offshore:
-            offshore_basinmodel_vectorized(
-                mesh_vector.distance_from_shoreline,
-                depths,
-                qualities_vector,
-                z_indices,
-                nz_tomography_data,
+    if gtl:
+        if nz_tomography_data.special_offshore_tapering:
+            # Determine if the offshore model should be applied (point-level condition)
+            apply_offshore = (
+                (mesh_vector.vs30 < 100)
+                and (not in_any_basin_lat_lon)
+                and (not on_boundary)
+                and (mesh_vector.distance_from_shoreline > 0)
             )
 
-        else:
-            # Apply GTL only if apply_offshore is False
-            gtl_mask = relative_depths <= 350.0
-            if np.any(gtl_mask):
-                z_indices_gtl = z_indices[gtl_mask]
-                vs_gtl = qualities_vector.vs[z_indices_gtl]
-                relative_depths_gtl = relative_depths[gtl_mask]
-                vs_new, vp_new, rho_new = v30gtl_vectorized(
-                    mesh_vector.vs30, vs_gtl, relative_depths_gtl, 350.0
+            if apply_offshore:
+                offshore_basinmodel_vectorized(
+                    mesh_vector.distance_from_shoreline,
+                    depths,
+                    qualities_vector,
+                    z_indices,
+                    nz_tomography_data,
                 )
-                qualities_vector.vs[z_indices_gtl] = vs_new
-                qualities_vector.vp[z_indices_gtl] = vp_new
-                qualities_vector.rho[z_indices_gtl] = rho_new
+            else:
+                _apply_gtl(z_indices, relative_depths, qualities_vector, mesh_vector)
+        else:
+            _apply_gtl(z_indices, relative_depths, qualities_vector, mesh_vector)

@@ -25,7 +25,7 @@ from velocity_modelling.cvm.constants import (
     DEFAULT_OFFSHORE_1D_MODEL,
     DEFAULT_OFFSHORE_DISTANCE,
     MODEL_VERSIONS_ROOT,
-    NZVM_REGISTRY_PATH,
+    nzcvm_REGISTRY_PATH,
     VelocityTypes,
 )
 from velocity_modelling.cvm.geometry import SmoothingBoundary
@@ -77,7 +77,7 @@ class CVMRegistry:
         self,
         version: str,
         data_root: Path,
-        registry_path: Optional[Path] = NZVM_REGISTRY_PATH,
+        registry_path: Optional[Path] = nzcvm_REGISTRY_PATH,
         logger: Optional[Logger] = None,
     ):
         """
@@ -231,17 +231,15 @@ class CVMRegistry:
             return self.cache[v1d_path]
 
         try:
-            with open(v1d_path, "r") as file:
-                next(file)  # Skip header
-                data = np.loadtxt(file)
-                velo_mod_1d_data = VelocityModel1D(
-                    data[:, 0], data[:, 1], data[:, 2], data[:, 5]
-                )
-                self.cache[v1d_path] = velo_mod_1d_data
-                self.logger.log(
-                    logging.INFO, f"Loaded 1D velocity model from {v1d_path}"
-                )
-                return velo_mod_1d_data
+            # Load data directly with skiprows parameter and use array transposition for cleaner column extraction
+            data = np.loadtxt(v1d_path, skiprows=1)
+            vp, vs, rho, qp, qs, depth = data.T
+            velo_mod_1d_data = VelocityModel1D(vp, vs, rho, qp, qs, depth)
+            self.cache[v1d_path] = velo_mod_1d_data
+            self.logger.log(
+                logging.INFO, f"Loaded 1D velocity model from {v1d_path}"
+            )
+            return velo_mod_1d_data
         except FileNotFoundError:
             self.logger.log(
                 logging.ERROR, f"Error: 1D velocity model file {v1d_path} not found."

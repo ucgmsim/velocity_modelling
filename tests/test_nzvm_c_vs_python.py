@@ -8,7 +8,7 @@ import pytest
 
 from velocity_modelling.cvm.tools.compare_emod3d import (
     compare_output_files,
-    parse_nzvm_config,
+    parse_nzcvm_config,
 )
 
 # Define paths
@@ -18,21 +18,21 @@ TEST_DIR = BASE_DIR / "tests"
 
 
 @pytest.fixture
-def nzvm_c_binary_path(request: pytest.FixtureRequest) -> Path:
+def nzcvm_c_binary_path(request: pytest.FixtureRequest) -> Path:
     """
-    Get the path to the NZVM C binary from the command-line option or environment variable.
+    Get the path to the nzcvm C binary from the command-line option or environment variable.
     """
-    nzvm_path = request.config.getoption("--nzvm-binary-path")
-    if nzvm_path is None:
+    nzcvm_path = request.config.getoption("--nzcvm-binary-path")
+    if nzcvm_path is None:
         raise ValueError(
-            "NZVM binary path not provided. Use --nzvm-binary-path or NZVM_BINARY_PATH environment variable."
+            "nzcvm binary path not provided. Use --nzcvm-binary-path or nzcvm_BINARY_PATH environment variable."
         )
-    new_nzvm_path = Path(nzvm_path).resolve()
-    if not new_nzvm_path.exists():
-        raise ValueError(f"Provided NZVM binary path does not exist: {new_nzvm_path}")
-    if not new_nzvm_path.is_file():
-        raise ValueError(f"Provided NZVM binary path is not a file: {new_nzvm_path}")
-    return new_nzvm_path
+    new_nzcvm_path = Path(nzcvm_path).resolve()
+    if not new_nzcvm_path.exists():
+        raise ValueError(f"Provided nzcvm binary path does not exist: {new_nzcvm_path}")
+    if not new_nzcvm_path.is_file():
+        raise ValueError(f"Provided nzcvm binary path is not a file: {new_nzcvm_path}")
+    return new_nzcvm_path
 
 
 @pytest.fixture
@@ -51,8 +51,8 @@ def data_root_path(request: pytest.FixtureRequest) -> Path:
     return data_root
 
 
-def generate_random_nzvm_config(tmp_path: Path, c_output_dir: Path) -> Path:
-    """Generate a random but sensible nzvm.cfg file with specified parameters"""
+def generate_random_nzcvm_config(tmp_path: Path, c_output_dir: Path) -> Path:
+    """Generate a random but sensible nzcvm.cfg file with specified parameters"""
     # Sensible ranges and choices for parameters
     model_version = random.choice(["2.03", "2.07"])
     extent_x = random.uniform(10, 100)
@@ -88,7 +88,7 @@ OUTPUT_DIR={c_output_dir}
 """
 
     # Write config in C binary's directory
-    config_file = tmp_path / "nzvm.cfg"
+    config_file = tmp_path / "nzcvm.cfg"
     with open(config_file, "w") as f:
         f.write(config_content.strip())
         f.write("\n")
@@ -103,8 +103,8 @@ OUTPUT_DIR={c_output_dir}
 
 
 @pytest.mark.repeat(5)
-def test_nzvm_c_vs_python(
-    tmp_path: Path, nzvm_c_binary_path: Path, data_root_path: Path
+def test_nzcvm_c_vs_python(
+    tmp_path: Path, nzcvm_c_binary_path: Path, data_root_path: Path
 ):
     """Test C binary vs Python script with random config"""
     # Define output directories but don't create them yet
@@ -116,12 +116,12 @@ def test_nzvm_c_vs_python(
         shutil.rmtree(c_output_dir)
 
     # Generate random config with C output directory
-    config_file = generate_random_nzvm_config(tmp_path, c_output_dir)
+    config_file = generate_random_nzcvm_config(tmp_path, c_output_dir)
 
     # Run C binary from its directory with relative path
     c_result = subprocess.run(
-        [nzvm_c_binary_path, config_file],  # Relative path since we're in C_BINARY_DIR
-        cwd=str(nzvm_c_binary_path.parent),
+        [nzcvm_c_binary_path, config_file],  # Relative path since we're in C_BINARY_DIR
+        cwd=str(nzcvm_c_binary_path.parent),
         capture_output=True,
         text=True,
     )
@@ -143,7 +143,7 @@ def test_nzvm_c_vs_python(
     python_result = subprocess.run(
         [
             "python",
-            str(SCRIPT_DIR / "nzvm.py"),
+            str(SCRIPT_DIR / "nzcvm.py"),
             "generate-velocity-model",
             str(config_file),
             "--out-dir",
@@ -159,7 +159,7 @@ def test_nzvm_c_vs_python(
     )
 
     # Parse config for nx, ny, nz (dynamically determined)
-    vm_params = parse_nzvm_config(config_file)
+    vm_params = parse_nzcvm_config(config_file)
     nx = vm_params["nx"]
     ny = vm_params["ny"]
     nz = vm_params["nz"]

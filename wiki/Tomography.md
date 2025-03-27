@@ -7,9 +7,10 @@ The tomography models in the NZCVM provide the background velocity structure for
 The NZCVM currently supports the following tomography models:
 
 1. **2010_NZ**: Based on Eberhart-Phillips et al. (2010)
-2. **2010_NZ_OFFSHORE**: Extension of the 2010 model with offshore regions
+2. **2010_NZ_OFFSHORE**: Extension of the 2010 model with a basin submodel applied to the offshore region
 3. **2020_NZ**: Based on Eberhart-Phillips et al. (2020)
-4. **2020_NZ_OFFSHORE**: Extension of the 2020 model with offshore regions
+4. **2020_NZ_OFFSHORE**: Extension of the 2020 model with a basin submodel applied to the offshore region
+5. **2020_NZ_OFFSHORE_NO_BASIN** : Extension of the 2020 model with offshore region but no basin submodel applied
 
 ## Tomography Model Definition
 
@@ -31,7 +32,7 @@ The key components of a tomography model definition are:
 - **nElev**: Number of elevation levels in the model
 - **elev**: Array of elevation values (in kilometers) for the model
 - **vs30_path**: Path to the Vs30 (shear wave velocity in the top 30 meters) data file
-- **special_offshore_tapering**: Whether to apply special tapering in offshore regions
+- **special_offshore_tapering**: Whether to apply basin submodel in offshore regions (default submodel: canterbury1d_submod)
 - **path**: Path to the tomography model data file (in HDF5 format)
 
 ## Usage in Model Versions

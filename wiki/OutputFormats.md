@@ -126,7 +126,7 @@ HDF5 (Hierarchical Data Format version 5) is an efficient binary format for stor
 To generate a velocity model in HDF5 format:
 
 ```bash
-nzvm generate-velocity-model /path/to/nzvm.cfg --output-format HDF5
+nzcvm generate-velocity-model /path/to/nzcvm.cfg --output-format HDF5
 ```
 
 ### HDF5 File Structure
@@ -197,14 +197,18 @@ To visualize the HDF5 model in ParaView:
 2. Use "File > Open" and select the generated XDMF file (`velocity_model.xdmf`)
 3. If ParaView asks which reader to use, select "Xdmf3ReaderS" (XdmfReader for old XDMF version2 files and less robust)
 4. Go to "Properties" panel, and select "Points" in the "Representation" dropdown
-<img src="images/paraview_point_view.png" width="75%">
+
+<img src="images/paraview_point_view.png" width="30%">
+
 5. Select "P-wave velocity" or other properties in the "Coloring" dropdown
 6. For best colour range, click on the "Rescale to data range" button in the "Coloring" panel
 7. In the "Styling" panel, adjust Point Size and Opacity as needed (e.g., increase Point Size for better visibility)
 8. Click "Apply" at the top of the Properties panel
-<img src="images/paraview_pipeline_viewer.png" width="75%">
+
+<img src="images/paraview_pipeline_viewer.png" width="30%">
 
 9. Make sure you have "velocity_model_xdmf" selected in the Pipeline Browser (Eye icon should be visible on the left)
+
 <img src="images/paraview_cross_section.png" width="100%">
 10. To see a cross-section, use the "Clip" filter (search for "Clip" in the Filter search box or click on the "Clip" 
 icon in the toolbar). Adjust the clip plane as needed, and click "Apply" in the Properties panel. 
@@ -223,6 +227,6 @@ Depending on the configuration, the NZCVM may also generate additional output fi
 
 ## Output Location
 
-By default, output files are stored in the directory specified by the `--out-dir` argument when running the `nzvm.py` script. If not specified, they are stored in the directory specified by the `OUTPUT_DIR` parameter in the configuration file.
+By default, output files are stored in the directory specified by the `--out-dir` argument when running the `nzcvm.py` script. If not specified, they are stored in the directory specified by the `OUTPUT_DIR` parameter in the configuration file.
 
 Each model version and configuration creates a separate subdirectory to avoid overwriting existing files.

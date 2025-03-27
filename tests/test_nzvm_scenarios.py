@@ -1,4 +1,4 @@
-# tests/test_nzvm_scenarios.py
+# tests/test_nzcvm_scenarios.py
 import subprocess
 from pathlib import Path
 from typing import TypedDict
@@ -7,7 +7,7 @@ import pytest
 
 from velocity_modelling.cvm.tools.compare_emod3d import (
     compare_output_files,
-    parse_nzvm_config,
+    parse_nzcvm_config,
 )
 
 # Define the scenarios
@@ -74,7 +74,7 @@ def scenario(
     """Fixture to provide scenario data for each test"""
     scenario_name = request.param
     scenario_path = SCENARIO_DIR / scenario_name
-    config_file = scenario_path / "nzvm.cfg"
+    config_file = scenario_path / "nzcvm.cfg"
     benchmark_path = test_paths[0] / scenario_name
     output_path = tmp_path / scenario_name
     data_root = test_paths[1]
@@ -88,7 +88,7 @@ def scenario(
     )
 
 
-def test_nzvm_scenarios(scenario: ScenarioDict):
+def test_nzcvm_scenarios(scenario: ScenarioDict):
     """
     Test generate_velocity_model.py with different scenarios
     and compare outputs with benchmarks
@@ -101,7 +101,7 @@ def test_nzvm_scenarios(scenario: ScenarioDict):
     result = subprocess.run(
         [
             "python",
-            str(SCRIPT_DIR / "nzvm.py"),
+            str(SCRIPT_DIR / "nzcvm.py"),
             "generate-velocity-model",
             str(scenario["config_file"]),
             "--out-dir",
@@ -119,7 +119,7 @@ def test_nzvm_scenarios(scenario: ScenarioDict):
     )
 
     # Parse the config file to get nx, ny, nz
-    vm_params = parse_nzvm_config(scenario["config_file"])
+    vm_params = parse_nzcvm_config(scenario["config_file"])
     nx = vm_params["nx"]
     ny = vm_params["ny"]
     nz = vm_params["nz"]

@@ -9,28 +9,34 @@ Surface data files (`.in` extension) contain elevation or depth data on a 2D gri
 ### Format Specification
 
 ```
-nx ny
-lon_min lon_max lat_min lat_max
-z_value_1_1 z_value_1_2 ... z_value_1_ny
-z_value_2_1 z_value_2_2 ... z_value_2_ny
+ny (number of latitudes) nx (number of longitues)
+lat_1 lat_2 lat_3.....lat_ny
+lon_1 lon_2 lon_3.....lon_nx
+z_value_1_1 z_value_1_2 ... z_value_1_nx
+z_value_2_1 z_value_2_2 ... z_value_2_nx
 ...
-z_value_nx_1 z_value_nx_2 ... z_value_nx_ny
+z_value_ny_1 z_value_ny_2 ... z_value_ny_nx
 ```
 
 Where:
 - `nx` and `ny` are the number of grid points in the x and y directions
-- `lon_min`, `lon_max`, `lat_min`, and `lat_max` define the geographic extent of the grid
-- `z_value_i_j` is the elevation or depth value at grid point (i, j)
+- `z_value_lat_lon` is the elevation or depth value at grid point (lat, lon)
+
+If the data file has a missing value, it will warn the user and pad with zeros to match the required data length during the run time.
+```
+2025-03-25 21:13:21,015 - nzcvm - WARNING - Warning: In /Users/sungbae/velocity_modelling/velocity_modelling/cvm/data/regional/Canterbury/Canterbury_Miocene_WGS84.in raster data length mismatch: 150800 != 150801. Padding with zeros.
+```
+Note: This is likely due to clerical error during data preparation. We chose to pad with zeros to match the behaviour original C code, but this may lead to a undesirable outcome. 
 
 ### Example
 
 ```
-100 120
-170.0 172.0 -44.0 -42.0
-125.6 125.3 ... 124.8
-125.4 125.2 ... 124.7
+180 227 
+-45.590000 -45.585000 ... -44.695000
+169.270000 169.275000 ... 170.400000
+14.313100 14.595800 ...
 ...
-123.8 123.7 ... 123.0
+15.695500 16.386100 ...
 ```
 
 ## Boundary Data Format
@@ -40,7 +46,6 @@ Boundary files (typically `.txt` extension) define the geographical boundaries o
 ### Format Specification
 
 ```
-num_points
 lon_1 lat_1
 lon_2 lat_2
 ...
@@ -48,13 +53,13 @@ lon_n lat_n
 ```
 
 Where:
-- `num_points` is the number of points in the boundary
 - `lon_i` and `lat_i` are the longitude and latitude coordinates of point i
+The first location should be the same as the last to form a closed polygon. ie. (lon_1, lat_1)=(lon_n, lat_n)
+If the boundary data is found to be not closed, it will throw an error and program will terminate.
 
 ### Example
 
 ```
-8
 172.5000 -43.5000
 172.6000 -43.5000
 172.7000 -43.4500
@@ -63,34 +68,72 @@ Where:
 172.5000 -43.3000
 172.4000 -43.3500
 172.4000 -43.4500
+...
+172.5000 -43.5000
 ```
 
 ## Tomography Data Format
 
 Tomography data is stored in HDF5 format (`.h5` extension). These files contain 3D grids of velocity values derived from seismic tomography.
 
-### Format Specification
+### Structure Overview
+```
+/
+├── "elevation1" (e.g., "-750" or "0.25")
+│   ├── latitudes [array of float values]
+│   ├── longitudes [array of float values]
+│   ├── vp [2D array - shape(nlat, nlon)]
+│   ├── vs [2D array - shape(nlat, nlon)]
+│   └── rho [2D array - shape(nlat, nlon)]
+├── "elevation2" (another elevation layer)
+│   ├── latitudes [array of float values]
+│   ├── longitudes [array of float values]
+│   ├── vp [2D array - shape(nlat, nlon)]
+│   ├── vs [2D array - shape(nlat, nlon)]
+│   └── rho [2D array - shape(nlat, nlon)]
+└── ... (additional elevation groups)
+```
+### Structure Details
+- Root Level: Contains groups named after elevation values, (e.g., "-750" or "0.25") 
+- Elevation Groups: Each elevation group contains:
 
-The HDF5 file contains the following datasets:
-- `lat`: 1D array of latitude values
-- `lon`: 1D array of longitude values
-- `depth`: 1D array of depth values
-- `vp`: 3D array of P-wave velocity values
-- `vs`: 3D array of S-wave velocity values
-- `rho`: 3D array of density values
+  - latitudes: 1D array of latitude coordinates
+  - longitudes: 1D array of longitude coordinates
+  - vp: 2D array of P-wave velocities at grid points [nlat × nlon]
+  - vs: 2D array of S-wave velocities at grid points [nlat × nlon]
+  - rho: 2D array of density values at grid points [nlat × nlon]
+- Grid Structure: The velocity and density data are arranged in 2D grids where:
+    - First dimension corresponds to the latitude points
+    - Second dimension corresponds to the longitude points
+    - Values represent the property (vp, vs, or rho) at that lat/lon coordinate
+
 
 ### Access Example
 
 ```python
 import h5py
 
-with h5py.File('tomography_file.h5', 'r') as f:
-    lat = f['lat'][:]
-    lon = f['lon'][:]
-    depth = f['depth'][:]
-    vp = f['vp'][:]
-    vs = f['vs'][:]
-    rho = f['rho'][:]
+with h5py.File('2010_NZ.h5', 'r') as f:
+    # List available elevations
+    elevations = list(f.keys())
+    print(f"Available elevations: {elevations}")
+    
+    # Access data for a specific elevation
+    elev = elevations[0]  # For example, get the first elevation
+    
+    # Get coordinate arrays
+    latitudes = f[elev]['latitudes'][:]
+    longitudes = f[elev]['longitudes'][:]
+    
+    # Get velocity and density data
+    vp = f[elev]['vp'][:]
+    vs = f[elev]['vs'][:]
+    rho = f[elev]['rho'][:]
+    
+    # Example: Access value at specific lat/lon index
+    i_lat, i_lon = 10, 20
+    vs_value = vs[i_lat, i_lon]
+    print(f"S-wave velocity at lat={latitudes[i_lat]}, lon={longitudes[i_lon]}: {vs_value} km/s")
 ```
 
 ## 1D Velocity Model Format
@@ -100,27 +143,31 @@ with h5py.File('tomography_file.h5', 'r') as f:
 ### Format Specification
 
 ```
-depth_1 vp_1 vs_1 rho_1 qp_1 qs_1
-depth_2 vp_2 vs_2 rho_2 qp_2 qs_2
+header
+vp_1 vs_1 rho_1 qp_1 qs_1 depth_1
+vp_2 vs_2 rho_2 qp_2 qs_2 depth_2 
 ...
-depth_n vp_n vs_n rho_n qp_n qs_n
+vp_n vs_n rho_n qp_n qs_n depth_n 
 ```
 
 Where:
-- `depth_i` is the depth in kilometers
 - `vp_i` is the P-wave velocity in km/s
 - `vs_i` is the S-wave velocity in km/s
 - `rho_i` is the density in g/cm³
 - `qp_i` is the P-wave quality factor
 - `qs_i` is the S-wave quality factor
-
+- `depth_i` is the depth in kilometers
 ### Example
 
 ```
-0.0 1.5 0.5 2.0 100 50
-0.1 1.8 0.6 2.1 120 60
-0.5 2.0 0.8 2.2 150 75
-1.0 2.5 1.0 2.3 200 100
+DEF HST
+  1.80   0.50   1.81   50.0   25.0    0.400
+  1.90   0.58   1.86   58.0   29.0    0.600
+  2.03   0.66   1.92   66.0   33.0    0.800
+  2.14   0.74   1.97   74.0   37.0    1.000
+  2.20   0.80   1.99   80.0   40.0    1.200
+  2.40   1.01   2.06  101.0   50.5    1.400
+  2.70   1.22   2.15  122.0   61.0    1.600
 ...
 ```
 
@@ -131,32 +178,28 @@ Smoothing files define regions where velocity models should be smoothly transiti
 ### Format Specification
 
 ```
-num_points
-lon_1 lat_1 weight_1
-lon_2 lat_2 weight_2
+lon_1 lat_1
+lon_2 lat_2
 ...
-lon_n lat_n weight_n
+lon_n lat_n
 ```
 
 Where:
-- `num_points` is the number of points in the smoothing boundary
 - `lon_i` and `lat_i` are the longitude and latitude coordinates of point i
-- `weight_i` is the smoothing weight at point i (typically between 0 and 1)
+
+This is the same format as the boundary, but doesn't have a requirement of being the first and last point to be identical.
 
 ### Example
 
 ```
-10
-172.5000 -43.5000 0.0
-172.5500 -43.5000 0.2
-172.6000 -43.4800 0.5
-172.6500 -43.4500 0.8
-172.6500 -43.4000 1.0
-172.6000 -43.3500 1.0
-172.5500 -43.3200 0.8
-172.5000 -43.3000 0.5
-172.4500 -43.3200 0.2
-172.4000 -43.3500 0.0
+170.00831948 -46.23795676
+170.00960087 -46.23802830
+170.01082825 -46.23830416
+170.01198789 -46.23870333
+170.01310530 -46.23915898
+170.01420524 -46.23963506
+170.01529993 -46.24011699
+...
 ```
 
 ## Data Locations

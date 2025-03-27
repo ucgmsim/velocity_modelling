@@ -1,11 +1,11 @@
 pipeline {
     agent {
-        docker { image 'earthquakesuc/nzvm'
+        docker { image 'earthquakesuc/nzcvm'
             // The -u 0 flags means run commands inside the container
             // as the user with uid = 0. This user is, by default, the
             // root user. So it is effectively saying run the commands
             // as root.
-            args "-u 0 -v /home/jenkins/Data:/nzvm/Data -v /home/jenkins/benchmarks:/nzvm/benchmarks -v /home/jenkins/global:/nzvm/global"
+            args "-u 0 -v /home/jenkins/Data:/nzcvm/Data -v /home/jenkins/benchmarks:/nzcvm/benchmarks -v /home/jenkins/global:/nzcvm/global"
         }
 
     }
@@ -53,8 +53,8 @@ pipeline {
                 sh """
                     cd ${env.WORKSPACE}
                     source .venv/bin/activate
-                    ln -s /nzvm/global ${env.WORKSPACE}/velocity_modelling/cvm/data/global
-                    pytest -s tests/ --benchmark-dir /nzvm/benchmarks --nzvm-binary-path /nzvm/NZVM
+                    ln -s /nzcvm/global ${env.WORKSPACE}/velocity_modelling/cvm/data/global
+                    pytest -s tests/ --benchmark-dir /nzcvm/benchmarks --nzcvm-binary-path /nzcvm/nzcvm
                 """
             }
         }
