@@ -1,5 +1,9 @@
 # NZ Community Velocity Models
 
+[![GitHub Actions](https://github.com/ucgmsim/velocity_modelling/workflows/CI/badge.svg)](https://github.com/ucgmsim/velocity_modelling/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+
 The NZ Community Velocity Models (NZCVM) provide detailed 3D representations of the subsurface velocity structure in New Zealand. These models are essential for seismic hazard analysis and earthquake engineering.
 
 ## Overview
@@ -87,11 +91,11 @@ For detailed instructions, see the [Generating Velocity Model](wiki/Generating-V
 
 After successful execution, the output files will be located in the specified output directory. See [Output Formats](wiki/OutputFormats.md) for details on the format and contents of these files.
 
-### Data Files
+## Data Files
 
 All the data such as surface, boundary, DEM, 1D velocity model etc. files are placed under [velocity_modelling/cvm/data](velocity_modelling/cvm/data) folder. Details of the data format, see the [Data Formats Guide](wiki/DataFormats.md)
 
-### Changelogs and Development Plans
+## Changelogs and Development Plans
 
 For information about our development roadmap, upcoming features, and past version changes, please see our [Development Schedule](wiki/Development-Schedule.md).
 
