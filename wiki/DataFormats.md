@@ -193,10 +193,10 @@ with h5py.File('2010_NZ.h5', 'r') as f:
 
 ```
 header
-vp_1 vs_1 rho_1 qp_1 qs_1 depth_1
-vp_2 vs_2 rho_2 qp_2 qs_2 depth_2 
+vp_1 vs_1 rho_1 qp_1 qs_1 bottom_depth_1
+vp_2 vs_2 rho_2 qp_2 qs_2 bottom_depth_2 
 ...
-vp_n vs_n rho_n qp_n qs_n depth_n 
+vp_n vs_n rho_n qp_n qs_n bottom_depth_n 
 ```
 
 Where:
@@ -205,7 +205,7 @@ Where:
 - `rho_i` is the density in g/cm³
 - `qp_i` is the P-wave quality factor
 - `qs_i` is the S-wave quality factor
-- `depth_i` is the depth in kilometers
+- `bottom_depth_i` is the depth of the bottom of a layer in kilometers
 ### Example
 
 ```
