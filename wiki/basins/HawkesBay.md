@@ -10,19 +10,19 @@
 
 
 ## Images
-<a href="../images/maps/NI_mideast.png"><img src="../images/maps/NI_mideast.png" width="75%"></a>
+![](../images/maps/NI_mideast.png)
 
 *Figure 1 Location*
 
-<a href="../images/regional/HawkesBay_basin_map.png"><img src="../images/regional/HawkesBay_basin_map.png" width="75%"></a>
+![](../images/regional/HawkesBay_basin_map.png)
 
 *Figure 2 Hawkesbay Basin Map*
 
-<a href="../images/basins/hawkes_bay_outline.png"><img src="../images/basins/hawkes_bay_outline.png" width="75%"></a>
+![](../images/basins/hawkes_bay_outline.png)
 
 *Figure 3 Hawkes Bay Outline*
 
-<a href="../images/basins/hawkes_bay_outline_edited.png"><img src="../images/basins/hawkes_bay_outline_edited.png" width="75%"></a>
+![](../images/basins/hawkes_bay_outline_edited.png)
 
 *Figure 4 Hawkes Bay Outline Edited*
 
@@ -32,14 +32,14 @@
 
 ## Data
 ### Boundaries
-- [HawkesBay_outline_WGS84_1.txt](../../velocity_modelling/data/regional/HawkesBay/HawkesBay_outline_WGS84_1.txt)
-- [HawkesBay_outline_WGS84_2.txt](../../velocity_modelling/data/regional/HawkesBay/HawkesBay_outline_WGS84_2.txt)
-- [HawkesBay_outline_WGS84_3.txt](../../velocity_modelling/data/regional/HawkesBay/HawkesBay_outline_WGS84_3.txt)
-- [HawkesBay_outline_WGS84_4.txt](../../velocity_modelling/data/regional/HawkesBay/HawkesBay_outline_WGS84_4.txt)
+- HawkesBay_outline_WGS84_1 : [TXT](../../velocity_modelling/data/regional/HawkesBay/HawkesBay_outline_WGS84_1.txt) / [GeoJSON](../../velocity_modelling/data/regional/HawkesBay/HawkesBay_outline_WGS84_1.geojson)
+- HawkesBay_outline_WGS84_2 : [TXT](../../velocity_modelling/data/regional/HawkesBay/HawkesBay_outline_WGS84_2.txt) / [GeoJSON](../../velocity_modelling/data/regional/HawkesBay/HawkesBay_outline_WGS84_2.geojson)
+- HawkesBay_outline_WGS84_3 : [TXT](../../velocity_modelling/data/regional/HawkesBay/HawkesBay_outline_WGS84_3.txt) / [GeoJSON](../../velocity_modelling/data/regional/HawkesBay/HawkesBay_outline_WGS84_3.geojson)
+- HawkesBay_outline_WGS84_4 : [TXT](../../velocity_modelling/data/regional/HawkesBay/HawkesBay_outline_WGS84_4.txt) / [GeoJSON](../../velocity_modelling/data/regional/HawkesBay/HawkesBay_outline_WGS84_4.geojson)
 
 ### Surfaces
-- [NZ_DEM_HD.in](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [HawkesBay_basement_WGS84.in](../../velocity_modelling/data/regional/HawkesBay/HawkesBay_basement_WGS84.in) (Submodel: N/A)
+- NZ_DEM_HD : [HDF5](../../velocity_modelling/data/global/surface/NZ_DEM_HD.h5) / [TXT](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- HawkesBay_basement_WGS84 : [HDF5](../../velocity_modelling/data/regional/HawkesBay/HawkesBay_basement_WGS84.h5) / [TXT](../../velocity_modelling/data/regional/HawkesBay/HawkesBay_basement_WGS84.in) (Submodel: N/A)
 
 ### Smoothing Boundaries
 - [HawkesBay_smoothing.txt](../../velocity_modelling/data/regional/HawkesBay/HawkesBay_smoothing.txt)
@@ -57,4 +57,4 @@
 - [HawkesBay_Grid_WGS84_Export.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Napier_Hawkes_Bay/v21p7/HawkesBay_Grid_WGS84_Export.in)
 
 ---
-*Page generated on: March 22, 2025, 19:41 NZST/NZDT*
+*Page generated on: March 28, 2025, 16:34 NZST/NZDT*

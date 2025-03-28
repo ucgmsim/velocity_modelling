@@ -10,15 +10,15 @@
 
 
 ## Images
-<a href="../images/maps/SI_se.png"><img src="../images/maps/SI_se.png" width="75%"></a>
+![](../images/maps/SI_se.png)
 
 *Figure 1 Location*
 
-<a href="../images/regional/NE_Otago_basin_map.png"><img src="../images/regional/NE_Otago_basin_map.png" width="75%"></a>
+![](../images/regional/NE_Otago_basin_map.png)
 
 *Figure 2 Ne Otago Basin Map*
 
-<a href="../images/basins/ne_otago_basins_classification-page-001.jpg"><img src="../images/basins/ne_otago_basins_classification-page-001.jpg" width="75%"></a>
+![](../images/basins/ne_otago_basins_classification-page-001.jpg)
 
 *Figure 3 Ne Otago Basins Classification-page-001*
 
@@ -28,15 +28,15 @@
 
 ## Data
 ### Boundaries
-- [NE_Otago_outline_WGS84_1.txt](../../velocity_modelling/data/regional/NE_Otago/NE_Otago_outline_WGS84_1.txt)
-- [NE_Otago_outline_WGS84_2.txt](../../velocity_modelling/data/regional/NE_Otago/NE_Otago_outline_WGS84_2.txt)
-- [NE_Otago_outline_WGS84_3.txt](../../velocity_modelling/data/regional/NE_Otago/NE_Otago_outline_WGS84_3.txt)
-- [NE_Otago_outline_WGS84_4.txt](../../velocity_modelling/data/regional/NE_Otago/NE_Otago_outline_WGS84_4.txt)
-- [NE_Otago_outline_WGS84_5.txt](../../velocity_modelling/data/regional/NE_Otago/NE_Otago_outline_WGS84_5.txt)
+- NE_Otago_outline_WGS84_1 : [TXT](../../velocity_modelling/data/regional/NE_Otago/NE_Otago_outline_WGS84_1.txt) / [GeoJSON](../../velocity_modelling/data/regional/NE_Otago/NE_Otago_outline_WGS84_1.geojson)
+- NE_Otago_outline_WGS84_2 : [TXT](../../velocity_modelling/data/regional/NE_Otago/NE_Otago_outline_WGS84_2.txt) / [GeoJSON](../../velocity_modelling/data/regional/NE_Otago/NE_Otago_outline_WGS84_2.geojson)
+- NE_Otago_outline_WGS84_3 : [TXT](../../velocity_modelling/data/regional/NE_Otago/NE_Otago_outline_WGS84_3.txt) / [GeoJSON](../../velocity_modelling/data/regional/NE_Otago/NE_Otago_outline_WGS84_3.geojson)
+- NE_Otago_outline_WGS84_4 : [TXT](../../velocity_modelling/data/regional/NE_Otago/NE_Otago_outline_WGS84_4.txt) / [GeoJSON](../../velocity_modelling/data/regional/NE_Otago/NE_Otago_outline_WGS84_4.geojson)
+- NE_Otago_outline_WGS84_5 : [TXT](../../velocity_modelling/data/regional/NE_Otago/NE_Otago_outline_WGS84_5.txt) / [GeoJSON](../../velocity_modelling/data/regional/NE_Otago/NE_Otago_outline_WGS84_5.geojson)
 
 ### Surfaces
-- [NZ_DEM_HD.in](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [NE_Otago_basement_WGS84.in](../../velocity_modelling/data/regional/NE_Otago/NE_Otago_basement_WGS84.in) (Submodel: N/A)
+- NZ_DEM_HD : [HDF5](../../velocity_modelling/data/global/surface/NZ_DEM_HD.h5) / [TXT](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- NE_Otago_basement_WGS84 : [HDF5](../../velocity_modelling/data/regional/NE_Otago/NE_Otago_basement_WGS84.h5) / [TXT](../../velocity_modelling/data/regional/NE_Otago/NE_Otago_basement_WGS84.in) (Submodel: N/A)
 
 ## Data retrieved from
 ### Boundaries
@@ -51,4 +51,4 @@
 - [ran-alex_proj_WGS84.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/ran-alex_proj_WGS84.in)
 
 ---
-*Page generated on: March 22, 2025, 19:41 NZST/NZDT*
+*Page generated on: March 28, 2025, 16:34 NZST/NZDT*

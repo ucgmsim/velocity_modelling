@@ -10,31 +10,31 @@
 
 
 ## Images
-<a href="../images/maps/NI_mideast.png"><img src="../images/maps/NI_mideast.png" width="75%"></a>
+![](../images/maps/NI_mideast.png)
 
 *Figure 1 Location*
 
-<a href="../images/regional/Napier_basin_map.png"><img src="../images/regional/Napier_basin_map.png" width="75%"></a>
+![](../images/regional/Napier_basin_map.png)
 
 *Figure 2 Napier Basin Map*
 
-<a href="../images/basins/napier_outline.png"><img src="../images/basins/napier_outline.png" width="75%"></a>
+![](../images/basins/napier_outline.png)
 
 *Figure 3 Napier Outline*
 
 
 ## Data
 ### Boundaries
-- [Napier_outline_WGS84_1.txt](../../velocity_modelling/data/regional/Napier/Napier_outline_WGS84_1.txt)
-- [Napier_outline_WGS84_2.txt](../../velocity_modelling/data/regional/Napier/Napier_outline_WGS84_2.txt)
-- [Napier_outline_WGS84_3.txt](../../velocity_modelling/data/regional/Napier/Napier_outline_WGS84_3.txt)
-- [Napier_outline_WGS84_4.txt](../../velocity_modelling/data/regional/Napier/Napier_outline_WGS84_4.txt)
-- [Napier_outline_WGS84_5.txt](../../velocity_modelling/data/regional/Napier/Napier_outline_WGS84_5.txt)
-- [Napier_outline_WGS84_6.txt](../../velocity_modelling/data/regional/Napier/Napier_outline_WGS84_6.txt)
+- Napier_outline_WGS84_1 : [TXT](../../velocity_modelling/data/regional/Napier/Napier_outline_WGS84_1.txt) / [GeoJSON](../../velocity_modelling/data/regional/Napier/Napier_outline_WGS84_1.geojson)
+- Napier_outline_WGS84_2 : [TXT](../../velocity_modelling/data/regional/Napier/Napier_outline_WGS84_2.txt) / [GeoJSON](../../velocity_modelling/data/regional/Napier/Napier_outline_WGS84_2.geojson)
+- Napier_outline_WGS84_3 : [TXT](../../velocity_modelling/data/regional/Napier/Napier_outline_WGS84_3.txt) / [GeoJSON](../../velocity_modelling/data/regional/Napier/Napier_outline_WGS84_3.geojson)
+- Napier_outline_WGS84_4 : [TXT](../../velocity_modelling/data/regional/Napier/Napier_outline_WGS84_4.txt) / [GeoJSON](../../velocity_modelling/data/regional/Napier/Napier_outline_WGS84_4.geojson)
+- Napier_outline_WGS84_5 : [TXT](../../velocity_modelling/data/regional/Napier/Napier_outline_WGS84_5.txt) / [GeoJSON](../../velocity_modelling/data/regional/Napier/Napier_outline_WGS84_5.geojson)
+- Napier_outline_WGS84_6 : [TXT](../../velocity_modelling/data/regional/Napier/Napier_outline_WGS84_6.txt) / [GeoJSON](../../velocity_modelling/data/regional/Napier/Napier_outline_WGS84_6.geojson)
 
 ### Surfaces
-- [NZ_DEM_HD.in](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [Napier_basement_WGS84.in](../../velocity_modelling/data/regional/Napier/Napier_basement_WGS84.in) (Submodel: N/A)
+- NZ_DEM_HD : [HDF5](../../velocity_modelling/data/global/surface/NZ_DEM_HD.h5) / [TXT](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- Napier_basement_WGS84 : [HDF5](../../velocity_modelling/data/regional/Napier/Napier_basement_WGS84.h5) / [TXT](../../velocity_modelling/data/regional/Napier/Napier_basement_WGS84.in) (Submodel: N/A)
 
 ### Smoothing Boundaries
 - [Napier_smoothing.txt](../../velocity_modelling/data/regional/Napier/Napier_smoothing.txt)
@@ -53,4 +53,4 @@
 - [Napier_Grid_WGS84_Export.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Napier_Hawkes_Bay/v21p7/Napier_Grid_WGS84_Export.in)
 
 ---
-*Page generated on: March 22, 2025, 19:41 NZST/NZDT*
+*Page generated on: March 28, 2025, 16:34 NZST/NZDT*

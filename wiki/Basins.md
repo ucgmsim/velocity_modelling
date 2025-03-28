@@ -19,8 +19,6 @@ This page provides an overview of all sedimentary basins included in the New Zea
 - [Whangaparoa_v23p4](basins/Whangaparoa.md)
 
 ### Wellington Region
-- [Wellington_v19p1](basins/Wellington.md)
-- [Wellington_v19p6](basins/Wellington.md)
 - [Wellington_v21p8](basins/Wellington.md)
 - [GreaterWellington_v21p7](basins/GreaterWellington.md)
 - [Porirua_v21p7](basins/Porirua.md)
@@ -29,9 +27,6 @@ This page provides an overview of all sedimentary basins included in the New Zea
 ## South Island Basins
 
 ### Canterbury Region
-- [Canterbury_v18p1](basins/Canterbury.md)
-- [Canterbury_v18p2](basins/Canterbury.md)
-- [Canterbury_v18p3](basins/Canterbury.md)
 - [Canterbury_v19p1](basins/Canterbury.md)
 - [NorthCanterbury_v19p1](basins/NorthCanterbury.md)
 - [BanksPeninsulaVolcanics_v19p1](basins/BanksPeninsulaVolcanics.md)

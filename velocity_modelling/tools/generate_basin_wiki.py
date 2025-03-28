@@ -47,7 +47,7 @@ if not yaml_file_path.is_file():
     exit(1)
 
 # Define the project root directory (four levels up from script location)
-PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
+PROJECT_ROOT = Path(__file__).parent.parent.parent
 OUTPUT_DIR = PROJECT_ROOT / "wiki" / "basins"
 
 # Ensure the output directory exists
@@ -172,21 +172,22 @@ for basin_name, versions in basin_versions.items():
             filename = Path(boundary).name
             file_path = Path(boundary)
             base_path = file_path.parent / file_path.stem
+            print(base_path)
 
             # Check if alternative formats exist
             geojson_path = f"{base_path}.geojson"
             txt_path = f"{base_path}.txt"
 
             # Use CVM_DATA path instead of GitHub URL
-            updated_boundary_path = f"../../velocity_modelling/cvm/data/{boundary}"
-            updated_txt_path = f"../../velocity_modelling/cvm/data/{txt_path}"
-            updated_geojson_path = f"../../velocity_modelling/cvm/data/{geojson_path}"
+            updated_boundary_path = f"../../velocity_modelling/data/{boundary}"
+            updated_txt_path = f"../../velocity_modelling/data/{txt_path}"
+            updated_geojson_path = f"../../velocity_modelling/data/{geojson_path}"
 
             # Create links with format indicators
             links = []
-            if Path(txt_path).exists():
+            if Path(updated_txt_path).exists():
                 links.append(f"[TXT]({updated_txt_path})")
-            if Path(geojson_path).exists():
+            if Path(updated_geojson_path).exists():
                 links.append(f"[GeoJSON]({updated_geojson_path})")
 
             link_text = " / ".join(links)
@@ -208,14 +209,14 @@ for basin_name, versions in basin_versions.items():
             in_path = f"{base_path}.in"
 
             # Use CVM_DATA path instead of GitHub URL
-            updated_h5_path = f"../../velocity_modelling/cvm/data/{h5_path}"
-            updated_in_path = f"../../velocity_modelling/cvm/data/{in_path}"
+            updated_h5_path = f"../../velocity_modelling/data/{h5_path}"
+            updated_in_path = f"../../velocity_modelling/data/{in_path}"
 
             # Create links with format indicators
             links = []
-            if Path(h5_path).exists():
+            if Path(updated_h5_path).exists():
                 links.append(f"[HDF5]({updated_h5_path})")
-            if Path(in_path).exists():
+            if Path(updated_in_path).exists():
                 links.append(f"[TXT]({updated_in_path})")
 
             link_text = " / ".join(links)
@@ -227,7 +228,7 @@ for basin_name, versions in basin_versions.items():
         md_content += "### Smoothing Boundaries\n"
         smoothing_filename = Path(smoothing).name
         # Use CVM_DATA path instead of GitHub URL
-        updated_smoothing_path = f"../../velocity_modelling/cvm/data/{smoothing}"
+        updated_smoothing_path = f"../../velocity_modelling/data/{smoothing}"
         md_content += f"- [{smoothing_filename}]({updated_smoothing_path})\n"
         md_content += "\n"
 

@@ -10,19 +10,19 @@
 
 
 ## Images
-<a href="../images/maps/NI_mideast.png"><img src="../images/maps/NI_mideast.png" width="75%"></a>
+![](../images/maps/NI_mideast.png)
 
 *Figure 1 Location*
 
-<a href="../images/regional/SouthernHawkesBay_basin_map.png"><img src="../images/regional/SouthernHawkesBay_basin_map.png" width="75%"></a>
+![](../images/regional/SouthernHawkesBay_basin_map.png)
 
 *Figure 2 Southernhawkesbay Basin Map*
 
-<a href="../images/basins/southern_hawkes_bay_outline.png"><img src="../images/basins/southern_hawkes_bay_outline.png" width="75%"></a>
+![](../images/basins/southern_hawkes_bay_outline.png)
 
 *Figure 3 Southern Hawkes Bay Outline*
 
-<a href="../images/basins/southern_hawkes_bay_outline_extra.png"><img src="../images/basins/southern_hawkes_bay_outline_extra.png" width="75%"></a>
+![](../images/basins/southern_hawkes_bay_outline_extra.png)
 
 *Figure 4 Southern Hawkes Bay Outline Extra*
 
@@ -35,11 +35,11 @@
 
 ## Data
 ### Boundaries
-- [SouthernHawkesBay_outline_WGS84.txt](../../velocity_modelling/data/regional/SouthernHawkesBay/SouthernHawkesBay_outline_WGS84.txt)
+- SouthernHawkesBay_outline_WGS84 : [TXT](../../velocity_modelling/data/regional/SouthernHawkesBay/SouthernHawkesBay_outline_WGS84.txt) / [GeoJSON](../../velocity_modelling/data/regional/SouthernHawkesBay/SouthernHawkesBay_outline_WGS84.geojson)
 
 ### Surfaces
-- [NZ_DEM_HD.in](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [SouthernHawkesBay_basement_WGS84.in](../../velocity_modelling/data/regional/SouthernHawkesBay/SouthernHawkesBay_basement_WGS84.in) (Submodel: N/A)
+- NZ_DEM_HD : [HDF5](../../velocity_modelling/data/global/surface/NZ_DEM_HD.h5) / [TXT](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- SouthernHawkesBay_basement_WGS84 : [HDF5](../../velocity_modelling/data/regional/SouthernHawkesBay/SouthernHawkesBay_basement_WGS84.h5) / [TXT](../../velocity_modelling/data/regional/SouthernHawkesBay/SouthernHawkesBay_basement_WGS84.in) (Submodel: N/A)
 
 ## Data retrieved from
 ### Boundaries
@@ -50,4 +50,4 @@
 - [SHB_Surface_Export.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Southern_Hawkes_Bay/v21p12/SHB_Surface_Export.in)
 
 ---
-*Page generated on: March 22, 2025, 19:41 NZST/NZDT*
+*Page generated on: March 28, 2025, 16:34 NZST/NZDT*

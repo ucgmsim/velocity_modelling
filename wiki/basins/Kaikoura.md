@@ -5,31 +5,31 @@
 |---------|---------------------|
 | Version | 19p1           |
 | Type    | 2        |
-| Author  | Ethan Thomson            |
+| Author  | Robin Lee            |
 | Created | 2019-01           |
 
 
 ## Images
-<a href="../images/maps/kaikoura.png"><img src="../images/maps/kaikoura.png" width="75%"></a>
+![](../images/maps/kaikoura.png)
 
 *Figure 1 Location*
 
-<a href="../images/regional/Kaikoura_basin_map.png"><img src="../images/regional/Kaikoura_basin_map.png" width="75%"></a>
+![](../images/regional/Kaikoura_basin_map.png)
 
 *Figure 2 Kaikoura Basin Map*
 
-<a href="../images/basins/kaikoura_basement.png"><img src="../images/basins/kaikoura_basement.png" width="75%"></a>
+![](../images/basins/kaikoura_basement.png)
 
 *Figure 3 Kaikoura Basement*
 
 
 ## Data
 ### Boundaries
-- [Kaikoura_outline_WGS84.txt](../../velocity_modelling/data/regional/Kaikoura/Kaikoura_outline_WGS84.txt)
+- Kaikoura_outline_WGS84 : [TXT](../../velocity_modelling/data/regional/Kaikoura/Kaikoura_outline_WGS84.txt) / [GeoJSON](../../velocity_modelling/data/regional/Kaikoura/Kaikoura_outline_WGS84.geojson)
 
 ### Surfaces
-- [NZ_DEM_HD.in](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [Kaikoura_basement_WGS84.in](../../velocity_modelling/data/regional/Kaikoura/Kaikoura_basement_WGS84.in) (Submodel: N/A)
+- NZ_DEM_HD : [HDF5](../../velocity_modelling/data/global/surface/NZ_DEM_HD.h5) / [TXT](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- Kaikoura_basement_WGS84 : [HDF5](../../velocity_modelling/data/regional/Kaikoura/Kaikoura_basement_WGS84.h5) / [TXT](../../velocity_modelling/data/regional/Kaikoura/Kaikoura_basement_WGS84.in) (Submodel: N/A)
 
 ### Smoothing Boundaries
 - [Kaikoura_smoothing.txt](../../velocity_modelling/data/regional/Kaikoura/Kaikoura_smoothing.txt)
@@ -43,4 +43,4 @@
 - [Kaikoura_Basement_WGS84_v0p0.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/SI_BASINS/Kaikoura_Basement_WGS84_v0p0.in)
 
 ---
-*Page generated on: March 22, 2025, 19:41 NZST/NZDT*
+*Page generated on: March 28, 2025, 16:34 NZST/NZDT*

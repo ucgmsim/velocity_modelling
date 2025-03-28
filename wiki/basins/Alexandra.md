@@ -10,15 +10,15 @@
 
 
 ## Images
-<a href="../images/maps/SI_mid.png"><img src="../images/maps/SI_mid.png" width="75%"></a>
+![](../images/maps/SI_mid.png)
 
 *Figure 1 Location*
 
-<a href="../images/regional/Alexandra_basin_map.png"><img src="../images/regional/Alexandra_basin_map.png" width="75%"></a>
+![](../images/regional/Alexandra_basin_map.png)
 
 *Figure 2 Alexandra Basin Map*
 
-<a href="../images/basins/alexandra-ranfurly_basins_classification_v2-page-001.jpg"><img src="../images/basins/alexandra-ranfurly_basins_classification_v2-page-001.jpg" width="75%"></a>
+![](../images/basins/alexandra-ranfurly_basins_classification_v2-page-001.jpg)
 
 *Figure 3 Alexandra-ranfurly Basins Classification V2-page-001*
 
@@ -28,11 +28,11 @@
 
 ## Data
 ### Boundaries
-- [Alexandra_outline_WGS84.txt](../../velocity_modelling/data/regional/Alexandra/Alexandra_outline_WGS84.txt)
+- Alexandra_outline_WGS84 : [TXT](../../velocity_modelling/data/regional/Alexandra/Alexandra_outline_WGS84.txt) / [GeoJSON](../../velocity_modelling/data/regional/Alexandra/Alexandra_outline_WGS84.geojson)
 
 ### Surfaces
-- [NZ_DEM_HD.in](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [Alexandra_basement_WGS84.in](../../velocity_modelling/data/regional/Alexandra/Alexandra_basement_WGS84.in) (Submodel: N/A)
+- NZ_DEM_HD : [HDF5](../../velocity_modelling/data/global/surface/NZ_DEM_HD.h5) / [TXT](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- Alexandra_basement_WGS84 : [HDF5](../../velocity_modelling/data/regional/Alexandra/Alexandra_basement_WGS84.h5) / [TXT](../../velocity_modelling/data/regional/Alexandra/Alexandra_basement_WGS84.in) (Submodel: N/A)
 
 ## Data retrieved from
 ### Boundaries
@@ -43,4 +43,4 @@
 - [ran-alex_proj_WGS84.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/ran-alex_proj_WGS84.in)
 
 ---
-*Page generated on: March 22, 2025, 19:41 NZST/NZDT*
+*Page generated on: March 28, 2025, 16:34 NZST/NZDT*
