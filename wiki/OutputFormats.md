@@ -96,21 +96,31 @@ y,x,z,lat,lon,depth,vp,vs,rho,inbasin
 
 ### Reading CSV Files
 
-CSV files can be easily read using standard libraries in most programming languages. Here's an example in Python:
+CSV files can be easily read using a spreadsheet application like MS Excel. Here's an example in Python that shows how to efficiently access velocity values using pandas indexing:
 
 ```python
 import pandas as pd
 
 # Read CSV file
-df = pd.read_csv('model.csv')
+df = pd.read_csv('velocity_model.csv')
 
-# Get velocity values at a specific location
-x, y, z = 1.0, 2.0, 0.5
-point = df[(df['x'] == x) & (df['y'] == y) & (df['z'] == z)]
-vp = point['vp'].values[0]
-vs = point['vs'].values[0]
-rho = point['rho'].values[0]
+# Set x, y, z as multi-index for efficient lookup
+df.set_index(['x', 'y', 'z'], inplace=True)
+
+# Access values directly using index lookup (much faster for large datasets)
+X, Y, Z = 10.0, 15.0, 2.0
+try:
+    # One-liner to get values at a specific point
+    vp = df.loc[(X, Y, Z), 'vp']
+    vs = df.loc[(X, Y, Z), 'vs']
+    rho = df.loc[(X, Y, Z), 'rho']
+    print(f"At (x={X}, y={Y}, z={Z}): Vp={vp} km/s, Vs={vs} km/s, density={rho} g/cm³")
+except KeyError:
+    print(f"Point (x={X}, y={Y}, z={Z}) not found in the model")
+
 ```
+
+## HDF5 Format
 
 HDF5 (Hierarchical Data Format version 5) is an efficient binary format for storing large scientific datasets with metadata. This format offers several advantages:
 
@@ -219,11 +229,7 @@ You may wish to turn off the "Eye" icon of the original data to see the clip mor
 
 ## Other Output Files
 
-Depending on the configuration, the NZCVM may also generate additional output files:
-
-- **Log files**: Contains information about the model generation process, including any warnings or errors.
-- **Visualization files**: For visualization in tools like PyVista or ParaView.
-- **Metadata files**: JSON or YAML files containing metadata about the generated model.
+If the existing output formats do not meet your requirements, you are encouraged to submit a feature request. Please include detailed specifications of the desired data format to help us evaluate and implement your request effectively.
 
 ## Output Location
 

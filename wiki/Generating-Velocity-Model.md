@@ -142,7 +142,7 @@ The `2p03.yaml` file defines the components and parameters for model version 2.0
 ```yaml
 GTL: true
 surfaces:
-  - path: global/surface/NZ_DEM_HD.in
+  - path: global/surface/NZ_DEM_HD.h5
     submodel: ep_tomography_submod_v2010
 
 tomography: 2010_NZ_OFFSHORE

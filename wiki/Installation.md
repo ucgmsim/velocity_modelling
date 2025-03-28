@@ -48,7 +48,7 @@ The requirements include:
 Some data files may need to be downloaded separately due to their size. This script downloads the data and place the extracted data files in the correct location.
 
 ```bash
-python cvm/tools/download_data.py
+python tools/download_data.py
 ```
 
 Alternatively, download the file from Dropbox link. 

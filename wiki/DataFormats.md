@@ -6,19 +6,18 @@ This page provides detailed information about the various data formats used in t
 
 Two data formats are used for surface data: ASCII grid files and HDF5 grid files, which contain elevation or depth data on a 2D grid.
 
-ASCII grid files have a `.in` extension and are compatible with old C code. HDF5 grid files have a `.h5` extension and are the preferred format for new data.
-All the surface data files are stored in the `cvm/data/global/surface` and `cvm/data/regional/<basin_name>/` directories, and we have both formats available.
-
+ASCII grid files have a `.in` extension and are compatible with older C code. HDF5 grid files have a `.h5` extension and are the preferred format for new data. All surface data files are stored in the `cvm/data/global/surface` and `cvm/data/regional/<basin_name>/` directories, with both formats available.
 
 ### ASCII Grid Format
+
 Surface data files (`.in` extension) contain elevation or depth data on a 2D grid.
 
 #### Format Specification
 
 ```
-ny (number of latitudes) nx (number of longitues)
-lat_1 lat_2 lat_3.....lat_ny
-lon_1 lon_2 lon_3.....lon_nx
+ny (number of latitudes) nx (number of longitudes)
+lat_1 lat_2 lat_3 ... lat_ny
+lon_1 lon_2 lon_3 ... lon_nx
 z_value_1_1 z_value_1_2 ... z_value_1_nx
 z_value_2_1 z_value_2_2 ... z_value_2_nx
 ...
@@ -26,15 +25,16 @@ z_value_ny_1 z_value_ny_2 ... z_value_ny_nx
 ```
 
 Where:
-- `nx` and `ny` are the number of grid points in the x and y directions
-- `z_value_lat_lon` is the elevation or depth value at grid point (lat, lon)
+- `nx` and `ny` are the number of grid points in the x and y directions.
+- `z_value_lat_lon` is the elevation or depth value at grid point (lat, lon).
 
-If the data file has a missing value, it will warn the user and pad with zeros to match the required data length during the run time.
+If the data file has a missing value, it will warn the user and pad with zeros to match the required data length during runtime.
 
 ```
 2025-03-25 21:13:21,015 - nzcvm - WARNING - In /Users/sungbae/velocity_modelling/velocity_modelling/cvm/data/regional/Canterbury/Canterbury_Miocene_WGS84.in: Data length mismatch - got 150800, expected 150801. Missing data will be padded with 0.
 ```
-Note: The example above is for illustration only. Usually such an issue is likely due to clerical error during data preparation. We chose to pad with zeros to match the behaviour of the original C code, but this may lead to a undesirable outcome.
+
+> **Note**: The example above is for illustration only. Such issues are usually due to clerical errors during data preparation. Padding with zeros matches the behavior of the original C code but may lead to undesirable outcomes.
 
 #### Example
 
@@ -56,13 +56,13 @@ Surface data files with the `.h5` extension are stored in HDF5 format, offering 
 The HDF5 surface files include the following components:
 
 - **Attributes**:
-  - `nrows`: Number of latitude points (integer)
-  - `ncols`: Number of longitude points (integer)
+    - `nrows`: Number of latitude points (integer).
+    - `ncols`: Number of longitude points (integer).
 
 - **Datasets**:
-  - `latitude`: 1D array of latitude values [shape: (nrows,)]
-  - `longitude`: 1D array of longitude values [shape: (ncols,)]
-  - `elevation`: 2D array of elevation or depth values [shape: (nrows, ncols)]
+    - `latitude`: 1D array of latitude values [shape: (nrows,)].
+    - `longitude`: 1D array of longitude values [shape: (ncols,)].
+    - `elevation`: 2D array of elevation or depth values [shape: (nrows, ncols)].
 
 All datasets are typically stored with gzip compression to reduce file size while preserving data integrity. The provided tool `tools/surface_ascii2h5.py` can be used to convert ASCII format files to HDF5 format.
 
@@ -72,18 +72,18 @@ All datasets are typically stored with gzip compression to reduce file size whil
 import h5py
 
 with h5py.File('surface_data.h5', 'r') as f:
-    # Access attributes
-    nrows = f.attrs['nrows']
-    ncols = f.attrs['ncols']
-    
-    # Access datasets
-    latitude = f['latitude'][:]
-    longitude = f['longitude'][:]
-    elevation = f['elevation'][:]
-    
-    print(f"Number of rows: {nrows}, Number of columns: {ncols}")
-    print(f"Latitude range: {latitude[0]} to {latitude[-1]}")
-    print(f"Longitude range: {longitude[0]} to {longitude[-1]}")
+        # Access attributes
+        nrows = f.attrs['nrows']
+        ncols = f.attrs['ncols']
+        
+        # Access datasets
+        latitude = f['latitude'][:]
+        longitude = f['longitude'][:]
+        elevation = f['elevation'][:]
+        
+        print(f"Number of rows: {nrows}, Number of columns: {ncols}")
+        print(f"Latitude range: {latitude[0]} to {latitude[-1]}")
+        print(f"Longitude range: {longitude[0]} to {longitude[-1]}")
 ```
 
 ## Boundary Data Format
@@ -102,9 +102,9 @@ lon_n lat_n
 Where:
 - `lon_i` and `lat_i` are the longitude and latitude coordinates of point i.
 
-The first location should be the same as the last to form a closed polygon. ie. (lon_1, lat_1)=(lon_n, lat_n)
+The first location should be the same as the last to form a closed polygon, i.e., `(lon_1, lat_1) = (lon_n, lat_n)`.
 
-If the boundary data is found to be not closed, it will throw an error and the code will terminate.
+If the boundary data is not closed, an error will be thrown, and the code will terminate.
 
 ### Example
 
@@ -126,6 +126,7 @@ If the boundary data is found to be not closed, it will throw an error and the c
 Tomography data is stored in HDF5 format (`.h5` extension). These files contain 3D grids of velocity values derived from seismic tomography.
 
 ### Structure Overview
+
 ```
 /
 ├── "elevation1" (e.g., "-750" or "0.25")
@@ -142,20 +143,21 @@ Tomography data is stored in HDF5 format (`.h5` extension). These files contain 
 │   └── rho [2D array - shape(nlat, nlon)]
 └── ... (additional elevation groups)
 ```
+
 ### Structure Details
-- Root Level: Contains groups named after elevation values, (e.g., "-750" or "0.25") 
-- Elevation Groups: Each elevation group contains:
 
-  - latitudes: 1D array of latitude coordinates
-  - longitudes: 1D array of longitude coordinates
-  - vp: 2D array of P-wave velocities at grid points [nlat × nlon]
-  - vs: 2D array of S-wave velocities at grid points [nlat × nlon]
-  - rho: 2D array of density values at grid points [nlat × nlon]
-- Grid Structure: The velocity and density data are arranged in 2D grids where:
-    - First dimension corresponds to the latitude points
-    - Second dimension corresponds to the longitude points
-    - Values represent the property (vp, vs, or rho) at that lat/lon coordinate
+- **Root Level**: Contains groups named after elevation values (e.g., "-750" or "0.25").
+- **Elevation Groups**: Each elevation group contains:
+    - `latitudes`: 1D array of latitude coordinates.
+    - `longitudes`: 1D array of longitude coordinates.
+    - `vp`: 2D array of P-wave velocities at grid points [nlat × nlon].
+    - `vs`: 2D array of S-wave velocities at grid points [nlat × nlon].
+    - `rho`: 2D array of density values at grid points [nlat × nlon].
 
+The velocity and density data are arranged in 2D grids where:
+- The first dimension corresponds to latitude points.
+- The second dimension corresponds to longitude points.
+- Values represent the property (vp, vs, or rho) at that lat/lon coordinate.
 
 ### Access Example
 
@@ -163,26 +165,26 @@ Tomography data is stored in HDF5 format (`.h5` extension). These files contain 
 import h5py
 
 with h5py.File('2010_NZ.h5', 'r') as f:
-    # List available elevations
-    elevations = list(f.keys())
-    print(f"Available elevations: {elevations}")
-    
-    # Access data for a specific elevation
-    elev = elevations[0]  # For example, get the first elevation
-    
-    # Get coordinate arrays
-    latitudes = f[elev]['latitudes'][:]
-    longitudes = f[elev]['longitudes'][:]
-    
-    # Get velocity and density data
-    vp = f[elev]['vp'][:]
-    vs = f[elev]['vs'][:]
-    rho = f[elev]['rho'][:]
-    
-    # Example: Access value at specific lat/lon index
-    i_lat, i_lon = 10, 20
-    vs_value = vs[i_lat, i_lon]
-    print(f"S-wave velocity at lat={latitudes[i_lat]}, lon={longitudes[i_lon]}: {vs_value} km/s")
+        # List available elevations
+        elevations = list(f.keys())
+        print(f"Available elevations: {elevations}")
+        
+        # Access data for a specific elevation
+        elev = elevations[0]  # For example, get the first elevation
+        
+        # Get coordinate arrays
+        latitudes = f[elev]['latitudes'][:]
+        longitudes = f[elev]['longitudes'][:]
+        
+        # Get velocity and density data
+        vp = f[elev]['vp'][:]
+        vs = f[elev]['vs'][:]
+        rho = f[elev]['rho'][:]
+        
+        # Example: Access value at specific lat/lon index
+        i_lat, i_lon = 10, 20
+        vs_value = vs[i_lat, i_lon]
+        print(f"S-wave velocity at lat={latitudes[i_lat]}, lon={longitudes[i_lon]}: {vs_value} km/s")
 ```
 
 ## 1D Velocity Model Format
@@ -200,23 +202,24 @@ vp_n vs_n rho_n qp_n qs_n bottom_depth_n
 ```
 
 Where:
-- `vp_i` is the P-wave velocity in km/s
-- `vs_i` is the S-wave velocity in km/s
-- `rho_i` is the density in g/cm³
-- `qp_i` is the P-wave quality factor
-- `qs_i` is the S-wave quality factor
-- `bottom_depth_i` is the depth of the bottom of a layer in kilometers
+- `vp_i` is the P-wave velocity in km/s.
+- `vs_i` is the S-wave velocity in km/s.
+- `rho_i` is the density in g/cm³.
+- `qp_i` is the P-wave quality factor.
+- `qs_i` is the S-wave quality factor.
+- `bottom_depth_i` is the depth of the bottom of a layer in kilometers.
+
 ### Example
 
 ```
 DEF HST
-  1.80   0.50   1.81   50.0   25.0    0.400
-  1.90   0.58   1.86   58.0   29.0    0.600
-  2.03   0.66   1.92   66.0   33.0    0.800
-  2.14   0.74   1.97   74.0   37.0    1.000
-  2.20   0.80   1.99   80.0   40.0    1.200
-  2.40   1.01   2.06  101.0   50.5    1.400
-  2.70   1.22   2.15  122.0   61.0    1.600
+    1.80   0.50   1.81   50.0   25.0    0.400
+    1.90   0.58   1.86   58.0   29.0    0.600
+    2.03   0.66   1.92   66.0   33.0    0.800
+    2.14   0.74   1.97   74.0   37.0    1.000
+    2.20   0.80   1.99   80.0   40.0    1.200
+    2.40   1.01   2.06  101.0   50.5    1.400
+    2.70   1.22   2.15  122.0   61.0    1.600
 ...
 ```
 
@@ -234,9 +237,9 @@ lon_n lat_n
 ```
 
 Where:
-- `lon_i` and `lat_i` are the longitude and latitude coordinates of point i
+- `lon_i` and `lat_i` are the longitude and latitude coordinates of point i.
 
-This is the same format as the boundary, but doesn't have a requirement of the first and last point being identical.
+This format is the same as the boundary format but does not require the first and last points to be identical.
 
 ### Example
 
@@ -255,8 +258,8 @@ This is the same format as the boundary, but doesn't have a requirement of the f
 
 The data files used by the NZCVM are located in the following directories:
 
-- **Surface data**: `data/global/surface` and `cvm/data/regional/<basin_name>/`
-- **Boundary data**: `data/regional/<basin_name>/`
-- **Tomography data**: `data/global/tomography/`
-- **1D velocity models**: `data/global/vm1d/`
-- **Smoothing data**: `data/regional/<basin_name>/`
+- **Surface data**: `data/global/surface` and `data/regional/<basin_name>/`.
+- **Boundary data**: `data/regional/<basin_name>/`.
+- **Tomography data**: `data/global/tomography/`.
+- **1D velocity models**: `data/global/vm1d/`.
+- **Smoothing data**: `data/regional/<basin_name>/`.
