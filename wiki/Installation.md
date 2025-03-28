@@ -45,7 +45,7 @@ The requirements include:
 
 ### Step 4: Download Data (If Not Included in Repository)
 
-Some data files may need to be downloaded separately due to their size. This script downloads the data and place the extracted data files in the correct location.
+Some data files may need to be downloaded separately due to their size. This script downloads the data and places the extracted data files in the correct location.
 
 ```bash
 python tools/download_data.py
