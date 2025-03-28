@@ -236,7 +236,7 @@ lon_n lat_n
 Where:
 - `lon_i` and `lat_i` are the longitude and latitude coordinates of point i
 
-This is the same format as the boundary, but doesn't have a requirement of being the first and last point to be identical.
+This is the same format as the boundary, but doesn't have a requirement of the first and last point being identical.
 
 ### Example
 
