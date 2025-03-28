@@ -60,7 +60,7 @@ The `nzcvm.py` script generates velocity models based on the NZCVM. Users can sp
 To run the `nzcvm.py` script, provide specific arguments, including the configuration file and the output directory:
 
 ```sh
-python cvm/scripts/nzcvm.py generate-velocity-model /path/to/config/nzcvm.cfg --out-dir /path/to/output
+python scripts/nzcvm.py generate-velocity-model /path/to/config/nzcvm.cfg --out-dir /path/to/output
 ```
 
 ### Configuration File: `nzcvm.cfg`

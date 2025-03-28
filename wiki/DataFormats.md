@@ -6,7 +6,7 @@ This page provides detailed information about the various data formats used in t
 
 Two data formats are used for surface data: ASCII grid files and HDF5 grid files, which contain elevation or depth data on a 2D grid.
 
-ASCII grid files have a `.in` extension and are compatible with older C code. HDF5 grid files have a `.h5` extension and are the preferred format for new data. All surface data files are stored in the `cvm/data/global/surface` and `cvm/data/regional/<basin_name>/` directories, with both formats available.
+ASCII grid files have a `.in` extension and are compatible with older C code. HDF5 grid files have a `.h5` extension and are the preferred format for new data. All surface data files are stored in the `data/global/surface` and `data/regional/<basin_name>/` directories, with both formats available.
 
 ### ASCII Grid Format
 
@@ -31,7 +31,7 @@ Where:
 If the data file has a missing value, it will warn the user and pad with zeros to match the required data length during runtime.
 
 ```
-2025-03-25 21:13:21,015 - nzcvm - WARNING - In /Users/sungbae/velocity_modelling/velocity_modelling/cvm/data/regional/Canterbury/Canterbury_Miocene_WGS84.in: Data length mismatch - got 150800, expected 150801. Missing data will be padded with 0.
+2025-03-25 21:13:21,015 - nzcvm - WARNING - In /Users/sungbae/velocity_modelling/velocity_modelling/data/regional/Canterbury/Canterbury_Miocene_WGS84.in: Data length mismatch - got 150800, expected 150801. Missing data will be padded with 0.
 ```
 
 > **Note**: The example above is for illustration only. Such issues are usually due to clerical errors during data preparation. Padding with zeros matches the behavior of the original C code but may lead to undesirable outcomes.
