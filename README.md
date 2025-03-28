@@ -25,7 +25,7 @@ By embedding discrete regional models into the lower-resolution tomography data,
 - [**Basins**](wiki/Basins.md): Detailed information about the 34 basin models integrated into the NZCVM
 - [**Tomography**](wiki/Tomography.md): Information about available tomography models
 - [**Data Formats**](wiki/DataFormats.md): Explanation of formats for surface, boundary, tomography, 1D velocity models, and smoothing data
-- [**Output Formats**](wiki/OutputFormats.md): Details about the output formats, including the emod3d, csv and HDF5 format
+- [**Output Formats**](wiki/OutputFormats.md): Details about the output formats, including the emod3d, csv and HDF5 formats
 
 ## Requirements and Installation
 
