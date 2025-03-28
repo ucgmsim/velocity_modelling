@@ -6,14 +6,14 @@ from pathlib import Path
 
 import pytest
 
-from velocity_modelling.cvm.tools.compare_emod3d import (
+from velocity_modelling.tools.compare_emod3d import (
     compare_output_files,
     parse_nzcvm_config,
 )
 
 # Define paths
 BASE_DIR = Path(__file__).parent.parent  # project root directory
-SCRIPT_DIR = BASE_DIR / "velocity_modelling/cvm/scripts"
+SCRIPT_DIR = BASE_DIR / "velocity_modelling/scripts"
 TEST_DIR = BASE_DIR / "tests"
 
 
@@ -25,13 +25,13 @@ def nzvm_c_binary_path(request: pytest.FixtureRequest) -> Path:
     nzvm_path = request.config.getoption("--nzvm-binary-path")
     if nzvm_path is None:
         raise ValueError(
-            "nzcvm binary path not provided. Use --nzvm-binary-path or NZVM_BINARY_PATH environment variable."
+            "nzvm binary path not provided. Use --nzvm-binary-path or NZVM_BINARY_PATH environment variable."
         )
     new_nzvm_path = Path(nzvm_path).resolve()
     if not new_nzvm_path.exists():
-        raise ValueError(f"Provided nzcvm binary path does not exist: {new_nzvm_path}")
+        raise ValueError(f"Provided nzvm binary path does not exist: {new_nzvm_path}")
     if not new_nzvm_path.is_file():
-        raise ValueError(f"Provided nzcvm binary path is not a file: {new_nzvm_path}")
+        raise ValueError(f"Provided nzvm binary path is not a file: {new_nzvm_path}")
     return new_nzvm_path
 
 

@@ -21,11 +21,11 @@
 
 ## Data
 ### Boundaries
-- [Wakatipu_outline_WGS84.txt](../../velocity_modelling/cvm/data/regional/Wakatipu/Wakatipu_outline_WGS84.txt)
+- [Wakatipu_outline_WGS84.txt](../../velocity_modelling/data/regional/Wakatipu/Wakatipu_outline_WGS84.txt)
 
 ### Surfaces
-- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [Wakatipu_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/Wakatipu/Wakatipu_basement_WGS84.in) (Submodel: N/A)
+- [NZ_DEM_HD.in](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [Wakatipu_basement_WGS84.in](../../velocity_modelling/data/regional/Wakatipu/Wakatipu_basement_WGS84.in) (Submodel: N/A)
 
 ## Data retrieved from
 ### Boundaries

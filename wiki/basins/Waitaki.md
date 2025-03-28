@@ -30,14 +30,14 @@
 
 ## Data
 ### Boundaries
-- [Waitaki_outline_WGS84.txt](../../velocity_modelling/cvm/data/regional/Waitaki/Waitaki_outline_WGS84.txt)
+- [Waitaki_outline_WGS84.txt](../../velocity_modelling/data/regional/Waitaki/Waitaki_outline_WGS84.txt)
 
 ### Surfaces
-- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [Waitaki_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/Waitaki/Waitaki_basement_WGS84.in) (Submodel: N/A)
+- [NZ_DEM_HD.in](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [Waitaki_basement_WGS84.in](../../velocity_modelling/data/regional/Waitaki/Waitaki_basement_WGS84.in) (Submodel: N/A)
 
 ### Smoothing Boundaries
-- [Waitaki_smoothing.txt](../../velocity_modelling/cvm/data/regional/Waitaki/Waitaki_smoothing.txt)
+- [Waitaki_smoothing.txt](../../velocity_modelling/data/regional/Waitaki/Waitaki_smoothing.txt)
 
 ## Data retrieved from
 ### Boundaries

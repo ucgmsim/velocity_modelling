@@ -169,7 +169,7 @@ basins:
    - **path**: The location of the surface data file
    - **submodel**: The velocity model submodule used for assigning velocity values below this surface
    
-   In this example, `NZ_DEM_HD.in` is a high-definition digital elevation model for New Zealand, and `ep_tomography_submod_v2010` is the submodel that computes velocities using the 2010 tomography model.
+   In this example, `NZ_DEM_HD.h5` is a high-definition digital elevation model for New Zealand, and `ep_tomography_submod_v2010` is the submodel that computes velocities using the 2010 tomography model.
 
 3. **tomography**: Specifies which tomography model to use. `2010_NZ_OFFSHORE` is an extension of the 2010 Eberhart-Phillips tomography model that includes offshore regions.
 
@@ -195,7 +195,7 @@ Example of a minimal custom model version:
 ```yaml
 GTL: true
 surfaces:
-  - path: global/surface/NZ_DEM_HD.in
+  - path: global/surface/NZ_DEM_HD.h5
     submodel: ep_tomography_submod_v2020
 
 tomography: 2020_NZ_OFFSHORE

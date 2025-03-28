@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from velocity_modelling.cvm.constants import DATA_ROOT
+from velocity_modelling.constants import DATA_ROOT
 
 try:
     nzvm_binary_path = Path(

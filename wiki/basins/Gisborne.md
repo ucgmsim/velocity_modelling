@@ -29,14 +29,14 @@
 
 ## Data
 ### Boundaries
-- [Gisborne_outline_WGS84.txt](../../velocity_modelling/cvm/data/regional/Gisborne/Gisborne_outline_WGS84.txt)
+- [Gisborne_outline_WGS84.txt](../../velocity_modelling/data/regional/Gisborne/Gisborne_outline_WGS84.txt)
 
 ### Surfaces
-- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [Gisborne_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/Gisborne/Gisborne_basement_WGS84.in) (Submodel: N/A)
+- [NZ_DEM_HD.in](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [Gisborne_basement_WGS84.in](../../velocity_modelling/data/regional/Gisborne/Gisborne_basement_WGS84.in) (Submodel: N/A)
 
 ### Smoothing Boundaries
-- [Gisborne_smoothing.txt](../../velocity_modelling/cvm/data/regional/Gisborne/Gisborne_smoothing.txt)
+- [Gisborne_smoothing.txt](../../velocity_modelling/data/regional/Gisborne/Gisborne_smoothing.txt)
 
 ## Data retrieved from
 ### Boundaries

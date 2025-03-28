@@ -21,14 +21,14 @@
 
 ## Data
 ### Boundaries
-- [Karamea_outline_WGS84.txt](../../velocity_modelling/cvm/data/regional/Karamea/Karamea_outline_WGS84.txt)
+- [Karamea_outline_WGS84.txt](../../velocity_modelling/data/regional/Karamea/Karamea_outline_WGS84.txt)
 
 ### Surfaces
-- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [Karamea_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/Karamea/Karamea_basement_WGS84.in) (Submodel: N/A)
+- [NZ_DEM_HD.in](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [Karamea_basement_WGS84.in](../../velocity_modelling/data/regional/Karamea/Karamea_basement_WGS84.in) (Submodel: N/A)
 
 ### Smoothing Boundaries
-- [Karamea_smoothing.txt](../../velocity_modelling/cvm/data/regional/Karamea/Karamea_smoothing.txt)
+- [Karamea_smoothing.txt](../../velocity_modelling/data/regional/Karamea/Karamea_smoothing.txt)
 
 ## Data retrieved from
 ### Boundaries

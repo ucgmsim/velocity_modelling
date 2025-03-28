@@ -25,19 +25,19 @@
 
 ## Data
 ### Boundaries
-- [GreaterWellington_outline_WGS84_1.txt](../../velocity_modelling/cvm/data/regional/GreaterWellington/GreaterWellington_outline_WGS84_1.txt)
-- [GreaterWellington_outline_WGS84_2.txt](../../velocity_modelling/cvm/data/regional/GreaterWellington/GreaterWellington_outline_WGS84_2.txt)
-- [GreaterWellington_outline_WGS84_3.txt](../../velocity_modelling/cvm/data/regional/GreaterWellington/GreaterWellington_outline_WGS84_3.txt)
-- [GreaterWellington_outline_WGS84_4.txt](../../velocity_modelling/cvm/data/regional/GreaterWellington/GreaterWellington_outline_WGS84_4.txt)
-- [GreaterWellington_outline_WGS84_5.txt](../../velocity_modelling/cvm/data/regional/GreaterWellington/GreaterWellington_outline_WGS84_5.txt)
-- [GreaterWellington_outline_WGS84_6.txt](../../velocity_modelling/cvm/data/regional/GreaterWellington/GreaterWellington_outline_WGS84_6.txt)
+- [GreaterWellington_outline_WGS84_1.txt](../../velocity_modelling/data/regional/GreaterWellington/GreaterWellington_outline_WGS84_1.txt)
+- [GreaterWellington_outline_WGS84_2.txt](../../velocity_modelling/data/regional/GreaterWellington/GreaterWellington_outline_WGS84_2.txt)
+- [GreaterWellington_outline_WGS84_3.txt](../../velocity_modelling/data/regional/GreaterWellington/GreaterWellington_outline_WGS84_3.txt)
+- [GreaterWellington_outline_WGS84_4.txt](../../velocity_modelling/data/regional/GreaterWellington/GreaterWellington_outline_WGS84_4.txt)
+- [GreaterWellington_outline_WGS84_5.txt](../../velocity_modelling/data/regional/GreaterWellington/GreaterWellington_outline_WGS84_5.txt)
+- [GreaterWellington_outline_WGS84_6.txt](../../velocity_modelling/data/regional/GreaterWellington/GreaterWellington_outline_WGS84_6.txt)
 
 ### Surfaces
-- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [GreaterWellington_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/GreaterWellington/GreaterWellington_basement_WGS84.in) (Submodel: N/A)
+- [NZ_DEM_HD.in](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [GreaterWellington_basement_WGS84.in](../../velocity_modelling/data/regional/GreaterWellington/GreaterWellington_basement_WGS84.in) (Submodel: N/A)
 
 ### Smoothing Boundaries
-- [GreaterWellington_smoothing.txt](../../velocity_modelling/cvm/data/regional/GreaterWellington/GreaterWellington_smoothing.txt)
+- [GreaterWellington_smoothing.txt](../../velocity_modelling/data/regional/GreaterWellington/GreaterWellington_smoothing.txt)
 
 ## Data retrieved from
 ### Boundaries

@@ -24,11 +24,11 @@
 
 ## Data
 ### Boundaries
-- [BanksPeninsulaVolcanics_outline_WGS84.txt](../../velocity_modelling/cvm/data/regional/BanksPeninsulaVolcanics/BanksPeninsulaVolcanics_outline_WGS84.txt)
+- [BanksPeninsulaVolcanics_outline_WGS84.txt](../../velocity_modelling/data/regional/BanksPeninsulaVolcanics/BanksPeninsulaVolcanics_outline_WGS84.txt)
 
 ### Surfaces
-- [BanksPeninsulaVolcanics_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/BanksPeninsulaVolcanics/BanksPeninsulaVolcanics_basement_WGS84.in) (Submodel: bpv_submod_v4)
-- [BanksPeninsulaVolcanics_Miocene_WGS84.in](../../velocity_modelling/cvm/data/regional/BanksPeninsulaVolcanics/BanksPeninsulaVolcanics_Miocene_WGS84.in) (Submodel: N/A)
+- [BanksPeninsulaVolcanics_basement_WGS84.in](../../velocity_modelling/data/regional/BanksPeninsulaVolcanics/BanksPeninsulaVolcanics_basement_WGS84.in) (Submodel: bpv_submod_v4)
+- [BanksPeninsulaVolcanics_Miocene_WGS84.in](../../velocity_modelling/data/regional/BanksPeninsulaVolcanics/BanksPeninsulaVolcanics_Miocene_WGS84.in) (Submodel: N/A)
 
 ## Data retrieved from
 ### Boundaries

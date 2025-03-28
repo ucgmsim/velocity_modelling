@@ -28,11 +28,11 @@
 
 ## Data
 ### Boundaries
-- [Alexandra_outline_WGS84.txt](../../velocity_modelling/cvm/data/regional/Alexandra/Alexandra_outline_WGS84.txt)
+- [Alexandra_outline_WGS84.txt](../../velocity_modelling/data/regional/Alexandra/Alexandra_outline_WGS84.txt)
 
 ### Surfaces
-- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [Alexandra_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/Alexandra/Alexandra_basement_WGS84.in) (Submodel: N/A)
+- [NZ_DEM_HD.in](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [Alexandra_basement_WGS84.in](../../velocity_modelling/data/regional/Alexandra/Alexandra_basement_WGS84.in) (Submodel: N/A)
 
 ## Data retrieved from
 ### Boundaries

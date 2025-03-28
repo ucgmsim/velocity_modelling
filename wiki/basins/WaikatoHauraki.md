@@ -25,14 +25,14 @@
 
 ## Data
 ### Boundaries
-- [WaikatoHauraki_outline_WGS84.txt](../../velocity_modelling/cvm/data/regional/WaikatoHauraki/WaikatoHauraki_outline_WGS84.txt)
+- [WaikatoHauraki_outline_WGS84.txt](../../velocity_modelling/data/regional/WaikatoHauraki/WaikatoHauraki_outline_WGS84.txt)
 
 ### Surfaces
-- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [WaikatoHauraki_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/WaikatoHauraki/WaikatoHauraki_basement_WGS84.in) (Submodel: N/A)
+- [NZ_DEM_HD.in](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [WaikatoHauraki_basement_WGS84.in](../../velocity_modelling/data/regional/WaikatoHauraki/WaikatoHauraki_basement_WGS84.in) (Submodel: N/A)
 
 ### Smoothing Boundaries
-- [WaikatoHauraki_smoothing.txt](../../velocity_modelling/cvm/data/regional/WaikatoHauraki/WaikatoHauraki_smoothing.txt)
+- [WaikatoHauraki_smoothing.txt](../../velocity_modelling/data/regional/WaikatoHauraki/WaikatoHauraki_smoothing.txt)
 
 ## Data retrieved from
 ### Boundaries

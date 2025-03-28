@@ -4,9 +4,16 @@ This page provides detailed information about the various data formats used in t
 
 ## Surface Data Format
 
-Surface data files (`.in` extension) contain elevation or depth data on a 2D grid. These files are used to define the top and bottom surfaces of basins and other geological features.
+Two data formats are used for surface data: ASCII grid files and HDF5 grid files, which contain elevation or depth data on a 2D grid.
 
-### Format Specification
+ASCII grid files have a `.in` extension and are compatible with old C code. HDF5 grid files have a `.h5` extension and are the preferred format for new data.
+All the surface data files are stored in the `cvm/data/global/surface` and `cvm/data/regional/<basin_name>/` directories, and we have both formats available.
+
+
+### ASCII Grid Format
+Surface data files (`.in` extension) contain elevation or depth data on a 2D grid.
+
+#### Format Specification
 
 ```
 ny (number of latitudes) nx (number of longitues)
@@ -23,12 +30,13 @@ Where:
 - `z_value_lat_lon` is the elevation or depth value at grid point (lat, lon)
 
 If the data file has a missing value, it will warn the user and pad with zeros to match the required data length during the run time.
-```
-2025-03-25 21:13:21,015 - nzcvm - WARNING - Warning: In /Users/sungbae/velocity_modelling/velocity_modelling/cvm/data/regional/Canterbury/Canterbury_Miocene_WGS84.in raster data length mismatch: 150800 != 150801. Padding with zeros.
-```
-Note: This is likely due to clerical error during data preparation. We chose to pad with zeros to match the behaviour original C code, but this may lead to a undesirable outcome. 
 
-### Example
+```
+2025-03-25 21:13:21,015 - nzcvm - WARNING - In /Users/sungbae/velocity_modelling/velocity_modelling/cvm/data/regional/Canterbury/Canterbury_Miocene_WGS84.in: Data length mismatch - got 150800, expected 150801. Missing data will be padded with 0.
+```
+Note: This is likely due to clerical error during data preparation. We chose to pad with zeros to match the behaviour original C code, but this may lead to a undesirable outcome.
+
+#### Example
 
 ```
 180 227 
@@ -37,6 +45,45 @@ Note: This is likely due to clerical error during data preparation. We chose to 
 14.313100 14.595800 ...
 ...
 15.695500 16.386100 ...
+```
+
+### HDF5 Grid Format
+
+Surface data files with the `.h5` extension are stored in HDF5 format, offering an efficient structure for large datasets with built-in compression.
+
+#### Format Specification
+
+The HDF5 surface files include the following components:
+
+- **Attributes**:
+  - `nrows`: Number of latitude points (integer)
+  - `ncols`: Number of longitude points (integer)
+
+- **Datasets**:
+  - `latitude`: 1D array of latitude values [shape: (nrows,)]
+  - `longitude`: 1D array of longitude values [shape: (ncols,)]
+  - `elevation`: 2D array of elevation or depth values [shape: (nrows, ncols)]
+
+All datasets are typically stored with gzip compression to reduce file size while preserving data integrity. The provided tool `tools/surface_ascii2h5.py` can be used to convert ASCII format files to HDF5 format.
+
+#### Access Example
+
+```python
+import h5py
+
+with h5py.File('surface_data.h5', 'r') as f:
+    # Access attributes
+    nrows = f.attrs['nrows']
+    ncols = f.attrs['ncols']
+    
+    # Access datasets
+    latitude = f['latitude'][:]
+    longitude = f['longitude'][:]
+    elevation = f['elevation'][:]
+    
+    print(f"Number of rows: {nrows}, Number of columns: {ncols}")
+    print(f"Latitude range: {latitude[0]} to {latitude[-1]}")
+    print(f"Longitude range: {longitude[0]} to {longitude[-1]}")
 ```
 
 ## Boundary Data Format

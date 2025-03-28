@@ -21,16 +21,16 @@
 
 ## Data
 ### Boundaries
-- [Collingwood_outline_WGS84_1.txt](../../velocity_modelling/cvm/data/regional/Collingwood/Collingwood_outline_WGS84_1.txt)
-- [Collingwood_outline_WGS84_2.txt](../../velocity_modelling/cvm/data/regional/Collingwood/Collingwood_outline_WGS84_2.txt)
-- [Collingwood_outline_WGS84_3.txt](../../velocity_modelling/cvm/data/regional/Collingwood/Collingwood_outline_WGS84_3.txt)
+- [Collingwood_outline_WGS84_1.txt](../../velocity_modelling/data/regional/Collingwood/Collingwood_outline_WGS84_1.txt)
+- [Collingwood_outline_WGS84_2.txt](../../velocity_modelling/data/regional/Collingwood/Collingwood_outline_WGS84_2.txt)
+- [Collingwood_outline_WGS84_3.txt](../../velocity_modelling/data/regional/Collingwood/Collingwood_outline_WGS84_3.txt)
 
 ### Surfaces
-- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [Collingwood_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/Collingwood/Collingwood_basement_WGS84.in) (Submodel: N/A)
+- [NZ_DEM_HD.in](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [Collingwood_basement_WGS84.in](../../velocity_modelling/data/regional/Collingwood/Collingwood_basement_WGS84.in) (Submodel: N/A)
 
 ### Smoothing Boundaries
-- [Collingwood_smoothing.txt](../../velocity_modelling/cvm/data/regional/Collingwood/Collingwood_smoothing.txt)
+- [Collingwood_smoothing.txt](../../velocity_modelling/data/regional/Collingwood/Collingwood_smoothing.txt)
 
 ## Data retrieved from
 ### Boundaries

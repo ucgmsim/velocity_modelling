@@ -5,7 +5,7 @@ from typing import TypedDict
 
 import pytest
 
-from velocity_modelling.cvm.tools.compare_emod3d import (
+from velocity_modelling.tools.compare_emod3d import (
     compare_output_files,
     parse_nzcvm_config,
 )
@@ -34,7 +34,7 @@ class ScenarioDict(TypedDict):
 
 # Define paths based on your directory structure
 BASE_DIR = Path(__file__).parent.parent  # Project root directory
-SCRIPT_DIR = BASE_DIR / "velocity_modelling/cvm/scripts"
+SCRIPT_DIR = BASE_DIR / "velocity_modelling/scripts"
 TEST_DIR = BASE_DIR / "tests"
 SCENARIO_DIR = TEST_DIR / "scenarios"
 BENCHMARK_DIR = TEST_DIR / "benchmarks"  # Default value, can be overridden

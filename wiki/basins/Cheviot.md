@@ -21,14 +21,14 @@
 
 ## Data
 ### Boundaries
-- [Cheviot_outline_WGS84.txt](../../velocity_modelling/cvm/data/regional/Cheviot/Cheviot_outline_WGS84.txt)
+- [Cheviot_outline_WGS84.txt](../../velocity_modelling/data/regional/Cheviot/Cheviot_outline_WGS84.txt)
 
 ### Surfaces
-- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [Cheviot_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/Cheviot/Cheviot_basement_WGS84.in) (Submodel: N/A)
+- [NZ_DEM_HD.in](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [Cheviot_basement_WGS84.in](../../velocity_modelling/data/regional/Cheviot/Cheviot_basement_WGS84.in) (Submodel: N/A)
 
 ### Smoothing Boundaries
-- [Cheviot_smoothing.txt](../../velocity_modelling/cvm/data/regional/Cheviot/Cheviot_smoothing.txt)
+- [Cheviot_smoothing.txt](../../velocity_modelling/data/regional/Cheviot/Cheviot_smoothing.txt)
 
 ## Data retrieved from
 ### Boundaries

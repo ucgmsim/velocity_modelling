@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from velocity_modelling import velocity_model_1d
+from velocity_modelling import velocity1d
 
 
 @pytest.fixture
@@ -31,7 +31,7 @@ def temp_parquet_file(tmp_path: Path) -> Path:
 @pytest.fixture
 def temp_text_file(tmp_path: Path) -> Path:
     """Create a temporary text file for testing."""
-    return tmp_path / "velocity_model.txt"
+    return tmp_path / "velocity_model.1d"
 
 
 def test_read_velocity_model_1d(
@@ -39,7 +39,7 @@ def test_read_velocity_model_1d(
 ):
     """Test reading velocity model from parquet and depth calculations."""
     sample_velocity_data.to_parquet(temp_parquet_file)
-    result = velocity_model_1d.read_velocity_model_1d(temp_parquet_file)
+    result = velocity1d.read_velocity_model_1d(temp_parquet_file)
 
     assert set(result.columns.tolist()) == {
         "width",
@@ -65,7 +65,7 @@ def test_read_velocity_model_1d_missing_columns(temp_parquet_file: Path):
     invalid_data.to_parquet(temp_parquet_file)
 
     with pytest.raises(ValueError, match="Missing required columns"):
-        velocity_model_1d.read_velocity_model_1d(temp_parquet_file)
+        velocity1d.read_velocity_model_1d(temp_parquet_file)
 
 
 def test_read_velocity_model_1d_negative_values(temp_parquet_file: Path):
@@ -83,17 +83,17 @@ def test_read_velocity_model_1d_negative_values(temp_parquet_file: Path):
     invalid_data.to_parquet(temp_parquet_file)
 
     with pytest.raises(ValueError, match="may not contain negative numbers"):
-        velocity_model_1d.read_velocity_model_1d(temp_parquet_file)
+        velocity1d.read_velocity_model_1d(temp_parquet_file)
 
 
 def test_read_velocity_model_1d_plain_text(
     sample_velocity_data: pd.DataFrame, temp_text_file: Path
 ):
     """Test reading velocity model from plain text format."""
-    velocity_model_1d.write_velocity_model_1d_plain_text(
+    velocity1d.write_velocity_model_1d_plain_text(
         sample_velocity_data, temp_text_file
     )
-    result = velocity_model_1d.read_velocity_model_1d_plain_text(temp_text_file)
+    result = velocity1d.read_velocity_model_1d_plain_text(temp_text_file)
 
     assert set(result.columns.tolist()) == {
         "width",
@@ -119,7 +119,7 @@ def test_read_velocity_model_1d_plain_text_invalid_header(temp_text_file: Path):
         f.write("100 2000 1200 2.2 100 50\n")
 
     with pytest.raises(ValueError, match="Invalid or missing layer count"):
-        velocity_model_1d.read_velocity_model_1d_plain_text(temp_text_file)
+        velocity1d.read_velocity_model_1d_plain_text(temp_text_file)
 
 
 def test_read_velocity_model_1d_plain_text_layer_mismatch(temp_text_file: Path):
@@ -129,7 +129,7 @@ def test_read_velocity_model_1d_plain_text_layer_mismatch(temp_text_file: Path):
         f.write("100 2000 1200 2.2 100 50\n")
 
     with pytest.raises(ValueError, match="does not match the header"):
-        velocity_model_1d.read_velocity_model_1d_plain_text(temp_text_file)
+        velocity1d.read_velocity_model_1d_plain_text(temp_text_file)
 
 
 def test_read_velocity_model_1d_plain_text_empty_data(temp_text_file: Path):
@@ -140,14 +140,14 @@ def test_read_velocity_model_1d_plain_text_empty_data(temp_text_file: Path):
     with pytest.raises(
         ValueError, match="Number of velocity model layers does not match the header."
     ):
-        velocity_model_1d.read_velocity_model_1d_plain_text(temp_text_file)
+        velocity1d.read_velocity_model_1d_plain_text(temp_text_file)
 
 
 def test_write_velocity_model_1d_plain_text(
     sample_velocity_data: pd.DataFrame, temp_text_file: Path
 ):
     """Test writing velocity model to plain text format."""
-    velocity_model_1d.write_velocity_model_1d_plain_text(
+    velocity1d.write_velocity_model_1d_plain_text(
         sample_velocity_data, temp_text_file
     )
 

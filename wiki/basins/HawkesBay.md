@@ -32,17 +32,17 @@
 
 ## Data
 ### Boundaries
-- [HawkesBay_outline_WGS84_1.txt](../../velocity_modelling/cvm/data/regional/HawkesBay/HawkesBay_outline_WGS84_1.txt)
-- [HawkesBay_outline_WGS84_2.txt](../../velocity_modelling/cvm/data/regional/HawkesBay/HawkesBay_outline_WGS84_2.txt)
-- [HawkesBay_outline_WGS84_3.txt](../../velocity_modelling/cvm/data/regional/HawkesBay/HawkesBay_outline_WGS84_3.txt)
-- [HawkesBay_outline_WGS84_4.txt](../../velocity_modelling/cvm/data/regional/HawkesBay/HawkesBay_outline_WGS84_4.txt)
+- [HawkesBay_outline_WGS84_1.txt](../../velocity_modelling/data/regional/HawkesBay/HawkesBay_outline_WGS84_1.txt)
+- [HawkesBay_outline_WGS84_2.txt](../../velocity_modelling/data/regional/HawkesBay/HawkesBay_outline_WGS84_2.txt)
+- [HawkesBay_outline_WGS84_3.txt](../../velocity_modelling/data/regional/HawkesBay/HawkesBay_outline_WGS84_3.txt)
+- [HawkesBay_outline_WGS84_4.txt](../../velocity_modelling/data/regional/HawkesBay/HawkesBay_outline_WGS84_4.txt)
 
 ### Surfaces
-- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [HawkesBay_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/HawkesBay/HawkesBay_basement_WGS84.in) (Submodel: N/A)
+- [NZ_DEM_HD.in](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [HawkesBay_basement_WGS84.in](../../velocity_modelling/data/regional/HawkesBay/HawkesBay_basement_WGS84.in) (Submodel: N/A)
 
 ### Smoothing Boundaries
-- [HawkesBay_smoothing.txt](../../velocity_modelling/cvm/data/regional/HawkesBay/HawkesBay_smoothing.txt)
+- [HawkesBay_smoothing.txt](../../velocity_modelling/data/regional/HawkesBay/HawkesBay_smoothing.txt)
 
 ## Data retrieved from
 ### Boundaries

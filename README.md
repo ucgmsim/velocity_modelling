@@ -93,7 +93,7 @@ After successful execution, the output files will be located in the specified ou
 
 ## Data Files
 
-All the data such as surface, boundary, DEM, 1D velocity model etc. files are placed under [velocity_modelling/cvm/data](velocity_modelling/cvm/data) folder. Details of the data format, see the [Data Formats Guide](wiki/DataFormats.md)
+All the data such as surface, boundary, DEM, 1D velocity model etc. files are placed under [velocity_modelling/cvm/data](velocity_modelling/data) folder. Details of the data format, see the [Data Formats Guide](wiki/DataFormats.md)
 
 ## Changelogs and Development Plans
 

@@ -28,15 +28,15 @@
 
 ## Data
 ### Boundaries
-- [NE_Otago_outline_WGS84_1.txt](../../velocity_modelling/cvm/data/regional/NE_Otago/NE_Otago_outline_WGS84_1.txt)
-- [NE_Otago_outline_WGS84_2.txt](../../velocity_modelling/cvm/data/regional/NE_Otago/NE_Otago_outline_WGS84_2.txt)
-- [NE_Otago_outline_WGS84_3.txt](../../velocity_modelling/cvm/data/regional/NE_Otago/NE_Otago_outline_WGS84_3.txt)
-- [NE_Otago_outline_WGS84_4.txt](../../velocity_modelling/cvm/data/regional/NE_Otago/NE_Otago_outline_WGS84_4.txt)
-- [NE_Otago_outline_WGS84_5.txt](../../velocity_modelling/cvm/data/regional/NE_Otago/NE_Otago_outline_WGS84_5.txt)
+- [NE_Otago_outline_WGS84_1.txt](../../velocity_modelling/data/regional/NE_Otago/NE_Otago_outline_WGS84_1.txt)
+- [NE_Otago_outline_WGS84_2.txt](../../velocity_modelling/data/regional/NE_Otago/NE_Otago_outline_WGS84_2.txt)
+- [NE_Otago_outline_WGS84_3.txt](../../velocity_modelling/data/regional/NE_Otago/NE_Otago_outline_WGS84_3.txt)
+- [NE_Otago_outline_WGS84_4.txt](../../velocity_modelling/data/regional/NE_Otago/NE_Otago_outline_WGS84_4.txt)
+- [NE_Otago_outline_WGS84_5.txt](../../velocity_modelling/data/regional/NE_Otago/NE_Otago_outline_WGS84_5.txt)
 
 ### Surfaces
-- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [NE_Otago_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/NE_Otago/NE_Otago_basement_WGS84.in) (Submodel: N/A)
+- [NZ_DEM_HD.in](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [NE_Otago_basement_WGS84.in](../../velocity_modelling/data/regional/NE_Otago/NE_Otago_basement_WGS84.in) (Submodel: N/A)
 
 ## Data retrieved from
 ### Boundaries

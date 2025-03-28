@@ -30,14 +30,14 @@
 
 ## Data
 ### Boundaries
-- [Wellington_outline_WGS84.txt](../../velocity_modelling/cvm/data/regional/Wellington/Wellington_outline_WGS84.txt)
+- [Wellington_outline_WGS84.txt](../../velocity_modelling/data/regional/Wellington/Wellington_outline_WGS84.txt)
 
 ### Surfaces
-- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [Wellington_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/Wellington/Wellington_basement_WGS84.in) (Submodel: N/A)
+- [NZ_DEM_HD.in](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [Wellington_basement_WGS84.in](../../velocity_modelling/data/regional/Wellington/Wellington_basement_WGS84.in) (Submodel: N/A)
 
 ### Smoothing Boundaries
-- [Wellington_smoothing.txt](../../velocity_modelling/cvm/data/regional/Wellington/Wellington_smoothing.txt)
+- [Wellington_smoothing.txt](../../velocity_modelling/data/regional/Wellington/Wellington_smoothing.txt)
 
 ## Data retrieved from
 ### Boundaries

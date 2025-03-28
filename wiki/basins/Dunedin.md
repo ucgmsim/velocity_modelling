@@ -29,14 +29,14 @@
 
 ## Data
 ### Boundaries
-- [Dunedin_outline_WGS84.txt](../../velocity_modelling/cvm/data/regional/Dunedin/Dunedin_outline_WGS84.txt)
+- [Dunedin_outline_WGS84.txt](../../velocity_modelling/data/regional/Dunedin/Dunedin_outline_WGS84.txt)
 
 ### Surfaces
-- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [Dunedin_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/Dunedin/Dunedin_basement_WGS84.in) (Submodel: N/A)
+- [NZ_DEM_HD.in](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [Dunedin_basement_WGS84.in](../../velocity_modelling/data/regional/Dunedin/Dunedin_basement_WGS84.in) (Submodel: N/A)
 
 ### Smoothing Boundaries
-- [Dunedin_smoothing.txt](../../velocity_modelling/cvm/data/regional/Dunedin/Dunedin_smoothing.txt)
+- [Dunedin_smoothing.txt](../../velocity_modelling/data/regional/Dunedin/Dunedin_smoothing.txt)
 
 ## Data retrieved from
 ### Boundaries

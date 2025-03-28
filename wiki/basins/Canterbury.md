@@ -25,17 +25,17 @@
 
 ## Data
 ### Boundaries
-- [Canterbury_outline_WGS84.txt](../../velocity_modelling/cvm/data/regional/Canterbury/Canterbury_outline_WGS84.txt)
+- [Canterbury_outline_WGS84.txt](../../velocity_modelling/data/regional/Canterbury/Canterbury_outline_WGS84.txt)
 
 ### Surfaces
-- [CantDEM.in](../../velocity_modelling/cvm/data/global/surface/CantDEM.in) (Submodel: canterbury1d_v2_pliocene_enforced)
-- [Canterbury_Pliocene_46_v8p9p18_WGS84.in](../../velocity_modelling/cvm/data/regional/Canterbury/Canterbury_Pliocene_46_v8p9p18_WGS84.in) (Submodel: pliocene_submod_v1)
-- [Canterbury_Miocene_WGS84.in](../../velocity_modelling/cvm/data/regional/Canterbury/Canterbury_Miocene_WGS84.in) (Submodel: miocene_submod_v1)
-- [Canterbury_Paleogene_WGS84.in](../../velocity_modelling/cvm/data/regional/Canterbury/Canterbury_Paleogene_WGS84.in) (Submodel: paleogene_submod_v1)
-- [Canterbury_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/Canterbury/Canterbury_basement_WGS84.in) (Submodel: N/A)
+- [CantDEM.in](../../velocity_modelling/data/global/surface/CantDEM.in) (Submodel: canterbury1d_v2_pliocene_enforced)
+- [Canterbury_Pliocene_46_v8p9p18_WGS84.in](../../velocity_modelling/data/regional/Canterbury/Canterbury_Pliocene_46_v8p9p18_WGS84.in) (Submodel: pliocene_submod_v1)
+- [Canterbury_Miocene_WGS84.in](../../velocity_modelling/data/regional/Canterbury/Canterbury_Miocene_WGS84.in) (Submodel: miocene_submod_v1)
+- [Canterbury_Paleogene_WGS84.in](../../velocity_modelling/data/regional/Canterbury/Canterbury_Paleogene_WGS84.in) (Submodel: paleogene_submod_v1)
+- [Canterbury_basement_WGS84.in](../../velocity_modelling/data/regional/Canterbury/Canterbury_basement_WGS84.in) (Submodel: N/A)
 
 ### Smoothing Boundaries
-- [Canterbury_smoothing.txt](../../velocity_modelling/cvm/data/regional/Canterbury/Canterbury_smoothing.txt)
+- [Canterbury_smoothing.txt](../../velocity_modelling/data/regional/Canterbury/Canterbury_smoothing.txt)
 
 ## Data retrieved from
 ### Boundaries

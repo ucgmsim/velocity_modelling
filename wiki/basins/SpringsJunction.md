@@ -21,11 +21,11 @@
 
 ## Data
 ### Boundaries
-- [SpringsJunction_outline_WGS84.txt](../../velocity_modelling/cvm/data/regional/SpringsJunction/SpringsJunction_outline_WGS84.txt)
+- [SpringsJunction_outline_WGS84.txt](../../velocity_modelling/data/regional/SpringsJunction/SpringsJunction_outline_WGS84.txt)
 
 ### Surfaces
-- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [SpringsJunction_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/SpringsJunction/SpringsJunction_basement_WGS84.in) (Submodel: N/A)
+- [NZ_DEM_HD.in](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [SpringsJunction_basement_WGS84.in](../../velocity_modelling/data/regional/SpringsJunction/SpringsJunction_basement_WGS84.in) (Submodel: N/A)
 
 ## Data retrieved from
 ### Boundaries

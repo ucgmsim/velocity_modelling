@@ -24,11 +24,11 @@
 
 ## Data
 ### Boundaries
-- [Whangaparoa_outline_WGS84.txt](../../velocity_modelling/cvm/data/regional/Whangaparoa/Whangaparoa_outline_WGS84.txt)
+- [Whangaparoa_outline_WGS84.txt](../../velocity_modelling/data/regional/Whangaparoa/Whangaparoa_outline_WGS84.txt)
 
 ### Surfaces
-- [NZ_DEM_HD.in](../../velocity_modelling/cvm/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- [Whangaparoa_basement_WGS84.in](../../velocity_modelling/cvm/data/regional/Whangaparoa/Whangaparoa_basement_WGS84.in) (Submodel: N/A)
+- [NZ_DEM_HD.in](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
+- [Whangaparoa_basement_WGS84.in](../../velocity_modelling/data/regional/Whangaparoa/Whangaparoa_basement_WGS84.in) (Submodel: N/A)
 
 ## Data retrieved from
 ### Boundaries

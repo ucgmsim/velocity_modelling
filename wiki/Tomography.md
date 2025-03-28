@@ -21,7 +21,7 @@ tomography:
   - name: 2010_NZ_OFFSHORE
     nElev: 20
     elev: [ 15, 1, -3, -8, -15, -23, -30, -38, -48, -65, -85, -105, -130, -155, -185, -225, -275, -370, -620, -750 ]
-    vs30_path: global/vs30/NZ_Vs30_HD_With_Offshore.in
+    vs30_path: global/vs30/NZ_Vs30_HD_With_Offshore.h5
     special_offshore_tapering: true
     path: global/tomography/2010_NZ.h5
 ```
