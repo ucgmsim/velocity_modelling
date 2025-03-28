@@ -36,7 +36,7 @@ def ascii_to_hdf5(input_file_path: str | Path, output_file_path: str | Path):
             # Read latitude values (full array)
             lat_line = f.readline().strip().split()
             lat_values = np.array([float(x) for x in lat_line])
-            
+
             # Read longitude values (full array)
             lon_line = f.readline().strip().split()
             lon_values = np.array([float(x) for x in lon_line])
@@ -51,7 +51,7 @@ def ascii_to_hdf5(input_file_path: str | Path, output_file_path: str | Path):
                     if not line:  # Handle end of file
                         break
                     row_data.extend(line)
-                
+
                 # Fill the row with as many values as we have (up to ncols)
                 for j in range(min(ncols, len(row_data))):
                     elevation_data[i, j] = float(row_data[j])

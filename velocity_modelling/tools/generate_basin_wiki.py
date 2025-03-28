@@ -172,23 +172,23 @@ for basin_name, versions in basin_versions.items():
             filename = Path(boundary).name
             file_path = Path(boundary)
             base_path = file_path.parent / file_path.stem
-            
+
             # Check if alternative formats exist
             geojson_path = f"{base_path}.geojson"
             txt_path = f"{base_path}.txt"
-            
+
             # Use CVM_DATA path instead of GitHub URL
             updated_boundary_path = f"../../velocity_modelling/cvm/data/{boundary}"
             updated_txt_path = f"../../velocity_modelling/cvm/data/{txt_path}"
             updated_geojson_path = f"../../velocity_modelling/cvm/data/{geojson_path}"
-            
+
             # Create links with format indicators
             links = []
             if Path(txt_path).exists():
                 links.append(f"[TXT]({updated_txt_path})")
             if Path(geojson_path).exists():
                 links.append(f"[GeoJSON]({updated_geojson_path})")
-            
+
             link_text = " / ".join(links)
             md_content += f"- {file_path.stem} : {link_text}\n"
         md_content += "\n"
@@ -202,22 +202,22 @@ for basin_name, versions in basin_versions.items():
             file_path = Path(surface_path)
             base_path = file_path.parent / file_path.stem
             submodel = surface.get("submodel", "N/A")
-            
+
             # Check if alternative formats exist
             h5_path = f"{base_path}.h5"
             in_path = f"{base_path}.in"
-            
+
             # Use CVM_DATA path instead of GitHub URL
             updated_h5_path = f"../../velocity_modelling/cvm/data/{h5_path}"
             updated_in_path = f"../../velocity_modelling/cvm/data/{in_path}"
-            
+
             # Create links with format indicators
             links = []
             if Path(h5_path).exists():
                 links.append(f"[HDF5]({updated_h5_path})")
             if Path(in_path).exists():
                 links.append(f"[TXT]({updated_in_path})")
-            
+
             link_text = " / ".join(links)
             md_content += f"- {file_path.stem} : {link_text} (Submodel: {submodel})\n"
         md_content += "\n"

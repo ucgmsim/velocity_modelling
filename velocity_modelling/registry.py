@@ -401,7 +401,6 @@ class CVMRegistry:
         RuntimeError
             If the file cannot be read or parsed correctly.
         """
-        from velocity_modelling.basin_model import BasinSurfaceRead
 
         try:
             surface_path = basin_surface["path"]
@@ -411,9 +410,7 @@ class CVMRegistry:
             )
             raise KeyError("Basin surface definition must include 'path' field")
 
-        self.logger.log(
-            logging.DEBUG, f"Loading basin surface file {surface_path}"
-        )
+        self.logger.log(logging.DEBUG, f"Loading basin surface file {surface_path}")
         basin_surface_path = self.get_full_path(surface_path)
         if basin_surface_path in self.cache:
             self.logger.log(logging.DEBUG, f"{basin_surface_path} loaded from cache")
@@ -421,14 +418,14 @@ class CVMRegistry:
 
         try:
             # Check file extension to determine loading method
-            if basin_surface_path.suffix.lower() == '.h5':
+            if basin_surface_path.suffix.lower() == ".h5":
                 basin_surf_read = self._load_hdf5_basin_surface(basin_surface_path)
             else:  # Default to ASCII format
                 basin_surf_read = self._load_ascii_basin_surface(basin_surface_path)
-                
+
             self.cache[basin_surface_path] = basin_surf_read
             return basin_surf_read
-            
+
         except FileNotFoundError:
             self.logger.log(
                 logging.ERROR,
@@ -460,7 +457,7 @@ class CVMRegistry:
             The loaded basin surface data.
         """
         from velocity_modelling.basin_model import BasinSurfaceRead
-        
+
         with open(surface_path, "r") as f:
             nlat, nlon = map(int, f.readline().split())
             basin_surf_read = BasinSurfaceRead(nlat, nlon)
@@ -512,20 +509,20 @@ class CVMRegistry:
             The loaded basin surface data.
         """
         from velocity_modelling.basin_model import BasinSurfaceRead
-        
+
         with h5py.File(surface_path, "r") as f:
             # Read attributes
             nlat = f.attrs["nrows"]
             nlon = f.attrs["ncols"]
-            
+
             basin_surf_read = BasinSurfaceRead(nlat, nlon)
-            
+
             # Read datasets
             basin_surf_read.lats = f["latitude"][:]
             basin_surf_read.lons = f["longitude"][:]
             # HDF5 stores in row-major order, so transpose as needed
             basin_surf_read.raster = f["elevation"][:].T
-            
+
             basin_surf_read.max_lat = max(
                 basin_surf_read.lats[0], basin_surf_read.lats[-1]
             )
@@ -538,7 +535,7 @@ class CVMRegistry:
             basin_surf_read.min_lon = min(
                 basin_surf_read.lons[0], basin_surf_read.lons[-1]
             )
-            
+
             return basin_surf_read
 
     def load_global_surface(self, surface_file: Path | str) -> GlobalSurfaceRead:
@@ -562,27 +559,26 @@ class CVMRegistry:
         RuntimeError
             If the file cannot be read or parsed correctly.
         """
-        from velocity_modelling.global_model import GlobalSurfaceRead
 
         if surface_file is None:
             return None
 
         surface_path = self.get_full_path(surface_file)
-        
+
         if surface_path in self.cache:
             self.logger.log(logging.DEBUG, f"{surface_path} loaded from cache")
             return self.cache[surface_path]
-            
+
         try:
             # Check file extension to determine loading method
-            if surface_path.suffix.lower() == '.h5':
+            if surface_path.suffix.lower() == ".h5":
                 surface_data = self._load_hdf5_global_surface(surface_path)
             else:  # Default to ASCII format
                 surface_data = self._load_ascii_global_surface(surface_path)
-                
+
             self.cache[surface_path] = surface_data
             return surface_data
-            
+
         except FileNotFoundError:
             self.logger.log(logging.ERROR, f"Surface file {surface_path} not found")
             raise FileNotFoundError(f"Surface file {surface_path} not found")
@@ -611,7 +607,7 @@ class CVMRegistry:
             The loaded global surface data.
         """
         from velocity_modelling.global_model import GlobalSurfaceRead
-        
+
         with open(surface_path, "r") as f:
             nlat, nlon = map(int, f.readline().split())
             self.logger.log(
@@ -652,14 +648,14 @@ class CVMRegistry:
             The loaded global surface data.
         """
         from velocity_modelling.global_model import GlobalSurfaceRead
-        
+
         with h5py.File(surface_path, "r") as f:
             # Read datasets
             latitudes = f["latitude"][:]
             longitudes = f["longitude"][:]
             # HDF5 stores in row-major order, so transpose as needed
             elevation_data = f["elevation"][:].T
-            
+
             self.logger.log(
                 logging.DEBUG,
                 f"Reading HDF5 surface with dimensions {len(latitudes)}x{len(longitudes)} from {surface_path}",
@@ -723,7 +719,9 @@ class CVMRegistry:
 
         # Load surfaces based on data format
         if data_format == "HDF5":
-            surfaces = self._load_hdf5_tomo_surface_data(tomo["path"], tomo_name, surf_depth)
+            surfaces = self._load_hdf5_tomo_surface_data(
+                tomo["path"], tomo_name, surf_depth
+            )
         else:  # ASCII
             surfaces = self._load_ascii_tomo_surface_data(tomo["path"], surf_depth)
 
