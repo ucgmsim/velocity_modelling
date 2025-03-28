@@ -1,6 +1,6 @@
 # Basins in the New Zealand Velocity Model
 
-This page provides an overview of all sedimentary basins included in the New Zealand Velocity Model.
+This page provides an overview of sedimentary basin models integrated into the New Zealand Velocity Model.
 
 <!-- Preserving the image from the original Basins.md, resized to 50% -->
 <img src="https://github.com/user-attachments/assets/ef94b323-fb08-4f39-8666-ffaf12ae4db4" width="50%" alt="New Zealand basins overview">
