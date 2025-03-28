@@ -45,14 +45,15 @@ The requirements include:
 
 ### Step 4: Download Data (If Not Included in Repository)
 
-Some data files may need to be downloaded separately due to their size:
+Some data files may need to be downloaded separately due to their size. This script downloads the data and place the extracted data files in the correct location.
 
 ```bash
-# Example script to download data (if not provided)
 python cvm/tools/download_data.py
 ```
 
 Alternatively, download the file from Dropbox link. 
 https://www.dropbox.com/scl/fi/53235uy9vmq8gdd58so4t/nzcvm_global_data.tar.gz?rlkey=0fpqa22fk6mf39iloe8s7lsa1&st=14xlz9or&dl=1
+
+Then extract it and place the `global` folder under `velocity_modelling/data`
 
 
