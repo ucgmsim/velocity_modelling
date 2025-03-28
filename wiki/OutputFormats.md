@@ -136,7 +136,7 @@ HDF5 (Hierarchical Data Format version 5) is an efficient binary format for stor
 To generate a velocity model in HDF5 format:
 
 ```bash
-nzcvm generate-velocity-model /path/to/nzcvm.cfg --output-format HDF5
+python scripts/nzcvm.py generate-velocity-model /path/to/nzcvm.cfg --output-format HDF5
 ```
 
 ### HDF5 File Structure
