@@ -52,15 +52,6 @@ def read_emod3d_file(filename, nx, ny, nz):
     
     return data
 
-# Read header information
-with open('model.info', 'r') as f:
-    lines = f.readlines()
-    hh = float(lines[0].strip())
-    nx, ny, nz = map(int, lines[1].strip().split())
-    modellon, modellat = map(float, lines[2].strip().split())
-    modelrot = float(lines[3].strip())
-    topo_type = lines[4].strip()
-
 # Read velocity and density files
 vp = read_emod3d_file('vp3dfile.p', nx, ny, nz)
 vs = read_emod3d_file('vs3dfile.s', nx, ny, nz)
