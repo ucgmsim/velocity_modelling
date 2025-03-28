@@ -205,7 +205,7 @@ To visualize the HDF5 model in ParaView:
 
 1. Open ParaView
 2. Use "File > Open" and select the generated XDMF file (`velocity_model.xdmf`)
-3. If ParaView asks which reader to use, select "Xdmf3ReaderS" (XdmfReader for old XDMF version2 files and less robust)
+3. If ParaView asks which reader to use, select "Xdmf3ReaderS" (XdmfReader is for old XDMF version2 files and less robust. Xdmf3ReaderT is for temporal data)
 4. Go to "Properties" panel, and select "Points" in the "Representation" dropdown
 
 <img src="images/paraview_point_view.png" width="30%">
