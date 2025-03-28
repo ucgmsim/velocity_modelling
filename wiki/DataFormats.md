@@ -255,8 +255,8 @@ This is the same format as the boundary, but doesn't have a requirement of the f
 
 The data files used by the NZCVM are located in the following directories:
 
-- **Surface data**: `cvm/data/global/surface` and `cvm/data/regional/<basin_name>/`
-- **Boundary data**: `cvm/data/regional/<basin_name>/`
-- **Tomography data**: `cvm/data/global/tomography/`
-- **1D velocity models**: `cvm/data/global/vm1d/`
-- **Smoothing data**: `cvm/data/regional/<basin_name>/`
+- **Surface data**: `data/global/surface` and `cvm/data/regional/<basin_name>/`
+- **Boundary data**: `data/regional/<basin_name>/`
+- **Tomography data**: `data/global/tomography/`
+- **1D velocity models**: `data/global/vm1d/`
+- **Smoothing data**: `data/regional/<basin_name>/`
