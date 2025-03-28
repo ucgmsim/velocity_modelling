@@ -34,7 +34,7 @@ If the data file has a missing value, it will warn the user and pad with zeros t
 ```
 2025-03-25 21:13:21,015 - nzcvm - WARNING - In /Users/sungbae/velocity_modelling/velocity_modelling/cvm/data/regional/Canterbury/Canterbury_Miocene_WGS84.in: Data length mismatch - got 150800, expected 150801. Missing data will be padded with 0.
 ```
-Note: This is likely due to clerical error during data preparation. We chose to pad with zeros to match the behaviour original C code, but this may lead to a undesirable outcome.
+Note: The example above is for illustration only. Usually such an issue is likely due to clerical error during data preparation. We chose to pad with zeros to match the behaviour of the original C code, but this may lead to a undesirable outcome.
 
 #### Example
 
