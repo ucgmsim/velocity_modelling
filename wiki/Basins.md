@@ -65,6 +65,6 @@ This page provides an overview of sedimentary basin models integrated into the N
 
 The version number in each basin name (e.g., v19p1) follows the format:
 - Year (e.g., 19 = 2019)
-- Point release (e.g., p1 = point release 1)
+- Point release (e.g., p1 = January)
 
 Newer versions typically include refinements to basin geometry or velocity structure.
