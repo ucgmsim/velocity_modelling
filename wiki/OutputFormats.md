@@ -222,6 +222,7 @@ To visualize the HDF5 model in ParaView:
 <img src="images/paraview_cross_section.png" width="100%">
 10. To see a cross-section, use the "Clip" filter (search for "Clip" in the Filter search box or click on the "Clip" 
 icon in the toolbar). Adjust the clip plane as needed, and click "Apply" in the Properties panel. 
+
 11. Ensure the "Clip" filter (most likely named as "Clip1") is selected in the Pipeline Browser and click on the "Eye" icon to see the clip.
 You may wish to turn off the "Eye" icon of the original data to see the clip more clearly.
 
