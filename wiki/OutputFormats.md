@@ -220,6 +220,7 @@ To visualize the HDF5 model in ParaView:
 9. Make sure you have "velocity_model_xdmf" selected in the Pipeline Browser (Eye icon should be visible on the left)
 
 <img src="images/paraview_cross_section.png" width="100%">
+
 10. To see a cross-section, use the "Clip" filter (search for "Clip" in the Filter search box or click on the "Clip" 
 icon in the toolbar). Adjust the clip plane as needed, and click "Apply" in the Properties panel. 
 
