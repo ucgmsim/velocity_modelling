@@ -1,0 +1,36 @@
+name: Numpydoc Lint
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  numpydoc-lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: fd-find
+          version: 1.0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'  # Adjust version as needed
+
+      - name: Install dependencies
+        run: |
+          pip install numpydoc
+
+      - name: Run Numpydoc Lint
+        run: |
+          fdfind . velocity_modelling/ -E "__init__.py" --extension py -x numpydoc lint
+
