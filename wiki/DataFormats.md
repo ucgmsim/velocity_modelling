@@ -104,7 +104,7 @@ Where:
 
 The first location should be the same as the last to form a closed polygon. ie. (lon_1, lat_1)=(lon_n, lat_n)
 
-If the boundary data is found to be not closed, it will throw an error and program will terminate.
+If the boundary data is found to be not closed, it will throw an error and the code will terminate.
 
 ### Example
 
