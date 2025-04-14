@@ -52,15 +52,6 @@ def read_emod3d_file(filename, nx, ny, nz):
     
     return data
 
-# Read header information
-with open('model.info', 'r') as f:
-    lines = f.readlines()
-    hh = float(lines[0].strip())
-    nx, ny, nz = map(int, lines[1].strip().split())
-    modellon, modellat = map(float, lines[2].strip().split())
-    modelrot = float(lines[3].strip())
-    topo_type = lines[4].strip()
-
 # Read velocity and density files
 vp = read_emod3d_file('vp3dfile.p', nx, ny, nz)
 vs = read_emod3d_file('vs3dfile.s', nx, ny, nz)
@@ -96,21 +87,31 @@ y,x,z,lat,lon,depth,vp,vs,rho,inbasin
 
 ### Reading CSV Files
 
-CSV files can be easily read using standard libraries in most programming languages. Here's an example in Python:
+CSV files can be easily read using a spreadsheet application like MS Excel. Here's an example in Python that shows how to efficiently access velocity values using pandas indexing:
 
 ```python
 import pandas as pd
 
 # Read CSV file
-df = pd.read_csv('model.csv')
+df = pd.read_csv('velocity_model.csv')
 
-# Get velocity values at a specific location
-x, y, z = 1.0, 2.0, 0.5
-point = df[(df['x'] == x) & (df['y'] == y) & (df['z'] == z)]
-vp = point['vp'].values[0]
-vs = point['vs'].values[0]
-rho = point['rho'].values[0]
+# Set x, y, z as multi-index for efficient lookup
+df.set_index(['x', 'y', 'z'], inplace=True)
+
+# Access values directly using index lookup (much faster for large datasets)
+X, Y, Z = 10.0, 15.0, 2.0
+try:
+    # One-liner to get values at a specific point
+    vp = df.loc[(X, Y, Z), 'vp']
+    vs = df.loc[(X, Y, Z), 'vs']
+    rho = df.loc[(X, Y, Z), 'rho']
+    print(f"At (x={X}, y={Y}, z={Z}): Vp={vp} km/s, Vs={vs} km/s, density={rho} g/cm³")
+except KeyError:
+    print(f"Point (x={X}, y={Y}, z={Z}) not found in the model")
+
 ```
+
+## HDF5 Format
 
 HDF5 (Hierarchical Data Format version 5) is an efficient binary format for storing large scientific datasets with metadata. This format offers several advantages:
 
@@ -126,7 +127,7 @@ HDF5 (Hierarchical Data Format version 5) is an efficient binary format for stor
 To generate a velocity model in HDF5 format:
 
 ```bash
-nzcvm generate-velocity-model /path/to/nzcvm.cfg --output-format HDF5
+python scripts/nzcvm.py generate-velocity-model /path/to/nzcvm.cfg --output-format HDF5
 ```
 
 ### HDF5 File Structure
@@ -195,7 +196,7 @@ To visualize the HDF5 model in ParaView:
 
 1. Open ParaView
 2. Use "File > Open" and select the generated XDMF file (`velocity_model.xdmf`)
-3. If ParaView asks which reader to use, select "Xdmf3ReaderS" (XdmfReader for old XDMF version2 files and less robust)
+3. If ParaView asks which reader to use, select "Xdmf3ReaderS" (XdmfReader is for old XDMF version2 files and less robust. Xdmf3ReaderT is for temporal data)
 4. Go to "Properties" panel, and select "Points" in the "Representation" dropdown
 
 <img src="images/paraview_point_view.png" width="30%">
@@ -210,8 +211,10 @@ To visualize the HDF5 model in ParaView:
 9. Make sure you have "velocity_model_xdmf" selected in the Pipeline Browser (Eye icon should be visible on the left)
 
 <img src="images/paraview_cross_section.png" width="100%">
+
 10. To see a cross-section, use the "Clip" filter (search for "Clip" in the Filter search box or click on the "Clip" 
 icon in the toolbar). Adjust the clip plane as needed, and click "Apply" in the Properties panel. 
+
 11. Ensure the "Clip" filter (most likely named as "Clip1") is selected in the Pipeline Browser and click on the "Eye" icon to see the clip.
 You may wish to turn off the "Eye" icon of the original data to see the clip more clearly.
 
@@ -219,11 +222,7 @@ You may wish to turn off the "Eye" icon of the original data to see the clip mor
 
 ## Other Output Files
 
-Depending on the configuration, the NZCVM may also generate additional output files:
-
-- **Log files**: Contains information about the model generation process, including any warnings or errors.
-- **Visualization files**: For visualization in tools like PyVista or ParaView.
-- **Metadata files**: JSON or YAML files containing metadata about the generated model.
+If the existing output formats do not meet your requirements, you are encouraged to submit a feature request. Please include detailed specifications of the desired data format to help us evaluate and implement your request effectively.
 
 ## Output Location
 

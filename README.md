@@ -4,28 +4,28 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
-The NZ Community Velocity Models (NZCVM) provide detailed 3D representations of the subsurface velocity structure in New Zealand. These models are essential for seismic hazard analysis and earthquake engineering.
+The NZ Community Velocity Models (NZCVM) provide detailed 3D representations of New Zealand's subsurface velocity structure. These models are crucial for seismic hazard analysis and earthquake engineering.
 
 ## Overview
 
-The NZCVM incorporates various data sets amassed from numerous geophysical and geological studies. It prescribes the compression or primary wave velocity (Vp), the shear or secondary wave velocity (Vs) and density (Rho) at specified locations in a 3D grid.
+The NZCVM integrates various datasets from numerous geophysical and geological studies. It specifies the compression or primary wave velocity (Vp), the shear or secondary wave velocity (Vs), and density (Rho) at specified locations in a 3D grid.
 
-The model consists of the following components:
+The model includes the following components:
 
--  **New Zealand-wide travel-time-derived seismic tomography model**: ~10km length scale
+- **New Zealand-wide travel-time-derived seismic tomography model**: ~10 km length scale
     - 2010 NZ: based on Eberhart-Philips et al. (2010)
     - 2020 NZ: based on Eberhart-Philips et al. (2020)
 
--  **Embedded subregion (sedimentary basin) models**: 34 basins of varying degrees of characterization
+- **Embedded subregion (sedimentary basin) models**: 34 basins with varying levels of characterization
 
-Through embedding discrete regional models into the lower resolution tomography data, we obtain a velocity model that incorporates data across multiple length scales and resolutions to give a unified representation of the velocity structure for use in broadband physics-based ground motion simulations and additional engineering applications.
+By embedding discrete regional models into the lower-resolution tomography data, the NZCVM provides a unified velocity model that incorporates data across multiple length scales and resolutions. This model is suitable for broadband physics-based ground motion simulations and other engineering applications.
 
 ## Key Components
 
 - [**Basins**](wiki/Basins.md): Detailed information about the 34 basin models integrated into the NZCVM
 - [**Tomography**](wiki/Tomography.md): Information about available tomography models
 - [**Data Formats**](wiki/DataFormats.md): Explanation of formats for surface, boundary, tomography, 1D velocity models, and smoothing data
-- [**Output Formats**](wiki/OutputFormats.md): Details about the output formats including emod3d format
+- [**Output Formats**](wiki/OutputFormats.md): Details about the output formats, including the emod3d, csv and HDF5 formats
 
 ## Requirements and Installation
 
@@ -37,36 +37,35 @@ Through embedding discrete regional models into the lower resolution tomography 
 ### Installation
 
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/ucgmsim/velocity_modelling.git
-   cd velocity_modelling
-   ```
+     ```bash
+     git clone https://github.com/ucgmsim/velocity_modelling.git
+     cd velocity_modelling
+     ```
 
 2. Install the required dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+     ```bash
+     pip install -r requirements.txt
+     ```
 
 3. Download the data from the external link.
 
-For data downloading and detailed installation instructions, see the [Installation Guide](wiki/Installation.md).
+For detailed data downloading and installation instructions, see the [Installation Guide](wiki/Installation.md).
 
 ## Using the `nzcvm.py` Script
 
-The `nzcvm.py` script is a tool for generating velocity models based on the NZCVM. It allows users to specify configuration files and output directories to customize the generated models.
+The `nzcvm.py` script generates velocity models based on the NZCVM. Users can specify configuration files and output directories to customize the generated models.
 
 ### Running the Script
 
-To run the `nzcvm.py` script, you need to provide specific arguments, including the configuration file and the output directory.
+To run the `nzcvm.py` script, provide specific arguments, including the configuration file and the output directory:
 
 ```sh
-python cvm/scripts/nzcvm.py generate-velocity-model /path/to/config/nzcvm.cfg --out-dir /path/to/output
+python scripts/nzcvm.py generate-velocity-model /path/to/config/nzcvm.cfg --out-dir /path/to/output
 ```
-
 
 ### Configuration File: `nzcvm.cfg`
 
-The `nzcvm.cfg` file is a configuration file used by the `nzcvm.py` script to generate velocity models. It contains various parameters that define the properties and settings of the velocity model to be generated. Below is an explanation of the parameters in a sample `nzcvm.cfg` file:
+The `nzcvm.cfg` file is a configuration file used by the `nzcvm.py` script to generate velocity models. It contains parameters defining the properties and settings of the velocity model. Below is an example:
 
 ```ini
 CALL_TYPE=GENERATE_VELOCITY_MOD
@@ -93,16 +92,16 @@ After successful execution, the output files will be located in the specified ou
 
 ## Data Files
 
-All the data such as surface, boundary, DEM, 1D velocity model etc. files are placed under [velocity_modelling/cvm/data](velocity_modelling/data) folder. Details of the data format, see the [Data Formats Guide](wiki/DataFormats.md)
+All data, such as surface, boundary, DEM, and 1D velocity model files, are located in the [velocity_modelling/data](velocity_modelling/data) folder. For details on the data format, see the [Data Formats Guide](wiki/DataFormats.md).
 
 ## Changelogs and Development Plans
 
-For information about our development roadmap, upcoming features, and past version changes, please see our [Development Schedule](wiki/Development-Schedule.md).
+For information about the development roadmap, upcoming features, and past version changes, see the [Development Schedule](wiki/Development-Schedule.md).
 
 ## References
 
-Ethan M. Thomson, Brendon A. Bradley & Robin L. Lee (2020) Methodology and computational implementation of a New Zealand Velocity Model (nzcvm2.0) for broadband ground motion simulation, New Zealand Journal of Geology and Geophysics, 63:1, 110-127, DOI: 10.1080/00288306.2019.1636830
+- Ethan M. Thomson, Brendon A. Bradley & Robin L. Lee (2020). Methodology and computational implementation of a New Zealand Velocity Model (nzcvm2.0) for broadband ground motion simulation, *New Zealand Journal of Geology and Geophysics*, 63(1), 110-127. DOI: [10.1080/00288306.2019.1636830](https://doi.org/10.1080/00288306.2019.1636830)
 
-Donna Eberhart-Phillips, Martin Reyners, Stephen Bannister, Mark Chadwick, Susan Ellis; Establishing a Versatile 3-D Seismic Velocity Model for New Zealand. Seismological Research Letters 2010; 81 (6): 992–1000. doi: https://doi.org/10.1785/gssrl.81.6.992
+- Donna Eberhart-Phillips, Martin Reyners, Stephen Bannister, Mark Chadwick, Susan Ellis (2010). Establishing a Versatile 3-D Seismic Velocity Model for New Zealand. *Seismological Research Letters*, 81(6), 992–1000. DOI: [10.1785/gssrl.81.6.992](https://doi.org/10.1785/gssrl.81.6.992)
 
-Donna Eberhart-Phillips, Stephen Bannister, Martin Reyners, and Stuart Henrys. "New Zealand Wide Model 2.2 Seismic Velocity and Qs and Qp Models for New Zealand". Zenodo, May 1, 2020. https://doi.org/10.5281/zenodo.3779523.
+- Donna Eberhart-Phillips, Stephen Bannister, Martin Reyners, and Stuart Henrys (2020). New Zealand Wide Model 2.2 Seismic Velocity and Qs and Qp Models for New Zealand. *Zenodo*. DOI: [10.5281/zenodo.3779523](https://doi.org/10.5281/zenodo.3779523)

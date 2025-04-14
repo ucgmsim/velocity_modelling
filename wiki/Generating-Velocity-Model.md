@@ -8,7 +8,7 @@
 
 (1)  `nzcvm_registry.yaml` : A wide range of community data that is curated and registered in this YAML file. This is an interface layer between NZCVM code and the storage of data files. A default file is used unless user overrides.
 
-(2)  A model version (`.yaml`) : This YAML file defines different configurations of the velocity model. This allows users to select different combinations of tomography models, basins, and other parameters. Model versions 2.03 and 2.07 are pre-configured and the corresponding YAML files, `2p03.yaml` and `2p07.yaml` are located in `cvm/model_versions`. Users are allowed to create a custom model version and place the `.yaml` file in the folder. 
+(2)  A model version (`.yaml`) : This YAML file defines different configurations of the velocity model. This allows users to select different combinations of tomography models, basins, and other parameters. Model versions 2.03 and 2.07 are pre-configured and the corresponding YAML files, `2p03.yaml` and `2p07.yaml` are located in `model_versions`. Users are allowed to create a custom model version and place the `.yaml` file in the folder. 
 
 (3) `nzcvm.cfg`: The details of the velocity model to generate. In most scenarios, this is the only file users may need to provide to `nzvm.py`
 
@@ -16,7 +16,7 @@
 The simplest command will look like:
 
 ```bash
-python cvm/scripts/nzcvm.py generate-velocity-model /path/to/config/nzcvm.cfg
+python scripts/nzcvm.py generate-velocity-model /path/to/config/nzcvm.cfg
 ```
 
 
@@ -31,7 +31,7 @@ python cvm/scripts/nzcvm.py generate-velocity-model /path/to/config/nzcvm.cfg
 - **--nzcvm-registry**: Path to the model registry file. If not specified, the default `nzcvm_registry.yaml` is used
 - **--model-version**: Override the model version specified in the configuration file
 - **--output-format**: Specify the output format (EMOD3D, CSV, or HDF5)
-- **--data-root**: Override the default DATA_ROOT directory. If not specified, the default `cvm/data` is used
+- **--data-root**: Override the default DATA_ROOT directory. If not specified, the default `data` is used
 - **--smoothing**: Enable smoothing at model boundaries (not currently implemented)
 - **--log-level**: Set the logging level (DEBUG, INFO, WARNING, ERROR)
 
@@ -90,7 +90,7 @@ An nzcvm.cfg file can be configured and downloaded via a web-based interface at 
 2. Run the script with the custom configuration:
 
 ```bash
-python cvm/scripts/nzcvm.py generate-velocity-model /path/to/custom/nzcvm.cfg --out-dir /path/to/output
+python scripts/nzcvm.py generate-velocity-model /path/to/custom/nzcvm.cfg --out-dir /path/to/output
 ```
 
 
@@ -131,7 +131,7 @@ The naming convention replaces dots with 'p', so for `MODEL_VERSION=2.03`, the s
 You can also override the model version at runtime using the `--model-version` parameter:
 
 ```bash
-python cvm/scripts/nzcvm.py generate-velocity-model /path/to/nzcvm.cfg --out-dir /path/to/output --model-version 2.07
+python scripts/nzcvm.py generate-velocity-model /path/to/nzcvm.cfg --out-dir /path/to/output --model-version 2.07
 ```
 
 
@@ -142,7 +142,7 @@ The `2p03.yaml` file defines the components and parameters for model version 2.0
 ```yaml
 GTL: true
 surfaces:
-  - path: global/surface/NZ_DEM_HD.in
+  - path: global/surface/NZ_DEM_HD.h5
     submodel: ep_tomography_submod_v2010
 
 tomography: 2010_NZ_OFFSHORE
@@ -240,7 +240,7 @@ OUTPUT_DIR=/path/to/output
 2. Run the script:
 
 ```bash
-python cvm/scripts/nzcvm.py generate-velocity-model /path/to/nzcvm.cfg --out-dir /path/to/output
+python velocity_modelling/scripts/nzcvm.py generate-velocity-model /path/to/nzcvm.cfg --out-dir /path/to/output
 ```
 
 3. The script will:
