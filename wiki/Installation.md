@@ -5,7 +5,7 @@ This page provides detailed instructions for installing and using the NZCVM soft
 ## System Requirements
 
 - **Operating System**: Linux, macOS, or Windows (with WSL recommended for best performance)
-- **Python**: Python 3.8 or later
+- **Python**: Python 3.11 or later
 - **Disk Space**: Approximately 10GB for the full dataset and code
 
 ## Installation

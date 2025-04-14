@@ -6,7 +6,7 @@ Brocher correlations and the Ely (2010) GTL model. It includes both scalar and
 vectorized implementations for efficiency.
 
 All velocity values in this module use km/s as units unless otherwise specified.
-Depths are in metres, and densities are in g/cm³.
+Depths are in metres, and densities are in g/cm^3.
 """
 
 import numba
@@ -26,7 +26,7 @@ def rho_from_vp_brocher(vp: float | np.ndarray) -> float | np.ndarray:
      Returns
      -------
      float or np.ndarray
-         Density (g/cm³) from the Brocher correlation.
+         Density (g/cm^3) from the Brocher correlation.
     """
     density = vp * (
         1.6612 + vp * (-0.4721 + vp * (0.0671 + vp * (-0.0043 + 0.000106 * vp)))
@@ -96,7 +96,7 @@ def v30gtl_vectorized(
     -------
     tuple
         (vs, vp, rho): Arrays of adjusted S-wave velocities (km/s),
-        P-wave velocities (km/s), and densities (g/cm³).
+        P-wave velocities (km/s), and densities (g/cm^3).
     """
     # Constants
     a = 0.5

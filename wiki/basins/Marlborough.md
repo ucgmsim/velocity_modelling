@@ -10,11 +10,11 @@
 
 
 ## Images
-![](../images/maps/SI_north.png)
+<a href="../images/maps/SI_north.png"><img src="../images/maps/SI_north.png" width="75%"></a>
 
 *Figure 1 Location*
 
-![](../images/regional/Marlborough_basin_map.png)
+<a href="../images/regional/Marlborough_basin_map.png"><img src="../images/regional/Marlborough_basin_map.png" width="75%"></a>
 
 *Figure 2 Marlborough Basin Map*
 
@@ -39,4 +39,4 @@
 - [Marlborough_Basement_WGS84_v0p1.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/SI_BASINS/Marlborough_Basement_WGS84_v0p1.in)
 
 ---
-*Page generated on: March 28, 2025, 16:34 NZST/NZDT*
+*Page generated on: April 15, 2025, 11:17 NZST/NZDT*

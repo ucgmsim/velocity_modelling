@@ -79,7 +79,7 @@ The CSV output contains one row per grid point, with the following columns:
 - `lon`, `lat`, `depth`: Geographic coordinates. `depth` is negative for depths below the surface (in meters)
 - `vp`: P-wave velocity (in km/s)
 - `vs`: S-wave velocity (in km/s)
-- `rho`: Density (in g/cm³)
+- `rho`: Density (in g/cm^3)
 
 ### Example
 
@@ -152,7 +152,7 @@ The file structure is organized as follows:
 - **`/properties` group**:
   - `vp`: 3D array of P-wave velocities (km/s) [shape: (nx, ny, nz)]
   - `vs`: 3D array of S-wave velocities (km/s) [shape: (nx, ny, nz)]
-  - `rho`: 3D array of densities (g/cm³) [shape: (nx, ny, nz)]
+  - `rho`: 3D array of densities (g/cm^3) [shape: (nx, ny, nz)]
   - `inbasin`: 3D array of basin membership flags [shape: (nx, ny, nz)]
 
 Each property dataset includes attributes describing units and constraints (e.g., minimum Vs values).

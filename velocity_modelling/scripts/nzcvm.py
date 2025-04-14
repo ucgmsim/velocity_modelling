@@ -148,7 +148,7 @@ def generate_velocity_model(
     nzcvm_registry: Annotated[
         Path, typer.Option(exists=True, dir_okay=False)
     ] = NZCVM_REGISTRY_PATH,
-    model_version: Annotated[str, typer.Option()] = None,
+    model_version: Annotated[Optional[str], typer.Option()] = None,
     output_format: Annotated[str, typer.Option()] = WriteFormat.EMOD3D.name,
     data_root: Annotated[
         Path,
@@ -176,12 +176,14 @@ def generate_velocity_model(
     ----------
     nzcvm_cfg_path : Path
         Path to the nzcvm.cfg configuration file.
-    out_dir : Path
-        Path to the output directory where the velocity model files will be written.
+    out_dir : Path, optional
+        Path to the output directory where the velocity model files will be written (overrides OUTPUT_DIR in config file).
+        If not provided, the directory specified in the config file will be used.
     nzcvm_registry : Path, optional
         Path to the model registry file (default: NZCVM_REGISTRY_PATH).
     model_version : str, optional
         Version of the model to use (overrides MODEL_VERSION in config file).
+        If not provided, the version from the config file will be used.
     output_format : str, optional
         Format to write the output. Options: "EMOD3D", "CSV", "HDF5" (default: "EMOD3D").
     data_root : Path, optional
@@ -424,10 +426,25 @@ def generate_velocity_model(
     )
 
 
-@cli.from_docstring(app)
-def empty_command() -> None:
+@app.callback()
+def callback():
     """
-    Empty command for testing purposes.
+    Dummy callback function to enforce command specification.
+    This function does nothing and is used to ensure that the command is specified
+
+    Typer behaves differently when only one command is available, and when multiple commands are available.
+    When there is only one command, it does not require the command to be specified, and executed the command without it
+    When there are multiple commands, it requires the command to be specified
+
+    eg. "nzcvm generate-velocity-model" instead of "nzvm" since there is only one command available
+
+    This is a problem because we currently only have one command available, but we expect to have more commands.
+    We want to enforce the command to be specified to maintain consistency and avoid confusion when we add more commands.
+
+    So we create a dummy callback function that does nothing. This can be removed once we have more than one command.
+    Ref: https://typer.tiangolo.com/tutorial/commands/one-or-multiple/#one-command-and-one-callback
+
+
     """
     pass
 

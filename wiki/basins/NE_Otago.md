@@ -10,15 +10,15 @@
 
 
 ## Images
-![](../images/maps/SI_se.png)
+<a href="../images/maps/SI_se.png"><img src="../images/maps/SI_se.png" width="75%"></a>
 
 *Figure 1 Location*
 
-![](../images/regional/NE_Otago_basin_map.png)
+<a href="../images/regional/NE_Otago_basin_map.png"><img src="../images/regional/NE_Otago_basin_map.png" width="75%"></a>
 
 *Figure 2 Ne Otago Basin Map*
 
-![](../images/basins/ne_otago_basins_classification-page-001.jpg)
+<a href="../images/basins/ne_otago_basins_classification-page-001.jpg"><img src="../images/basins/ne_otago_basins_classification-page-001.jpg" width="75%"></a>
 
 *Figure 3 Ne Otago Basins Classification-page-001*
 
@@ -51,4 +51,4 @@
 - [ran-alex_proj_WGS84.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/ran-alex_proj_WGS84.in)
 
 ---
-*Page generated on: March 28, 2025, 16:34 NZST/NZDT*
+*Page generated on: April 15, 2025, 11:17 NZST/NZDT*

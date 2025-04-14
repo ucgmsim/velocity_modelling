@@ -19,7 +19,7 @@ from velocity_modelling.velocity3d import (
 # Constants
 vs_full = 2.2818  # vs at the full (km/s)
 vp_full = 4.0  # vp at the full (km/s)
-rho_full = 2.393  # rho at the full (g/cm³)
+rho_full = 2.393  # rho at the full (g/cm^3)
 
 
 def main_vectorized(

@@ -2,9 +2,11 @@
 """
 Script to download and extract NZCVM data from Dropbox.
 This downloads the necessary data files for the New Zealand Community Velocity Model.
+
+The script downloads a tar.gz file from Dropbox, extracts it, and saves the files to a specified directory.
+
 """
 
-import sys
 import tarfile
 import tempfile
 from pathlib import Path
@@ -101,17 +103,13 @@ def main():
         print("You can now use the NZCVM software with the complete dataset.")
 
     except requests.exceptions.RequestException as e:
-        print(f"Error downloading file: {e}")
-        sys.exit(1)
+        raise RuntimeError(f"Error downloading file: {str(e)}")
     except tarfile.TarError as e:
-        print(f"Error extracting file: {e}")
-        sys.exit(1)
+        raise RuntimeError(f"Error extracting file: {str(e)}")
     except (OSError, IOError) as e:
-        print(f"File system error: {e}")
-        sys.exit(1)
+        raise RuntimeError(f"File system error: {str(e)}")
     except PermissionError as e:
-        print(f"Permission error: {e}")
-        sys.exit(1)
+        raise RuntimeError(f"Permission error: {e}")
     finally:
         # Clean up the temporary file
         if temp_file_path.exists():

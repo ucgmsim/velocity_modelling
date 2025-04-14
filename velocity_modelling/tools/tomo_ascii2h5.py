@@ -14,16 +14,19 @@ Example usage:
 This will convert the tomography files in /path/to/tomography_files to a file named output_name.h5
 in the same directory. If --out-dir is specified, the output file will be saved in that directory
 instead.
-
-
 """
 
-import argparse
 import re
 from pathlib import Path
+from typing import Annotated, Optional
 
 import h5py
 import numpy as np
+import typer
+
+from qcore import cli
+
+app = typer.Typer(pretty_exceptions_enable=False)
 
 
 def get_elevations_from_files(input_dir: Path) -> set[float]:
@@ -86,7 +89,7 @@ def get_elevations_from_files(input_dir: Path) -> set[float]:
     return elevations_by_type["vp"]  # All match, so any type's set is fine
 
 
-def convert_ascii_to_hdf5(input_dir: Path, name: str, out_dir: Path = None):
+def convert_ascii_to_hdf5(input_dir: Path, name: str, out_dir: Optional[Path] = None):
     """
     Convert ASCII tomography files to HDF5 format.
 
@@ -171,30 +174,43 @@ def convert_ascii_to_hdf5(input_dir: Path, name: str, out_dir: Path = None):
                 print(f"Converted {vtype} at elevation {elev} to {output_path}")
 
 
-def main():
+@cli.from_docstring(app)
+def convert_tomo_to_h5(
+    input_dir: Annotated[
+        Path,
+        typer.Argument(
+            exists=True,
+            file_okay=False,
+            help="Input directory containing ASCII tomography files",
+        ),
+    ],
+    name: Annotated[
+        str, typer.Argument(help="Name for the output HDF5 file (without extension)")
+    ],
+    out_dir: Annotated[
+        Optional[Path],
+        typer.Option(file_okay=False, help="Output directory for the HDF5 file"),
+    ] = None,
+):
     """
     Convert ASCII tomography files to HDF5 format.
 
-    """
-    parser = argparse.ArgumentParser(
-        description="Convert ASCII tomography files to HDF5 format."
-    )
-    parser.add_argument(
-        "input_dir", type=Path, help="Input directory containing ASCII tomography files"
-    )
-    parser.add_argument(
-        "name", type=str, help="Name for the output HDF5 file (without extension)"
-    )
-    parser.add_argument(
-        "--out-dir",
-        type=Path,
-        default=None,
-        help="Output directory for the HDF5 file (if unspecified, saves to input_dir/name.h5)",
-    )
+    This tool consolidates multiple ASCII tomography files into a single,
+    structured HDF5 file. It handles files with various elevation values
+    and velocity parameters (vp, vs, rho) and ensures they are consistent.
 
-    args = parser.parse_args()
-    convert_ascii_to_hdf5(args.input_dir, args.name, args.out_dir)
+    Parameters
+    ----------
+    input_dir : Path
+        Path to directory containing ASCII tomography files.
+    name : str
+        Name for the output HDF5 file (without extension).
+    out_dir : Path, optional
+        Output directory for the HDF5 file (if unspecified, saves to input_dir/name.h5).
+
+    """
+    convert_ascii_to_hdf5(input_dir, name, out_dir)
 
 
 if __name__ == "__main__":
-    main()
+    app()

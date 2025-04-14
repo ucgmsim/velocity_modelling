@@ -10,23 +10,23 @@
 
 
 ## Images
-![](../images/maps/motubay_whangaparoa.png)
+<a href="../images/maps/motubay_whangaparoa.png"><img src="../images/maps/motubay_whangaparoa.png" width="75%"></a>
 
 *Figure 1 Location*
 
-![](../images/regional/MotuBay_basin_map.png)
+<a href="../images/regional/MotuBay_basin_map.png"><img src="../images/regional/MotuBay_basin_map.png" width="75%"></a>
 
 *Figure 2 Motubay Basin Map*
 
-![](../images/basins/motubay_basement.png)
+<a href="../images/basins/motubay_basement.png"><img src="../images/basins/motubay_basement.png" width="75%"></a>
 
 *Figure 3 Motubay Basement*
 
-![](../images/basins/moturiver_extended_outline.png)
+<a href="../images/basins/moturiver_extended_outline.png"><img src="../images/basins/moturiver_extended_outline.png" width="75%"></a>
 
 *Figure 4 Moturiver Extended Outline*
 
-![](../images/basins/eastcape_coastal_river_valleys.png)
+<a href="../images/basins/eastcape_coastal_river_valleys.png"><img src="../images/basins/eastcape_coastal_river_valleys.png" width="75%"></a>
 
 *Figure 5 Eastcape Coastal River Valleys*
 
@@ -59,4 +59,4 @@
 - [Motu_river_Surface_Export.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/East_Cape/v22p3/Motu_river_Surface_Export.in)
 
 ---
-*Page generated on: March 28, 2025, 16:34 NZST/NZDT*
+*Page generated on: April 15, 2025, 11:17 NZST/NZDT*

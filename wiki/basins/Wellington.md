@@ -11,15 +11,15 @@
 
 
 ## Images
-![](../images/maps/NI_south.png)
+<a href="../images/maps/NI_south.png"><img src="../images/maps/NI_south.png" width="75%"></a>
 
 *Figure 1 Location*
 
-![](../images/regional/Wellington_basin_map.png)
+<a href="../images/regional/Wellington_basin_map.png"><img src="../images/regional/Wellington_basin_map.png" width="75%"></a>
 
 *Figure 2 Wellington Basin Map*
 
-![](../images/basins/wellington_outline.png)
+<a href="../images/basins/wellington_outline.png"><img src="../images/basins/wellington_outline.png" width="75%"></a>
 
 *Figure 3 Wellington Outline*
 
@@ -48,4 +48,4 @@
 - [Wellington_Grid_WGS84_Hill20210823_100_extracted_d.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Wellington/v21p8/Wellington_Grid_WGS84_Hill20210823_100_extracted_d.in)
 
 ---
-*Page generated on: March 28, 2025, 16:34 NZST/NZDT*
+*Page generated on: April 15, 2025, 11:17 NZST/NZDT*

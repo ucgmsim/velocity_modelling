@@ -58,7 +58,7 @@ class PartialGlobalQualities:
     vs : np.ndarray
         S-wave velocities (km/s).
     rho : np.ndarray
-        Densities (g/cm³).
+        Densities (g/cm^3).
     inbasin : np.ndarray
         Basin membership indicators.
     """
@@ -91,7 +91,7 @@ class QualitiesVector:
     vs : np.ndarray
         S-wave velocities (km/s).
     rho : np.ndarray
-        Densities (g/cm³).
+        Densities (g/cm^3).
     inbasin : np.ndarray
         Basin membership indicators.
     logger : Logger

@@ -1,12 +1,31 @@
 """
 Convert ASCII format surface file (.in) from plain text format to HDF5.
+
+The HDF5 file will contain the following datasets:
+- **Attributes**:
+  - `nrows`: Number of latitude points (integer)
+  - `ncols`: Number of longitude points (integer)
+
+- **Datasets**:
+  - `latitude`: 1D array of latitude values [shape: (nrows,)]
+  - `longitude`: 1D array of longitude values [shape: (ncols,)]
+  - `elevation`: 2D array of elevation or depth values [shape: (nrows, ncols)]
+
+Usage:
+    python surface_ascii2h5.py <input_file> [--out-dir <output_directory>]
+
 """
 
-import argparse
 from pathlib import Path
+from typing import Annotated, Optional
 
 import h5py
 import numpy as np
+import typer
+
+from qcore import cli
+
+app = typer.Typer(pretty_exceptions_enable=False)
 
 
 def ascii_to_hdf5(input_file_path: str | Path, output_file_path: str | Path):
@@ -78,22 +97,37 @@ def ascii_to_hdf5(input_file_path: str | Path, output_file_path: str | Path):
         raise ValueError(f"Error during conversion: {str(e)}")
 
 
-def main():
+@cli.from_docstring(app)
+def convert_surface_to_h5(
+    input_file: Annotated[
+        Path,
+        typer.Argument(exists=True, dir_okay=False, help="Path to the input DEM file"),
+    ],
+    out_dir: Annotated[
+        Optional[Path],
+        typer.Option(help="Output directory (default is same as input file)"),
+    ] = None,
+):
     """
-    Main function for command-line interface.
+    Convert ASCII format surface file (.in) from plain text format to HDF5.
+
+    This tool takes a surface file in ASCII format and converts it to a more
+    efficient HDF5 format, preserving all data.
+
+    Parameters
+    ----------
+    input_file : Path
+        Path to the input DEM file.
+    out_dir : Path, optional
+        Output directory for the converted file. If not specified, the output
+        file will be saved in the same directory as the input file with a .h5
+        extension.
 
     """
-    parser = argparse.ArgumentParser(description="Convert DEM file to HDF5 format")
-    parser.add_argument("input_file", type=str, help="Path to the input DEM file")
-    parser.add_argument(
-        "--out-dir", type=str, help="Output directory (default is same as input file)"
-    )
-    args = parser.parse_args()
+    input_path = Path(input_file)
 
-    input_path = Path(args.input_file)
-
-    if args.out_dir:
-        out_dir = Path(args.out_dir)
+    if out_dir:
+        out_dir = Path(out_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         output_path = out_dir / f"{input_path.stem}.h5"
     else:
@@ -103,4 +137,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    app()

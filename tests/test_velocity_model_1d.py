@@ -90,9 +90,7 @@ def test_read_velocity_model_1d_plain_text(
     sample_velocity_data: pd.DataFrame, temp_text_file: Path
 ):
     """Test reading velocity model from plain text format."""
-    velocity1d.write_velocity_model_1d_plain_text(
-        sample_velocity_data, temp_text_file
-    )
+    velocity1d.write_velocity_model_1d_plain_text(sample_velocity_data, temp_text_file)
     result = velocity1d.read_velocity_model_1d_plain_text(temp_text_file)
 
     assert set(result.columns.tolist()) == {
@@ -147,9 +145,7 @@ def test_write_velocity_model_1d_plain_text(
     sample_velocity_data: pd.DataFrame, temp_text_file: Path
 ):
     """Test writing velocity model to plain text format."""
-    velocity1d.write_velocity_model_1d_plain_text(
-        sample_velocity_data, temp_text_file
-    )
+    velocity1d.write_velocity_model_1d_plain_text(sample_velocity_data, temp_text_file)
 
     with open(temp_text_file, "r") as f:
         lines = f.readlines()

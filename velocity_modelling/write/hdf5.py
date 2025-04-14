@@ -34,9 +34,30 @@ def create_xdmf_file(hdf5_file: Path, vm_params: dict, logger: logging.Logger) -
     """
     xdmf_file = hdf5_file.with_suffix(".xdmf")
 
-    nx = vm_params.get("nx")
-    ny = vm_params.get("ny")
-    nz = vm_params.get("nz")
+    try:
+        nx = vm_params.get("nx")
+    except KeyError:
+        logger.log(
+            logging.ERROR,
+            "Missing 'nx' key in vm_params. Ensure the velocity model parameters are correctly set.",
+        )
+        raise KeyError("Missing 'nx' key in vm_params.")
+    try:
+        ny = vm_params.get("ny")
+    except KeyError:
+        logger.log(
+            logging.ERROR,
+            "Missing 'ny' key in vm_params. Ensure the velocity model parameters are correctly set.",
+        )
+        raise KeyError("Missing 'ny' key in vm_params.")
+    try:
+        nz = vm_params.get("nz")
+    except KeyError:
+        logger.log(
+            logging.ERROR,
+            "Missing 'nz' key in vm_params. Ensure the velocity model parameters are correctly set.",
+        )
+        raise KeyError("Missing 'nz' key in vm_params.")
 
     # Get the relative path to the HDF5 file from the XDMF file
     hdf5_relative = hdf5_file.name
@@ -138,9 +159,16 @@ def write_global_qualities(
     vs_data = np.copy(partial_global_qualities.vs)
     vs_data[vs_data < min_vs] = min_vs
 
-    ny = vm_params.get(
-        "ny"
-    )  # This is a slice along y (=lat) axis, so partial_global_mesh has only one y value
+    # ny is the number of slices in the y direction, but what we are processing here is a single slice along y (=lat)
+    # axis, so we need to get the total number of slices from the vm_params
+    try:
+        ny = vm_params["ny"]
+    except KeyError:
+        logger.log(
+            logging.ERROR,
+            "Missing 'ny' key in vm_params. Ensure the velocity model parameters are correctly set.",
+        )
+        raise KeyError("Missing 'ny' key in vm_params.")
 
     # If first slice, create the file and initialize structure
     if lat_ind == 0:
@@ -210,7 +238,7 @@ def write_global_qualities(
                 # Add metadata
                 props_group["vp"].attrs["units"] = "km/s"
                 props_group["vs"].attrs["units"] = "km/s"
-                props_group["rho"].attrs["units"] = "g/cm³"
+                props_group["rho"].attrs["units"] = "g/cm^3"
                 props_group["vs"].attrs["min_value_enforced"] = min_vs
 
         except OSError as e:
@@ -277,7 +305,7 @@ def write_global_qualities(
         raise RuntimeError(f"Error writing to HDF5 file {hdf5_file}: {str(e)}")
 
     # After writing all slices, create the XDMF file
-    if lat_ind == vm_params.get("ny", 0) - 1:
+    if lat_ind == ny - 1:
         # Now that we have written the entire model, create the XDMF file
         create_xdmf_file(hdf5_file, vm_params, logger)
         logger.log(logging.INFO, "HDF5 model complete with ParaView compatibility")

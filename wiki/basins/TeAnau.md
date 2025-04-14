@@ -10,7 +10,7 @@
 
 
 ## Images
-![](../images/regional/TeAnau_basin_map.png)
+<a href="../images/regional/TeAnau_basin_map.png"><img src="../images/regional/TeAnau_basin_map.png" width="75%"></a>
 
 *Figure 1 Location*
 
@@ -24,4 +24,4 @@
 - TeAnau_basement_WGS84 : [HDF5](../../velocity_modelling/data/regional/TeAnau/TeAnau_basement_WGS84.h5) / [TXT](../../velocity_modelling/data/regional/TeAnau/TeAnau_basement_WGS84.in) (Submodel: N/A)
 
 ---
-*Page generated on: March 28, 2025, 16:34 NZST/NZDT*
+*Page generated on: April 15, 2025, 11:17 NZST/NZDT*

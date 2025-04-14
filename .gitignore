@@ -1,5 +1,4 @@
 *.pyc
-*.pyc
 *~
 *.swp
 __pycache__/

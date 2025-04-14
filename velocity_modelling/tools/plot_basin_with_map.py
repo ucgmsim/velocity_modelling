@@ -11,16 +11,20 @@ Usage:
 
 """
 
-import argparse
 from pathlib import Path
-from typing import Optional
+from typing import Annotated, Optional
 
 import cartopy.crs as ccrs
 import cartopy.io.img_tiles as cimgt
 import cartopy.io.shapereader as shpreader
 import matplotlib.pyplot as plt
 import numpy as np
+import typer
 from cartopy.mpl.gridliner import LATITUDE_FORMATTER, LONGITUDE_FORMATTER
+
+from qcore import cli
+
+app = typer.Typer(pretty_exceptions_enable=False)
 
 
 # Custom tile class for Esri World Imagery
@@ -340,72 +344,83 @@ def plot_data(
     plt.close(fig)
 
 
-def main():
+@cli.from_docstring(app)
+def plot_basin_with_map(
+    basin_name: Annotated[
+        str, typer.Argument(help="Name of the basin for the map title")
+    ],
+    data_path: Annotated[
+        Path,
+        typer.Argument(
+            exists=True, file_okay=False, help="Directory containing all input files"
+        ),
+    ],
+    basement: Annotated[
+        Path,
+        typer.Argument(
+            help="Path to basement file (relative to data_path if not absolute)"
+        ),
+    ],
+    boundary: Annotated[
+        list[Path],
+        typer.Argument(
+            help="Path(s) to boundary file(s) (relative to data_path if not absolute)"
+        ),
+    ],
+    smoothing: Annotated[
+        Optional[Path],
+        typer.Option(
+            help="Path to smoothing file (relative to data_path if not absolute)"
+        ),
+    ] = None,
+    out_dir: Annotated[
+        Optional[Path],
+        typer.Option(
+            help="Directory to save the output map (if unspecified, data_path)"
+        ),
+    ] = None,
+):
     """
-    Parse command-line arguments and plot basement heatmap, boundaries, and optional smoothing with online basemap.
+    Plot basement heatmap, boundaries, and optional smoothing with online basemap.
 
+    This script reads basement, boundary, and optional smoothing files and plots
+    them on a map with an online basemap from Esri World Imagery.
+
+    Parameters
+    ----------
+    basin_name : str
+        Name of the basin for the map title.
+    data_path : Path
+        Directory containing all input files.
+    basement : Path
+        Path to basement file (relative to data_path if not absolute).
+    boundary : List[Path]
+        Path(s) to boundary file(s) (relative to data_path if not absolute).
+    smoothing : Path, optional
+        Path to smoothing file (relative to data_path if not absolute).
+    out_dir : Path, optional
+        Directory to save the output map (defaults to data_path).
 
     """
-    parser = argparse.ArgumentParser(
-        description="Plot basement heatmap, boundaries, and optional smoothing with online basemap."
-    )
-    parser.add_argument(
-        "basin_name", type=str, help="Name of the basin for the map title"
-    )
-    parser.add_argument(
-        "data_path", type=Path, help="Directory containing all input files"
-    )
-    parser.add_argument(
-        "basement",
-        type=Path,
-        help="Path to basement file (relative to data_path if not absolute)",
-    )
-    parser.add_argument(
-        "boundary",
-        nargs="+",
-        type=Path,
-        help="Path(s) to boundary file(s) (relative to data_path if not absolute)",
-    )
-    parser.add_argument(
-        "--smoothing",
-        type=Path,
-        default=None,
-        help="Path to smoothing file (relative to data_path if not absolute)",
-    )
-    parser.add_argument(
-        "--out-dir",
-        type=Path,
-        default=None,
-        help="Directory to save the output map (defaults to data_path)",
-    )
+    out_dir = data_path if out_dir is None else out_dir
 
-    args = parser.parse_args()
-
-    out_dir = args.data_path if args.out_dir is None else args.out_dir
-
-    data_path = args.data_path
     if not data_path.exists():
         print(f"Error: Data path {data_path} does not exist.")
-        raise ValueError
+        raise ValueError("Data path does not exist")
 
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    basement_file = (
-        data_path / args.basement if not args.basement.is_absolute() else args.basement
-    )
-    boundary_files = [
-        data_path / bf if not bf.is_absolute() else bf for bf in args.boundary
-    ]
-    smoothing_file = args.smoothing
-    if smoothing_file:
-        smoothing_file = (
-            data_path / smoothing_file
-            if not smoothing_file.is_absolute()
-            else smoothing_file
+    basement_file = data_path / basement if not basement.is_absolute() else basement
+    boundary_files = [data_path / bf if not bf.is_absolute() else bf for bf in boundary]
+
+    smoothing_path = None
+    if smoothing:
+        smoothing_path = (
+            data_path / smoothing if not smoothing.is_absolute() else smoothing
         )
 
-    plot_data(basement_file, boundary_files, smoothing_file, args.basin_name, out_dir)
+    plot_data(basement_file, boundary_files, smoothing_path, basin_name, out_dir)
 
 
 if __name__ == "__main__":
-    main()
+    app()

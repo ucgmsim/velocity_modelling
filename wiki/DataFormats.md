@@ -200,7 +200,7 @@ vp_n vs_n rho_n qp_n qs_n depth_n
 Where:
 - `vp_i` is the P-wave velocity in km/s
 - `vs_i` is the S-wave velocity in km/s
-- `rho_i` is the density in g/cm³
+- `rho_i` is the density in g/cm^3
 - `qp_i` is the P-wave quality factor
 - `qs_i` is the S-wave quality factor
 - `depth_i` is the depth in kilometers

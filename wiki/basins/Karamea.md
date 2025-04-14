@@ -10,11 +10,11 @@
 
 
 ## Images
-![](../images/maps/SI_north.png)
+<a href="../images/maps/SI_north.png"><img src="../images/maps/SI_north.png" width="75%"></a>
 
 *Figure 1 Location*
 
-![](../images/regional/Karamea_basin_map.png)
+<a href="../images/regional/Karamea_basin_map.png"><img src="../images/regional/Karamea_basin_map.png" width="75%"></a>
 
 *Figure 2 Karamea Basin Map*
 
@@ -39,4 +39,4 @@
 - [KarameaBasin_WGS84_500m_v12v11v2020.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/KarameaBasin_WGS84_500m_v12v11v2020.in)
 
 ---
-*Page generated on: March 28, 2025, 16:34 NZST/NZDT*
+*Page generated on: April 15, 2025, 11:17 NZST/NZDT*

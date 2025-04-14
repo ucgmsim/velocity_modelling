@@ -46,7 +46,7 @@ class VelocityModel1D:
     vs : np.ndarray
         S-wave velocities (km/s).
     rho : np.ndarray
-        Densities (g/cm³).
+        Densities (g/cm^3).
     qp : np.ndarray
         P-wave quality factors.
     qs : np.ndarray

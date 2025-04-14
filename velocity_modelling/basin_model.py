@@ -512,30 +512,18 @@ class PartialBasinSurfaceDepths:
             if self.depths[i] < self.depths[i + 1]:
                 self.depths[i] = self.depths[i + 1]
 
-    # Superseded by determine_basin_surface_above_vectorized(), but kept for reference
-
-    # def determine_basin_surface_above(self, depth: float):
-    #     """
-    #     Determine the index of the basin surface directly above the given depth.
-    #
-    #     Parameters
-    #     ----------
-    #     depth : float
-    #         The depth of the grid point to determine the properties at.
-    #
-    #     Returns
-    #     -------
-    #     int
-    #         Index of the surface directly above the grid point.
-    #     """
-    #     # self.depths is in decreasing order
-    #
-    #     valid_indices = np.where((~np.isnan(self.depths)) & (self.depths >= depth))[0]
-    #     return valid_indices[-1] if valid_indices.size > 0 else 0  # the last one
-
     def determine_basin_surface_above_vectorized(self, depths: np.ndarray):
         """
-        Vectorized approach for finding the indices of the basin surfaces directly above each of the given `depths`.
+        Find the indices of the basin surfaces directly above each of the given `depths`.
+
+        Non-vectorized version simply returns the last index of the valid depths that are greater than or equal to
+        the given 'depth'.
+
+        ```
+        def determine_basin_surface_above(self, depth: float):
+            valid_indices = np.where((~np.isnan(self.depths)) & (self.depths >= depth))[0]
+            return valid_indices[-1] if valid_indices.size > 0 else 0  # the last one, self.depths is in decreasing order
+        ```
 
         Parameters
         ----------

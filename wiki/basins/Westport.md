@@ -10,7 +10,7 @@
 
 
 ## Images
-![](../images/regional/Westport_basin_map.png)
+<a href="../images/regional/Westport_basin_map.png"><img src="../images/regional/Westport_basin_map.png" width="75%"></a>
 
 *Figure 1 Location*
 
@@ -27,4 +27,4 @@
 - [Westport_smoothing.txt](../../velocity_modelling/data/regional/Westport/Westport_smoothing.txt)
 
 ---
-*Page generated on: March 28, 2025, 16:34 NZST/NZDT*
+*Page generated on: April 15, 2025, 11:17 NZST/NZDT*
