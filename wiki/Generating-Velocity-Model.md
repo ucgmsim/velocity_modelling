@@ -10,7 +10,7 @@
 
 (2)  A model version (`.yaml`) : This YAML file defines different configurations of the velocity model. This allows users to select different combinations of tomography models, basins, and other parameters. Model versions 2.03 and 2.07 are pre-configured and the corresponding YAML files, `2p03.yaml` and `2p07.yaml` are located in `model_versions`. Users are allowed to create a custom model version and place the `.yaml` file in the folder. 
 
-(3) `nzcvm.cfg`: The details of the velocity model to generate. In most scenarios, this is the only file users may need to provide to `nzvm.py`
+(3) `nzcvm.cfg`: The details of the velocity model to generate. In most scenarios, this is the only file users need to provide to `nzcvm.py`
 
 
 The simplest command will look like:
