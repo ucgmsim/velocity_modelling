@@ -8,7 +8,7 @@ S-wave velocity, density and quality factors (Qp, Qs)) as a function of depth.
 The 1D velocity models serve as reference profiles for 3D velocity modeling and
 are used as baseline models in regions where more detailed information is unavailable.
 
-Also included are utilities for reading and writing 1-D velocity profiles in different formats.
+Also included are utilities for reading and writing 1D velocity profiles in different formats.
 
 There are three known formats for 1D velocity models:
 1. Parquet files containing columns for 'width' and Vp, Vs, rho, Qp, Qs
