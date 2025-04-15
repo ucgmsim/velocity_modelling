@@ -433,7 +433,7 @@ def callback():
     This function does nothing and is used to ensure that the command is specified
 
     Typer behaves differently when only one command is available, and when multiple commands are available.
-    When there is only one command, it does not require the command to be specified, and executed the command without it
+    When there is only one command, it does not require the command to be specified, and executes the command without it
     When there are multiple commands, it requires the command to be specified
 
     eg. "nzcvm generate-velocity-model" instead of "nzvm" since there is only one command available
