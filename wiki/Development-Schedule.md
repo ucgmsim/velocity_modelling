@@ -1,6 +1,6 @@
 # NZCVM Development Schedule
 
-This document outlines the development history, current status, and future roadmap for the New Zealand Community Velocity Models (NZCVM).
+This document outlines the development history, current status, and future roadmap for the New Zealand Community Velocity Model (NZCVM).
 
 ## Version History
 
