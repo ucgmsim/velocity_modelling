@@ -1,7 +1,7 @@
 """
 Convert ASCII format surface file (.in) from plain text format to HDF5.
 
-The HDF5 file will contain the following datasets:
+The HDF5 file will contain the following data:
 - **Attributes**:
   - `nrows`: Number of latitude points (integer)
   - `ncols`: Number of longitude points (integer)
