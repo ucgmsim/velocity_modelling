@@ -9,12 +9,11 @@ authors = [
 ]
 description = "Velocity modelling library"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dynamic = ["version", "dependencies"]
 
 [project.scripts]
-plot-velocity-model = "velocity_modelling.scripts.plot_velocity_model:app"
-view-velocity-model = "velocity_modelling.scripts.view_velocity_model:app"
+nzcvm = "velocity_modelling.scripts.nzcvm:app"
 
 [tool.setuptools.package-dir]
 velocity_modelling = "velocity_modelling"
@@ -69,7 +68,32 @@ known-first-party = [
 
 [tool.coverage.run]
 # Ignore the velocity model viewer because there is no way to test it,
-# and even if their were it would be too slow.
+# and even if there were, it would be too slow.
 omit = [
   "velocity_modelling/scripts/view_velocity_model.py"
+]
+
+[tool.numpydoc_validation]
+checks = [
+  "GL05",
+  "GL08",
+  "GL10",
+  "PR01",
+  "PR02",
+  "PR03",
+  "PR04",
+  "PR05",
+  "PR06",
+  "PR07",
+  "RT01",
+  "RT02",
+  "RT03",
+  "RT04",
+  "YD01",
+]
+# remember to use single quotes for regex in TOML
+exclude = [  # don't report on objects that match any of these regex
+    '\.undocumented_method$',
+    '\.__repr__$',
+    '\.__init__$'
 ]

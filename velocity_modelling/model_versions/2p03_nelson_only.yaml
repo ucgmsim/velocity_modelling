@@ -1,0 +1,9 @@
+GTL: true
+surfaces:
+  - path: global/surface/NZ_DEM_HD.in
+    submodel: ep_tomography_submod_v2010
+
+tomography: 2010_NZ_OFFSHORE
+basin_edge_smoothing: true
+basins:
+  - Nelson_v19p1
