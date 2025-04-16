@@ -43,9 +43,9 @@ The requirements include:
 - Project dependencies: numba, qcore, pyyaml, tqdm, typer
 - Tool dependencies: cartopy, pytz, requests
 
-### Step 4: Download Data (If Not Included in Repository)
+### Step 4: Download Data
 
-Some data files may need to be downloaded separately due to their size. This script downloads the data and places the extracted data files in the correct location.
+Some data files need to be downloaded separately due to their size. This script downloads the data and places the extracted data files in the correct location.
 
 ```bash
 python tools/download_data.py
