@@ -3,20 +3,21 @@
 ## Overview
 |         |                     |
 |---------|---------------------|
-| Version | 19p1           |
+| Version | 25p5           |
 | Type    | 2        |
 | Author  | Robin Lee            |
-| Created | 2019-01           |
+| Created | 2025-05           |
+| Older Versions | 19p1 |
 
 
 ## Images
-<a href="../images/maps/SI_north.png"><img src="../images/maps/SI_north.png" width="75%"></a>
+![](../images/maps/SI_north.png)
 
 *Figure 1 Location*
 
-<a href="../images/regional/Nelson_basin_map.png"><img src="../images/regional/Nelson_basin_map.png" width="75%"></a>
+![](../images/regional/Nelson_basin_map_v25p5.png)
 
-*Figure 2 Nelson Basin Map*
+*Figure 2 Nelson Basin Map V25p5*
 
 
 ## Notes
@@ -24,22 +25,14 @@
 
 ## Data
 ### Boundaries
-- Nelson_outline_WGS84 : [TXT](../../velocity_modelling/data/regional/Nelson/Nelson_outline_WGS84.txt) / [GeoJSON](../../velocity_modelling/data/regional/Nelson/Nelson_outline_WGS84.geojson)
+- Nelson_outline_v25p5_WGS84 : [TXT](../../velocity_modelling/data/regional/Nelson/Nelson_outline_v25p5_WGS84.txt) / [GeoJSON](../../velocity_modelling/data/regional/Nelson/Nelson_outline_v25p5_WGS84.geojson)
 
 ### Surfaces
 - NZ_DEM_HD : [HDF5](../../velocity_modelling/data/global/surface/NZ_DEM_HD.h5) / [TXT](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- Nelson_basement_WGS84 : [HDF5](../../velocity_modelling/data/regional/Nelson/Nelson_basement_WGS84.h5) / [TXT](../../velocity_modelling/data/regional/Nelson/Nelson_basement_WGS84.in) (Submodel: N/A)
+- Nelson_basement_v25p5_Ghisetti2017_WGS84 :  (Submodel: N/A)
 
 ### Smoothing Boundaries
-- [Nelson_smoothing.txt](../../velocity_modelling/data/regional/Nelson/Nelson_smoothing.txt)
-
-## Data retrieved from
-### Boundaries
-- [Nelson_Polygon_WGS84.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/SI_BASINS/Nelson_Polygon_WGS84.txt)
-
-### Surfaces
-- [NZ_DEM_HD.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in)
-- [Nelson_Basement_WGS84_v0p0.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/SI_BASINS/Nelson_Basement_WGS84_v0p0.in)
+- [Nelson_smoothing_v25p5.txt](../../velocity_modelling/data/regional/Nelson/Nelson_smoothing_v25p5.txt)
 
 ---
-*Page generated on: April 15, 2025, 11:17 NZST/NZDT*
+*Page generated on: May 02, 2025, 15:33 NZST/NZDT*

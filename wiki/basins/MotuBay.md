@@ -10,28 +10,25 @@
 
 
 ## Images
-<a href="../images/maps/motubay_whangaparoa.png"><img src="../images/maps/motubay_whangaparoa.png" width="75%"></a>
+![](../images/maps/motubay_whangaparoa.png)
 
 *Figure 1 Location*
 
-<a href="../images/regional/MotuBay_basin_map.png"><img src="../images/regional/MotuBay_basin_map.png" width="75%"></a>
+![](../images/regional/MotuBay_basin_map.png)
 
 *Figure 2 Motubay Basin Map*
 
-<a href="../images/basins/motubay_basement.png"><img src="../images/basins/motubay_basement.png" width="75%"></a>
+![](../images/basins/moturiver_extended_outline.png)
 
-*Figure 3 Motubay Basement*
+*Figure 3 Moturiver Extended Outline*
 
-<a href="../images/basins/moturiver_extended_outline.png"><img src="../images/basins/moturiver_extended_outline.png" width="75%"></a>
+![](../images/basins/eastcape_coastal_river_valleys.png)
 
-*Figure 4 Moturiver Extended Outline*
-
-<a href="../images/basins/eastcape_coastal_river_valleys.png"><img src="../images/basins/eastcape_coastal_river_valleys.png" width="75%"></a>
-
-*Figure 5 Eastcape Coastal River Valleys*
+*Figure 4 Eastcape Coastal River Valleys*
 
 
 ## Notes
+- Superseded by OmaioBay_v25p5
 - Rest of the coastal river valleys on the East Cape (Waiapu River, Hicks Bay, Waihau Bay, Motu River) to be added
 - Tolaga bay/Omaio Bay to be included (pending acceptance) https://github.com/ucgmsim/Velocity-Model/pull/43/files
 
@@ -59,4 +56,4 @@
 - [Motu_river_Surface_Export.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/East_Cape/v22p3/Motu_river_Surface_Export.in)
 
 ---
-*Page generated on: April 15, 2025, 11:17 NZST/NZDT*
+*Page generated on: May 02, 2025, 15:33 NZST/NZDT*

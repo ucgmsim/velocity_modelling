@@ -10,11 +10,11 @@
 
 
 ## Images
-<a href="../images/maps/SI_north.png"><img src="../images/maps/SI_north.png" width="75%"></a>
+![](../images/maps/SI_north.png)
 
 *Figure 1 Location*
 
-<a href="../images/regional/Collingwood_basin_map.png"><img src="../images/regional/Collingwood_basin_map.png" width="75%"></a>
+![](../images/regional/Collingwood_basin_map.png)
 
 *Figure 2 Collingwood Basin Map*
 
@@ -43,4 +43,4 @@
 - [CollTakBasin_WGS84_500m_v11v11v2020.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/CollTakBasin_WGS84_500m_v11v11v2020.in)
 
 ---
-*Page generated on: April 15, 2025, 11:17 NZST/NZDT*
+*Page generated on: May 02, 2025, 15:33 NZST/NZDT*

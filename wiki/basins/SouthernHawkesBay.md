@@ -10,19 +10,19 @@
 
 
 ## Images
-<a href="../images/maps/NI_mideast.png"><img src="../images/maps/NI_mideast.png" width="75%"></a>
+![](../images/maps/NI_mideast.png)
 
 *Figure 1 Location*
 
-<a href="../images/regional/SouthernHawkesBay_basin_map.png"><img src="../images/regional/SouthernHawkesBay_basin_map.png" width="75%"></a>
+![](../images/regional/SouthernHawkesBay_basin_map.png)
 
 *Figure 2 Southernhawkesbay Basin Map*
 
-<a href="../images/basins/southern_hawkes_bay_outline.png"><img src="../images/basins/southern_hawkes_bay_outline.png" width="75%"></a>
+![](../images/basins/southern_hawkes_bay_outline.png)
 
 *Figure 3 Southern Hawkes Bay Outline*
 
-<a href="../images/basins/southern_hawkes_bay_outline_extra.png"><img src="../images/basins/southern_hawkes_bay_outline_extra.png" width="75%"></a>
+![](../images/basins/southern_hawkes_bay_outline_extra.png)
 
 *Figure 4 Southern Hawkes Bay Outline Extra*
 
@@ -50,4 +50,4 @@
 - [SHB_Surface_Export.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Southern_Hawkes_Bay/v21p12/SHB_Surface_Export.in)
 
 ---
-*Page generated on: April 15, 2025, 11:17 NZST/NZDT*
+*Page generated on: May 02, 2025, 15:33 NZST/NZDT*

@@ -10,11 +10,11 @@
 
 
 ## Images
-<a href="../images/maps/canterbury_region.png"><img src="../images/maps/canterbury_region.png" width="75%"></a>
+![](../images/maps/canterbury_region.png)
 
 *Figure 1 Location*
 
-<a href="../images/regional/NorthCanterbury_basin_map.png"><img src="../images/regional/NorthCanterbury_basin_map.png" width="75%"></a>
+![](../images/regional/NorthCanterbury_basin_map.png)
 
 *Figure 2 Northcanterbury Basin Map*
 
@@ -36,4 +36,4 @@
 - [NorthCanterbury_Basement_WGS84_v0p0.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/SI_BASINS/NorthCanterbury_Basement_WGS84_v0p0.in)
 
 ---
-*Page generated on: April 15, 2025, 11:17 NZST/NZDT*
+*Page generated on: May 02, 2025, 15:33 NZST/NZDT*

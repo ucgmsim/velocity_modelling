@@ -10,11 +10,11 @@
 
 
 ## Images
-<a href="../images/maps/motubay_whangaparoa.png"><img src="../images/maps/motubay_whangaparoa.png" width="75%"></a>
+![](../images/maps/motubay_whangaparoa.png)
 
 *Figure 1 Location*
 
-<a href="../images/regional/Whangaparoa_basin_map.png"><img src="../images/regional/Whangaparoa_basin_map.png" width="75%"></a>
+![](../images/regional/Whangaparoa_basin_map.png)
 
 *Figure 2 Whangaparoa Basin Map*
 
@@ -30,6 +30,9 @@
 - NZ_DEM_HD : [HDF5](../../velocity_modelling/data/global/surface/NZ_DEM_HD.h5) / [TXT](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
 - Whangaparoa_basement_WGS84 : [HDF5](../../velocity_modelling/data/regional/Whangaparoa/Whangaparoa_basement_WGS84.h5) / [TXT](../../velocity_modelling/data/regional/Whangaparoa/Whangaparoa_basement_WGS84.in) (Submodel: N/A)
 
+### Smoothing Boundaries
+- [Whangaparoa_smoothing.txt](../../velocity_modelling/data/regional/Whangaparoa/Whangaparoa_smoothing.txt)
+
 ## Data retrieved from
 ### Boundaries
 - [Whangaparoa_outline_WGS84.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/Whangaparoa_outline_WGS84.txt)
@@ -39,4 +42,4 @@
 - [Whangaparoa_surface_WGS84.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/Whangaparoa_surface_WGS84.txt)
 
 ---
-*Page generated on: April 15, 2025, 11:17 NZST/NZDT*
+*Page generated on: May 02, 2025, 15:33 NZST/NZDT*

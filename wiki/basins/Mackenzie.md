@@ -10,15 +10,15 @@
 
 
 ## Images
-<a href="../images/maps/SI_mid.png"><img src="../images/maps/SI_mid.png" width="75%"></a>
+![](../images/maps/SI_mid.png)
 
 *Figure 1 Location*
 
-<a href="../images/regional/Mackenzie_basin_map.png"><img src="../images/regional/Mackenzie_basin_map.png" width="75%"></a>
+![](../images/regional/Mackenzie_basin_map.png)
 
 *Figure 2 Mackenzie Basin Map*
 
-<a href="../images/basins/mackenzie_boundary.png"><img src="../images/basins/mackenzie_boundary.png" width="75%"></a>
+![](../images/basins/mackenzie_boundary.png)
 
 *Figure 3 Mackenzie Boundary*
 
@@ -40,4 +40,4 @@
 - [mackenzie_proj_grid_WGS84.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/mackenzie_proj_grid_WGS84.in)
 
 ---
-*Page generated on: April 15, 2025, 11:17 NZST/NZDT*
+*Page generated on: May 02, 2025, 15:33 NZST/NZDT*

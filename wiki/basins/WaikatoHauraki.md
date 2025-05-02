@@ -10,15 +10,15 @@
 
 
 ## Images
-<a href="../images/maps/waikato_hauraki_boundary.png"><img src="../images/maps/waikato_hauraki_boundary.png" width="75%"></a>
+![](../images/maps/waikato_hauraki_boundary.png)
 
 *Figure 1 Location*
 
-<a href="../images/regional/WaikatoHauraki_basin_map.png"><img src="../images/regional/WaikatoHauraki_basin_map.png" width="75%"></a>
+![](../images/regional/WaikatoHauraki_basin_map.png)
 
 *Figure 2 Waikatohauraki Basin Map*
 
-<a href="../images/basins/waikato_hauraki_outline.png"><img src="../images/basins/waikato_hauraki_outline.png" width="75%"></a>
+![](../images/basins/waikato_hauraki_outline.png)
 
 *Figure 3 Waikato Hauraki Outline*
 
@@ -43,4 +43,4 @@
 - [WaikatoHaurakiBasin_WGS84_500m_v2019v07v05.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/NI_BASINS/WaikatoHaurakiBasin_WGS84_500m_v2019v07v05.in)
 
 ---
-*Page generated on: April 15, 2025, 11:17 NZST/NZDT*
+*Page generated on: May 02, 2025, 15:33 NZST/NZDT*
