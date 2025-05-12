@@ -256,10 +256,10 @@ def write_global_qualities(
                     "x", data=np.arange(partial_global_mesh.nx, dtype=np.float64)
                 )
                 mesh_group.create_dataset("y", data=np.arange(ny, dtype=np.float64))
-                # Depth is negative: -nz to 0
+                # Depth should go from surface to deep: 0 to (nz-1)
                 mesh_group.create_dataset(
                     "z",
-                    data=np.arange(-1 * partial_global_mesh.nz, 0, dtype=np.float64),
+                    data=np.arange(0, partial_global_mesh.nz, dtype=np.float64),
                 )
                 mesh_group.create_dataset("lon", data=partial_global_mesh.lon)
                 mesh_group.create_dataset("lat", data=partial_global_mesh.lat)
