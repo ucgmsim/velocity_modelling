@@ -131,6 +131,9 @@ def write_global_qualities(
     OSError
         If the HDF5 file cannot be written due to permissions or disk issues.
     """
+    if logger is None:
+        logger = Logger("xdmf")
+
     # Output filename - single file for all slices
     hdf5_file = out_dir / "velocity_model.h5"
     vs_data = np.copy(partial_global_qualities.vs)
@@ -183,7 +186,9 @@ def write_global_qualities(
                 mesh_group = f.create_group("mesh")
                 mesh_group.create_dataset("x", data=np.arange(nx, dtype=np.float64))
                 mesh_group.create_dataset("y", data=np.arange(ny, dtype=np.float64))
-                mesh_group.create_dataset("z", data=np.arange(nz, dtype=np.float64))
+                mesh_group.create_dataset(
+                    "z", data=np.arange(nz, dtype=np.float64)
+                )  # depth 0 is the top, the higher z is the deeper
                 mesh_group.create_dataset("lat", shape=(nx, ny), dtype="f8")
                 mesh_group.create_dataset("lon", shape=(nx, ny), dtype="f8")
 
@@ -251,7 +256,5 @@ def write_global_qualities(
 
     # After writing all slices, create the XDMF file
     if lat_ind == ny - 1:
-        create_xdmf_file(hdf5_file, vm_params, logger or Logger("xdmf"))
-        (logger or Logger("xdmf")).info(
-            "HDF5 model complete with ParaView compatibility"
-        )
+        create_xdmf_file(hdf5_file, vm_params, logger)
+        logger.log(logging.INFO, "HDF5 model complete with ParaView compatibility")
