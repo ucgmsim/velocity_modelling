@@ -10,11 +10,11 @@
 
 
 ## Images
-![](../images/maps/SI_mid.png)
+<a href="../images/maps/SI_mid.png"><img src="../images/maps/SI_mid.png" width="75%"></a>
 
 *Figure 1 Location*
 
-![](../images/regional/Wakatipu_basin_map.png)
+<a href="../images/regional/Wakatipu_basin_map.png"><img src="../images/regional/Wakatipu_basin_map.png" width="75%"></a>
 
 *Figure 2 Wakatipu Basin Map*
 
@@ -36,4 +36,4 @@
 - [WakatipuBasin_WGS84_500m_v2020v07v06.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/WakatipuBasin_WGS84_500m_v2020v07v06.in)
 
 ---
-*Page generated on: May 02, 2025, 15:33 NZST/NZDT*
+*Page generated on: April 15, 2025, 11:17 NZST/NZDT*

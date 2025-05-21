@@ -10,11 +10,11 @@
 
 
 ## Images
-![](../images/maps/cheviot_hanmer_northcanterbury.png)
+<a href="../images/maps/cheviot_hanmer_northcanterbury.png"><img src="../images/maps/cheviot_hanmer_northcanterbury.png" width="75%"></a>
 
 *Figure 1 Location*
 
-![](../images/regional/Cheviot_basin_map.png)
+<a href="../images/regional/Cheviot_basin_map.png"><img src="../images/regional/Cheviot_basin_map.png" width="75%"></a>
 
 *Figure 2 Cheviot Basin Map*
 
@@ -39,4 +39,4 @@
 - [Cheviot_Basement_WGS84_v0p0.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/SI_BASINS/Cheviot_Basement_WGS84_v0p0.in)
 
 ---
-*Page generated on: May 02, 2025, 15:33 NZST/NZDT*
+*Page generated on: April 15, 2025, 11:17 NZST/NZDT*

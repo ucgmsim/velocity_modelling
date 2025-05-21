@@ -11,11 +11,11 @@
 
 
 ## Images
-![](../images/maps/canterbury_region.png)
+<a href="../images/maps/canterbury_region.png"><img src="../images/maps/canterbury_region.png" width="75%"></a>
 
 *Figure 1 Location*
 
-![](../images/regional/Canterbury_basin_map.png)
+<a href="../images/regional/Canterbury_basin_map.png"><img src="../images/regional/Canterbury_basin_map.png" width="75%"></a>
 
 *Figure 2 Canterbury Basin Map*
 
@@ -49,4 +49,4 @@
 - [BasementTop.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Canterbury_Basin/Quaternary/BasementTop.in)
 
 ---
-*Page generated on: May 02, 2025, 15:33 NZST/NZDT*
+*Page generated on: April 15, 2025, 11:17 NZST/NZDT*

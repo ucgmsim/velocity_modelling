@@ -10,15 +10,15 @@
 
 
 ## Images
-![](../images/maps/SI_mid.png)
+<a href="../images/maps/SI_mid.png"><img src="../images/maps/SI_mid.png" width="75%"></a>
 
 *Figure 1 Location*
 
-![](../images/regional/Waitaki_basin_map.png)
+<a href="../images/regional/Waitaki_basin_map.png"><img src="../images/regional/Waitaki_basin_map.png" width="75%"></a>
 
 *Figure 2 Waitaki Basin Map*
 
-![](../images/basins/waitaki_hakataramea_outline.jpg)
+<a href="../images/basins/waitaki_hakataramea_outline.jpg"><img src="../images/basins/waitaki_hakataramea_outline.jpg" width="75%"></a>
 
 *Figure 3 Waitaki Hakataramea Outline*
 
@@ -48,4 +48,4 @@
 - [wai-hak_WGS84.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/wai-hak_WGS84.in)
 
 ---
-*Page generated on: May 02, 2025, 15:33 NZST/NZDT*
+*Page generated on: April 15, 2025, 11:17 NZST/NZDT*

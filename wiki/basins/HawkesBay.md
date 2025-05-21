@@ -10,19 +10,19 @@
 
 
 ## Images
-![](../images/maps/NI_mideast.png)
+<a href="../images/maps/NI_mideast.png"><img src="../images/maps/NI_mideast.png" width="75%"></a>
 
 *Figure 1 Location*
 
-![](../images/regional/HawkesBay_basin_map.png)
+<a href="../images/regional/HawkesBay_basin_map.png"><img src="../images/regional/HawkesBay_basin_map.png" width="75%"></a>
 
 *Figure 2 Hawkesbay Basin Map*
 
-![](../images/basins/hawkes_bay_outline.png)
+<a href="../images/basins/hawkes_bay_outline.png"><img src="../images/basins/hawkes_bay_outline.png" width="75%"></a>
 
 *Figure 3 Hawkes Bay Outline*
 
-![](../images/basins/hawkes_bay_outline_edited.png)
+<a href="../images/basins/hawkes_bay_outline_edited.png"><img src="../images/basins/hawkes_bay_outline_edited.png" width="75%"></a>
 
 *Figure 4 Hawkes Bay Outline Edited*
 
@@ -57,4 +57,4 @@
 - [HawkesBay_Grid_WGS84_Export.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Napier_Hawkes_Bay/v21p7/HawkesBay_Grid_WGS84_Export.in)
 
 ---
-*Page generated on: May 02, 2025, 15:33 NZST/NZDT*
+*Page generated on: April 15, 2025, 11:17 NZST/NZDT*
