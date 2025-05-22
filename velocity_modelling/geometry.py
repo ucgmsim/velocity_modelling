@@ -1071,14 +1071,10 @@ def gen_full_model_grid_great_circle(
     global_mesh.max_lon = 0
     global_mesh.min_lon = 180
 
-    assert nx == int(np.round(xmax / h_lat_lon)), (
-        f" nx: {nx} != {int(np.round(xmax / h_lat_lon))}"
-    )
-    assert ny == int(np.round(ymax / h_lat_lon)), (
-        f" ny: {ny} != {int(np.round(ymax / h_lat_lon))}"
-    )
-    assert nz == int(np.round((zmax - zmin) / h_depth)), (
-        f" nz: {nz} != {int(np.round((zmax - zmin) / h_depth))}"
+    assert nx == int(xmax / h_lat_lon), f" nx: {nx} != {int((xmax / h_lat_lon))}"
+    assert ny == int(ymax / h_lat_lon), f" ny: {ny} != {int((ymax / h_lat_lon))}"
+    assert nz == int((zmax - zmin) / h_depth), (
+        f" nz: {nz} != {int((zmax - zmin) / h_depth)}"
     )
 
     if any(
