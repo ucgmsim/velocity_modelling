@@ -528,11 +528,13 @@ def parse_nzcvm_config(config_path: Path, logger: Optional[Logger] = None) -> di
                     )
 
         # Calculate nx, ny, nz based on spacing and extent
-        # Truncation to int is favoured over rounding to match the C code
-        vm_params["nx"] = int(vm_params["extent_x"] / vm_params["h_lat_lon"])
-        vm_params["ny"] = int(vm_params["extent_y"] / vm_params["h_lat_lon"])
+        # Python round() behaves differently than C/C++ round(), rounds to the nearest even number
+        # eg. round(2.5)->2 round(2.5)->2, round(3.5)->4
+
+        vm_params["nx"] = int(vm_params["extent_x"] / vm_params["h_lat_lon"] + 0.5)
+        vm_params["ny"] = int(vm_params["extent_y"] / vm_params["h_lat_lon"] + 0.5)
         vm_params["nz"] = int(
-            (vm_params["extent_zmax"] - vm_params["extent_zmin"]) / vm_params["h_depth"]
+            (vm_params["extent_zmax"] - vm_params["extent_zmin"]) / vm_params["h_depth"] + 0.5
         )
     except FileNotFoundError:
         logger.log(logging.ERROR, "Config file {config_path} not found")
