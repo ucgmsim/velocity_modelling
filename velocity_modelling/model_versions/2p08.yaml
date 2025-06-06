@@ -11,7 +11,7 @@ basins:
   - BanksPeninsulaVolcanics_v19p1
   - Kaikoura_v25p5
   - Cheviot_v19p1
-  - Hanmer_v25p5
+  - Hanmer_v25p3
   - Marlborough_v19p1
   - Nelson_v25p5
   - Wellington_v21p8
@@ -38,9 +38,15 @@ basins:
   - Gisborne_v21p11
   - SouthernHawkesBay_v21p12
   - Wairarapa_v21p12
-  - Whangaparoa_v23p4
-  - Westport_v24p9
-  - TeAnau_v24p9
   - OmaioBay_v25p5
-  - TolagaBay_v25p5
+  - Whangaparoa_v23p4
+  - PalmerstonNorth_v25p5
   - Southland_v25p5
+  - TeAnau_v25p5
+  - TolagaBay_v25p5
+  - Waiapu_v25p5
+  - WestCoast_v25p5
+  - Westport_v25p5
+
+
+  -

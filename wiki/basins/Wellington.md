@@ -34,7 +34,7 @@
 
 ### Surfaces
 - NZ_DEM_HD : [HDF5](../../velocity_modelling/data/global/surface/NZ_DEM_HD.h5) / [TXT](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- Wellington_basement_WGS84 : [HDF5](../../velocity_modelling/data/regional/Wellington/Wellington_basement_WGS84.h5) / [TXT](../../velocity_modelling/data/regional/Wellington/Wellington_basement_WGS84.in) (Submodel: N/A)
+- Wellington_basement_WGS84_v21p8 : [HDF5](../../velocity_modelling/data/regional/Wellington/Wellington_basement_WGS84_v21p8.h5) / [TXT](../../velocity_modelling/data/regional/Wellington/Wellington_basement_WGS84_v21p8.in) (Submodel: N/A)
 
 ### Smoothing Boundaries
 - [Wellington_smoothing.txt](../../velocity_modelling/data/regional/Wellington/Wellington_smoothing.txt)
@@ -48,4 +48,4 @@
 - [Wellington_Grid_WGS84_Hill20210823_100_extracted_d.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Wellington/v21p8/Wellington_Grid_WGS84_Hill20210823_100_extracted_d.in)
 
 ---
-*Page generated on: May 02, 2025, 15:33 NZST/NZDT*
+*Page generated on: June 06, 2025, 15:31 NZST/NZDT*

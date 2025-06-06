@@ -4,7 +4,7 @@
 |         |                     |
 |---------|---------------------|
 | Version | 19p1           |
-| Type    | 2        |
+| Type    | 1        |
 | Author  | Robin Lee            |
 | Created | 2019-01           |
 
@@ -39,4 +39,4 @@
 - [Marlborough_Basement_WGS84_v0p1.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/SI_BASINS/Marlborough_Basement_WGS84_v0p1.in)
 
 ---
-*Page generated on: May 02, 2025, 15:33 NZST/NZDT*
+*Page generated on: June 06, 2025, 15:31 NZST/NZDT*

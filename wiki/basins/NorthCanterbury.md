@@ -4,7 +4,7 @@
 |         |                     |
 |---------|---------------------|
 | Version | 19p1           |
-| Type    | 4        |
+| Type    | 1        |
 | Author  | Robin Lee            |
 | Created | 2019-01           |
 
@@ -36,4 +36,4 @@
 - [NorthCanterbury_Basement_WGS84_v0p0.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/SI_BASINS/NorthCanterbury_Basement_WGS84_v0p0.in)
 
 ---
-*Page generated on: May 02, 2025, 15:33 NZST/NZDT*
+*Page generated on: June 06, 2025, 15:31 NZST/NZDT*

@@ -22,17 +22,18 @@
 
 ## Notes
 - Sourced from https://nelson-richmond-geolmap.github.io/RGMap/ (for the geological map of the Nelson-Richmond area)
+- Based on Ghisetti2017
 
 ## Data
 ### Boundaries
-- Nelson_outline_v25p5_WGS84 : [TXT](../../velocity_modelling/data/regional/Nelson/Nelson_outline_v25p5_WGS84.txt) / [GeoJSON](../../velocity_modelling/data/regional/Nelson/Nelson_outline_v25p5_WGS84.geojson)
+- Nelson_outline_WGS84 : [TXT](../../velocity_modelling/data/regional/Nelson/Nelson_outline_WGS84.txt) / [GeoJSON](../../velocity_modelling/data/regional/Nelson/Nelson_outline_WGS84.geojson)
 
 ### Surfaces
 - NZ_DEM_HD : [HDF5](../../velocity_modelling/data/global/surface/NZ_DEM_HD.h5) / [TXT](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- Nelson_basement_v25p5_Ghisetti2017_WGS84 :  (Submodel: N/A)
+- Nelson_basement_WGS84_v25p5 :  (Submodel: N/A)
 
 ### Smoothing Boundaries
-- [Nelson_smoothing_v25p5.txt](../../velocity_modelling/data/regional/Nelson/Nelson_smoothing_v25p5.txt)
+- [Nelson_smoothing.txt](../../velocity_modelling/data/regional/Nelson/Nelson_smoothing.txt)
 
 ---
-*Page generated on: May 02, 2025, 15:33 NZST/NZDT*
+*Page generated on: June 06, 2025, 15:31 NZST/NZDT*

@@ -5,7 +5,7 @@
 |---------|---------------------|
 | Version | 25p5           |
 | Type    | 1        |
-| Author  | ??            |
+| Author  | Archie Goodrick            |
 | Created | 2025-05           |
 
 
@@ -27,4 +27,4 @@
 - [Southland_smoothing.txt](../../velocity_modelling/data/regional/Southland/Southland_smoothing.txt)
 
 ---
-*Page generated on: May 02, 2025, 15:33 NZST/NZDT*
+*Page generated on: June 06, 2025, 15:31 NZST/NZDT*

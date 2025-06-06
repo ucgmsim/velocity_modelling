@@ -19,10 +19,6 @@
 *Figure 2 Eastcape Coastal River Valleys*
 
 
-## Notes
-- Superseding MotuBay_v22p2
-- OmaioBay_v25p5 is separately added
-
 ## Data
 ### Boundaries
 - TolagaBay_outline_WGS84 : [TXT](../../velocity_modelling/data/regional/TolagaBay/TolagaBay_outline_WGS84.txt) / [GeoJSON](../../velocity_modelling/data/regional/TolagaBay/TolagaBay_outline_WGS84.geojson)
@@ -35,4 +31,4 @@
 - [TolagaBay_smoothing.txt](../../velocity_modelling/data/regional/TolagaBay/TolagaBay_smoothing.txt)
 
 ---
-*Page generated on: May 02, 2025, 15:33 NZST/NZDT*
+*Page generated on: June 06, 2025, 15:31 NZST/NZDT*

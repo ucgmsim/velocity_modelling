@@ -7,6 +7,7 @@
 | Type    | 1        |
 | Author  | Cameron Davis / Emma Coumbe (USER2022)            |
 | Created | 2025-05           |
+| Older Versions | 22p3 |
 
 
 ## Images
@@ -27,10 +28,6 @@
 *Figure 4 Eastcape Coastal River Valleys*
 
 
-## Notes
-- Superseding MotuBay_v22p2
-- TolagaBay_v25p5 is separately added
-
 ## Data
 ### Boundaries
 - OmaioBay_outline_WGS84_1 : [TXT](../../velocity_modelling/data/regional/OmaioBay/OmaioBay_outline_WGS84_1.txt) / [GeoJSON](../../velocity_modelling/data/regional/OmaioBay/OmaioBay_outline_WGS84_1.geojson)
@@ -47,4 +44,4 @@
 - [OmaioBay_smoothing.txt](../../velocity_modelling/data/regional/OmaioBay/OmaioBay_smoothing.txt)
 
 ---
-*Page generated on: May 02, 2025, 15:33 NZST/NZDT*
+*Page generated on: June 06, 2025, 15:31 NZST/NZDT*

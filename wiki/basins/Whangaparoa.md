@@ -20,7 +20,7 @@
 
 
 ## Notes
-- See [MotuBay](MotuBay.md) for additional notes
+- See [OmaioBay](OmaioBay.md) for additional notes
 
 ## Data
 ### Boundaries
@@ -42,4 +42,4 @@
 - [Whangaparoa_surface_WGS84.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/Whangaparoa_surface_WGS84.txt)
 
 ---
-*Page generated on: May 02, 2025, 15:33 NZST/NZDT*
+*Page generated on: June 06, 2025, 15:31 NZST/NZDT*

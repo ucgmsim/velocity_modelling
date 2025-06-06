@@ -3,10 +3,10 @@
 ## Overview
 |         |                     |
 |---------|---------------------|
-| Version | 25p5           |
-| Type    | 3        |
+| Version | 25p3           |
+| Type    | 1        |
 | Author  | Ayushi Tiwari / Robin Lee            |
-| Created | 2025-05           |
+| Created | 2025-03           |
 | Older Versions | 19p1 |
 
 
@@ -22,11 +22,11 @@
 
 ## Data
 ### Boundaries
-- Hanmer_outline_v25p5_WGS84 : [TXT](../../velocity_modelling/data/regional/Hanmer/Hanmer_outline_v25p5_WGS84.txt) / [GeoJSON](../../velocity_modelling/data/regional/Hanmer/Hanmer_outline_v25p5_WGS84.geojson)
+- Hanmer_outline_WGS84_v25p3 : [TXT](../../velocity_modelling/data/regional/Hanmer/Hanmer_outline_WGS84_v25p3.txt) / [GeoJSON](../../velocity_modelling/data/regional/Hanmer/Hanmer_outline_WGS84_v25p3.geojson)
 
 ### Surfaces
 - NZ_DEM_HD : [HDF5](../../velocity_modelling/data/global/surface/NZ_DEM_HD.h5) / [TXT](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- Hanmer_basement_v25p5_WGS84 : [HDF5](../../velocity_modelling/data/regional/Hanmer/Hanmer_basement_v25p5_WGS84.h5) / [TXT](../../velocity_modelling/data/regional/Hanmer/Hanmer_basement_v25p5_WGS84.in) (Submodel: N/A)
+- Hanmer_basement_WGS84_v25p3 : [HDF5](../../velocity_modelling/data/regional/Hanmer/Hanmer_basement_WGS84_v25p3.h5) / [TXT](../../velocity_modelling/data/regional/Hanmer/Hanmer_basement_WGS84_v25p3.in) (Submodel: N/A)
 
 ---
-*Page generated on: May 02, 2025, 15:33 NZST/NZDT*
+*Page generated on: June 06, 2025, 15:31 NZST/NZDT*
