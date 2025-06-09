@@ -391,9 +391,6 @@ basin:
       - maps/NI_south.png
       - regional/Wellington_basin_map.png
       - basins/wellington_outline.png
-    notes:
-      - 19.1,19.6 Robin Lee (basement update)
-      - 21.8 Matt Hill (basement update)
 
     boundaries:
       - regional/Wellington/Wellington_outline_WGS84.txt
@@ -408,6 +405,27 @@ basin:
       - surfaces:
         - DEM/NZ_DEM_HD.in
         - Basins/Wellington/v21p8/Wellington_Grid_WGS84_Hill20210823_100_extracted_d.in
+
+  - name: Wellington_v25p5
+    type: 3
+    author: Robin Lee / Matt Hill
+    wiki_images:
+      - maps/NI_south.png
+      - regional/Wellington_basin_map.png
+      - basins/wellington_outline.png
+    notes:
+      - 19.1,19.6 Robin Lee (basement update)
+      - 21.8 Matt Hill (basement update)
+      - 25.5 Matt Hill (city extent model combined with regional model)
+
+    boundaries:
+      - regional/Wellington/Wellington_outline_WGS84.txt
+    surfaces:
+      - path: global/surface/NZ_DEM_HD.h5
+        submodel: canterbury1d_v2
+      - path: regional/Wellington/Wellington_basement_WGS84_v25p5.in
+
+    smoothing: regional/Wellington/Wellington_smoothing.txt
 
   - name: WaikatoHauraki_v19p7
     type: 1
