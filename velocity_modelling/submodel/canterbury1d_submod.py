@@ -49,16 +49,22 @@ def main_vectorized(
         )
 
     # Convert model depths to meters, negative downwards
-    model_depths = np.array(vm1d_data.bottom_depth) * -1000  # Shape: (num_model_depths,)
+    model_depths = (
+        np.array(vm1d_data.bottom_depth) * -1000
+    )  # Shape: (num_model_depths,)
 
     # Define tolerance for floating-point comparisons
     tolerance = 1e-6
 
     # Create ascending version of model_depths for searchsorted
-    model_depths_asc = model_depths[::-1]  # e.g., [..., -800, -600, -400, -300, -200, -150, -100, -50]
+    model_depths_asc = model_depths[
+        ::-1
+    ]  # e.g., [..., -800, -600, -400, -300, -200, -150, -100, -50]
 
     # Find first index where model_depth <= depth + tolerance
-    indices = len(model_depths) - np.searchsorted(model_depths_asc, depths + tolerance, side="right")
+    indices = len(model_depths) - np.searchsorted(
+        model_depths_asc, depths + tolerance, side="right"
+    )
 
     # Mask for valid indices (within model extent)
     valid_mask = (indices >= 0) & (indices < len(model_depths))
@@ -66,7 +72,10 @@ def main_vectorized(
     if not np.all(valid_mask):
         invalid_indices = np.where(~valid_mask)[0]
         for idx in invalid_indices:
-            print(f"Error: Depth point {depths[idx]} below the extent represented in the 1D velocity model file.")
+            logger.log(
+                logging.ERROR,
+                f"Depth point {depths[idx]} below the extent represented in the 1D velocity model file.",
+            )
 
     # Apply valid mask to indices and z_indices
     valid_indices = indices[valid_mask]
