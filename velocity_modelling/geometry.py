@@ -1071,11 +1071,18 @@ def gen_full_model_grid_great_circle(
     global_mesh.max_lon = 0
     global_mesh.min_lon = 180
 
-    assert nx == int(xmax / h_lat_lon), f" nx: {nx} != {int((xmax / h_lat_lon))}"
-    assert ny == int(ymax / h_lat_lon), f" ny: {ny} != {int((ymax / h_lat_lon))}"
-    assert nz == int((zmax - zmin) / h_depth), (
-        f" nz: {nz} != {int((zmax - zmin) / h_depth)}"
-    )
+    # Check if the grid dimensions are consistent with the provided parameters
+    # Python round() has different behavior than C round(), so we use adding 0.5 then cast with int() for consistency
+    nx_expected = int(xmax / h_lat_lon + 0.5)
+    ny_expected = int(ymax / h_lat_lon + 0.5)
+    nz_expected = int((zmax - zmin) / h_depth + 0.5)
+
+    if nx != nx_expected:
+        raise ValueError(f" nx: {nx} !=  xmax: {xmax} / h_lat_lon: {h_lat_lon}(={nx_expected})")
+    if ny != ny_expected:
+        raise ValueError(f" ny: {ny} !=  ymax: {ymax} / h_lat_lon: {h_lat_lon}(={ny_expected})")
+    if nz != nz_expected:
+        raise ValueError(f" nz: {nz} !=  (zmax-zmin: {zmax}-{zmin}) / h_depth: {h_depth})(={nz_expected})")
 
     if any(
         [
