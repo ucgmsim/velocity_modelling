@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Extract cross-section from a velocity model and plot it.
 This script reads a velocity model from an HDF5 file and generates a cross-section plot
@@ -45,7 +46,6 @@ Usage:
 
 """
 
-#!/usr/bin/env python3
 from pathlib import Path
 from typing import Annotated, Optional
 
@@ -54,6 +54,7 @@ import cartopy.feature as cfeature
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import typer
 from cartopy.mpl.gridliner import LATITUDE_FORMATTER, LONGITUDE_FORMATTER
 
@@ -129,15 +130,26 @@ def extract_cross_section(
         lon = f["/mesh/lon"][()]
         z = f["/mesh/z"][()]
         data = f[f"/properties/{property_name}"][()]
-        config = f.get("/config", {})
 
-        extent_z_spacing = config.attrs.get("h_depth")
-        if isinstance(extent_z_spacing, str):
-            extent_z_spacing = float(extent_z_spacing)
+        config = f.get("/config")
+        if not isinstance(config, h5py.Group):
+            raise KeyError("Missing required /config group in HDF5 file.")
 
-        origin_lat = float(config.attrs.get("origin_lat", 0.0))
-        origin_lon = float(config.attrs.get("origin_lon", 0.0))
-        origin_rot = float(config.attrs.get("origin_rot", 0.0))
+        # Required attributes, including h_depth now
+        required_attrs = ["origin_lat", "origin_lon", "origin_rot", "h_depth"]
+        missing = [attr for attr in required_attrs if attr not in config.attrs]
+        if missing:
+            raise KeyError(
+                f"Missing required config attribute(s): {', '.join(missing)}"
+            )
+
+        try:
+            origin_lat = float(config.attrs["origin_lat"])
+            origin_lon = float(config.attrs["origin_lon"])
+            origin_rot = float(config.attrs["origin_rot"])
+            extent_z_spacing = float(config.attrs["h_depth"])
+        except (TypeError, ValueError) as e:
+            raise ValueError(f"Invalid value in config attributes: {e}")
 
         z_km = z * extent_z_spacing
 
@@ -237,8 +249,6 @@ def extract_cross_section(
             idx_map.append((x_idx, y_idx))
 
         if csv:
-            import pandas as pd
-
             # Prepare data for DataFrame
             data_rows = []
             for i in range(n_points):
@@ -246,10 +256,10 @@ def extract_cross_section(
                 for j in range(len(z)):
                     data_rows.append(
                         {
-                            "z_km": round(z_km[j], 4),
-                            "lon": round(lon[x_idx, y_idx], 4),
-                            "lat": round(lat[x_idx, y_idx], 4),
-                            "value": round(cross_section[j, i], 4),
+                            "z_km": z_km[j],
+                            "lon": lon[x_idx, y_idx],
+                            "lat": lat[x_idx, y_idx],
+                            "value": cross_section[j, i],
                             "x": x_idx,
                             "y": y_idx,
                         }
