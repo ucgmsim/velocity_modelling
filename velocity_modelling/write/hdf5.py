@@ -33,35 +33,17 @@ def create_xdmf_file(hdf5_file: Path, vm_params: dict, logger: logging.Logger) -
         Logger for reporting progress and errors.
     """
     xdmf_file = hdf5_file.with_suffix(".xdmf")
+    nx = vm_params.get("nx")
+    ny = vm_params.get("ny")
+    nz = vm_params.get("nz")
+    if not all([nx, ny, nz]):
+        logger.log(
+            logging.ERROR,
+            "Missing 'nx' 'ny' or 'nz' key in vm_params. Ensure the velocity model parameters are correctly set.",
+        )
+        raise KeyError("Missing nx, ny, or nz in vm_params")
 
-    try:
-        nx = vm_params.get("nx")
-    except KeyError:
-        logger.log(
-            logging.ERROR,
-            "Missing 'nx' key in vm_params. Ensure the velocity model parameters are correctly set.",
-        )
-        raise KeyError("Missing 'nx' key in vm_params.")
-    try:
-        ny = vm_params.get("ny")
-    except KeyError:
-        logger.log(
-            logging.ERROR,
-            "Missing 'ny' key in vm_params. Ensure the velocity model parameters are correctly set.",
-        )
-        raise KeyError("Missing 'ny' key in vm_params.")
-    try:
-        nz = vm_params.get("nz")
-    except KeyError:
-        logger.log(
-            logging.ERROR,
-            "Missing 'nz' key in vm_params. Ensure the velocity model parameters are correctly set.",
-        )
-        raise KeyError("Missing 'nz' key in vm_params.")
-
-    # Get the relative path to the HDF5 file from the XDMF file
     hdf5_relative = hdf5_file.name
-
     xdmf_content = f"""<?xml version="1.0" ?>
 <!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>
 <Xdmf Version="3.0">
@@ -100,7 +82,7 @@ def create_xdmf_file(hdf5_file: Path, vm_params: dict, logger: logging.Logger) -
         </DataItem>
       </Attribute>
     </Grid>
-  </Domain>c
+  </Domain>
 </Xdmf>
 """
 
@@ -110,7 +92,7 @@ def create_xdmf_file(hdf5_file: Path, vm_params: dict, logger: logging.Logger) -
         logger.log(logging.INFO, f"Created ParaView-compatible XDMF file: {xdmf_file}")
     except Exception as e:
         if isinstance(e, (SystemExit, KeyboardInterrupt)):
-            raise  # Re-raise critical exceptions
+            raise
         logger.log(logging.ERROR, f"Error creating XDMF file: {e}")
         raise RuntimeError(f"Failed to create XDMF file: {e}")
 
@@ -149,18 +131,18 @@ def write_global_qualities(
     OSError
         If the HDF5 file cannot be written due to permissions or disk issues.
     """
-    # Output filename - single file for all slices
-    hdf5_file = Path(out_dir) / "velocity_model.h5"
+    if logger is None:
+        logger = Logger("xdmf")
 
-    # Apply minimum VS constraint
-    min_vs = vm_params.get(
-        "min_vs", 0.0
-    )  # Get the minimum Vs value from the parameters
+    # Output filename - single file for all slices
+    hdf5_file = out_dir / "velocity_model.h5"
     vs_data = np.copy(partial_global_qualities.vs)
+    min_vs = vm_params.get("min_vs", 0.0)
     vs_data[vs_data < min_vs] = min_vs
 
-    # ny is the number of slices in the y direction, but what we are processing here is a single slice along y (=lat)
-    # axis, so we need to get the total number of slices from the vm_params
+    # ny is the number of slices in the y direction, but what we are processing here is a single slice
+    # along y (=lat if not-rotated) axis, so we need to get the total number of slices from the vm_params
+
     try:
         ny = vm_params["ny"]
     except KeyError:
@@ -170,131 +152,99 @@ def write_global_qualities(
         )
         raise KeyError("Missing 'ny' key in vm_params.")
 
+    nx, nz = partial_global_qualities.vp.shape
+
     # If first slice, create the file and initialize structure
     if lat_ind == 0:
         try:
             with h5py.File(hdf5_file, "w") as f:
-                logger.log(logging.DEBUG, f"Creating new HDF5 file: {hdf5_file}")
+                f.attrs.update(
+                    {
+                        "total_y_slices": ny,
+                        "format_version": "1.0",
+                        "creation_date": datetime.datetime.now().isoformat(),
+                    }
+                )
 
-                # Add basic metadata attributes
-                f.attrs["total_y_slices"] = ny
-                f.attrs["format_version"] = "1.0"
-                f.attrs["creation_date"] = datetime.datetime.now().isoformat()
+                config_group = f.create_group("config")
+                config_group.attrs.update(
+                    {
+                        k: (
+                            v.name
+                            if hasattr(v, "name")
+                            else v.value
+                            if hasattr(v, "value")
+                            else str(v)
+                        )
+                        for k, v in vm_params.items()
+                    }
+                )
+                config_group.attrs["config_string"] = "\n".join(
+                    f"{k.upper()}={v}" for k, v in vm_params.items()
+                )
 
-                # Add all velocity model parameters from nzcvm.cfg as root attributes
-                if vm_params:
-                    config_group = f.create_group("config")
-                    for key, value in vm_params.items():
-                        # Handle special case for enum types
-                        if hasattr(value, "name"):
-                            config_group.attrs[key] = value.name
-                        elif hasattr(value, "value"):
-                            config_group.attrs[key] = value.value
-                        else:
-                            try:
-                                config_group.attrs[key] = value
-                            except TypeError:
-                                # If attribute can't be stored directly, convert to string
-                                config_group.attrs[key] = str(value)
+                mesh_group = f.create_group("mesh")
+                mesh_group.create_dataset("x", data=np.arange(nx, dtype=np.float64))
+                mesh_group.create_dataset("y", data=np.arange(ny, dtype=np.float64))
+                mesh_group.create_dataset(
+                    "z", data=np.arange(nz, dtype=np.float64)
+                )  # depth 0 is the top, the higher z is the deeper
+                mesh_group.create_dataset("lat", shape=(nx, ny), dtype="f8")
+                mesh_group.create_dataset("lon", shape=(nx, ny), dtype="f8")
 
-                    # Add a string representation of the original config for reference
-                    config_lines = []
-                    for key, value in vm_params.items():
-                        if hasattr(value, "name"):
-                            config_lines.append(f"{key.upper()}={value.name}")
-                        else:
-                            config_lines.append(f"{key.upper()}={value}")
-                    config_str = "\n".join(config_lines)
-                    config_group.attrs["config_string"] = config_str
+                props = f.create_group("properties")
 
-                # Create groups for mesh and properties
-                f.create_group("mesh")
-                f.create_group("properties")
+                # Create datasets with shape (nz, ny, nx): Paraview demands this order
+                shape = (nz, ny, nx)
 
-                # Create resizable datasets for properties
-                props_group = f["properties"]
-                nx, nz = partial_global_qualities.vp.shape
-
-                # Log the dimensions for debugging
                 logger.log(
                     logging.DEBUG,
                     f"Creating datasets with shape (nz={nz}, ny={ny}, nx={nx})",
                 )
-
-                # Create datasets with shape (nz, ny, nx): Paraview demands this order
-                props_group.create_dataset(
-                    "vp", shape=(nz, ny, nx), dtype="f4", compression="gzip"
-                )
-                props_group.create_dataset(
-                    "vs", shape=(nz, ny, nx), dtype="f4", compression="gzip"
-                )
-                props_group.create_dataset(
-                    "rho", shape=(nz, ny, nx), dtype="f4", compression="gzip"
-                )
-                props_group.create_dataset(
-                    "inbasin", shape=(nz, ny, nx), dtype="i1", compression="gzip"
+                props.create_dataset("vp", shape=shape, dtype="f4", compression="gzip")
+                props.create_dataset("vs", shape=shape, dtype="f4", compression="gzip")
+                props.create_dataset("rho", shape=shape, dtype="f4", compression="gzip")
+                props.create_dataset(
+                    "inbasin", shape=shape, dtype="i1", compression="gzip"
                 )
 
                 # Add metadata
-                props_group["vp"].attrs["units"] = "km/s"
-                props_group["vs"].attrs["units"] = "km/s"
-                props_group["rho"].attrs["units"] = "g/cm^3"
-                props_group["vs"].attrs["min_value_enforced"] = min_vs
-
+                props["vp"].attrs["units"] = "km/s"
+                props["vs"].attrs.update(
+                    {"units": "km/s", "min_value_enforced": min_vs}
+                )
+                props["rho"].attrs["units"] = "g/cm^3"
         except OSError as e:
             logger.log(logging.ERROR, f"Failed to create HDF5 file {hdf5_file}: {e}")
             raise OSError(f"Failed to create HDF5 file {hdf5_file}: {str(e)}")
 
-    # Write this slice's data to the file
     try:
         with h5py.File(hdf5_file, "r+") as f:
-            # Write mesh data only once (when completing the model)
-            if lat_ind == ny - 1:
-                # Now that we have all slices, write the complete mesh data
-                mesh_group = f["mesh"]
-                mesh_group.create_dataset(
-                    "x", data=np.arange(partial_global_mesh.nx, dtype=np.float64)
-                )
-                mesh_group.create_dataset("y", data=np.arange(ny, dtype=np.float64))
-                # Depth is negative: -nz to 0
-                mesh_group.create_dataset(
-                    "z",
-                    data=np.arange(-1 * partial_global_mesh.nz, 0, dtype=np.float64),
-                )
-                mesh_group.create_dataset("lon", data=partial_global_mesh.lon)
-                mesh_group.create_dataset("lat", data=partial_global_mesh.lat)
-
-                # Mark file as complete
-                f.attrs["complete"] = True
+            f["mesh/lat"][:, lat_ind] = partial_global_mesh.lat
+            f["mesh/lon"][:, lat_ind] = partial_global_mesh.lon
 
             # Write property data for this slice to make this Paraview compatible
             # partial_global_qualities.vp is (nx, nz), need to transpose to (nz, nx) for (z, x)
             # Dataset is (nz, ny, nx), so [:, lat_ind, :] expects (nz, nx)
-            vp_slice = np.transpose(partial_global_qualities.vp)  # (nx, nz) -> (nz, nx)
-            vs_slice = np.transpose(vs_data)  # (nz, nx)
-            rho_slice = np.transpose(partial_global_qualities.rho)  # (nz, nx)
-            inbasin_slice = np.transpose(partial_global_qualities.inbasin)  # (nz, nx)
+            vp = partial_global_qualities.vp.T
+            vs = vs_data.T
+            rho = partial_global_qualities.rho.T
+            inbasin = partial_global_qualities.inbasin.T
 
-            # Verify shapes
-            expected_shape = (partial_global_mesh.nz, partial_global_mesh.nx)
-            if vp_slice.shape != expected_shape:
+            expected = (nz, nx)
+            if vp.shape != expected:
                 logger.log(
                     logging.ERROR,
-                    f"Shape mismatch: vp_slice has shape {vp_slice.shape}, expected {expected_shape}",
+                    f"Shape mismatch: vp has shape {vp.shape}, expected {expected}",
                 )
-                raise ValueError(
-                    f"Shape mismatch: vp_slice has shape {vp_slice.shape}, expected {expected_shape}"
-                )
+                raise ValueError(f"Shape mismatch: got {vp.shape}, expected {expected}")
 
-            f["properties/vp"][:, lat_ind, :] = vp_slice
-            f["properties/vs"][:, lat_ind, :] = vs_slice
-            f["properties/rho"][:, lat_ind, :] = rho_slice
-            f["properties/inbasin"][:, lat_ind, :] = inbasin_slice
+            f["properties/vp"][:, lat_ind, :] = vp
+            f["properties/vs"][:, lat_ind, :] = vs
+            f["properties/rho"][:, lat_ind, :] = rho
+            f["properties/inbasin"][:, lat_ind, :] = inbasin
 
-            # Update progress attribute
             f.attrs["last_slice_written"] = lat_ind
-
-        logger.log(logging.DEBUG, f"Written slice {lat_ind} to {hdf5_file}")
     except OSError as e:
         logger.log(logging.ERROR, f"Failed to update HDF5 file {hdf5_file}: {e}")
         raise OSError(f"Failed to update HDF5 file {hdf5_file}: {str(e)}")
@@ -306,6 +256,5 @@ def write_global_qualities(
 
     # After writing all slices, create the XDMF file
     if lat_ind == ny - 1:
-        # Now that we have written the entire model, create the XDMF file
         create_xdmf_file(hdf5_file, vm_params, logger)
         logger.log(logging.INFO, "HDF5 model complete with ParaView compatibility")
