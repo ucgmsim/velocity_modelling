@@ -172,17 +172,32 @@ class QualitiesVector:
         elif topo_type == TopoTypes.SQUASHED_TAPERED:
             taper_dist = 1.0
             depth_change = -mesh_vector.z
-            taper_val = np.where(
-                (depth_change == 0)
-                | (partial_global_surface_depths.depths[1] == 0)
-                | (partial_global_surface_depths.depths[1] < 0),
-                1.0,
-                1.0
-                - (
-                    depth_change
-                    / (partial_global_surface_depths.depths[1] * taper_dist)
-                ),
-            )
+
+            # Calculate denominator - check if it's a scalar or array
+            denominator = partial_global_surface_depths.depths[1] * taper_dist
+
+            # Create mask for safe division (avoiding zeros)
+            valid_mask = depth_change != 0
+
+            # Initialize taper_val array
+            taper_val = np.ones_like(depth_change)
+
+            # Check if denominator is a scalar or array
+            if np.isscalar(denominator):
+                if (
+                    np.isfinite(denominator) and denominator > 0
+                ):  # Scalar, finite, and positive
+                    taper_val[valid_mask] = 1.0 - (
+                        depth_change[valid_mask] / denominator
+                    )
+                # If denominator is nan, inf, or <= 0, keep taper_val as 1.0 (no action needed)
+            else:
+                # Handle array denominator
+                array_valid_mask = valid_mask & (denominator > 0)
+                taper_val[array_valid_mask] = 1.0 - (
+                    depth_change[array_valid_mask] / denominator[array_valid_mask]
+                )
+            # Ensure taper_val is within bounds
             taper_val = np.clip(taper_val, 0.0, None)
             shifted_mesh_vector = mesh_vector.copy()
             shifted_mesh_vector.z = (
