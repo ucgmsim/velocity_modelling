@@ -10,15 +10,15 @@
 
 
 ## Images
-<a href="../images/maps/SI_mid.png"><img src="../images/maps/SI_mid.png" width="75%"></a>
+![](../images/maps/SI_mid.png)
 
 *Figure 1 Location*
 
-<a href="../images/regional/Wanaka_basin_map.png"><img src="../images/regional/Wanaka_basin_map.png" width="75%"></a>
+![](../images/regional/Wanaka_basin_map.png)
 
 *Figure 2 Wanaka Basin Map*
 
-<a href="../images/basins/wanaka_boundary.png"><img src="../images/basins/wanaka_boundary.png" width="75%"></a>
+![](../images/basins/wanaka_boundary.png)
 
 *Figure 3 Wanaka Boundary*
 
@@ -40,4 +40,4 @@
 - [wanaka_basin_grid_WGS84_v2.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/wanaka_basin_grid_WGS84_v2.in)
 
 ---
-*Page generated on: April 15, 2025, 11:17 NZST/NZDT*
+*Page generated on: June 10, 2025, 10:08 NZST/NZDT*

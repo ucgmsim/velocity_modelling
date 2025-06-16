@@ -10,15 +10,15 @@
 
 
 ## Images
-<a href="../images/maps/NI_mideast.png"><img src="../images/maps/NI_mideast.png" width="75%"></a>
+![](../images/maps/NI_mideast.png)
 
 *Figure 1 Location*
 
-<a href="../images/regional/Gisborne_basin_map.png"><img src="../images/regional/Gisborne_basin_map.png" width="75%"></a>
+![](../images/regional/Gisborne_basin_map.png)
 
 *Figure 2 Gisborne Basin Map*
 
-<a href="../images/basins/grisborne_basement.png"><img src="../images/basins/grisborne_basement.png" width="75%"></a>
+![](../images/basins/grisborne_basement.png)
 
 *Figure 3 Grisborne Basement*
 
@@ -47,4 +47,4 @@
 - [Gisborne_Surface_Export.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Gisborne/v21p11/Gisborne_Surface_Export.in)
 
 ---
-*Page generated on: April 15, 2025, 11:17 NZST/NZDT*
+*Page generated on: June 10, 2025, 10:08 NZST/NZDT*

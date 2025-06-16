@@ -3,14 +3,14 @@
 ## Overview
 |         |                     |
 |---------|---------------------|
-| Version | 24p9           |
-| Type    | N/A        |
+| Version | 25p5           |
+| Type    | 1        |
 | Author  | Kaleb Finn / Ayushi Tiwari (ENCN493)            |
-| Created | 2024-09           |
+| Created | 2025-05           |
 
 
 ## Images
-<a href="../images/regional/Westport_basin_map.png"><img src="../images/regional/Westport_basin_map.png" width="75%"></a>
+![](../images/regional/Westport_basin_map.png)
 
 *Figure 1 Location*
 
@@ -27,4 +27,4 @@
 - [Westport_smoothing.txt](../../velocity_modelling/data/regional/Westport/Westport_smoothing.txt)
 
 ---
-*Page generated on: April 15, 2025, 11:17 NZST/NZDT*
+*Page generated on: June 10, 2025, 10:08 NZST/NZDT*

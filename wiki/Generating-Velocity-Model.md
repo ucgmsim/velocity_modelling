@@ -67,7 +67,7 @@ OUTPUT_DIR=/tmp
 - **EXTENT_ZMAX**: Maximum depth of the model grid (in kilometers).
 - **EXTENT_ZMIN**: Minimum depth of the model grid (in kilometers).
 - **EXTENT_Z_SPACING**: Spacing between grid points in the Z direction (in kilometers).
-- **EXTENT_LATLON_SPACING**: Spacing between grid points in the latitude and longitude directions (in km).
+- **EXTENT_LATLON_SPACING**: Spacing between grid points in the latitude and longitude directions (in degrees).
 - **MIN_VS**: Minimum shear wave velocity (in meter per second).
 - **TOPO_TYPE**: Type of topography to use. Possible values are `BULLDOZED`, `SQUASHED`, `SQUASHED_TAPERED` and `TRUE`. 
 - **OUTPUT_DIR**: Directory where the generated velocity model files will be saved.

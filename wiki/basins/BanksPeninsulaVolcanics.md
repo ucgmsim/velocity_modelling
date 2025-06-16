@@ -10,11 +10,11 @@
 
 
 ## Images
-<a href="../images/maps/canterbury_region.png"><img src="../images/maps/canterbury_region.png" width="75%"></a>
+![](../images/maps/canterbury_region.png)
 
 *Figure 1 Location*
 
-<a href="../images/regional/BanksPeninsulaVolcanics_basin_map.png"><img src="../images/regional/BanksPeninsulaVolcanics_basin_map.png" width="75%"></a>
+![](../images/regional/BanksPeninsulaVolcanics_basin_map.png)
 
 *Figure 2 Bankspeninsulavolcanics Basin Map*
 
@@ -39,4 +39,4 @@
 - [MioceneTop.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Canterbury_Basin/Pre_Quaternary/MioceneTop.in)
 
 ---
-*Page generated on: April 15, 2025, 11:17 NZST/NZDT*
+*Page generated on: June 10, 2025, 10:08 NZST/NZDT*
