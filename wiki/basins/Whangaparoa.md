@@ -42,4 +42,4 @@
 - [Whangaparoa_surface_WGS84.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/Whangaparoa_surface_WGS84.txt)
 
 ---
-*Page generated on: June 10, 2025, 10:08 NZST/NZDT*
+*Page generated on: June 17, 2025, 10:30 NZST/NZDT*
