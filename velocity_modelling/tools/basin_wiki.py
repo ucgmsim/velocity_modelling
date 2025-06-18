@@ -15,7 +15,7 @@ Usage examples:
   python basin_wiki.py generate-wiki all
 
   # Generate wiki pages for all basins and scale images
-  python basin_wiki.py generate-basin-wiki all --scale-images
+  python basin_wiki.py generate-wiki all --scale-images
 
   # Use a specific registry file
   python basin_wiki.py list-basins --registry /path/to/my_registry.yaml
@@ -45,8 +45,10 @@ def _get_basin_versions(registry_path: Path):
         data = yaml.safe_load(file)
 
     basin_versions = {}
-    for full_name, basin in data.get("basin", []):
-        match = re.match(r"^(.*)_v(\d+p\d+)$", full_name)
+    # The basin data can be a list of single-item dicts
+    for basin_item in data.get("basin", []):
+        full_name = basin_item.pop("name")
+        match = re.match(r"^(.*?)_v(\d+p\d+)$", full_name)
         if not match:
             continue
         basin_name, version = match.groups()
@@ -60,9 +62,10 @@ def _get_basin_versions(registry_path: Path):
                 "full_name": full_name,
                 "version": version,
                 "version_tuple": version_tuple,
-                "data": basin,
+                "data": basin_item,
             }
         )
+
     return basin_versions
 
 
@@ -75,7 +78,7 @@ def list_basins(
             help="Path to the nzcvm_registry.yaml file (default: ../nzcvm_registry.yaml)",
             default_factory=lambda: Path(__file__).parent.parent / "nzcvm_registry.yaml",
         ),
-    ] = None,
+    ],
 ):
     """Lists all unique basin names found in the registry."""
     basin_versions = _get_basin_versions(registry)
@@ -222,7 +225,6 @@ def generate_wiki(
             for boundary in boundaries:
                 file_path = Path(boundary)
                 base_path = file_path.parent / file_path.stem
-                print(base_path)
 
                 # Check if alternative formats exist
                 geojson_path = f"{base_path}.geojson"
@@ -306,6 +308,7 @@ def generate_wiki(
         filename = output_dir / f"{basin_name}.md"
         with filename.open("w", encoding="utf-8") as f:
             f.write(md_content)
+        print(f"Generated {filename}")
 
     # Print the number of files generated (number of unique basin names)
     print(f"Generated {len(basin_versions)} .md files in {output_dir}")

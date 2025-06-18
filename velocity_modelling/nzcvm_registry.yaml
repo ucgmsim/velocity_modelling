@@ -1074,6 +1074,7 @@ basin:
         - path: global/surface/NZ_DEM_HD.h5
           submodel: canterbury1d_v2
         - path: regional/PalmerstonNorth/PalmerstonNorth_basement_WGS84.in
+    smoothing: regional/PalmerstonNorth/PalmerstonNorth_smoothing.txt
 
 
   - name: Southland_v25p5
