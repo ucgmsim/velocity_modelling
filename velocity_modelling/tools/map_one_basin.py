@@ -7,7 +7,7 @@ This script reads basement, boundary, and optional smoothing files and plots the
 - The smoothing file should contain a list of latitude and longitude coordinates that define the smoothing boundary.
 
 Usage:
-    python plot_basin_with_map.py <basin_name> <data_path> <basement> <boundary1> [<boundary2>,...]  [--smoothing <smoothing>] [--out-dir <out_dir>]
+    python map_one_basin.py <basin_name> <data_path> <basement> <boundary1> [<boundary2>,...]  [--smoothing <smoothing>] [--out-dir <out_dir>]
 
 """
 

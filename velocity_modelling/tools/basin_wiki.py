@@ -1,15 +1,24 @@
 """
-Generate Markdown files for basins from nzcvm_registry.yaml
+Generate Markdown files for basins from nzcvm_registry.yaml and provide related utilities.
 
-This script reads the nzcvm_registry.yaml file and generates a Markdown file for each unique basin name.
-The Markdown file contains details such as the basin type, author, images, notes, boundaries, surfaces, and smoothing boundaries. The generated files are saved in the wiki/basins directory.
+This script reads the nzcvm_registry.yaml file to perform operations related to basins,
+such as generating wiki pages or listing available basins.
 
-Usage:
-    python generate_basin_wiki.py [--registry PATH] [--scale-images]
+Usage examples:
+  # List all available basins
+  python basin_wiki.py list-basins
 
-Options:
-    --registry PATH    Path to the nzcvm_registry.yaml file (default: ../nzcvm_registry.yaml)
-    --scale-images     Scale images to 75% size with a clickable link to full size
+  # Generate wiki page for a single basin
+  python basin_wiki.py generate-wiki Canterbury
+
+  # Generate wiki pages for all basins
+  python basin_wiki.py generate-wiki all
+
+  # Generate wiki pages for all basins and scale images
+  python basin_wiki.py generate-basin-wiki all --scale-images
+
+  # Use a specific registry file
+  python basin_wiki.py list-basins --registry /path/to/my_registry.yaml
 """
 
 import re
@@ -26,8 +35,62 @@ from qcore import cli
 app = typer.Typer(pretty_exceptions_enable=False)
 
 
+def _get_basin_versions(registry_path: Path):
+    """Reads and parses the registry yaml file to group models by basin name."""
+    if not registry_path.exists():
+        print(f"Error: Registry file not found at {registry_path}")
+        raise typer.Exit(code=1)
+
+    with open(registry_path, "r", encoding="utf-8") as file:
+        data = yaml.safe_load(file)
+
+    basin_versions = {}
+    for full_name, basin in data.get("basin", []):
+        match = re.match(r"^(.*)_v(\d+p\d+)$", full_name)
+        if not match:
+            continue
+        basin_name, version = match.groups()
+        version_parts = version.replace("v", "").split("p")
+        version_tuple = (int(version_parts[0]), int(version_parts[1]))
+
+        if basin_name not in basin_versions:
+            basin_versions[basin_name] = []
+        basin_versions[basin_name].append(
+            {
+                "full_name": full_name,
+                "version": version,
+                "version_tuple": version_tuple,
+                "data": basin,
+            }
+        )
+    return basin_versions
+
+
+@app.command()
+def list_basins(
+    registry: Annotated[
+        Path,
+        typer.Option(
+            "--registry",
+            help="Path to the nzcvm_registry.yaml file (default: ../nzcvm_registry.yaml)",
+            default_factory=lambda: Path(__file__).parent.parent / "nzcvm_registry.yaml",
+        ),
+    ] = None,
+):
+    """Lists all unique basin names found in the registry."""
+    basin_versions = _get_basin_versions(registry)
+    for basin_name in sorted(basin_versions.keys()):
+        print(basin_name)
+
+
 @cli.from_docstring(app)
-def generate_basin_wiki(
+def generate_wiki(
+    basin: Annotated[
+        str,
+        typer.Argument(
+            help="Basin name to generate wiki for, or 'all' for all basins.",
+        ),
+    ],
     registry: Annotated[
         Path,
         typer.Option(
@@ -52,16 +115,22 @@ def generate_basin_wiki(
 
     Parameters
     ----------
+    basin : str
+        Basin name to generate wiki for, or 'all' for all basins.
     registry : Path, optional
         Path to the nzcvm_registry.yaml file
     scale_images : bool, optional
         If True, scale images to 75% size with a clickable link to full size
     """
-    # Get the YAML file path from arguments
-    yaml_file_path = registry
-    if not yaml_file_path.is_file():
-        print(f"Error: {yaml_file_path} does not exist or is not a file")
-        raise typer.Exit(code=1)
+    basin_versions = _get_basin_versions(registry)
+
+    # If a specific basin is requested, filter basin_versions
+    if basin != "all":
+        if basin not in basin_versions:
+            print(f"Error: Basin '{basin}' not found in registry.")
+            print(f"Available basins: {', '.join(sorted(basin_versions.keys()))}")
+            raise typer.Exit(code=1)
+        basin_versions = {basin: basin_versions[basin]}
 
     # Define the project root directory (four levels up from script location)
     project_root = Path(__file__).parent.parent.parent
@@ -69,41 +138,6 @@ def generate_basin_wiki(
 
     # Ensure the output directory exists
     output_dir.mkdir(parents=True, exist_ok=True)
-
-    # Read the YAML content
-    with yaml_file_path.open("r", encoding="utf-8") as f:
-        data = yaml.safe_load(f)
-
-    # Extract basin entries
-    basins = data.get("basin", [])
-
-    # Dictionary to store basins by name and their versions
-    basin_versions = {}
-
-    # Process each basin to group by name and version
-    for basin in basins:
-        full_name = basin.get("name", "Unnamed Basin")
-        # Split at the last "_v" followed by version (e.g., "_v18p1")
-        match = re.match(r"^(.*)_v(\d+p\d+)$", full_name)
-        if match:
-            basin_name, version = match.groups()
-            # Convert version to a tuple of integers for comparison (e.g., "v18p1" -> (18, 1))
-            version_parts = version.replace("v", "").split("p")
-            version_tuple = (int(version_parts[0]), int(version_parts[1]))
-        else:
-            basin_name, version = full_name, "N/A"
-            version_tuple = (0, 0)  # Default for non-versioned names
-
-        if basin_name not in basin_versions:
-            basin_versions[basin_name] = []
-        basin_versions[basin_name].append(
-            {
-                "full_name": full_name,
-                "version": version,
-                "version_tuple": version_tuple,
-                "data": basin,
-            }
-        )
 
     # Process only the latest version of each basin
     for basin_name, versions in basin_versions.items():

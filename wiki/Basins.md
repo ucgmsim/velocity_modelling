@@ -1,65 +1,74 @@
-# Basins in the New Zealand Velocity Model
+# Basins in the New Zealand Velocity Model (version 2.08)
 
 This page provides an overview of sedimentary basin models integrated into the New Zealand Velocity Model.
 
-<!-- Preserving the image from the original Basins.md, resized to 50% -->
-<img src="https://github.com/user-attachments/assets/ef94b323-fb08-4f39-8666-ffaf12ae4db4" width="50%" alt="New Zealand basins overview">
+<!-- Referenced map image -->
+<img src="images/maps/all_basins_2p08.png" width="50%" alt="New Zealand basins overview">
 
-## North Island Basins
+##  Bay of Plenty Region
+- [OmaioBay v25p5](basins/OmaioBay.md)
+- [Whangaparoa v23p4](basins/Whangaparoa.md)
 
-### Auckland Region
-- [Waikato Hauraki v19p7](basins/WaikatoHauraki.md)
-
-### East Coast
-- [Gisborne v21p11](basins/Gisborne.md)
-- [Hawke's Bay v21p7](basins/HawkesBay.md)
-- [Napier v21p7](basins/Napier.md)
-- [Southern Hawke's Bay v21p12](basins/SouthernHawkesBay.md)
-- [Motu Bay v22p3](basins/MotuBay.md)
-- [Whangaparaoa v23p4](basins/Whangaparoa.md)
-
-### Wellington Region
-- [Wellington v21p8](basins/Wellington.md)
-- [Greater Wellington v21p7](basins/GreaterWellington.md)
-- [Porirua v21p7](basins/Porirua.md)
-- [Wairarapa v21p12](basins/Wairarapa.md)
-
-## South Island Basins
-
-### Canterbury Region
+##  Canterbury Region
+- [BanksPeninsulaVolcanics v19p1](basins/BanksPeninsulaVolcanics.md)
 - [Canterbury v19p1](basins/Canterbury.md)
-- [North Canterbury v19p1](basins/NorthCanterbury.md)
-- [Banks Peninsula Volcanics v19p1](basins/BanksPeninsulaVolcanics.md)
-
-### Marlborough Region
-- [Kaikoura v19p1](basins/Kaikoura.md)
 - [Cheviot v19p1](basins/Cheviot.md)
-- [Hanmer v19p1](basins/Hanmer.md)
+- [Hakataramea v20p8](basins/Hakataramea.md)
+- [Hanmer v25p3](basins/Hanmer.md)
+- [Kaikoura v25p5](basins/Kaikoura.md)
+- [Mackenzie v20p6](basins/Mackenzie.md)
+- [NorthCanterbury v19p1](basins/NorthCanterbury.md)
+- [Waitaki v20p8](basins/Waitaki.md)
+
+##  Gisborne Region
+- [Gisborne v21p11](basins/Gisborne.md)
+- [TolagaBay v25p5](basins/TolagaBay.md)
+- [Waiapu v25p5](basins/Waiapu.md)
+
+##  Hawke's Bay Region
+- [HawkesBay v21p7](basins/HawkesBay.md)
+- [Napier v21p7](basins/Napier.md)
+
+##  Manawatū-Whanganui Region
+- [PalmerstonNorth v25p5](basins/PalmerstonNorth.md)
+- [SouthernHawkesBay v21p12](basins/SouthernHawkesBay.md)
+
+##  Marlborough Region
 - [Marlborough v19p1](basins/Marlborough.md)
 
-### Nelson/Tasman Region
-- [Nelson v19p1](basins/Nelson.md)
-- [Murchison v20p7](basins/Murchison.md)
-- [Karamea v20p11](basins/Karamea.md)
-- [Collingwood v20p11](basins/Collingwood.md)
-- [Springs Junction v20p11](basins/SpringsJunction.md)
-- [Westport v24p9](basins/Westport.md)
-
-### Central Otago Region
-- [Wanaka v20p6](basins/Wanaka.md)
-- [Mackenzie v20p6](basins/Mackenzie.md)
-- [Wakatipu v20p7](basins/Wakatipu.md)
+##  Otago Region
 - [Alexandra v20p7](basins/Alexandra.md)
-- [Ranfurly v20p7](basins/Ranfurly.md)
-- [Waitaki v20p8](basins/Waitaki.md)
-- [Hakataramea v20p8](basins/Hakataramea.md)
-
-### Otago Region
-- [Northeast Otago v20p7](basins/NE_Otago.md)
-- [Mosgiel v20p7](basins/Mosgiel.md)
 - [Balclutha v20p7](basins/Balclutha.md)
 - [Dunedin v20p7](basins/Dunedin.md)
-- [Te Anau v24p9](basins/TeAnau.md)
+- [Mosgiel v20p7](basins/Mosgiel.md)
+- [NE_Otago v20p7](basins/NE_Otago.md)
+- [Ranfurly v20p7](basins/Ranfurly.md)
+- [Wakatipu v20p7](basins/Wakatipu.md)
+- [Wanaka v20p6](basins/Wanaka.md)
+
+##  Southland Region
+- [Southland v25p5](basins/Southland.md)
+- [TeAnau v25p5](basins/TeAnau.md)
+
+##  Tasman Region
+- [Collingwood v20p11](basins/Collingwood.md)
+- [Murchison v20p7](basins/Murchison.md)
+- [Nelson v25p5](basins/Nelson.md)
+
+##  Waikato Region
+- [WaikatoHauraki v19p7](basins/WaikatoHauraki.md)
+
+##  Wellington Region
+- [GreaterWellington v21p7](basins/GreaterWellington.md)
+- [Porirua v21p7](basins/Porirua.md)
+- [Wairarapa v21p12](basins/Wairarapa.md)
+- [Wellington v25p5](basins/Wellington.md)
+
+##  West Coast Region
+- [Karamea v20p11](basins/Karamea.md)
+- [SpringsJunction v20p11](basins/SpringsJunction.md)
+- [WestCoast v25p5](basins/WestCoast.md)
+- [Westport v25p5](basins/Westport.md)
 
 ## Version Information
 

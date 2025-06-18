@@ -40,7 +40,7 @@ def generate_basin_markdown(
     ],
     basin_map_file: Annotated[
         Path,
-        typer.Argument(help="Path to the PNG map of basins", exists=True)
+        typer.Argument(help="Relative path to the PNG map of basins from the wiki to be generated", exists=True)
     ],
     basin_region_csv: Annotated[
         Path,
@@ -54,6 +54,8 @@ def generate_basin_markdown(
         model_data = yaml.safe_load(f)
 
     model_name = model_version_file.stem
+    model_version = model_name.replace("p", ".") if "p" in model_name and model_name.replace("p","").isdigit() else model_name
+
     basin_entries = model_data.get("basins", [])
     if not basin_entries:
         typer.echo("❌ No basins found in the YAML file.", err=True)
@@ -67,12 +69,12 @@ def generate_basin_markdown(
         region = region_lookup.get(base, "Uncategorized")
         region_basin_map.setdefault(region, []).append((base, version))
 
-    output_file = Path(f"Basins_{model_name}.md")
+    output_file = Path(f"Basins.md")
     with open(output_file, "w") as out:
-        out.write("# Basins in the New Zealand Velocity Model\n\n")
+        out.write(f"# Basins in the New Zealand Velocity Model (version {model_version})\n\n")
         out.write("This page provides an overview of sedimentary basin models integrated into the New Zealand Velocity Model.\n\n")
         out.write(f"<!-- Referenced map image -->\n")
-        out.write(f'<img src="{basin_map_file.name}" width="50%" alt="New Zealand basins overview">\n\n')
+        out.write(f'<img src="{basin_map_file}" width="50%" alt="New Zealand basins overview">\n\n')
 
         # Write grouped content by region only
         for subregion in sorted(region_basin_map):
