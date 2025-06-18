@@ -350,7 +350,7 @@ basin:
     surfaces:
       - path: global/surface/NZ_DEM_HD.h5
         submodel: canterbury1d_v2
-      - path: regional/Nelson_basement_WGS84_v25p5.in
+      - path: regional/Nelson/Nelson_basement_WGS84_v25p5.in
     smoothing: regional/Nelson/Nelson_smoothing.txt
 
   - name: Wellington_v19p1
@@ -1084,7 +1084,8 @@ basin:
       - regional/Southland_basin_map.png
 
     boundaries:
-      - regional/Southland/Southland_outline_WGS84.txt
+      - regional/Southland/Southland_outline_WGS84_1.txt
+      - regional/Southland/Southland_outline_WGS84_2.txt
 
     surfaces:
       - path: global/surface/NZ_DEM_HD.h5
