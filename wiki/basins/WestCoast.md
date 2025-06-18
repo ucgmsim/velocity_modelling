@@ -10,7 +10,7 @@
 
 
 ## Images
-![](../images/regional/WestCoast_basin_map.png)
+<a href="../images/regional/WestCoast_basin_map.png"><img src="../images/regional/WestCoast_basin_map.png" width="75%"></a>
 
 *Figure 1 Location*
 
@@ -27,4 +27,4 @@
 - [WestCoast_smoothing.txt](../../velocity_modelling/data/regional/WestCoast/WestCoast_smoothing.txt)
 
 ---
-*Page generated on: June 17, 2025, 10:30 NZST/NZDT*
+*Page generated on: June 18, 2025, 17:14 NZST/NZDT*

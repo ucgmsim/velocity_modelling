@@ -10,11 +10,11 @@
 
 
 ## Images
-![](../images/maps/NI_south.png)
+<a href="../images/maps/NI_south.png"><img src="../images/maps/NI_south.png" width="75%"></a>
 
 *Figure 1 Location*
 
-![](../images/regional/Wairarapa_basin_map.png)
+<a href="../images/regional/Wairarapa_basin_map.png"><img src="../images/regional/Wairarapa_basin_map.png" width="75%"></a>
 
 *Figure 2 Wairarapa Basin Map*
 
@@ -42,4 +42,4 @@
 - [Wairarapa_Surface_Export.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Wairarapa/v21p12/Wairarapa_Surface_Export.in)
 
 ---
-*Page generated on: June 17, 2025, 10:30 NZST/NZDT*
+*Page generated on: June 18, 2025, 17:14 NZST/NZDT*

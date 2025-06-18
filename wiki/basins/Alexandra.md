@@ -10,15 +10,15 @@
 
 
 ## Images
-![](../images/maps/SI_mid.png)
+<a href="../images/maps/SI_mid.png"><img src="../images/maps/SI_mid.png" width="75%"></a>
 
 *Figure 1 Location*
 
-![](../images/regional/Alexandra_basin_map.png)
+<a href="../images/regional/Alexandra_basin_map.png"><img src="../images/regional/Alexandra_basin_map.png" width="75%"></a>
 
 *Figure 2 Alexandra Basin Map*
 
-![](../images/basins/alexandra-ranfurly_basins_classification_v2-page-001.jpg)
+<a href="../images/basins/alexandra-ranfurly_basins_classification_v2-page-001.jpg"><img src="../images/basins/alexandra-ranfurly_basins_classification_v2-page-001.jpg" width="75%"></a>
 
 *Figure 3 Alexandra-ranfurly Basins Classification V2-page-001*
 
@@ -43,4 +43,4 @@
 - [ran-alex_proj_WGS84.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/ran-alex_proj_WGS84.in)
 
 ---
-*Page generated on: June 17, 2025, 10:30 NZST/NZDT*
+*Page generated on: June 18, 2025, 17:14 NZST/NZDT*

@@ -11,19 +11,19 @@
 
 
 ## Images
-![](../images/maps/motubay_whangaparoa.png)
+<a href="../images/maps/motubay_whangaparoa.png"><img src="../images/maps/motubay_whangaparoa.png" width="75%"></a>
 
 *Figure 1 Location*
 
-![](../images/regional/OmaioBay_basin_map.png)
+<a href="../images/regional/OmaioBay_basin_map.png"><img src="../images/regional/OmaioBay_basin_map.png" width="75%"></a>
 
 *Figure 2 Omaiobay Basin Map*
 
-![](../images/basins/moturiver_extended_outline.png)
+<a href="../images/basins/moturiver_extended_outline.png"><img src="../images/basins/moturiver_extended_outline.png" width="75%"></a>
 
 *Figure 3 Moturiver Extended Outline*
 
-![](../images/basins/eastcape_coastal_river_valleys.png)
+<a href="../images/basins/eastcape_coastal_river_valleys.png"><img src="../images/basins/eastcape_coastal_river_valleys.png" width="75%"></a>
 
 *Figure 4 Eastcape Coastal River Valleys*
 
@@ -44,4 +44,4 @@
 - [OmaioBay_smoothing.txt](../../velocity_modelling/data/regional/OmaioBay/OmaioBay_smoothing.txt)
 
 ---
-*Page generated on: June 17, 2025, 10:30 NZST/NZDT*
+*Page generated on: June 18, 2025, 17:14 NZST/NZDT*

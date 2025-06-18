@@ -10,15 +10,15 @@
 
 
 ## Images
-![](../images/maps/NI_mideast.png)
+<a href="../images/maps/NI_mideast.png"><img src="../images/maps/NI_mideast.png" width="75%"></a>
 
 *Figure 1 Location*
 
-![](../images/regional/Napier_basin_map.png)
+<a href="../images/regional/Napier_basin_map.png"><img src="../images/regional/Napier_basin_map.png" width="75%"></a>
 
 *Figure 2 Napier Basin Map*
 
-![](../images/basins/napier_outline.png)
+<a href="../images/basins/napier_outline.png"><img src="../images/basins/napier_outline.png" width="75%"></a>
 
 *Figure 3 Napier Outline*
 
@@ -53,4 +53,4 @@
 - [Napier_Grid_WGS84_Export.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Basins/Napier_Hawkes_Bay/v21p7/Napier_Grid_WGS84_Export.in)
 
 ---
-*Page generated on: June 17, 2025, 10:30 NZST/NZDT*
+*Page generated on: June 18, 2025, 17:14 NZST/NZDT*

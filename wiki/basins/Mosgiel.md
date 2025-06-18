@@ -10,19 +10,19 @@
 
 
 ## Images
-![](../images/maps/SI_se.png)
+<a href="../images/maps/SI_se.png"><img src="../images/maps/SI_se.png" width="75%"></a>
 
 *Figure 1 Location*
 
-![](../images/regional/Mosgiel_basin_map.png)
+<a href="../images/regional/Mosgiel_basin_map.png"><img src="../images/regional/Mosgiel_basin_map.png" width="75%"></a>
 
 *Figure 2 Mosgiel Basin Map*
 
-![](../images/basins/green_class.png)
+<a href="../images/basins/green_class.png"><img src="../images/basins/green_class.png" width="75%"></a>
 
 *Figure 3 Green Class*
 
-![](../images/basins/green_rock.png)
+<a href="../images/basins/green_rock.png"><img src="../images/basins/green_rock.png" width="75%"></a>
 
 *Figure 4 Green Rock*
 
@@ -49,4 +49,4 @@
 - [mos_proj_WGS84.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/mos_proj_WGS84.in)
 
 ---
-*Page generated on: June 17, 2025, 10:30 NZST/NZDT*
+*Page generated on: June 18, 2025, 17:14 NZST/NZDT*

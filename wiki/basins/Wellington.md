@@ -11,15 +11,15 @@
 
 
 ## Images
-![](../images/maps/NI_south.png)
+<a href="../images/maps/NI_south.png"><img src="../images/maps/NI_south.png" width="75%"></a>
 
 *Figure 1 Location*
 
-![](../images/regional/Wellington_basin_map.png)
+<a href="../images/regional/Wellington_basin_map.png"><img src="../images/regional/Wellington_basin_map.png" width="75%"></a>
 
 *Figure 2 Wellington Basin Map*
 
-![](../images/basins/wellington_outline.png)
+<a href="../images/basins/wellington_outline.png"><img src="../images/basins/wellington_outline.png" width="75%"></a>
 
 *Figure 3 Wellington Outline*
 
@@ -41,4 +41,4 @@
 - [Wellington_smoothing.txt](../../velocity_modelling/data/regional/Wellington/Wellington_smoothing.txt)
 
 ---
-*Page generated on: June 17, 2025, 10:30 NZST/NZDT*
+*Page generated on: June 18, 2025, 17:14 NZST/NZDT*

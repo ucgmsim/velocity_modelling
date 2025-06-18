@@ -10,11 +10,11 @@
 
 
 ## Images
-![](../images/maps/motubay_whangaparoa.png)
+<a href="../images/maps/motubay_whangaparoa.png"><img src="../images/maps/motubay_whangaparoa.png" width="75%"></a>
 
 *Figure 1 Location*
 
-![](../images/regional/Whangaparoa_basin_map.png)
+<a href="../images/regional/Whangaparoa_basin_map.png"><img src="../images/regional/Whangaparoa_basin_map.png" width="75%"></a>
 
 *Figure 2 Whangaparoa Basin Map*
 
@@ -42,4 +42,4 @@
 - [Whangaparoa_surface_WGS84.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/Whangaparoa_surface_WGS84.txt)
 
 ---
-*Page generated on: June 17, 2025, 10:30 NZST/NZDT*
+*Page generated on: June 18, 2025, 17:14 NZST/NZDT*

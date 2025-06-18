@@ -11,15 +11,15 @@
 
 
 ## Images
-![](../images/maps/kaikoura.png)
+<a href="../images/maps/kaikoura.png"><img src="../images/maps/kaikoura.png" width="75%"></a>
 
 *Figure 1 Location*
 
-![](../images/regional/Kaikoura_basin_map_v25p5.png)
+<a href="../images/regional/Kaikoura_basin_map_v25p5.png"><img src="../images/regional/Kaikoura_basin_map_v25p5.png" width="75%"></a>
 
 *Figure 2 Kaikoura Basin Map V25p5*
 
-![](../images/basins/kaikoura_basement.png)
+<a href="../images/basins/kaikoura_basement.png"><img src="../images/basins/kaikoura_basement.png" width="75%"></a>
 
 *Figure 3 Kaikoura Basement*
 
@@ -36,4 +36,4 @@
 - [Kaikoura_smoothing_v25p5_.txt](../../velocity_modelling/data/regional/Kaikoura/Kaikoura_smoothing_v25p5_.txt)
 
 ---
-*Page generated on: June 17, 2025, 10:30 NZST/NZDT*
+*Page generated on: June 18, 2025, 17:14 NZST/NZDT*

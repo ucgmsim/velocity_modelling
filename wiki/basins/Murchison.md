@@ -10,15 +10,15 @@
 
 
 ## Images
-![](../images/maps/SI_north.png)
+<a href="../images/maps/SI_north.png"><img src="../images/maps/SI_north.png" width="75%"></a>
 
 *Figure 1 Location*
 
-![](../images/regional/Murchison_basin_map.png)
+<a href="../images/regional/Murchison_basin_map.png"><img src="../images/regional/Murchison_basin_map.png" width="75%"></a>
 
 *Figure 2 Murchison Basin Map*
 
-![](../images/basins/murchison_outline.png)
+<a href="../images/basins/murchison_outline.png"><img src="../images/basins/murchison_outline.png" width="75%"></a>
 
 *Figure 3 Murchison Outline*
 
@@ -40,4 +40,4 @@
 - [MurchisonBasin_WGS84_500m_v2020v07v15.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/MurchisonBasin_WGS84_500m_v2020v07v15.in)
 
 ---
-*Page generated on: June 17, 2025, 10:30 NZST/NZDT*
+*Page generated on: June 18, 2025, 17:14 NZST/NZDT*

@@ -10,11 +10,11 @@
 
 
 ## Images
-![](../images/maps/SI_north.png)
+<a href="../images/maps/SI_north.png"><img src="../images/maps/SI_north.png" width="75%"></a>
 
 *Figure 1 Location*
 
-![](../images/regional/SpringsJunction_basin_map.png)
+<a href="../images/regional/SpringsJunction_basin_map.png"><img src="../images/regional/SpringsJunction_basin_map.png" width="75%"></a>
 
 *Figure 2 Springsjunction Basin Map*
 
@@ -36,4 +36,4 @@
 - [SpringsJunctionBasin_WGS84_500m_v12v11v2020.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/SpringsJunctionBasin_WGS84_500m_v12v11v2020.in)
 
 ---
-*Page generated on: June 17, 2025, 10:30 NZST/NZDT*
+*Page generated on: June 18, 2025, 17:14 NZST/NZDT*

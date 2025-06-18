@@ -11,11 +11,11 @@
 
 
 ## Images
-![](../images/maps/SI_north.png)
+<a href="../images/maps/SI_north.png"><img src="../images/maps/SI_north.png" width="75%"></a>
 
 *Figure 1 Location*
 
-![](../images/regional/Nelson_basin_map_v25p5.png)
+<a href="../images/regional/Nelson_basin_map_v25p5.png"><img src="../images/regional/Nelson_basin_map_v25p5.png" width="75%"></a>
 
 *Figure 2 Nelson Basin Map V25p5*
 
@@ -36,4 +36,4 @@
 - [Nelson_smoothing.txt](../../velocity_modelling/data/regional/Nelson/Nelson_smoothing.txt)
 
 ---
-*Page generated on: June 17, 2025, 10:30 NZST/NZDT*
+*Page generated on: June 18, 2025, 17:14 NZST/NZDT*
