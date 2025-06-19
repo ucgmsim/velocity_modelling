@@ -36,7 +36,53 @@ app = typer.Typer(pretty_exceptions_enable=False)
 
 
 def _get_basin_versions(registry_path: Path):
-    """Reads and parses the registry yaml file to group models by basin name."""
+    """
+    Reads and parses the registry yaml file to group models by basin name.
+
+    Parameters
+    ----------
+    registry_path : Path
+        Path to the nzcvm_registry.yaml file.
+
+    Returns
+    -------
+    dict
+        A dictionary where keys are basin names and values are lists of dictionaries
+        containing basin details, including full name, version, version tuple, and data.
+
+    Raises
+    -------
+    FileNotFoundError
+        If the registry file does not exist at the specified path.
+    ValueError
+        If the registry file is not in the expected format or does not contain basin data.
+
+    Notes
+    -----
+    The function expects the registry file to contain a "basin" key with a list of basin entries.
+    Each basin entry should have a "name" field formatted as "BasinName_vXvY" where X and Y
+    are integers representing the version.
+    The version is split into a tuple of integers (major, minor) for easy comparison.
+
+    Example
+    -------
+    >>> registry_path = Path("nzcvm_registry.yaml")
+    >>> basin_versions = _get_basin_versions(registry_path)
+    >>> print(basin_versions["Canterbury"])
+    [
+        {
+            "full_name": "Canterbury_v20p7",
+            "version": "v20p7",
+            "version_tuple": (20, 7),
+            "data": {...}
+        },
+        ...
+    ]
+
+
+
+    """
+
     if not registry_path.exists():
         print(f"Error: Registry file not found at {registry_path}")
         raise typer.Exit(code=1)
@@ -76,11 +122,20 @@ def list_basins(
         typer.Option(
             "--registry",
             help="Path to the nzcvm_registry.yaml file (default: ../nzcvm_registry.yaml)",
-            default_factory=lambda: Path(__file__).parent.parent / "nzcvm_registry.yaml",
+            default_factory=lambda: Path(__file__).parent.parent
+            / "nzcvm_registry.yaml",
         ),
     ],
 ):
-    """Lists all unique basin names found in the registry."""
+    """
+    Lists all unique basin names found in the registry.
+
+    Parameters
+    ----------
+    registry : Path
+        Path to the nzcvm_registry.yaml file. Defaults to ../nzcvm_registry.yaml.
+
+    """
     basin_versions = _get_basin_versions(registry)
     for basin_name in sorted(basin_versions.keys()):
         print(basin_name)
@@ -124,6 +179,7 @@ def generate_wiki(
         Path to the nzcvm_registry.yaml file
     scale_images : bool, optional
         If True, scale images to 75% size with a clickable link to full size
+
     """
     basin_versions = _get_basin_versions(registry)
 
@@ -149,7 +205,6 @@ def generate_wiki(
         older_versions = [v for v in versions if v != latest_version]
 
         # Extract details from the latest version
-        full_name = latest_version["full_name"]
         version = latest_version["version"]
         basin_data = latest_version["data"]
 
