@@ -16,13 +16,13 @@ The model includes the following components:
     - 2010 NZ: based on Eberhart-Philips et al. (2010)
     - 2020 NZ: based on Eberhart-Philips et al. (2020)
 
-- **Embedded subregion (sedimentary basin) models**: 34 basins with varying levels of characterization
+- **Embedded subregion (sedimentary basin) models**: 41 basins with varying levels of characterization (version 2.08)
 
 By embedding discrete regional models into the lower-resolution tomography data, the NZCVM provides a unified velocity model that incorporates data across multiple length scales and resolutions. This model is suitable for broadband physics-based ground motion simulations and other engineering applications.
 
 ## Key Components
 
-- [**Basins**](wiki/Basins.md): Detailed information about the 34 basin models integrated into the NZCVM
+- [**Basins**](wiki/Basins.md): Detailed information about the 41 basin models integrated into the NZCVM
 - [**Tomography**](wiki/Tomography.md): Information about available tomography models
 - [**Data Formats**](wiki/DataFormats.md): Explanation of formats for surface, boundary, tomography, 1D velocity models, and smoothing data
 - [**Output Formats**](wiki/OutputFormats.md): Details about the output formats, including the emod3d, csv and HDF5 formats

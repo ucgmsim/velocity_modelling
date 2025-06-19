@@ -66,8 +66,8 @@ In addition to the EMOD3D format, the NZCVM can also output velocity models in C
 ### Format Specification
 
 The CSV output contains one row per grid point, with the following columns:
-- `y`, `x`, `z`: Grid coordinates (in kilometers)
-- `lon`, `lat`, `depth`: Geographic coordinates. `depth` is negative for depths below the surface (in meters)
+- `y`, `x`, `z`: Grid coordinates (indexes in the model grid)
+- `lon`, `lat`, `depth`: Geographic coordinates. `depth` is negative for depths above the surface (in meters)
 - `vp`: P-wave velocity (in km/s)
 - `vs`: S-wave velocity (in km/s)
 - `rho`: Density (in g/cm^3)
@@ -76,12 +76,12 @@ The CSV output contains one row per grid point, with the following columns:
 
 ```
 y,x,z,lat,lon,depth,vp,vs,rho,inbasin
-0,0,0,-40.7843951540506,173.21166935182586,-125.0,1.8,0.58,1.81,-1
-0,0,1,-40.7843951540506,173.21166935182586,-375.0,1.8,0.83,1.81,-1
-0,0,2,-40.7843951540506,173.21166935182586,-625.0,2.03,1.0,1.92,-1
-0,0,3,-40.7843951540506,173.21166935182586,-875.0,2.14,1.05,1.97,-1
-0,0,4,-40.7843951540506,173.21166935182586,-1125.0,2.2,1.1,1.99,-1
-0,0,5,-40.7843951540506,173.21166935182586,-1375.0,2.4,1.15,2.06,-1
+0,0,0,-40.7843951540506,173.21166935182586,125.0,1.8,0.58,1.81,-1
+0,0,1,-40.7843951540506,173.21166935182586,375.0,1.8,0.83,1.81,-1
+0,0,2,-40.7843951540506,173.21166935182586,625.0,2.03,1.0,1.92,-1
+0,0,3,-40.7843951540506,173.21166935182586,875.0,2.14,1.05,1.97,-1
+0,0,4,-40.7843951540506,173.21166935182586,1125.0,2.2,1.1,1.99,-1
+0,0,5,-40.7843951540506,173.21166935182586,1375.0,2.4,1.15,2.06,-1
 ...
 ```
 
@@ -144,9 +144,9 @@ The file structure is organized as follows:
   - `model_version`: Version of the velocity model being used
 
 - **`/mesh` group**:
-  - `x`: Array of X coordinates (km)
-  - `y`: Array of Y coordinates (km) 
-  - `z`: Array of Z (depth) coordinates (km)
+  - `x`: Array of X coordinates (index)
+  - `y`: Array of Y coordinates (index) 
+  - `z`: Array of Z (depth) coordinates (index)
   - `lon`: 2D array of longitude values
   - `lat`: 2D array of latitude values
 

@@ -20,7 +20,7 @@
 
 
 ## Notes
-- See [MotuBay](MotuBay.md) for additional notes
+- See [OmaioBay](OmaioBay.md) for additional notes
 
 ## Data
 ### Boundaries
@@ -29,6 +29,9 @@
 ### Surfaces
 - NZ_DEM_HD : [HDF5](../../velocity_modelling/data/global/surface/NZ_DEM_HD.h5) / [TXT](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
 - Whangaparoa_basement_WGS84 : [HDF5](../../velocity_modelling/data/regional/Whangaparoa/Whangaparoa_basement_WGS84.h5) / [TXT](../../velocity_modelling/data/regional/Whangaparoa/Whangaparoa_basement_WGS84.in) (Submodel: N/A)
+
+### Smoothing Boundaries
+- [Whangaparoa_smoothing.txt](../../velocity_modelling/data/regional/Whangaparoa/Whangaparoa_smoothing.txt)
 
 ## Data retrieved from
 ### Boundaries
@@ -39,4 +42,4 @@
 - [Whangaparoa_surface_WGS84.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/USER20_BASINS/Whangaparoa_surface_WGS84.txt)
 
 ---
-*Page generated on: April 15, 2025, 11:17 NZST/NZDT*
+*Page generated on: June 18, 2025, 17:14 NZST/NZDT*

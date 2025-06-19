@@ -29,7 +29,7 @@
 
 ### Surfaces
 - CantDEM : [HDF5](../../velocity_modelling/data/global/surface/CantDEM.h5) / [TXT](../../velocity_modelling/data/global/surface/CantDEM.in) (Submodel: canterbury1d_v2_pliocene_enforced)
-- Canterbury_Pliocene_46_v8p9p18_WGS84 : [HDF5](../../velocity_modelling/data/regional/Canterbury/Canterbury_Pliocene_46_v8p9p18_WGS84.h5) / [TXT](../../velocity_modelling/data/regional/Canterbury/Canterbury_Pliocene_46_v8p9p18_WGS84.in) (Submodel: pliocene_submod_v1)
+- Canterbury_Pliocene_46_WGS84_v8p9p18 : [HDF5](../../velocity_modelling/data/regional/Canterbury/Canterbury_Pliocene_46_WGS84_v8p9p18.h5) / [TXT](../../velocity_modelling/data/regional/Canterbury/Canterbury_Pliocene_46_WGS84_v8p9p18.in) (Submodel: pliocene_submod_v1)
 - Canterbury_Miocene_WGS84 : [HDF5](../../velocity_modelling/data/regional/Canterbury/Canterbury_Miocene_WGS84.h5) / [TXT](../../velocity_modelling/data/regional/Canterbury/Canterbury_Miocene_WGS84.in) (Submodel: miocene_submod_v1)
 - Canterbury_Paleogene_WGS84 : [HDF5](../../velocity_modelling/data/regional/Canterbury/Canterbury_Paleogene_WGS84.h5) / [TXT](../../velocity_modelling/data/regional/Canterbury/Canterbury_Paleogene_WGS84.in) (Submodel: paleogene_submod_v1)
 - Canterbury_basement_WGS84 : [HDF5](../../velocity_modelling/data/regional/Canterbury/Canterbury_basement_WGS84.h5) / [TXT](../../velocity_modelling/data/regional/Canterbury/Canterbury_basement_WGS84.in) (Submodel: N/A)
@@ -49,4 +49,4 @@
 - [BasementTop.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/Canterbury_Basin/Quaternary/BasementTop.in)
 
 ---
-*Page generated on: April 15, 2025, 11:17 NZST/NZDT*
+*Page generated on: June 18, 2025, 17:14 NZST/NZDT*

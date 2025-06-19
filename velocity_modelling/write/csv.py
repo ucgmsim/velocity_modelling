@@ -72,7 +72,7 @@ def write_global_qualities(
             "z": np.tile(np.arange(nz), nx),
             "lat": np.repeat(partial_global_mesh.lat, nz),
             "lon": np.repeat(partial_global_mesh.lon, nz),
-            "depth": np.tile(partial_global_mesh.z, nx),
+            "depth": np.tile(partial_global_mesh.z * (-1), nx), # negative to convert elevation to depth
         }
 
         # Process quality values

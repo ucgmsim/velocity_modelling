@@ -8,6 +8,9 @@ matplotlib
 
 # Geospatial
 shapely
+fiona
+geopandas
+pyproj
 
 # Testing
 hypothesis[numpy]

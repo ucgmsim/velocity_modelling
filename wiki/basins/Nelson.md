@@ -3,10 +3,11 @@
 ## Overview
 |         |                     |
 |---------|---------------------|
-| Version | 19p1           |
+| Version | 25p5           |
 | Type    | 2        |
 | Author  | Robin Lee            |
-| Created | 2019-01           |
+| Created | 2025-05           |
+| Older Versions | 19p1 |
 
 
 ## Images
@@ -14,13 +15,14 @@
 
 *Figure 1 Location*
 
-<a href="../images/regional/Nelson_basin_map.png"><img src="../images/regional/Nelson_basin_map.png" width="75%"></a>
+<a href="../images/regional/Nelson_basin_map_v25p5.png"><img src="../images/regional/Nelson_basin_map_v25p5.png" width="75%"></a>
 
-*Figure 2 Nelson Basin Map*
+*Figure 2 Nelson Basin Map V25p5*
 
 
 ## Notes
 - Sourced from https://nelson-richmond-geolmap.github.io/RGMap/ (for the geological map of the Nelson-Richmond area)
+- Based on Ghisetti2017
 
 ## Data
 ### Boundaries
@@ -28,18 +30,10 @@
 
 ### Surfaces
 - NZ_DEM_HD : [HDF5](../../velocity_modelling/data/global/surface/NZ_DEM_HD.h5) / [TXT](../../velocity_modelling/data/global/surface/NZ_DEM_HD.in) (Submodel: canterbury1d_v2)
-- Nelson_basement_WGS84 : [HDF5](../../velocity_modelling/data/regional/Nelson/Nelson_basement_WGS84.h5) / [TXT](../../velocity_modelling/data/regional/Nelson/Nelson_basement_WGS84.in) (Submodel: N/A)
+- Nelson_basement_WGS84_v25p5 :  (Submodel: N/A)
 
 ### Smoothing Boundaries
 - [Nelson_smoothing.txt](../../velocity_modelling/data/regional/Nelson/Nelson_smoothing.txt)
 
-## Data retrieved from
-### Boundaries
-- [Nelson_Polygon_WGS84.txt](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/SI_BASINS/Nelson_Polygon_WGS84.txt)
-
-### Surfaces
-- [NZ_DEM_HD.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/DEM/NZ_DEM_HD.in)
-- [Nelson_Basement_WGS84_v0p0.in](https://github.com/ucgmsim/Velocity-Model/tree/main/Data/SI_BASINS/Nelson_Basement_WGS84_v0p0.in)
-
 ---
-*Page generated on: April 15, 2025, 11:17 NZST/NZDT*
+*Page generated on: June 18, 2025, 17:14 NZST/NZDT*
