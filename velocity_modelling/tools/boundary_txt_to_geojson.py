@@ -42,7 +42,8 @@ def read_coordinates_from_file(file_path: Path) -> list[list[float]]:
     """
     lines = file_path.read_text().splitlines()
     coordinates = []
-    for line in lines:
+    # Explicitly filter out empty or whitespace-only lines before processing
+    for line in [ln for ln in lines if ln.strip()]:
         parts = line.strip().split()
         if len(parts) >= 2:
             try:
