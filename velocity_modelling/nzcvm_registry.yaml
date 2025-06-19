@@ -237,7 +237,7 @@ basin:
       - path: global/surface/NZ_DEM_HD.h5
         submodel: canterbury1d_v2
       - path: regional/Kaikoura/Kaikoura_basement_v25p5_WGS84.in
-    smoothing: regional/Kaikoura/Kaikoura_smoothing_v25p5_.txt
+    smoothing: regional/Kaikoura/Kaikoura_smoothing_v25p5.txt
     
 
   - name: Cheviot_v19p1

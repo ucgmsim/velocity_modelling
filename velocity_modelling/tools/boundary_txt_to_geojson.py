@@ -140,7 +140,11 @@ def convert_to_geojson(
             err=True,
         )
         coordinates.append(coordinates[0])  # Close the polygon in memory
+        # Ensure there's a newline before appending the closing coordinate
+        content = input_txt.read_text()
         with input_txt.open("a") as f:
+            if content and not content.endswith("\n"):
+                f.write("\n")
             f.write(f"{coordinates[-1][0]} {coordinates[-1][1]}\n")
 
     geojson = create_geojson(coordinates)
