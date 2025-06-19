@@ -147,14 +147,14 @@ The file structure is organized as follows:
   - `x`: Array of X coordinates (index)
   - `y`: Array of Y coordinates (index) 
   - `z`: Array of Z (depth) coordinates (index)
-  - `lon`: 2D array of longitude values
-  - `lat`: 2D array of latitude values
+  - `lon`: 2D array of longitude values [shape: (nx, ny)]
+  - `lat`: 2D array of latitude values [shape: (nx, ny)]
 
 - **`/properties` group**:
-  - `vp`: 3D array of P-wave velocities (km/s) [shape: (nx, ny, nz)]
-  - `vs`: 3D array of S-wave velocities (km/s) [shape: (nx, ny, nz)]
-  - `rho`: 3D array of densities (g/cm^3) [shape: (nx, ny, nz)]
-  - `inbasin`: 3D array of basin membership flags [shape: (nx, ny, nz)]
+  - `vp`: 3D array of P-wave velocities (km/s) [shape: (nz, ny, nx)]
+  - `vs`: 3D array of S-wave velocities (km/s) [shape: (nz, ny, nx)]
+  - `rho`: 3D array of densities (g/cm^3) [shape: (nz, ny, nx)]
+  - `inbasin`: 3D array of basin membership flags [shape: (nz, ny, nx)]
 
 Each property dataset includes attributes describing units and constraints (e.g., minimum Vs values).
 
