@@ -1,5 +1,5 @@
 pipeline {
-    agent none
+    agent none 
 
     stages {
         stage('Pull Latest Docker Image') {
@@ -9,16 +9,20 @@ pipeline {
             }
         }
 
-        stage('Run in Docker') {
+        stage('Run Tests in Container') {
             agent {
-                docker {
-                    image 'earthquakesuc/nzvm'
+                docker { image 'earthquakesuc/nzvm'
+                    // The -u 0 flags means run commands inside the container
+                    // as the user with uid = 0. This user is, by default, the
+                    // root user. So it is effectively saying run the commands
+                    // as root.
                     args "-u 0 -v /mnt/mantle_data/jenkins/nzvm/Data:/nzvm/Data -v /mnt/mantle_data/jenkins/nzvm/benchmarks:/nzvm/benchmarks -v /mnt/mantle_data/jenkins/nzvm/global:/nzvm/global"
                 }
             }
             stages {
                 stage('Install Python') {
                     steps {
+
                         sh """
                             apt-get update
                             apt-get install -y python3-pip python3-venv python3
@@ -29,15 +33,15 @@ pipeline {
                     steps {
                         echo "[[ Install GMT ]]"
                         sh """
-                            apt-get update
-                            apt-get install -y gmt libgmt-dev libgmt6 ghostscript
+                           apt-get update
+                           apt-get install -y gmt libgmt-dev libgmt6 ghostscript
                         """
                     }
                 }
                 stage('Install UV') {
                     steps {
                         sh """
-                            curl -LsSf https://astral.sh/uv/install.sh | sh
+                             curl -LsSf https://astral.sh/uv/install.sh | sh
                         """
                     }
                 }
@@ -53,6 +57,7 @@ pipeline {
                         """
                     }
                 }
+
                 stage('Run regression tests') {
                     steps {
                         sh """
@@ -64,7 +69,8 @@ pipeline {
                     }
                 }
             }
-        }
-    }
-}
+        } // stage('Run Tests in Container')
+    } // stages
+} // pipeline
+
 
