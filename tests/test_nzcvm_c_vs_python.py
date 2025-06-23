@@ -54,7 +54,7 @@ def data_root_path(request: pytest.FixtureRequest) -> Path:
 def generate_random_nzcvm_config(tmp_path: Path, c_output_dir: Path) -> Path:
     """Generate a random but sensible nzcvm.cfg file with specified parameters"""
     # Sensible ranges and choices for parameters
-    model_version = random.choice(["2.03", "2.07"])
+    model_version = random.choice(["2.08"])  # Fixed to known valid versions
     extent_x = random.uniform(10, 100)
     extent_y = random.uniform(10, 100)
     extent_zmax = random.uniform(2, 50)
