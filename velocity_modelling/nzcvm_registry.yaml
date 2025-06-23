@@ -232,11 +232,11 @@ basin:
       - regional/Kaikoura_basin_map_v25p5.png
       - basins/kaikoura_basement.png
     boundaries:
-      - regional/Kaikoura/Kaikoura_outline_v25p5_WGS84.txt
+      - regional/Kaikoura/Kaikoura_outline_WGS84_v25p5.txt
     surfaces:
       - path: global/surface/NZ_DEM_HD.h5
         submodel: canterbury1d_v2
-      - path: regional/Kaikoura/Kaikoura_basement_v25p5_WGS84.in
+      - path: regional/Kaikoura/Kaikoura_basement_WGS84_v25p5.in
     smoothing: regional/Kaikoura/Kaikoura_smoothing_v25p5.txt
     
 
