@@ -264,7 +264,7 @@ The data files used by the NZCVM are located in the following directories:
 - **1D velocity models**: `data/global/vm1d/`.
 - **Smoothing data**: `data/regional/<basin_name>/`. Named `<basin_name>_smoothing[_v*].txt`.
 
-It is acceptable to omit the version suffix if there is only one version. However, it is strongly recommended to add a version suffix to avoid confusion, 
+It is acceptable to omit the version suffix if there is only one version. However, it is strongly recommended to add a version suffix to avoid confusion,
 especially when multiple versions of the same file exist. The version suffix typically follows the format `_v<version_number>`, where `<version_number>` is a string representing the version (e.g., `v25p5` for version 25.5).
 
 If a version suffix is not specified in the file name, it is assumed to be the latest version.
