@@ -51,13 +51,13 @@ def create_xdmf_file(hdf5_file: Path, vm_params: dict, logger: logging.Logger) -
     <Grid Name="Velocity_Model" GridType="Uniform">
       <Topology TopologyType="3DRectMesh" Dimensions="{nx} {ny} {nz}"/>
       <Geometry GeometryType="VXVYVZ">
-        <DataItem Dimensions="{nx}" NumberType="Float" Precision="8" Format="HDF">
+        <DataItem Dimensions="{nx}" NumberType="Int" Precision="4" Format="HDF">
           {hdf5_relative}:/mesh/x
         </DataItem>
-        <DataItem Dimensions="{ny}" NumberType="Float" Precision="8" Format="HDF">
+        <DataItem Dimensions="{ny}" NumberType="Int" Precision="4" Format="HDF">
           {hdf5_relative}:/mesh/y
         </DataItem>
-        <DataItem Dimensions="{nz}" NumberType="Float" Precision="8" Format="HDF">
+        <DataItem Dimensions="{nz}" NumberType="Int" Precision="4" Format="HDF">
           {hdf5_relative}:/mesh/z
         </DataItem>
       </Geometry>
@@ -184,10 +184,10 @@ def write_global_qualities(
                 )
 
                 mesh_group = f.create_group("mesh")
-                mesh_group.create_dataset("x", data=np.arange(nx, dtype=np.float64))
-                mesh_group.create_dataset("y", data=np.arange(ny, dtype=np.float64))
+                mesh_group.create_dataset("x", data=np.arange(nx, dtype=np.int32))
+                mesh_group.create_dataset("y", data=np.arange(ny, dtype=np.int32))
                 mesh_group.create_dataset(
-                    "z", data=np.arange(nz, dtype=np.float64)
+                    "z", data=np.arange(nz, dtype=np.int32)
                 )  # depth 0 is the top, the higher z is the deeper
                 mesh_group.create_dataset("lat", shape=(nx, ny), dtype="f8")
                 mesh_group.create_dataset("lon", shape=(nx, ny), dtype="f8")
