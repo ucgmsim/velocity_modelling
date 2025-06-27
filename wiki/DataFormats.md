@@ -258,8 +258,14 @@ This format is the same as the boundary format but does not require the first an
 
 The data files used by the NZCVM are located in the following directories:
 
-- **Surface data**: `data/global/surface` and `data/regional/<basin_name>/`. Named `<basin_name>_basement_[*_]WGS84.in` or `<basin_name>_basement_[*_]WGS84.h5`.
-- **Boundary data**: `data/regional/<basin_name>/`. Named `<basin_name>_outline_WGS84[_1,2,3..].txt` or `<basin_name>_outline_WGS84[_1,2,3..].geojson`.
+- **Surface data**: `data/global/surface` and `data/regional/<basin_name>/`. Named `<basin_name>_basement_WGS84[_ver].in` or `<basin_name>_basement_WGS84[_ver].h5`.
+- **Boundary data**: `data/regional/<basin_name>/`. Named `<basin_name>_outline_WGS84[_ver][_1,2,3..].txt` or `<basin_name>_outline_WGS84[_ver][_1,2,3..].geojson`. eg) OmaioBay_outline_WGS84_v22p3_1.txt
 - **Tomography data**: `data/global/tomography/`.
 - **1D velocity models**: `data/global/vm1d/`.
-- **Smoothing data**: `data/regional/<basin_name>/`. Named `<basin_name>_smoothing.txt`.
+- **Smoothing data**: `data/regional/<basin_name>/`. Named `<basin_name>_smoothing[_v*].txt`.
+
+It is acceptable to omit the version suffix if there is only one version. However, it is strongly recommended to add a version suffix to avoid confusion,
+especially when multiple versions of the same file exist. The version suffix typically follows the format `_v<version_number>`, where `<version_number>` is a string representing the version (e.g., `v25p5` for version 25.5).
+
+If a version suffix is not specified in the file name, it is assumed to be the latest version.
+
