@@ -50,13 +50,20 @@ pip install -e  .
     TOPO_TYPE=BULLDOZED
     OUTPUT_DIR=/tmp
 """
-
+import importlib
 import logging
 import sys
 import time
+from concurrent.futures import ProcessPoolExecutor
 from logging import Logger
+from multiprocessing import Lock, Manager
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Any
+
+
+
+
+
 
 import typer
 from tqdm import tqdm
@@ -141,6 +148,83 @@ def write_velo_mod_corners_text_file(
         )
 
 
+def process_slice_worker(
+    j: int,
+    global_mesh_data: dict,
+    partial_global_mesh_data: Any,
+    vm_params: dict,
+    registry_path: Path,
+    data_root: Path,
+    model_version: str,
+    smoothing: bool,
+    out_dir: Path,
+    output_format: str,
+):
+
+
+    # Recreate required objects
+    cvm_registry = CVMRegistry(model_version, Path(data_root), Path(registry_path), None)
+    global_surfaces = cvm_registry.global_surfaces
+    basin_data_list = cvm_registry.basin_data_list
+    in_basin_mesh, partial_global_mesh_list = InBasinGlobalMesh.preprocess_basin_membership(
+        global_mesh_data["mesh"],
+        basin_data_list,
+        None,
+        smooth_bound=cvm_registry.nz_tomography_data.smooth_boundary,
+    )
+
+    partial_global_mesh = partial_global_mesh_list[j]
+    partial_global_qualities = PartialGlobalQualities(partial_global_mesh.nx, partial_global_mesh.nz)
+
+    for k in range(len(partial_global_mesh.x)):
+        partial_global_surface_depths = PartialGlobalSurfaceDepths(len(global_surfaces))
+        partial_basin_surface_depths_list = [
+            PartialBasinSurfaceDepths(basin_data) for basin_data in basin_data_list
+        ]
+        qualities_vector = QualitiesVector(partial_global_mesh.nz)
+        basin_indices = in_basin_mesh.get_basin_membership(k, j)
+        in_basin_list = [
+            InBasin(basin_data, len(global_mesh_data["mesh"].z))
+            for basin_data in basin_data_list
+        ]
+        for basin_idx in basin_indices:
+            if basin_idx >= 0:
+                in_basin_list[basin_idx].in_basin_lat_lon = True
+
+        mesh_vector = extract_mesh_vector(partial_global_mesh, k)
+        qualities_vector.assign_qualities(
+            cvm_registry,
+            cvm_registry.vm1d_data,
+            cvm_registry.nz_tomography_data,
+            global_surfaces,
+            basin_data_list,
+            mesh_vector,
+            partial_global_surface_depths,
+            partial_basin_surface_depths_list,
+            in_basin_list,
+            in_basin_mesh,
+            vm_params["topo_type"],
+        )
+
+        partial_global_qualities.rho[k] = qualities_vector.rho
+        partial_global_qualities.vp[k] = qualities_vector.vp
+        partial_global_qualities.vs[k] = qualities_vector.vs
+        partial_global_qualities.inbasin[k] = qualities_vector.inbasin
+
+    # Write to disk
+    module_name = f"velocity_modelling.write.{output_format.lower()}"
+    writer_module = importlib.import_module(module_name)
+    writer_module.write_global_qualities(
+        Path(out_dir),
+        partial_global_mesh,
+        partial_global_qualities,
+        j,
+        vm_params,
+    )
+
+    return j
+
+
 @cli.from_docstring(app)
 def generate_velocity_model(
     nzcvm_cfg_path: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
@@ -149,6 +233,7 @@ def generate_velocity_model(
         Path, typer.Option(exists=True, dir_okay=False)
     ] = NZCVM_REGISTRY_PATH,
     model_version: Annotated[Optional[str], typer.Option()] = None,
+    np: Annotated[int, typer.Option(help="Number of parallel processes")] = 1,
     output_format: Annotated[str, typer.Option()] = WriteFormat.EMOD3D.name,
     data_root: Annotated[
         Path,
@@ -184,6 +269,8 @@ def generate_velocity_model(
     model_version : str, optional
         Version of the model to use (overrides MODEL_VERSION in config file).
         If not provided, the version from the config file will be used.
+    np : int, optional
+        Number of parallel processes to use for generating the model (default: 1).
     output_format : str, optional
         Format to write the output. Options: "EMOD3D", "CSV", "HDF5" (default: "EMOD3D").
     data_root : Path, optional
@@ -268,6 +355,9 @@ def generate_velocity_model(
         logger.log(logging.ERROR, f"Unsupported output format: {output_format}")
         raise ValueError(f"Unsupported output format: {output_format}")
 
+    if np > 1 and output_format.upper() != "HDF5":
+        raise ValueError("Parallel execution requires HDF5 output format.")
+
     import importlib
 
     try:
@@ -330,89 +420,64 @@ def generate_velocity_model(
 
     # Process each latitude slice
     total_slices = len(global_mesh.y)
-    for j in tqdm(range(total_slices), desc="Generating velocity model", unit="slice"):
-        partial_global_mesh = partial_global_mesh_list[j]
-        partial_global_qualities = PartialGlobalQualities(
-            partial_global_mesh.nx, partial_global_mesh.nz
-        )
 
-        for k in range(len(partial_global_mesh.x)):
-            partial_global_surface_depths = PartialGlobalSurfaceDepths(
-                len(global_surfaces)
-            )
-            partial_basin_surface_depths_list = [
-                PartialBasinSurfaceDepths(basin_data) for basin_data in basin_data_list
-            ]
-            qualities_vector = QualitiesVector(partial_global_mesh.nz)
-
-            basin_indices = in_basin_mesh.get_basin_membership(k, j)
-            in_basin_list = [
-                InBasin(basin_data, len(global_mesh.z))
-                for basin_data in basin_data_list
-            ]
-            for basin_idx in basin_indices:
-                if basin_idx >= 0:
-                    in_basin_list[basin_idx].in_basin_lat_lon = True
-
-            if smoothing:
-                logger.log(
-                    logging.DEBUG, "Smoothing option selected but not implemented"
+    if np == 1:
+        # Single-threaded processing
+        for j in tqdm(range(total_slices), desc="Generating velocity model", unit="slice"):
+            process_slice_worker(
+                    j,
+                    {
+                        "mesh": global_mesh,
+                        "vm1d_data": vm1d_data,
+                        "nz_tomography_data": nz_tomography_data,
+                    },
+                    partial_global_mesh_list[j],
+                    vm_params,
+                    nzcvm_registry,
+                    data_root,
+                    vm_params["model_version"],
+                    smoothing,
+                    out_dir,
+                    output_format,
                 )
-                # Placeholder for future implementation
-            else:
-                try:
-                    mesh_vector = extract_mesh_vector(partial_global_mesh, k)
-                    qualities_vector.assign_qualities(
-                        cvm_registry,
-                        vm1d_data,
-                        nz_tomography_data,
-                        global_surfaces,
-                        basin_data_list,
-                        mesh_vector,
-                        partial_global_surface_depths,
-                        partial_basin_surface_depths_list,
-                        in_basin_list,
-                        in_basin_mesh,
-                        vm_params["topo_type"],
-                    )
-                    partial_global_qualities.rho[k] = qualities_vector.rho
-                    partial_global_qualities.vp[k] = qualities_vector.vp
-                    partial_global_qualities.vs[k] = qualities_vector.vs
-                    partial_global_qualities.inbasin[k] = qualities_vector.inbasin
-                except AttributeError as e:
-                    logger.log(
-                        logging.ERROR,
-                        f"Error accessing qualities vector attributes at j={j}, k={k}: {e}",
-                    )
-                    raise RuntimeError(
-                        f"Error processing point at j={j}, k={k}: {str(e)}"
-                    )
-                except Exception as e:
-                    if isinstance(e, (SystemExit, KeyboardInterrupt)):
-                        raise  # Re-raise critical exceptions
-                    logger.log(
-                        logging.ERROR, f"Error processing point at j={j}, k={k}: {e}"
-                    )
-                    raise RuntimeError(
-                        f"Error processing point at j={j}, k={k}: {str(e)}"
-                    )
+    else:
+        # Multi-threaded processing
+        from concurrent.futures import as_completed
 
-        # Write this latitude slice to disk
-        try:
-            # Use a single function call format for all writer modules
-            write_global_qualities(
-                out_dir,
-                partial_global_mesh,
-                partial_global_qualities,
-                j,
-                vm_params,
-                logger,
-            )
-        except Exception as e:
-            if isinstance(e, (SystemExit, KeyboardInterrupt)):
-                raise  # Re-raise critical exceptions
-            logger.log(logging.ERROR, f"Error writing slice j={j}: {e}")
-            raise OSError(f"Failed to write slice j={j} to {out_dir}: {str(e)}")
+        logger.log(logging.INFO, f"Using {np} parallel processes for model generation")
+
+        with ProcessPoolExecutor(max_workers=np) as executor:
+            futures = {
+                executor.submit(
+                    process_slice_worker,
+                    j,
+                    {
+                        "mesh": global_mesh,
+                        "vm1d_data": vm1d_data,
+                        "nz_tomography_data": nz_tomography_data,
+                    },
+                    partial_global_mesh_list[j],
+                    vm_params,
+                    nzcvm_registry,
+                    data_root,
+                    vm_params["model_version"],
+                    smoothing,
+                    out_dir,
+                    output_format,
+                ): j
+                for j in range(total_slices)
+            }
+
+            for future in tqdm(
+                as_completed(futures), total=total_slices, desc="Generating velocity model", unit="slice"
+            ):
+                try:
+                    future.result()
+                except Exception as e:
+                    logger.log(logging.ERROR, f"Error processing slice: {e}")
+                    raise RuntimeError(f"Error processing slice: {str(e)}")
+
+
 
     logger.log(logging.INFO, "Generation of velocity model 100% complete")
     logger.log(
