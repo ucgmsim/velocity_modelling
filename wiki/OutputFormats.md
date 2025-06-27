@@ -132,31 +132,55 @@ python scripts/nzcvm.py generate-velocity-model /path/to/nzcvm.cfg --output-form
 
 ### HDF5 File Structure
 
-The HDF5 output consists of a single file:
-- Location: `<output_dir>/velocity_model.h5`
+
+A single consolidated file is written to:
+`<output_dir>/velocity_model.h5`
 
 The file structure is organized as follows:
 
-- **Root attributes**:
-  - `total_y_slices`: Total number of latitude slices in the model
-  - `format_version`: Version of the HDF5 format specification
-  - `complete`: Boolean flag indicating if the model is complete
-  - `model_version`: Version of the velocity model being used
+#### Root-level attributes
 
-- **`/mesh` group**:
-  - `x`: Array of X coordinates (index)
-  - `y`: Array of Y coordinates (index) 
-  - `z`: Array of Z (depth) coordinates (index)
-  - `lon`: 2D array of longitude values
-  - `lat`: 2D array of latitude values
+| Attribute            | Description                                                                                       |
+|----------------------|---------------------------------------------------------------------------------------------------|
+| `total_y_slices`     | Total number of latitude (-*y*) slices in the final model.                                        |
+| `format_version`     | Format specification version (currently `"1.0"`).                                                 |
+| `creation_date`      | ISO-8601 timestamp when the file was first created.                                               |
+| `last_slice_written` | Index of the most recently appended latitude slice (present only while the build is in progress). |
 
-- **`/properties` group**:
-  - `vp`: 3D array of P-wave velocities (km/s) [shape: (nx, ny, nz)]
-  - `vs`: 3D array of S-wave velocities (km/s) [shape: (nx, ny, nz)]
-  - `rho`: 3D array of densities (g/cm^3) [shape: (nx, ny, nz)]
-  - `inbasin`: 3D array of basin membership flags [shape: (nx, ny, nz)]
+#### `/config` group
 
-Each property dataset includes attributes describing units and constraints (e.g., minimum Vs values).
+All key–value pairs from `nzcvm.cfg` are saved as attributes here, plus a human-readable `config_string` containing the same information (one `KEY=VALUE` per line).  
+Use this group to retrieve provenance and run-time parameters.
+
+#### `/mesh` group (grid geometry)
+
+| Dataset | Shape      | DType     | Meaning                                                                   |
+|---------|------------|-----------|---------------------------------------------------------------------------|
+| `x`     | `(nx,)`    | `int32`   | Grid-index positions along *x* (east-west).                               |
+| `y`     | `(ny,)`    | `int32`   | Grid-index positions along *y* (north-south).                             |
+| `z`     | `(nz,)`    | `int32`   | Grid-index positions along *z* (depth); **0 = surface, larger = deeper**. |
+| `lon`   | `(nx, ny)` | `float64` | Longitude at each surface node.                                           |
+| `lat`   | `(nx, ny)` | `float64` | Latitude at each surface node.                                            |
+
+#### `/properties` group (model values)
+
+All datasets are stored **node-centred** in ParaView order `(nz, ny, nx)` and compressed with GZIP.
+
+| Dataset   | Shape           | DType     | Meaining                           | Units      | Extra attrs                                              |
+|-----------|-----------------|-----------|------------------------------------|------------|----------------------------------------------------------|
+| `vp`      | `(nz, ny, nx)`  | `float32` | 3D array of P-wave velocities      | km/s       | none                                                     |
+| `vs`      | `(nz, ny, nx)`  | `float32` | 3D array of S-wave velocities      | km/s       | `min_value_enforced` – the Vs floor applied during write |
+| `rho`     | `(nz, ny, nx)`  | `float32` | 3D array of densities              | g/cm^3     | none                                                     |
+| `inbasin` | `(nz, ny, nx)`  | `int8`    | 3D array of basin membership flags | (basin id) | none                                                     |
+
+#### Companion XDMF
+
+When the final slice is written (`lat_ind == total_y_slices - 1`) a ParaView-ready
+file
+`<output_dir>/velocity_model.xdmf` is created automatically. It references the HDF5 file and exposes `vp`, `vs`, `rho`,
+and `inbasin` as scalar node attributes on a uniform rectilinear grid, so the model
+opens instantly in ParaView without manual setup.
+
 
 ### Reading HDF5 Files
 
@@ -168,28 +192,33 @@ import h5py
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Open the HDF5 file
-with h5py.File('velocity_model.h5', 'r') as f:
-    # Access metadata
-    model_version = f.attrs.get('model_version', 'unknown')
-    print(f"Model version: {model_version}")
-    
-    # Get depth slice of Vs at a specific depth index
-    vs = f['properties/vs'][:, :, 100]  # depth slice at index 100
-    
-    # Get coordinates
-    x = f['mesh/x'][:]
-    y = f['mesh/y'][0]  # y values are repeated, just take first set
-    
-    # Create a plot
-    plt.figure(figsize=(10, 8))
-    plt.pcolormesh(x, y, vs.T, shading='auto', cmap='viridis')
-    plt.colorbar(label='Vs (km/s)')
-    plt.title(f'S-wave velocity at depth slice 100 - Model v{model_version}')
-    plt.xlabel('X (km)')
-    plt.ylabel('Y (km)')
-    plt.savefig('vs_slice.png')
+depth_index = 100  # choose a depth level (0 = surface)
+
+with h5py.File("velocity_model.h5", "r") as f:
+    # --- metadata ---
+    print("created:", f.attrs["creation_date"])
+    ny = f.attrs["total_y_slices"]
+
+    # --- geometry ---
+    x = f["mesh/x"][:]          # (nx,)
+    y = f["mesh/y"][:]          # (ny,)
+
+    # --- S-wave velocity slice ---
+    vs = f["properties/vs"][depth_index, :, :]   # (ny, nx)
+
+# plot
+plt.figure(figsize=(10, 8))
+plt.pcolormesh(x, y, vs, shading="auto", cmap="viridis")
+plt.colorbar(label="Vs (km/s)")
+plt.title(f"Vs at depth index {depth_index}")
+plt.xlabel("X (grid index)")
+plt.ylabel("Y (grid index)")
+plt.savefig("vs_slice.png", dpi=150)
+
 ```
+**Note**: `x`, `y`, `z` are grid indices. Convert to metres/kilometres or projected
+coordinates if you need physical distances.
+
 ### ParaView Visualization
 
 To visualize the HDF5 model in ParaView:
