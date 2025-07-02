@@ -138,11 +138,15 @@ if __name__ == "__main__":
     lat_min, lat_max = lat0.min(), lat0.max()
     lon_min, lon_max = lon0.min(), lon0.max()
     img = fetch_esri_export(lat_min, lat_max, lon_min, lon_max)
+
+    lon_mesh0, lat_mesh0 = np.meshgrid(lon0, lat0)
+
     basemap_rgb = resample_image_to_grid(
         img,
         np.linspace(lat_min, lat_max, img.shape[0]),
         np.linspace(lon_min, lon_max, img.shape[1]),
-        *np.meshgrid(lon0, lat0)
+        lat_mesh0,
+        lon_mesh0
     )
 
     # Crop bounds from lower layers
