@@ -14,13 +14,14 @@ latitude/longitude ranges, and setting color map limits.
 
 import sys
 from pathlib import Path
-from typing import Annotated, Optional, Any
+from typing import Annotated, Optional
 
 import h5py
 import numpy as np
 import pandas as pd
 import pyvista as pv
 import typer
+from pyvista.plotting.camera import Camera
 from pyvistaqt import QtInteractor
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
@@ -33,7 +34,6 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from pyvista.plotting.camera import Camera
 
 from qcore import cli
 
@@ -248,7 +248,6 @@ class TomoApp(QMainWindow):
         super().__init__()
         self.debug = debug
 
-
         # Find the topmost grid (highest elevation)
         top_grid = grid_dict[max(grid_dict.keys())]
         # Dynamically determine focal point from the center of the top grid
@@ -295,7 +294,9 @@ class TomoApp(QMainWindow):
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self.addDockWidget(Qt.LeftDockWidgetArea, dock)
 
-        for i, elevation in enumerate(sorted(grid_dict.keys())[::-1]): # reverse order for top-down view
+        for i, elevation in enumerate(
+            sorted(grid_dict.keys())[::-1]
+        ):  # reverse order for top-down view
             grid = grid_dict[elevation]
             clim = clim
             actor = self.plotter_widget.add_mesh(
@@ -338,7 +339,6 @@ class TomoApp(QMainWindow):
                     p_actor.SetVisibility(True)
                 else:
                     p_actor.SetVisibility(False)
-
 
             cb.stateChanged.connect(
                 lambda state, a=actor: self.set_visibility(a, state)
@@ -511,7 +511,9 @@ def launch_viewer(
     elevations, lon, lat, scalar_values = load_stacked_slices(
         h5file, scalar=scalar, lat_range=lat_range, lon_range=lon_range
     )
-    grid_dict, vmin, vmax = make_flat_surfaces(elevations, lon, lat, scalar_values, gap=gap)
+    grid_dict, vmin, vmax = make_flat_surfaces(
+        elevations, lon, lat, scalar_values, gap=gap
+    )
 
     points_by_elevation = None
     if txt:
@@ -535,7 +537,6 @@ def launch_viewer(
         if len(clim) != 2 or not all(isinstance(c, (int, float)) for c in clim):
             raise ValueError("clim must be a tuple of two numeric values (min, max).")
         clim = tuple(clim)
-
 
     window = TomoApp(
         h5file.stem,
