@@ -1160,19 +1160,23 @@ def gen_full_model_grid_great_circle(
 
 def extract_partial_mesh(global_mesh: GlobalMesh, lat_ind: int) -> PartialGlobalMesh:
     """
-    Extract a partial mesh (slice) based on a single latitude index.
+    Extract a 2D slice of the global mesh at a specified latitude index.
+
+    This function creates a partial mesh (nX x 1 x nZ) from the full 3D global mesh (nX x nY x nZ)
+    by extracting data at the given latitude index. The resulting slice contains all X and Z points
+    for a single Y (latitude) value.
 
     Parameters
     ----------
     global_mesh : GlobalMesh
-        The full global mesh object.
+        The full model grid containing latitude, longitude, and depth points.
     lat_ind : int
-        The index of the latitude slice.
+        The latitude index of the slice to be extracted.
 
     Returns
     -------
     PartialGlobalMesh
-        The partial slice of the global mesh.
+        A partial global mesh containing the extracted slice.
     """
 
     return PartialGlobalMesh(global_mesh, lat_ind)
