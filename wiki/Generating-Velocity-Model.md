@@ -16,7 +16,7 @@
 The simplest command will look like:
 
 ```bash
-python scripts/nzcvm.py generate-velocity-model /path/to/config/nzcvm.cfg
+python scripts/generate_3d_model.py /path/to/config/nzcvm.cfg
 ```
 
 
@@ -90,7 +90,7 @@ An nzcvm.cfg file can be configured and downloaded via a web-based interface at 
 2. Run the script with the custom configuration:
 
 ```bash
-python scripts/nzcvm.py generate-velocity-model /path/to/custom/nzcvm.cfg --out-dir /path/to/output
+python scripts/generate_3d_model.py /path/to/custom/nzcvm.cfg --out-dir /path/to/output
 ```
 
 
@@ -131,7 +131,7 @@ The naming convention replaces dots with 'p', so for `MODEL_VERSION=2.03`, the s
 You can also override the model version at runtime using the `--model-version` parameter:
 
 ```bash
-python scripts/nzcvm.py generate-velocity-model /path/to/nzcvm.cfg --out-dir /path/to/output --model-version 2.07
+python scripts/generate_3d_model.py /path/to/nzcvm.cfg --out-dir /path/to/output --model-version 2.07
 ```
 
 
@@ -240,7 +240,7 @@ OUTPUT_DIR=/path/to/output
 2. Run the script:
 
 ```bash
-python velocity_modelling/scripts/nzcvm.py generate-velocity-model /path/to/nzcvm.cfg --out-dir /path/to/output
+python velocity_modelling/scripts/generate_3d_model.py /path/to/nzcvm.cfg --out-dir /path/to/output
 ```
 
 3. The script will:

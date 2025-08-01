@@ -1,38 +1,96 @@
+"""
+generate_1d_profiles.py
+
+This script generates multiple 1D velocity profiles for specified geographic locations and depth intervals.
+It reads profile parameters from a CSV file, optionally accepts custom depth points, loads model data,
+computes velocity and density profiles, and writes results to disk in standard or site response formats.
+Intended for use with the NZCVM velocity modelling framework.
+
+This script is part of the velocity_modelling package and is designed to be run from the command line.
+Usage:
+    python generate_1d_profiles.py --out-dir <output_directory> --model-version <version> --location-csv <csv_file> --min-vs <min_vs> --topo-type <topo_type> [--custom-depth <depth_file>] [--nzcvm-registry <registry_file>] [--data-root <data_root>] [--log-level <log_level>]
+
+Example:
+    python generate_1d_profiles.py --out-dir ./profiles --model-version 1.0 --location-csv locations.csv --min-vs 0.2 --topo-type TRUE
+
+    where, locations.csv is a CSV file with columns: id, lon, lat, zmin, zmax, spacing.
+    Sample locations.csv:
+        id, lon, lat, zmin, zmax, spacing
+        ADCS, 171.747604, -43.902401,0.0, 3.0, 0.1
+        ...
+If the --custom-depth option is provided, it should point to a text file with depth points in kilometers, one per line, such as:
+        0.0
+        0.1
+        0.5
+        1.0
+        5.0
+In this case, the zmin, zmax, and spacing parameters in the CSV file will be ignored.
+
+Sample output:  Profile_ADCS.txt
+
+Properties at Lat: -43.902401 Lon: 171.747604
+Model Version: 2.07
+Topo Type: TRUE
+Minimum Vs: 0.000000
+Elevation (km) 	 Vp (km/s) 	 Vs (km/s) 	 Rho (t/m^3)
+-0.000000 	 1.800000 	 0.380000 	 1.810000
+-0.100000 	 1.800000 	 0.480000 	 1.810000
+-0.200000 	 1.800000 	 0.608600 	 1.810000
+-0.300000 	 2.000000 	 0.608600 	 1.905000
+-0.400000 	 2.000000 	 0.608600 	 1.905000
+....
+-3.000000 	 4.520129 	 2.676067 	 2.538085
+
+Sample output: ProfileSurfaceDepths_ADCS.txt
+
+Surface Elevation (in m) at Lat: -43.902401 Lon: 171.747604
+
+Global surfaces
+Surface_name 	 Elevation (m)
+- posInf	1000000.000000
+- NZ_DEM_HD	99.607015
+- negInf	-1000000.000000
+
+Basin surfaces (if applicable)
+
+Canterbury_v19p1
+- CantDEM	99.607015
+- Canterbury_Pliocene_46_WGS84_v8p9p18	-266.438467
+- Canterbury_Miocene_WGS84	-887.287466
+- Canterbury_Paleogene_WGS84	-1031.612588
+- Canterbury_basement_WGS84	-1765.060557
+
+"""
+
 import logging
 import sys
 import time
-
-import numpy as np
-import pandas as pd
-
 from pathlib import Path
 from typing import Annotated, Optional
 
+import numpy as np
+import pandas as pd
 import typer
 from tqdm import tqdm
 
 from qcore import cli
 from velocity_modelling.basin_model import (
+    BasinData,
     InBasin,
-
+    InBasinGlobalMesh,
     PartialBasinSurfaceDepths,
 )
-from velocity_modelling.constants import (
-    DATA_ROOT,
-    NZCVM_REGISTRY_PATH,
-    TopoTypes,
-)
+from velocity_modelling.constants import DATA_ROOT, NZCVM_REGISTRY_PATH, TopoTypes
 from velocity_modelling.geometry import (
     extract_mesh_vector,
-    extract_partial_mesh,
     gen_full_model_grid_great_circle,
 )
-from velocity_modelling.global_model import PartialGlobalSurfaceDepths
+from velocity_modelling.global_model import (
+    GlobalSurfaceRead,
+    PartialGlobalSurfaceDepths,
+)
 from velocity_modelling.registry import CVMRegistry
-
 from velocity_modelling.velocity3d import QualitiesVector
-
-
 
 # Configure logging at the module level
 logging.basicConfig(
@@ -70,35 +128,29 @@ def read_depth_points_text_file(file_path: Path, logger: logging.Logger) -> list
     ValueError
         If the file contains invalid data.
     """
+    if not file_path.exists():
+        logger.error(f"Depth points file does not exist: {file_path}")
+        raise OSError(f"Depth points file does not exist: {file_path}")
     try:
-        if not file_path.exists():
-            logger.error(f"Depth points file does not exist: {file_path}")
-            raise OSError(f"Depth points file does not exist: {file_path}")
-
         depth_values = np.loadtxt(file_path, dtype=float).tolist()
-        if not depth_values:
-            logger.error(f"No valid depth points found in {file_path}")
-            raise ValueError(f"No valid depth points found in {file_path}")
-
-        logger.debug(f"Read {len(depth_values)} depth points from {file_path}")
-        return depth_values
-
-    except OSError as e:
+    except (OSError, ValueError) as e:
         logger.error(f"Failed to read depth points file {file_path}: {e}")
-        raise OSError(f"Failed to read depth points file {file_path}: {str(e)}")
-    except ValueError as e:
-        logger.error(f"Invalid data in depth points file {file_path}: {e}")
-        raise ValueError(f"Invalid data in depth points file {file_path}: {str(e)}")
+        raise
+    if not depth_values:
+        logger.log(logging.ERROR, f"No valid depth points found in {file_path}")
+        raise ValueError(f"No valid depth points found in {file_path}")
+    logger.log(logging.DEBUG, f"Read {len(depth_values)} depth points from {file_path}")
+    return depth_values
 
 
 def write_profiles(
-        out_dir: Path,
-        qualities_vector: QualitiesVector,
-        vm_params: dict,
-        mesh_vector: QualitiesVector,
-        df: pd.DataFrame,
-        profile_idx: int,
-        logger: logging.Logger,
+    out_dir: Path,
+    qualities_vector: QualitiesVector,
+    vm_params: dict,
+    mesh_vector: QualitiesVector,
+    df: pd.DataFrame,
+    profile_idx: int,
+    logger: logging.Logger,
 ) -> None:
     """
     Write velocity profile data to a text file in either 1D_SITE_RESPONSE or STANDARD format.
@@ -128,77 +180,71 @@ def write_profiles(
         If there are issues creating or writing to the output file.
     """
     profiles_dir = out_dir / "Profiles"
-    try:
-        profiles_dir.mkdir(exist_ok=True, parents=True)
-    except OSError as e:
-        logger.error(f"Failed to create Profiles directory {profiles_dir}: {e}")
-        raise OSError(f"Failed to create Profiles directory {profiles_dir}: {str(e)}")
-
-    output_type = vm_params.get("output_type", "STANDARD")
-    profile_id = df['id'].iloc[profile_idx]
+    profiles_dir.mkdir(exist_ok=True, parents=True)
+    output_type = vm_params.get(
+        "output_type", "STANDARD"
+    )  # Default to STANDARD if not specified
+    profile_id = df["id"].iloc[profile_idx]
 
     if output_type == "1D_SITE_RESPONSE":
         file_path = profiles_dir / f"{profile_id}.1d"
-        try:
-            with file_path.open('w') as f:
-                f.write(f"{mesh_vector.nZ}\n")
-                dep_bot = 0.0
-                for i in range(mesh_vector.nZ):
-                    vs = max(qualities_vector.Vs[i], vm_params["min_vs"])
-                    if i == mesh_vector.nZ - 1:
-                        delta_depth = -999999.0
-                    elif i == 0:
-                        delta_depth = 2 * mesh_vector.Z[i]
-                        dep_bot = delta_depth
-                    else:
-                        delta_depth = 2 * (mesh_vector.Z[i] - dep_bot)
-                        dep_bot += delta_depth
-                    quality_factor_1 = 2.0 * (41.0 + 34.0 * vs)
-                    quality_factor_2 = 41.0 + 34.0 * vs
-                    f.write(
-                        f"{-delta_depth / 1000:.3f} \t {qualities_vector.Vp[i]:.3f} \t "
-                        f"{vs:.3f} \t {qualities_vector.Rho[i]:.3f} \t "
-                        f"{quality_factor_1:.3f} \t {quality_factor_2:.3f}\n"
-                    )
-            logger.info(f"Wrote 1D site response profile to {file_path}")
-        except OSError as e:
-            logger.error(f"Failed to write profile to {file_path}: {e}")
-            raise OSError(f"Failed to write profile to {file_path}: {str(e)}")
+        with file_path.open("w") as f:
+            f.write(f"{mesh_vector.nz}\n")
+            dep_bot = 0.0
+            for i in range(mesh_vector.nz):
+                vs = max(qualities_vector.vs[i], vm_params["min_vs"])
+                if i == mesh_vector.nz - 1:
+                    delta_depth = -999999.0
+                elif i == 0:
+                    delta_depth = 2 * mesh_vector.z[i]
+                    dep_bot = delta_depth
+                else:
+                    delta_depth = 2 * (mesh_vector.z[i] - dep_bot)
+                    dep_bot += delta_depth
+                quality_factor_1 = 2.0 * (41.0 + 34.0 * vs)
+                quality_factor_2 = 41.0 + 34.0 * vs
+                f.write(
+                    f"{-delta_depth / 1000:.3f} \t {qualities_vector.vp[i]:.3f} \t "
+                    f"{vs:.3f} \t {qualities_vector.rho[i]:.3f} \t "
+                    f"{quality_factor_1:.3f} \t {quality_factor_2:.3f}\n"
+                )
+        logger.log(logging.INFO, f"Wrote 1D site response profile to {file_path}")
 
     elif output_type == "STANDARD":
-        file_path = profiles_dir / f"Profile{profile_id}.txt"
-        try:
-            with file_path.open('w') as f:
+        file_path = profiles_dir / f"Profile_{profile_id}.txt"
+        with file_path.open("w") as f:
+            f.write(
+                f"Properties at Lat: {df['lat'].iloc[profile_idx]:.6f} Lon: {df['lon'].iloc[profile_idx]:.6f}\n"
+            )
+            f.write(f"Model Version: {vm_params['model_version']}\n")
+            f.write(f"Topo Type: {vm_params['topo_type'].name}\n")
+            f.write(f"Minimum Vs: {vm_params['min_vs']:.6f}\n")
+            f.write("Elevation (km) \t Vp (km/s) \t Vs (km/s) \t Rho (t/m^3)\n")
+            for i in range(mesh_vector.nz):
+                vs = max(qualities_vector.vs[i], vm_params["min_vs"])
                 f.write(
-                    f"Properties at Lat: {df['lat'].iloc[profile_idx]:.6f} Lon: {df['lon'].iloc[profile_idx]:.6f}\n")
-                f.write("Depth (km) \t Vp (km/s) \t Vs (km/s) \t Rho (t/m^3)\n")
-                for i in range(mesh_vector.nz):
-                    vs = max(qualities_vector.vs[i], vm_params["min_vs"])
-                    f.write(
-                        f"{mesh_vector.z[i] / 1000:.6f} \t {qualities_vector.vp[i]:.6f} \t "
-                        f"{vs:.6f} \t {qualities_vector.rho[i]:.6f}\n"
-                    )
-            logger.info(f"Wrote standard profile to {file_path}")
-        except OSError as e:
-            logger.error(f"Failed to write profile to {file_path}: {e}")
-            raise OSError(f"Failed to write profile to {file_path}: {str(e)}")
+                    f"{mesh_vector.z[i] / 1000:.6f} \t {qualities_vector.vp[i]:.6f} \t "
+                    f"{vs:.6f} \t {qualities_vector.rho[i]:.6f}\n"
+                )
+        logger.log(logging.INFO, f"Wrote standard profile to {file_path}")
 
     else:
-        logger.error(f"Invalid output_type: {output_type}")
-        raise ValueError(f"Invalid output_type: {output_type}. Must be '1D_SITE_RESPONSE' or 'STANDARD'")
+        logger.log(logging.ERROR, f"Invalid output_type: {output_type}")
+        raise ValueError(
+            f"Invalid output_type: {output_type}. Must be '1D_SITE_RESPONSE' or 'STANDARD'"
+        )
 
 
 def write_profile_surface_depths(
-        out_dir: Path,
-        cvm_registry: CVMRegistry,
-        basin_data_list: list,
-        partial_global_surface_depths: PartialGlobalSurfaceDepths,
-        partial_basin_surface_depths: PartialBasinSurfaceDepths,
-        in_basin_list: list[InBasin],
-        mesh_vector: QualitiesVector,
-        df: pd.DataFrame,
-        profile_idx: int,
-        logger: logging.Logger,
+    out_dir: Path,
+    global_surfaces: list[GlobalSurfaceRead],
+    basin_data_list: list[BasinData],
+    partial_global_surface_depths: PartialGlobalSurfaceDepths,
+    partial_basin_surface_depths: PartialBasinSurfaceDepths,
+    in_basin_list: list[InBasin],
+    df: pd.DataFrame,
+    profile_idx: int,
+    logger: logging.Logger,
 ) -> None:
     """
     Write surface depths for global and basin surfaces to a text file.
@@ -207,18 +253,16 @@ def write_profile_surface_depths(
     ----------
     out_dir : Path
         Output directory where the Profiles subdirectory will be created.
-    cvm_registry : CVMRegistry
-        Registry containing global model parameters (nSurf, surf, nBasins, basin, basinSurfaceNames).
-    basin_data_list : list
+    global_surfaces : list[GlobalSurfaceRead]
+        List of global surface data objects.
+    basin_data_list : list[BasinData]
         List of basin data objects.
     partial_global_surface_depths : PartialGlobalSurfaceDepths
         Depths of global surfaces at the profile location.
     partial_basin_surface_depths : PartialBasinSurfaceDepths
         Depths of basin surfaces at the profile location.
-    in_basin : InBasin
-        Object indicating whether the profile is in each basin.
-    mesh_vector : QualitiesVector
-        Mesh data containing latitude (Lat) and longitude (Lon).
+    in_basin_list : list[InBasin]
+        List of InBasin objects indicating basin membership for the profile location.
     df : pd.DataFrame
         DataFrame containing profile parameters (id, lon, lat, zmin, zmax, spacing).
     profile_idx : int
@@ -232,19 +276,16 @@ def write_profile_surface_depths(
         If there are issues creating or writing to the output file.
     """
     profiles_dir = out_dir / "Profiles"
-    try:
-        profiles_dir.mkdir(exist_ok=True, parents=True)
-    except OSError as e:
-        logger.error(f"Failed to create Profiles directory {profiles_dir}: {e}")
-        raise OSError(f"Failed to create Profiles directory {profiles_dir}: {str(e)}")
-
-    file_path = profiles_dir / f"ProfileSurfaceDepths{df['id'].iloc[profile_idx]}.txt"
+    profiles_dir.mkdir(exist_ok=True, parents=True)
+    file_path = profiles_dir / f"ProfileSurfaceDepths_{df['id'].iloc[profile_idx]}.txt"
     lines = [
-        f"Surface Depths (in m) at Lat: {df['lat'].iloc[profile_idx]:.6f} Lon: {df['lon'].iloc[profile_idx]:.6f}\n",
+        f"Surface Elevation (in m) at Lat: {df['lat'].iloc[profile_idx]:.6f} Lon: {df['lon'].iloc[profile_idx]:.6f}\n",
         "\nGlobal surfaces\n",
-        "Surface_name \t Depth (m)\n",
-        *[f"{Path(cvm_registry.global_params['surfaces'][i]['path']).stem}\t{partial_global_surface_depths.depths[i]:.6f}\n"
-          for i in range(len(cvm_registry.global_params["surfaces"]))],
+        "Surface_name \t Elevation (m)\n",
+        *[
+            f"- {Path(global_surfaces[i].file_path).stem}\t{partial_global_surface_depths.depths[i]:.6f}\n"
+            for i in range(len(global_surfaces))
+        ],
         "\nBasin surfaces (if applicable)\n",
     ]
 
@@ -252,28 +293,52 @@ def write_profile_surface_depths(
         if in_basin_list[i].in_basin_lat_lon:
             lines.append(f"\n{basin.name}\n")
             lines.extend(
-                f"{basin.surface_names[j]}\t{partial_basin_surface_depths.depths[i][j]:.6f}\n"
-                for j in range(basin.nSurfaces)
+                f"- {Path(basin.surfaces[j].file_path).stem}\t{partial_basin_surface_depths[i].depths[j]:.6f}\n"
+                for j in range(len(basin.surfaces))
             )
 
-    try:
-        with file_path.open('w') as f:
-            f.writelines(lines)
-        logger.info(f"Wrote surface depths to {file_path}")
-    except OSError as e:
-        logger.error(f"Failed to write surface depths to {file_path}: {e}")
-        raise OSError(f"Failed to write surface depths to {file_path}: {str(e)}")
+    with file_path.open("w") as f:
+        f.writelines(lines)
+    logger.log(logging.INFO, f"Wrote surface depths to {file_path}")
+
 
 @cli.from_docstring(app)
-def generate_multiple_profiles(
-    out_dir: Annotated[Path, typer.Option(file_okay=False, help="Output directory for profile files")],
+def generate_1d_profiles(
+    out_dir: Annotated[
+        Path, typer.Option(file_okay=False, help="Output directory for profile files")
+    ],
     model_version: Annotated[str, typer.Option(help="Version of the model to use")],
-    location_csv: Annotated[Path, typer.Option(exists=True, dir_okay=False, help="CSV file with profile parameters (id, lon, lat, zmin, zmax, spacing)")],
+    location_csv: Annotated[
+        Path,
+        typer.Option(
+            exists=True,
+            dir_okay=False,
+            help="CSV file with profile parameters (id, lon, lat, zmin, zmax, spacing)",
+        ),
+    ],
     min_vs: Annotated[float, typer.Option(help="Minimum shear wave velocity")] = 0.0,
-    topo_type: Annotated[str, typer.Option(help="Topography type")] = TopoTypes.TRUE.name,
-    custom_depth: Annotated[Optional[Path], typer.Option(exists=True, dir_okay=False, help="Text file with custom depth points (overrides zmin, zmax, spacing in location_csv)")] = None,
-    nzcvm_registry: Annotated[Path, typer.Option(exists=True, dir_okay=False)] = NZCVM_REGISTRY_PATH,
-    data_root: Annotated[Path, typer.Option(file_okay=False, exists=True, help="Override the default DATA_ROOT directory")] = DATA_ROOT,
+    topo_type: Annotated[
+        str, typer.Option(help="Topography type")
+    ] = TopoTypes.TRUE.name,
+    custom_depth: Annotated[
+        Optional[Path],
+        typer.Option(
+            exists=True,
+            dir_okay=False,
+            help="Text file with custom depth points (overrides zmin, zmax, spacing in location_csv)",
+        ),
+    ] = None,
+    nzcvm_registry: Annotated[
+        Path, typer.Option(exists=True, dir_okay=False)
+    ] = NZCVM_REGISTRY_PATH,
+    data_root: Annotated[
+        Path,
+        typer.Option(
+            file_okay=False,
+            exists=True,
+            help="Override the default DATA_ROOT directory",
+        ),
+    ] = DATA_ROOT,
     log_level: Annotated[str, typer.Option(help="Logging level")] = "INFO",
 ) -> None:
     """
@@ -328,10 +393,9 @@ def generate_multiple_profiles(
     data_root = data_root.resolve()
     logger.log(logging.INFO, f"data_root set to {data_root}")
 
-
     # Validate min_vs
     if min_vs < 0:
-        logger.error(f"min_vs ({min_vs}) cannot be negative")
+        logger.log(logging.ERROR, f"min_vs ({min_vs}) cannot be negative")
         raise ValueError(f"min_vs ({min_vs}) cannot be negative")
 
     # Validate and import the appropriate writer based on format
@@ -350,53 +414,46 @@ def generate_multiple_profiles(
 
     # Ensure output directory exists
     out_dir = out_dir.resolve()
-    try:
-        out_dir.mkdir(exist_ok=True, parents=True)
-    except OSError as e:
-        logger.error(f"Failed to create output directory {out_dir}: {e}")
-        raise OSError(f"Failed to create output directory {out_dir}: {str(e)}")
-
-    # Initialize registry
-    cvm_registry = CVMRegistry(vm_params["model_version"], data_root, nzcvm_registry, logger)
+    out_dir.mkdir(exist_ok=True, parents=True)
+    cvm_registry = CVMRegistry(
+        vm_params["model_version"], data_root, nzcvm_registry, logger
+    )
 
     # Read profile parameters from location_csv
-    try:
-        df = pd.read_csv(location_csv)
-        required_columns = ['id', 'lon', 'lat', 'zmin', 'zmax', 'spacing']
-        if not all(col in df.columns for col in required_columns):
-            logger.error(f"CSV file {location_csv} must contain columns: {', '.join(required_columns)}")
-            raise ValueError(f"Invalid CSV format: missing required columns")
-        for i, row in df.iterrows():
-            if row['zmin'] >= row['zmax']:
-                logger.error(f"Profile {row['id']}: zmin ({row['zmin']}) must be less than zmax ({row['zmax']})")
-                raise ValueError(f"Profile {row['id']}: zmin ({row['zmin']}) must be less than zmax ({row['zmax']})")
-            if row['spacing'] <= 0:
-                logger.error(f"Profile {row['id']}: spacing ({row['spacing']}) must be positive")
-                raise ValueError(f"Profile {row['id']}: spacing ({row['spacing']}) must be positive")
-    except (OSError, pd.errors.ParserError) as e:
-        logger.error(f"Failed to read location_csv {location_csv}: {e}")
-        raise OSError(f"Failed to read location_csv {location_csv}: {str(e)}")
-
-    # Read custom depth points if provided
+    df = pd.read_csv(location_csv)
+    required_columns = ["id", "lon", "lat", "zmin", "zmax", "spacing"]
+    if not all(col in df.columns for col in required_columns):
+        logger.log(
+            logging.ERROR,
+            f"CSV file {location_csv} must contain columns: {', '.join(required_columns)}",
+        )
+        raise ValueError("Invalid CSV format: missing required columns")
+    for i, row in df.iterrows():
+        if row["zmin"] >= row["zmax"]:
+            logger.log(
+                logging.ERROR,
+                f"Profile {row['id']}: zmin ({row['zmin']}) must be less than zmax ({row['zmax']})",
+            )
+            raise ValueError(
+                f"Profile {row['id']}: zmin ({row['zmin']}) must be less than zmax ({row['zmax']})"
+            )
+        if row["spacing"] <= 0:
+            logger.log(
+                logging.ERROR,
+                f"Profile {row['id']}: spacing ({row['spacing']}) must be positive",
+            )
+            raise ValueError(
+                f"Profile {row['id']}: spacing ({row['spacing']}) must be positive"
+            )
     depth_values = None
     if custom_depth:
-        try:
-            depth_values = read_depth_points_text_file(custom_depth, logger)
-        except (OSError, ValueError) as e:
-            logger.error(f"Failed to read custom depth points file {custom_depth}: {e}")
-            raise
-
-    # Load all required data
+        depth_values = read_depth_points_text_file(custom_depth, logger)
     logger.log(logging.INFO, "Loading model data")
-    try:
-        vm1d_data, nz_tomography_data, global_surfaces, basin_data_list = cvm_registry.load_all_global_data()
-    except RuntimeError as e:
-        logger.error(f"Failed to load model data: {e}")
-        raise RuntimeError(f"Failed to load model data: {str(e)}")
-
-    # Process each profile
+    vm1d_data, nz_tomography_data, global_surfaces, basin_data_list = (
+        cvm_registry.load_all_global_data()
+    )
     for i in tqdm(range(len(df)), desc="Generating profiles", unit="profile"):
-        logger.log(logging.INFO, f"Generating profile {i+1} of {len(df)}")
+        logger.log(logging.INFO, f"Generating profile {i + 1} of {len(df)}")
 
         # Initialize model extent
         model_extent = {
@@ -405,8 +462,8 @@ def generate_multiple_profiles(
             "extent_x": 1.0,
             "extent_y": 1.0,
             "h_lat_lon": 1.0,
-            "origin_lat": df['lat'].iloc[i],
-            "origin_lon": df['lon'].iloc[i],
+            "origin_lat": df["lat"].iloc[i],
+            "origin_lon": df["lon"].iloc[i],
         }
 
         # Set depth parameters
@@ -416,98 +473,103 @@ def generate_multiple_profiles(
             model_extent["h_depth"] = 1.0  # Placeholder, as actual depths are set later
         else:
             half = 0.5
-            model_extent["extent_zmin"] = df['zmin'].iloc[i] - half * df['spacing'].iloc[i]
-            model_extent["extent_zmax"] = df['zmax'].iloc[i] + half * df['spacing'].iloc[i]
-            model_extent["h_depth"] = df['spacing'].iloc[i]
-
-        model_extent["nx"] = int(model_extent["extent_x"] / model_extent["h_lat_lon"] + 0.5)
-        model_extent["ny"] = int(model_extent["extent_y"] / model_extent["h_lat_lon"] + 0.5)
+            model_extent["extent_zmin"] = (
+                df["zmin"].iloc[i] - half * df["spacing"].iloc[i]
+            )
+            model_extent["extent_zmax"] = (
+                df["zmax"].iloc[i] + half * df["spacing"].iloc[i]
+            )
+            model_extent["h_depth"] = df["spacing"].iloc[i]
+        model_extent["nx"] = int(
+            model_extent["extent_x"] / model_extent["h_lat_lon"] + 0.5
+        )
+        model_extent["ny"] = int(
+            model_extent["extent_y"] / model_extent["h_lat_lon"] + 0.5
+        )
         model_extent["nz"] = int(
-            (model_extent["extent_zmax"] - model_extent["extent_zmin"]) / model_extent["h_depth"]
+            (model_extent["extent_zmax"] - model_extent["extent_zmin"])
+            / model_extent["h_depth"]
             + 0.5
         )
-
-        # Generate model grid
-        try:
-            global_mesh = gen_full_model_grid_great_circle(model_extent, logger)
-        except RuntimeError as e:
-            logger.error(f"Failed to generate model grid for profile {i+1}: {e}")
-            raise RuntimeError(f"Failed to generate model grid for profile {i+1}: {str(e)}")
-
-        # Adjust depths for custom depth points
+        global_mesh = gen_full_model_grid_great_circle(model_extent, logger)
+        logger.log(logging.INFO, "Pre-processing basin membership")
+        in_basin_mesh, partial_global_mesh_list = (
+            InBasinGlobalMesh.preprocess_basin_membership(
+                global_mesh,
+                basin_data_list,
+                logger,
+                smooth_bound=nz_tomography_data.smooth_boundary,
+            )
+        )
         if depth_values:
-            global_mesh.n_z = len(depth_values)
-            logger.log(logging.DEBUG, f"Number of model points - nx: {global_mesh.n_x}, ny: {global_mesh.n_y}, nz: {global_mesh.n_z}")
+            global_mesh.nz = len(depth_values)
+            logger.log(
+                logging.DEBUG,
+                f"Number of model points - nx: {global_mesh.nx}, ny: {global_mesh.ny}, nz: {global_mesh.nz}",
+            )
             global_mesh.z = [-1000 * dep for dep in depth_values]
-
-        # Initialize data structures
-        try:
-            partial_global_mesh = extract_partial_mesh(global_mesh, 0)
-            mesh_vector = extract_mesh_vector(partial_global_mesh, 0)
-            in_basin_list = [
-                InBasin(basin_data, len(global_mesh.z))
-                for basin_data in basin_data_list
-            ]
-            partial_global_surface_depths = PartialGlobalSurfaceDepths(len(global_surfaces))
-            partial_basin_surface_depths = [PartialBasinSurfaceDepths(basin_data) for basin_data in basin_data_list]
-            qualities_vector = QualitiesVector(partial_global_mesh.nz)
-        except RuntimeError as e:
-            logger.error(f"Failed to initialize data structures for profile {i+1}: {e}")
-            raise RuntimeError(f"Failed to initialize data structures for profile {i+1}: {str(e)}")
-
-        # Assign qualities
-        try:
-            qualities_vector.assign_qualities(
-                cvm_registry,
-                vm1d_data,
-                nz_tomography_data,
-                global_surfaces,
-                basin_data_list,
-                mesh_vector,
-                partial_global_surface_depths,
-                partial_basin_surface_depths,
-                in_basin_list,
-                None,  # No in_basin_mesh for profiles
-                vm_params["topo_type"],
-            )
-        except RuntimeError as e:
-            logger.error(f"Error assigning qualities for profile {i+1}: {e}")
-            raise RuntimeError(f"Error assigning qualities for profile {i+1}: {str(e)}")
-
-        # Write profile data
-        try:
-            write_profiles(
-                out_dir,
-                qualities_vector,
-                vm_params,
-                mesh_vector,
-                df,
-                i,
-                logger,
-            )
-            write_profile_surface_depths(
-                out_dir,
-                cvm_registry,
-                basin_data_list,
-                partial_global_surface_depths,
-                partial_basin_surface_depths,
-                in_basin_list,
-                mesh_vector,
-                df,
-                i,
-                logger,
-            )
-        except OSError as e:
-            logger.error(f"Error writing profile {i + 1}: {e}")
-            raise OSError(f"Failed to write profile {i + 1} to {out_dir}: {str(e)}")
-
+        partial_global_mesh = partial_global_mesh_list[
+            0
+        ]  # Use the first mesh for the profile
+        basin_indices = in_basin_mesh.get_basin_membership(
+            0, 0
+        )  # Get basin indices for the profile location
+        in_basin_list = [
+            InBasin(basin_data, len(global_mesh.z)) for basin_data in basin_data_list
+        ]
+        for basin_idx in basin_indices:
+            if basin_idx >= 0:
+                in_basin_list[basin_idx].in_basin_lat_lon = True
+        mesh_vector = extract_mesh_vector(partial_global_mesh, 0)
+        partial_global_surface_depths = PartialGlobalSurfaceDepths(len(global_surfaces))
+        partial_basin_surface_depths = [
+            PartialBasinSurfaceDepths(basin_data) for basin_data in basin_data_list
+        ]
+        qualities_vector = QualitiesVector(partial_global_mesh.nz)
+        qualities_vector.assign_qualities(
+            cvm_registry,
+            vm1d_data,
+            nz_tomography_data,
+            global_surfaces,
+            basin_data_list,
+            mesh_vector,
+            partial_global_surface_depths,
+            partial_basin_surface_depths,
+            in_basin_list,
+            None,
+            vm_params["topo_type"],
+        )
+        write_profiles(
+            out_dir,
+            qualities_vector,
+            vm_params,
+            mesh_vector,
+            df,
+            i,
+            logger,
+        )
+        write_profile_surface_depths(
+            out_dir,
+            global_surfaces,
+            basin_data_list,
+            partial_global_surface_depths,
+            partial_basin_surface_depths,
+            in_basin_list,
+            df,
+            i,
+            logger,
+        )
         logger.log(logging.INFO, f"Profile {i + 1} of {len(df)} complete")
-
     logger.log(logging.INFO, "Generation of multiple profiles 100% complete")
-    logger.log(logging.INFO,
-               f"Profiles (version: {vm_params['model_version']}) successfully generated and written to {out_dir}")
+    logger.log(
+        logging.INFO,
+        f"Profiles (version: {vm_params['model_version']}) successfully generated and written to {out_dir}",
+    )
     elapsed_time = time.time() - start_time
-    logger.log(logging.INFO, f"Multiple profiles generation completed in {elapsed_time:.2f} seconds")
+    logger.log(
+        logging.INFO,
+        f"Multiple profiles generation completed in {elapsed_time:.2f} seconds",
+    )
 
 
 if __name__ == "__main__":

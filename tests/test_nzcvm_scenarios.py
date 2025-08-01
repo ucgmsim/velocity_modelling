@@ -90,19 +90,18 @@ def scenario(
 
 def test_nzcvm_scenarios(scenario: ScenarioDict):
     """
-    Test generate_velocity_model.py with different scenarios
+    Test generate_3d_model.py with different scenarios
     and compare outputs with benchmarks
     """
 
     # Create output directory for this scenario
     scenario["output_path"].mkdir(exist_ok=True)
 
-    # Run the generate_velocity_model.py script with --out-dir
+    # Run the generate_3d_model.py script with --out-dir
     result = subprocess.run(
         [
             "python",
-            str(SCRIPT_DIR / "nzcvm.py"),
-            "generate-velocity-model",
+            str(SCRIPT_DIR / "generate_3d_model.py"),
             str(scenario["config_file"]),
             "--out-dir",
             str(scenario["output_path"]),

@@ -460,12 +460,9 @@ class CVMRegistry:
 
         with open(surface_path, "r") as f:
             nlat, nlon = map(int, f.readline().split())
-            basin_surf_read = BasinSurfaceRead(nlat, nlon)
 
             latitudes = np.fromfile(f, dtype=float, count=nlat, sep=" ")
             longitudes = np.fromfile(f, dtype=float, count=nlon, sep=" ")
-            basin_surf_read.lats = latitudes
-            basin_surf_read.lons = longitudes
 
             raster_data = np.fromfile(f, dtype=float, count=nlat * nlon, sep=" ")
             if len(raster_data) != nlat * nlon:
@@ -478,19 +475,7 @@ class CVMRegistry:
                     raster_data, (0, nlat * nlon - len(raster_data)), "constant"
                 )
 
-            basin_surf_read.raster = raster_data.reshape((nlat, nlon)).T
-            basin_surf_read.max_lat = max(
-                basin_surf_read.lats[0], basin_surf_read.lats[-1]
-            )
-            basin_surf_read.min_lat = min(
-                basin_surf_read.lats[0], basin_surf_read.lats[-1]
-            )
-            basin_surf_read.max_lon = max(
-                basin_surf_read.lons[0], basin_surf_read.lons[-1]
-            )
-            basin_surf_read.min_lon = min(
-                basin_surf_read.lons[0], basin_surf_read.lons[-1]
-            )
+            basin_surf_read = BasinSurfaceRead(surface_path, latitudes,longitudes, raster_data.reshape((nlat, nlon)).T)
 
             return basin_surf_read
 
@@ -512,31 +497,9 @@ class CVMRegistry:
 
         with h5py.File(surface_path, "r") as f:
             # Read attributes
-            nlat = f.attrs["nrows"]
-            nlon = f.attrs["ncols"]
+            basin_surf_read = BasinSurfaceRead(surface_path,  f["latitude"][:],  f["longitude"][:],  f["elevation"][:].T)
 
-            basin_surf_read = BasinSurfaceRead(nlat, nlon)
-
-            # Read datasets
-            basin_surf_read.lats = f["latitude"][:]
-            basin_surf_read.lons = f["longitude"][:]
-            # HDF5 stores in row-major order, so transpose as needed
-            basin_surf_read.raster = f["elevation"][:].T
-
-            basin_surf_read.max_lat = max(
-                basin_surf_read.lats[0], basin_surf_read.lats[-1]
-            )
-            basin_surf_read.min_lat = min(
-                basin_surf_read.lats[0], basin_surf_read.lats[-1]
-            )
-            basin_surf_read.max_lon = max(
-                basin_surf_read.lons[0], basin_surf_read.lons[-1]
-            )
-            basin_surf_read.min_lon = min(
-                basin_surf_read.lons[0], basin_surf_read.lons[-1]
-            )
-
-            return basin_surf_read
+        return basin_surf_read
 
     def load_global_surface(self, surface_file: Path | str) -> GlobalSurfaceRead:
         """
@@ -629,8 +592,7 @@ class CVMRegistry:
                     raster_data, (0, nlat * nlon - len(raster_data)), "constant"
                 )
 
-            return GlobalSurfaceRead(
-                latitudes, longitudes, raster_data.reshape((nlat, nlon)).T
+            return GlobalSurfaceRead(surface_path, latitudes, longitudes, raster_data.reshape((nlat, nlon)).T
             )
 
     def _load_hdf5_global_surface(self, surface_path: Path):
@@ -661,7 +623,7 @@ class CVMRegistry:
                 f"Reading HDF5 surface with dimensions {len(latitudes)}x{len(longitudes)} from {surface_path}",
             )
 
-            return GlobalSurfaceRead(latitudes, longitudes, elevation_data)
+            return GlobalSurfaceRead(surface_path, latitudes, longitudes, elevation_data)
 
     def load_tomo_surface_data(
         self,
@@ -799,7 +761,7 @@ class CVMRegistry:
                         for vtype in VelocityTypes:
                             try:
                                 data = elev_group[vtype.name][:]
-                                surfaces[i][vtype.name] = GlobalSurfaceRead(
+                                surfaces[i][vtype.name] = GlobalSurfaceRead(hdf5_path,
                                     latitudes, longitudes, data.T
                                 )
                                 self.logger.log(

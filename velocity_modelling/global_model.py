@@ -8,6 +8,7 @@ including interpolation and depth calculations.
 
 import numpy as np
 from numba import njit
+from pathlib import Path
 
 from velocity_modelling.geometry import (
     AdjacentPoints,
@@ -26,6 +27,8 @@ class GlobalSurfaceRead:
 
     Parameters
     ----------
+    file_path : Path
+        The file path of the global surface data.
     latitudes : np.ndarray
         The latitude values.
     longitudes : np.ndarray
@@ -35,6 +38,8 @@ class GlobalSurfaceRead:
 
     Attributes
     ----------
+    file_path : Path
+        The file path of the global surface data.
     lats : np.ndarray
         The latitude values.
     lons : np.ndarray
@@ -52,11 +57,12 @@ class GlobalSurfaceRead:
     """
 
     def __init__(
-        self, latitudes: np.ndarray, longitudes: np.ndarray, raster: np.ndarray
+        self, file_path: Path, latitudes: np.ndarray, longitudes: np.ndarray, raster: np.ndarray
     ):
         """
         Initialize the GlobalSurfaceRead.
         """
+        self.file_path = file_path
         self.lats = latitudes
         self.lons = longitudes
         self.raster = raster

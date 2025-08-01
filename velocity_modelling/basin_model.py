@@ -8,6 +8,7 @@ with proper logging throughout the processing workflow.
 
 import logging
 from logging import Logger
+from pathlib import Path
 from typing import Optional, Self
 
 import numpy as np
@@ -622,13 +623,20 @@ class BasinSurfaceRead:
 
     Parameters
     ----------
-    nlat : int
-        Number of latitudes
-    nlon : int
-        Number of longitudes
+    file_path : Path
+        Path to the basin surface file.
+    lats : np.ndarray
+        Array of latitudes.
+    lons : np.ndarray
+        Array of longitudes.
+    raster : np.ndarray
+        2D array of raster data.
+
 
     Attributes
     ----------
+    file_path : Path
+        Path to the basin surface file.
     lats : np.ndarray
         Array of latitudes.
     lons : np.ndarray
@@ -642,15 +650,26 @@ class BasinSurfaceRead:
 
     """
 
-    def __init__(self, nlat: int, nlon: int):
+    def __init__(self, file_path: Path, lats: np.ndarray, lons: np.ndarray, raster: np.ndarray):
         """
         Initialize the BasinSurfaceRead object.
 
         """
-        self.lats = np.zeros(nlat)
-        self.lons = np.zeros(nlon)
-        self.raster = np.zeros((nlon, nlat))
-        self.max_lat = None
-        self.min_lat = None
-        self.max_lon = None
-        self.min_lon = None
+        self.file_path = file_path
+        self.lats = lats
+        self.lons = lons
+        self.raster = raster
+        self.max_lat = max(
+            self.lats[0], self.lats[-1]
+        )
+        self.min_lat = min(
+            self.lats[0], self.lats[-1]
+        )
+        self.max_lon = max(
+            self.lons[0], self.lons[-1]
+        )
+        self.min_lon = min(
+            self.lons[0], self.lons[-1]
+        )
+
+

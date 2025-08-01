@@ -143,8 +143,7 @@ def test_nzcvm_c_vs_python(
     python_result = subprocess.run(
         [
             "python",
-            str(SCRIPT_DIR / "nzcvm.py"),
-            "generate-velocity-model",
+            str(SCRIPT_DIR / "generate_3d_model.py"),
             str(config_file),
             "--out-dir",
             str(python_output_dir),

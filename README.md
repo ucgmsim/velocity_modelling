@@ -51,18 +51,40 @@ By embedding discrete regional models into the lower-resolution tomography data,
 
 For detailed data downloading and installation instructions, see the [Installation Guide](wiki/Installation.md).
 
-## Using the `nzcvm.py` Script
+## Using the `nzcvm` Scripts
 
-The `nzcvm.py` script generates velocity models based on the NZCVM. Users can specify configuration files and output directories to customize the generated models.
+Currently, the NZCVM provides 3 Python scripts  located in the `scripts` directory. 
+- `generate_velocity_model.py`: Generates velocity models based on the configuration files.
+- `generate_1d_profiles.py`: Generates 1D velocity profiles.
+- `extract_cross_section.py`: Extracts cross-sections from the velocity models.
 
 ### Running the Script
 
-To run the `nzcvm.py` script, provide specific arguments, including the configuration file and the output directory:
+#### `generate_velocity_model.py`
+To run the `generate_velocity_model.py` script, provide specific arguments, including the configuration file and the output directory:
 
 ```sh
-python scripts/nzcvm.py generate-velocity-model /path/to/config/nzcvm.cfg --out-dir /path/to/output
+python scripts/generate_3d_model.py  /path/to/config/nzcvm.cfg --out-dir /path/to/output
+```
+#### `generate_1d_profiles.py`
+To generate 1D velocity profiles, use the `generate_1d_profiles.py` script:
+
+```sh
+ python generate_1d_profiles.py --out-dir <output_directory> --model-version <version> --location-csv <csv_file> --min-vs <min_vs> --topo-type <topo_type> [--custom-depth <depth_file>] 
 ```
 
+#### `extract_cross_section.py`
+To extract cross-sections from a HDF5-format velocity model, use the `extract_cross_section.py` script:
+
+```sh
+    python extract_cross_section.py <h5file> [options]
+    --lat1 <lat1> --lon1 <lon1> --lat2 <lat2> --lon2 <lon2>
+    --x1 <x1> --y1 <y1> --x2 <x2> --y2 <y2>
+    --property <property_name> --xaxis <xaxis> --n_points <n_points>
+    --vmin <vmin> --vmax <vmax> --max_depth <max_depth>
+    --cmap <cmap> --png <output_png> --csv <csv_output>
+
+```
 ### Configuration File: `nzcvm.cfg`
 
 The `nzcvm.cfg` file is a configuration file used by the `nzcvm.py` script to generate velocity models. It contains parameters defining the properties and settings of the velocity model. Below is an example:
