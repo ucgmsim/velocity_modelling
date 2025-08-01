@@ -1,3 +1,10 @@
+# Usage:
+# After installing this package, you can run the scripts from the command line, e.g.:
+#   generate_3d_model ...
+#   generate_1d_profiles ...
+# To add more scripts, add entries under [project.scripts] in the format:
+#   script_name = "module.path:app"
+
 [build-system]
 requires = ["setuptools", "setuptools-scm", "cython", "numpy"]
 build-backend = "setuptools.build_meta"
@@ -13,7 +20,11 @@ requires-python = ">=3.11"
 dynamic = ["version", "dependencies"]
 
 [project.scripts]
-nzcvm = "velocity_modelling.scripts.nzcvm:app"
+generate_3d_model = "velocity_modelling.scripts.generate_3d_model:app"
+generate_1d_profiles = "velocity_modelling.scripts.generate_1d_profiles:app"
+extract_cross_section = "velocity_modelling.scripts.extract_cross_section:app"
+# Add more scripts as needed:
+# script_name = "module.path:app"
 
 [tool.setuptools.package-dir]
 velocity_modelling = "velocity_modelling"

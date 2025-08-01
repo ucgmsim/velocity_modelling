@@ -51,17 +51,17 @@ By embedding discrete regional models into the lower-resolution tomography data,
 
 For detailed data downloading and installation instructions, see the [Installation Guide](wiki/Installation.md).
 
-## Using the `nzcvm` Scripts
+
+
+### Running the script
 
 Currently, the NZCVM provides 3 Python scripts  located in the `scripts` directory. 
-- `generate_velocity_model.py`: Generates velocity models based on the configuration files.
+- `generate_3d_model.py`: Generates velocity models based on the configuration files.
 - `generate_1d_profiles.py`: Generates 1D velocity profiles.
 - `extract_cross_section.py`: Extracts cross-sections from the velocity models.
 
-### Running the Script
-
-#### `generate_velocity_model.py`
-To run the `generate_velocity_model.py` script, provide specific arguments, including the configuration file and the output directory:
+#### `generate_3d_model.py`
+To run the `generate_3d_model.py` script, provide specific arguments, including the configuration file and the output directory:
 
 ```sh
 python scripts/generate_3d_model.py  /path/to/config/nzcvm.cfg --out-dir /path/to/output

@@ -142,7 +142,7 @@ def write_velo_mod_corners_text_file(
 
 
 @cli.from_docstring(app)
-def generate_velocity_model(
+def generate_3d_model(
     nzcvm_cfg_path: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
     out_dir: Annotated[Optional[Path], typer.Option(file_okay=False)] = None,
     nzcvm_registry: Annotated[
