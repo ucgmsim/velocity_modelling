@@ -650,7 +650,9 @@ class BasinSurfaceRead:
 
     """
 
-    def __init__(self, file_path: Path, lats: np.ndarray, lons: np.ndarray, raster: np.ndarray):
+    def __init__(
+        self, file_path: Path, lats: np.ndarray, lons: np.ndarray, raster: np.ndarray
+    ):
         """
         Initialize the BasinSurfaceRead object.
 
@@ -659,17 +661,7 @@ class BasinSurfaceRead:
         self.lats = lats
         self.lons = lons
         self.raster = raster
-        self.max_lat = max(
-            self.lats[0], self.lats[-1]
-        )
-        self.min_lat = min(
-            self.lats[0], self.lats[-1]
-        )
-        self.max_lon = max(
-            self.lons[0], self.lons[-1]
-        )
-        self.min_lon = min(
-            self.lons[0], self.lons[-1]
-        )
-
-
+        self.max_lat = max(self.lats[0], self.lats[-1])
+        self.min_lat = min(self.lats[0], self.lats[-1])
+        self.max_lon = max(self.lons[0], self.lons[-1])
+        self.min_lon = min(self.lons[0], self.lons[-1])

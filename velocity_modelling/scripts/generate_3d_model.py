@@ -144,11 +144,11 @@ def write_velo_mod_corners_text_file(
 @cli.from_docstring(app)
 def generate_3d_model(
     nzcvm_cfg_path: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
-    out_dir: Annotated[Path|None, typer.Option(file_okay=False)] = None,
+    out_dir: Annotated[Path | None, typer.Option(file_okay=False)] = None,
     nzcvm_registry: Annotated[
         Path, typer.Option(exists=True, dir_okay=False)
     ] = NZCVM_REGISTRY_PATH,
-    model_version: Annotated[str|None, typer.Option()] = None,
+    model_version: Annotated[str | None, typer.Option()] = None,
     output_format: Annotated[str, typer.Option()] = WriteFormat.EMOD3D.name,
     data_root: Annotated[
         Path,
@@ -449,7 +449,7 @@ def callback():
     pass
 
 
-def parse_nzcvm_config(config_path: Path, logger: Logger|None = None) -> dict:
+def parse_nzcvm_config(config_path: Path, logger: Logger | None = None) -> dict:
     """
     Parse the nzcvm config file and convert it to a dictionary format.
 

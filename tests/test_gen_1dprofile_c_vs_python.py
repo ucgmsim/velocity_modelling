@@ -1,10 +1,8 @@
 import csv
-
-import os
 import random
 import re
-import subprocess
 import shutil
+import subprocess
 from pathlib import Path
 
 import numpy as np
@@ -15,7 +13,6 @@ SCRIPT_DIR = BASE_DIR / "velocity_modelling/scripts"
 TEST_DIR = BASE_DIR / "tests"
 
 MODEL_VERSIONS = ["2.08"]  # Fixed to known valid versions
-
 
 
 @pytest.fixture
@@ -36,8 +33,9 @@ def nzvm_c_binary_path(request: pytest.FixtureRequest) -> Path:
     return new_nzvm_path
 
 
-
-def generate_random_profile_config(tmp_path: Path, output_dir: Path) -> tuple[Path, dict]:
+def generate_random_profile_config(
+    tmp_path: Path, output_dir: Path
+) -> tuple[Path, dict]:
     """Generate a random profile config file for the C version."""
     profile_id = random.randint(100, 999)
     profile_lat = random.uniform(-45.0, -35.0)
@@ -55,8 +53,6 @@ def generate_random_profile_config(tmp_path: Path, output_dir: Path) -> tuple[Pa
         shutil.rmtree(output_subdir)
     output_subdir.parent.mkdir(parents=True, exist_ok=True)
 
-
-    profile_dir = output_subdir / "Profile"
     config = f"""
 CALL_TYPE=GENERATE_PROFILE
 MODEL_VERSION={model_version}
@@ -93,37 +89,54 @@ def generate_location_csv(csv_path: Path, params: dict):
     with open(csv_path, "w", newline="") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(["id", "lon", "lat", "zmin", "zmax", "spacing"])
-        writer.writerow([
-            params["id"], params["lon"], params["lat"],
-            params["zmin"], params["zmax"], params["spacing"]
-        ])
+        writer.writerow(
+            [
+                params["id"],
+                params["lon"],
+                params["lat"],
+                params["zmin"],
+                params["zmax"],
+                params["spacing"],
+            ]
+        )
 
 
 def read_profile_data(file_path: Path) -> np.ndarray:
     with open(file_path, "r") as f:
-        lines = [line.strip() for line in f if line.strip() and not line.startswith("#")]
-    header_idx = next(i for i, line in enumerate(lines) if line.startswith("Depth") or line.startswith("Elevation"))
-    data_lines = lines[header_idx + 1:]
+        lines = [
+            line.strip() for line in f if line.strip() and not line.startswith("#")
+        ]
+    header_idx = next(
+        i
+        for i, line in enumerate(lines)
+        if line.startswith("Depth") or line.startswith("Elevation")
+    )
+    data_lines = lines[header_idx + 1 :]
     data = np.genfromtxt(data_lines)
     return data
 
 
-def compare_profiles(c_path: Path, py_path: Path, atol=1e-5):
+def compare_profiles(c_path: Path, py_path: Path, atol: float = 1e-5):
     c_data = read_profile_data(c_path)
     py_data = read_profile_data(py_path)
 
-    assert c_data.shape == py_data.shape, f"Shape mismatch: {c_data.shape} vs {py_data.shape}"
+    assert c_data.shape == py_data.shape, (
+        f"Shape mismatch: {c_data.shape} vs {py_data.shape}"
+    )
 
     # Check that NaNs are in the same positions
     c_nan_mask = np.isnan(c_data)
     py_nan_mask = np.isnan(py_data)
-    assert np.array_equal(c_nan_mask, py_nan_mask), "NaN positions mismatch between C and Python outputs"
+    assert np.array_equal(c_nan_mask, py_nan_mask), (
+        "NaN positions mismatch between C and Python outputs"
+    )
 
     # Compare only non-NaN values
     mask = ~c_nan_mask
     diff = np.abs(c_data[mask] - py_data[mask])
-    assert np.all(diff < atol), f"Profile mismatch. Max diff: {np.max(diff)}, Mean diff: {np.mean(diff)}"
-
+    assert np.all(diff < atol), (
+        f"Profile mismatch. Max diff: {np.max(diff)}, Mean diff: {np.mean(diff)}"
+    )
 
 
 def read_surface_depths(file_path: Path) -> dict:
@@ -132,13 +145,17 @@ def read_surface_depths(file_path: Path) -> dict:
         for line in f:
             line = re.sub(r"\s+", " ", line).strip()
 
-            if not line or line.startswith(("Surface", "Global", "Basin", "#")): # skip known headers
+            if not line or line.startswith(
+                ("Surface", "Global", "Basin", "#")
+            ):  # skip known headers
                 continue
             parts = line.split()
             try:
-                parts.remove("-") # Remove any leading dashes that may be present in Python output
+                parts.remove(
+                    "-"
+                )  # Remove any leading dashes that may be present in Python output
             except ValueError:
-                pass # Ignore if no dashes are present
+                pass  # Ignore if no dashes are present
 
             if len(parts) >= 2:
                 try:
@@ -150,10 +167,9 @@ def read_surface_depths(file_path: Path) -> dict:
     return surface_depths
 
 
-def compare_surface_depths(c_path: Path, py_path: Path, atol=1e-3):
+def compare_surface_depths(c_path: Path, py_path: Path, atol: float = 1e-5):
     c_dict = read_surface_depths(c_path)
     py_dict = read_surface_depths(py_path)
-
 
     matched = 0
     print(c_dict)
@@ -163,25 +179,30 @@ def compare_surface_depths(c_path: Path, py_path: Path, atol=1e-3):
     py_items = list(py_dict.items())
 
     for i, (c_key, c_val) in enumerate(c_items):
-        py_key,py_val = py_items[i]
+        py_key, py_val = py_items[i]
         assert abs(c_val - py_val) < atol, (
             f"Mismatch in surface '{c_key}': {c_val} (C) vs '{py_key}' : {py_val} (Python)"
         )
         matched += 1
         break
 
-        assert matched > 0, f"No matching surface names found between files"
+        assert matched > 0, "No matching surface names found between files"
 
 
 @pytest.mark.repeat(5)
-def test_c_vs_python_profile(tmp_path: Path, nzvm_c_binary_path: Path,
+def test_c_vs_python_profile(
+    tmp_path: Path,
+    nzvm_c_binary_path: Path,
 ):
     root_out_dir = tmp_path / "1d_profiles"
     config_path, params = generate_random_profile_config(tmp_path, root_out_dir)
 
     # Run C binary from its directory with relative path
     c_result = subprocess.run(
-        [nzvm_c_binary_path, str(config_path)],  # Relative path since we're in C_BINARY_DIR
+        [
+            nzvm_c_binary_path,
+            str(config_path),
+        ],  # Relative path since we're in C_BINARY_DIR
         cwd=str(nzvm_c_binary_path.parent),
         capture_output=True,
         text=True,
@@ -197,24 +218,33 @@ def test_c_vs_python_profile(tmp_path: Path, nzvm_c_binary_path: Path,
     # Run Python version
     location_csv = tmp_path / "locations.csv"
     generate_location_csv(location_csv, params)
-    subprocess.run([
-        "python", str(SCRIPT_DIR / "generate_1d_profiles.py"),
-        "--model-version", params["model_version"],
-        "--out-dir", str(root_out_dir / "output"),
-        "--location-csv", str(location_csv),
-        "--topo-type", params["topo_type"],
-        "--min-vs", str(params["min_vs"]),
-    ], check=True)
+    subprocess.run(
+        [
+            "python",
+            str(SCRIPT_DIR / "generate_1d_profiles.py"),
+            "--model-version",
+            params["model_version"],
+            "--out-dir",
+            str(root_out_dir / "output"),
+            "--location-csv",
+            str(location_csv),
+            "--topo-type",
+            params["topo_type"],
+            "--min-vs",
+            str(params["min_vs"]),
+        ],
+        check=True,
+    )
 
     # Compare Profile
     cid = params["id"]
     compare_profiles(
         root_out_dir / f"c_output/{cid}/Profile/Profile.txt",
-        root_out_dir / f"output/Profiles/Profile_{cid}.txt"
+        root_out_dir / f"output/Profiles/Profile_{cid}.txt",
     )
     compare_surface_depths(
         root_out_dir / f"c_output/{cid}/Profile/ProfileSurfaceDepths.txt",
-        root_out_dir / f"output/Profiles/ProfileSurfaceDepths_{cid}.txt"
+        root_out_dir / f"output/Profiles/ProfileSurfaceDepths_{cid}.txt",
     )
 
 

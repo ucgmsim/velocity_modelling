@@ -475,7 +475,9 @@ class CVMRegistry:
                     raster_data, (0, nlat * nlon - len(raster_data)), "constant"
                 )
 
-            basin_surf_read = BasinSurfaceRead(surface_path, latitudes,longitudes, raster_data.reshape((nlat, nlon)).T)
+            basin_surf_read = BasinSurfaceRead(
+                surface_path, latitudes, longitudes, raster_data.reshape((nlat, nlon)).T
+            )
 
             return basin_surf_read
 
@@ -497,7 +499,9 @@ class CVMRegistry:
 
         with h5py.File(surface_path, "r") as f:
             # Read attributes
-            basin_surf_read = BasinSurfaceRead(surface_path,  f["latitude"][:],  f["longitude"][:],  f["elevation"][:].T)
+            basin_surf_read = BasinSurfaceRead(
+                surface_path, f["latitude"][:], f["longitude"][:], f["elevation"][:].T
+            )
 
         return basin_surf_read
 
@@ -592,7 +596,8 @@ class CVMRegistry:
                     raster_data, (0, nlat * nlon - len(raster_data)), "constant"
                 )
 
-            return GlobalSurfaceRead(surface_path, latitudes, longitudes, raster_data.reshape((nlat, nlon)).T
+            return GlobalSurfaceRead(
+                surface_path, latitudes, longitudes, raster_data.reshape((nlat, nlon)).T
             )
 
     def _load_hdf5_global_surface(self, surface_path: Path):
@@ -623,7 +628,9 @@ class CVMRegistry:
                 f"Reading HDF5 surface with dimensions {len(latitudes)}x{len(longitudes)} from {surface_path}",
             )
 
-            return GlobalSurfaceRead(surface_path, latitudes, longitudes, elevation_data)
+            return GlobalSurfaceRead(
+                surface_path, latitudes, longitudes, elevation_data
+            )
 
     def load_tomo_surface_data(
         self,
@@ -761,8 +768,8 @@ class CVMRegistry:
                         for vtype in VelocityTypes:
                             try:
                                 data = elev_group[vtype.name][:]
-                                surfaces[i][vtype.name] = GlobalSurfaceRead(hdf5_path,
-                                    latitudes, longitudes, data.T
+                                surfaces[i][vtype.name] = GlobalSurfaceRead(
+                                    hdf5_path, latitudes, longitudes, data.T
                                 )
                                 self.logger.log(
                                     logging.DEBUG,
