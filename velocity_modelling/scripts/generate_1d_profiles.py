@@ -13,7 +13,8 @@ Usage:
 Example:
     python generate_1d_profiles.py --out-dir ./profiles --model-version 1.0 --location-csv locations.csv --min-vs 0.2 --topo-type TRUE
 
-    where, locations.csv is a CSV file with columns: id, lon, lat, zmin, zmax, spacing.
+    where, locations.csv is a CSV file with columns: id, lon, lat, zmin, zmax, spacing. zmin, zmax and spacing are in kilometers.
+
     Sample locations.csv:
         id, lon, lat, zmin, zmax, spacing
         ADCS, 171.747604, -43.902401,0.0, 3.0, 0.1
@@ -26,9 +27,10 @@ If the --custom-depth option is provided, it should point to a text file with de
         5.0
 In this case, the zmin, zmax, and spacing parameters in the CSV file will be ignored.
 
-Sample output:  Profile_ADCS.txt
 
-Properties at Lat: -43.902401 Lon: 171.747604
+Sample output:  Profile_ADCS.txt
+```
+Properties at Lat : -43.902401 Lon: 171.747604 (On Mesh Lat: -43.902396 Lon: 171.747599)
 Model Version: 2.07
 Topo Type: TRUE
 Minimum Vs: 0.000000
@@ -37,13 +39,13 @@ Elevation (km) 	 Vp (km/s) 	 Vs (km/s) 	 Rho (t/m^3)
 -0.100000 	 1.800000 	 0.480000 	 1.810000
 -0.200000 	 1.800000 	 0.608600 	 1.810000
 -0.300000 	 2.000000 	 0.608600 	 1.905000
--0.400000 	 2.000000 	 0.608600 	 1.905000
-....
+...
+
 -3.000000 	 4.520129 	 2.676067 	 2.538085
-
+```
 Sample output: ProfileSurfaceDepths_ADCS.txt
-
-Surface Elevation (in m) at Lat: -43.902401 Lon: 171.747604
+```
+Surface Elevation (in m) at Lat : -43.902401 Lon: 171.747604 (On Mesh Lat: -43.902396 Lon: 171.747599)
 
 Global surfaces
 Surface_name 	 Elevation (m)
@@ -59,6 +61,8 @@ Canterbury_v19p1
 - Canterbury_Miocene_WGS84	-887.287466
 - Canterbury_Paleogene_WGS84	-1031.612588
 - Canterbury_basement_WGS84	-1765.060557
+
+```
 
 """
 
@@ -132,7 +136,9 @@ def read_depth_points_text_file(file_path: Path, logger: logging.Logger) -> list
         logger.error(f"Depth points file does not exist: {file_path}")
         raise OSError(f"Depth points file does not exist: {file_path}")
     try:
-        depth_values = np.loadtxt(file_path, dtype=float).tolist()
+        # Use numpy to read the file and convert to a list.
+        # atleast_1d ensures we get a 1D array even if the file has a single value.
+        depth_values = np.atleast_1d(np.loadtxt(file_path, dtype=float)).tolist()
     except (OSError, ValueError) as e:
         logger.error(f"Failed to read depth points file {file_path}: {e}")
         raise
@@ -242,6 +248,7 @@ def write_profile_surface_depths(
     partial_global_surface_depths: PartialGlobalSurfaceDepths,
     partial_basin_surface_depths: PartialBasinSurfaceDepths,
     in_basin_list: list[InBasin],
+    mesh_vector: QualitiesVector,
     df: pd.DataFrame,
     profile_idx: int,
     logger: logging.Logger,
@@ -263,6 +270,8 @@ def write_profile_surface_depths(
         Depths of basin surfaces at the profile location.
     in_basin_list : list[InBasin]
         List of InBasin objects indicating basin membership for the profile location.
+    mesh_vector : QualitiesVector
+        Mesh vector containing latitude and longitude of the profile location.
     df : pd.DataFrame
         DataFrame containing profile parameters (id, lon, lat, zmin, zmax, spacing).
     profile_idx : int
@@ -279,7 +288,7 @@ def write_profile_surface_depths(
     profiles_dir.mkdir(exist_ok=True, parents=True)
     file_path = profiles_dir / f"ProfileSurfaceDepths_{df['id'].iloc[profile_idx]}.txt"
     lines = [
-        f"Surface Elevation (in m) at Lat: {df['lat'].iloc[profile_idx]:.6f} Lon: {df['lon'].iloc[profile_idx]:.6f}\n",
+        f"Surface Elevation (in m) at Lat : {df['lat'].iloc[profile_idx]:.6f} Lon: {df['lon'].iloc[profile_idx]:.6f} (On Mesh Lat: {mesh_vector.lat:.6f} Lon: {mesh_vector.lon:.6f})\n",
         "\nGlobal surfaces\n",
         "Surface_name \t Elevation (m)\n",
         *[
@@ -420,14 +429,31 @@ def generate_1d_profiles(
     )
 
     # Read profile parameters from location_csv
-    df = pd.read_csv(location_csv)
+    try:
+        df = pd.read_csv(location_csv, skipinitialspace=True)
+        if df.empty:
+            logger.log(logging.ERROR, f"CSV file {location_csv} is empty.")
+            raise ValueError(f"CSV file {location_csv} is empty.")
+    except pd.errors.EmptyDataError:
+        logger.log(logging.ERROR, f"CSV file {location_csv} is empty or invalid.")
+        raise ValueError(f"CSV file {location_csv} is empty or invalid.")
+
+    # Standardize column names to lowercase to be forgiving
+    df.columns = df.columns.str.lower()
+
     required_columns = ["id", "lon", "lat", "zmin", "zmax", "spacing"]
-    if not all(col in df.columns for col in required_columns):
+    if list(df.columns) != required_columns:
+        # Check if it looks like there's no header vs. a wrong header
+        if not any(col in df.columns for col in required_columns):
+            message = f"CSV file {location_csv} appears to be missing a header."
+        else:
+            message = f"CSV file {location_csv} has an incorrect header."
         logger.log(
             logging.ERROR,
-            f"CSV file {location_csv} must contain columns: {', '.join(required_columns)}",
+            f"{message} Expected columns in order: {', '.join(required_columns)}",
         )
-        raise ValueError("Invalid CSV format: missing required columns")
+        raise ValueError("Invalid CSV format: incorrect or missing header")
+
     for i, row in df.iterrows():
         if row["zmin"] >= row["zmax"]:
             logger.log(
@@ -472,11 +498,12 @@ def generate_1d_profiles(
             model_extent["extent_zmax"] = max(depth_values)
             model_extent["h_depth"] = 1.0  # Placeholder, as actual depths are set later
         else:
+            spacing_offset = 0.5
             model_extent["extent_zmin"] = (
-                df["zmin"].iloc[i] - 0.5 * df["spacing"].iloc[i]
+                df["zmin"].iloc[i] - spacing_offset * df["spacing"].iloc[i]
             )
             model_extent["extent_zmax"] = (
-                df["zmax"].iloc[i] + 0.5 * df["spacing"].iloc[i]
+                df["zmax"].iloc[i] + spacing_offset * df["spacing"].iloc[i]
             )
             model_extent["h_depth"] = df["spacing"].iloc[i]
         model_extent["nx"] = int(
@@ -506,7 +533,8 @@ def generate_1d_profiles(
                 logging.DEBUG,
                 f"Number of model points - nx: {global_mesh.nx}, ny: {global_mesh.ny}, nz: {global_mesh.nz}",
             )
-            global_mesh.z = [-1000 * dep for dep in depth_values]
+            global_mesh.z = np.array([-1000 * dep for dep in depth_values]) # in meters
+
         partial_global_mesh = partial_global_mesh_list[
             0
         ]  # Use the first mesh for the profile
@@ -554,6 +582,7 @@ def generate_1d_profiles(
             partial_global_surface_depths,
             partial_basin_surface_depths,
             in_basin_list,
+            mesh_vector,
             df,
             i,
             logger,

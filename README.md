@@ -87,7 +87,7 @@ To extract cross-sections from a HDF5-format velocity model, use the `extract_cr
 ```
 ### Configuration File: `nzcvm.cfg`
 
-The `nzcvm.cfg` file is a configuration file used by the `nzcvm.py` script to generate velocity models. It contains parameters defining the properties and settings of the velocity model. Below is an example:
+The `nzcvm.cfg` file is a configuration file used by the `generate_3d_model.py` script to generate velocity models. It contains parameters defining the properties and settings of the velocity model. Below is an example:
 
 ```ini
 CALL_TYPE=GENERATE_VELOCITY_MOD

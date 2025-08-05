@@ -52,12 +52,12 @@ class GlobalMesh:
         Maximum longitude.
     min_lon : float
         Minimum longitude.
-    x : np.ndarray
+    x : np.ndarray (indexed by nx)
         Array of X coordinates.
-    y : np.ndarray
+    y : np.ndarray (indexed by ny)
         Array of Y coordinates.
     z : np.ndarray
-        Array of Z coordinates.
+        Array of Z coordinates. (in meters)
 
     """
 
