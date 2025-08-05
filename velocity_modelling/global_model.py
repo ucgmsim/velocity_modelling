@@ -8,8 +8,8 @@ including interpolation and depth calculations.
 
 from pathlib import Path
 
-from numba import njit
 import numpy as np
+from numba import njit
 
 from velocity_modelling.geometry import (
     AdjacentPoints,

@@ -96,7 +96,6 @@ from velocity_modelling.global_model import (
 from velocity_modelling.registry import CVMRegistry
 from velocity_modelling.velocity3d import QualitiesVector
 
-
 LAST_LAYER_DEPTH = -999999.0
 
 # Configure logging at the module level
@@ -536,7 +535,7 @@ def generate_1d_profiles(
                 logging.DEBUG,
                 f"Number of model points - nx: {global_mesh.nx}, ny: {global_mesh.ny}, nz: {global_mesh.nz}",
             )
-            global_mesh.z = np.array([-1000 * dep for dep in depth_values]) # in meters
+            global_mesh.z = np.array([-1000 * dep for dep in depth_values])  # in meters
 
         partial_global_mesh = partial_global_mesh_list[
             0
