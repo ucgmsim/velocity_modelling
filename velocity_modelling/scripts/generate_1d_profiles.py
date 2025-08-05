@@ -96,6 +96,9 @@ from velocity_modelling.global_model import (
 from velocity_modelling.registry import CVMRegistry
 from velocity_modelling.velocity3d import QualitiesVector
 
+
+LAST_LAYER_DEPTH = -999999.0
+
 # Configure logging at the module level
 logging.basicConfig(
     level=logging.INFO,
@@ -200,7 +203,7 @@ def write_profiles(
             for i in range(mesh_vector.nz):
                 vs = max(qualities_vector.vs[i], vm_params["min_vs"])
                 if i == mesh_vector.nz - 1:
-                    delta_depth = -999999.0
+                    delta_depth = LAST_LAYER_DEPTH
                 elif i == 0:
                     delta_depth = 2 * mesh_vector.z[i]
                     dep_bot = delta_depth
