@@ -1,4 +1,4 @@
-# tests/test_nzcvm_scenarios.py
+# tests/test_gen_3dvm_scenarios.py
 import subprocess
 from pathlib import Path
 from typing import TypedDict

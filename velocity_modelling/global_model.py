@@ -192,7 +192,7 @@ class PartialGlobalSurfaceDepths:
         self.depths[1:][mask] = self.depths[:-1][mask]
 
 
-@njit
+#@njit
 def interpolate_global_surface_numba(
     lats: np.ndarray,
     lons: np.ndarray,

@@ -66,7 +66,7 @@ import logging
 import sys
 import time
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 import numpy as np
 import pandas as pd
@@ -214,7 +214,7 @@ def write_profiles(
         file_path = profiles_dir / f"Profile_{profile_id}.txt"
         with file_path.open("w") as f:
             f.write(
-                f"Properties at Lat: {df['lat'].iloc[profile_idx]:.6f} Lon: {df['lon'].iloc[profile_idx]:.6f}\n"
+                f"Properties at Lat : {df['lat'].iloc[profile_idx]:.6f} Lon: {df['lon'].iloc[profile_idx]:.6f} (On Mesh Lat: {mesh_vector.lat:.6f} Lon: {mesh_vector.lon:.6f})\n"
             )
             f.write(f"Model Version: {vm_params['model_version']}\n")
             f.write(f"Topo Type: {vm_params['topo_type'].name}\n")
@@ -321,7 +321,7 @@ def generate_1d_profiles(
         str, typer.Option(help="Topography type")
     ] = TopoTypes.TRUE.name,
     custom_depth: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option(
             exists=True,
             dir_okay=False,
@@ -472,12 +472,11 @@ def generate_1d_profiles(
             model_extent["extent_zmax"] = max(depth_values)
             model_extent["h_depth"] = 1.0  # Placeholder, as actual depths are set later
         else:
-            half = 0.5
             model_extent["extent_zmin"] = (
-                df["zmin"].iloc[i] - half * df["spacing"].iloc[i]
+                df["zmin"].iloc[i] - 0.5 * df["spacing"].iloc[i]
             )
             model_extent["extent_zmax"] = (
-                df["zmax"].iloc[i] + half * df["spacing"].iloc[i]
+                df["zmax"].iloc[i] + 0.5 * df["spacing"].iloc[i]
             )
             model_extent["h_depth"] = df["spacing"].iloc[i]
         model_extent["nx"] = int(

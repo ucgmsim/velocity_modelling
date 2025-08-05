@@ -61,7 +61,7 @@ def linear_interpolation_vectorized(
     return y0 + (y1 - y0) * (x - x0) / (x1 - x0)
 
 
-@numba.jit(nopython=True)
+#@numba.jit(nopython=True)
 def bi_linear_interpolation(
     x1: float,
     x2: float,
