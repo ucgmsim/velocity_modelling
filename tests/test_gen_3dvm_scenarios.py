@@ -88,7 +88,7 @@ def scenario(
     )
 
 
-def test_nzcvm_scenarios(scenario: ScenarioDict):
+def test_gen_3dvm_scenarios(scenario: ScenarioDict):
     """
     Test generate_3d_model.py with different scenarios
     and compare outputs with benchmarks

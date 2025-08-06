@@ -103,7 +103,7 @@ OUTPUT_DIR={c_output_dir}
 
 
 @pytest.mark.repeat(5)
-def test_nzcvm_c_vs_python(
+def test_gen_3dvm_c_vs_python(
     tmp_path: Path, nzvm_c_binary_path: Path, data_root_path: Path
 ):
     """Test C binary vs Python script with random config"""

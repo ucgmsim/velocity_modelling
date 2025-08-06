@@ -1,3 +1,92 @@
+"""
+Test script to compare the output of the C version of the NZVM velocity model
+
+The output of the C version differs slightly from the Python version
+
+C version
+---------------------------------------
+# Profile.txt
+
+Properties at Lat: -43.902396 Lon: 171.747599
+Depth (km) 	 Vp (km/s) 	 Vs (km/s) 	 Rho (t/m^3)
+-0.000000 	 1.800000 	 0.380000 	 1.810000
+-0.100000 	 1.800000 	 0.480000 	 1.810000
+-0.200000 	 1.800000 	 0.608600 	 1.810000
+...
+-3.000000 	 4.520129 	 2.676067 	 2.538085
+
+# ProfileSurfaceDepths.txt
+Surface Depths (in m) at Lat: -43.902396 Lon: 171.747599
+
+Global surfaces
+Surface_name 	 Depth (m)
+posInfSurf	1000000.000000
+DEM	99.607015
+negInfSurf	-1000000.000000
+
+Basin surfaces (if applicable)
+
+Canterbury_Pre_Quaternary_v19p1
+DEM	99.607015
+PlioceneTop	-266.438467
+MioceneTop	-887.287466
+PaleogeneTop	-1031.612588
+BasementTopSurf	-1765.060557
+---------------------------------------
+
+
+Python version : Site ID is used as a suffix. For site ADCS, the output files are:
+---------------------------------------
+# Profile_ADCS.txt
+Properties at Lat : -43.902401 Lon: 171.747604 (On Mesh Lat: -43.902396 Lon: 171.747599)
+Model Version: 2.07
+Topo Type: TRUE
+Minimum Vs: 0.000000
+Elevation (km) 	 Vp (km/s) 	 Vs (km/s) 	 Rho (t/m^3)
+-0.000000 	 1.800000 	 0.380000 	 1.810000
+-0.100000 	 1.800000 	 0.480000 	 1.810000
+-0.200000 	 1.800000 	 0.608600 	 1.810000
+...
+
+-3.000000 	 4.520129 	 2.676067 	 2.538085
+
+# ProfileSurfaceDepths_ADCS.txt
+Surface Elevation (in m) at Lat : -43.902401 Lon: 171.747604 (On Mesh Lat: -43.902396 Lon: 171.747599)
+
+Global surfaces
+Surface_name 	 Elevation (m)
+- posInf	1000000.000000
+- NZ_DEM_HD	99.607015
+- negInf	-1000000.000000
+
+Basin surfaces (if applicable)
+
+Canterbury_v19p1
+- CantDEM	99.607015
+- Canterbury_Pliocene_46_WGS84_v8p9p18	-266.438467
+- Canterbury_Miocene_WGS84	-887.287466
+- Canterbury_Paleogene_WGS84	-1031.612588
+- Canterbury_basement_WGS84	-1765.060557
+
+---------------------------------------
+
+Differences:
+- The Python version includes the site ID as a suffix in the output filenames.
+- The Python version includes additional metadata in the profile header (model version, topo type, minimum Vs).
+- The Python version uses "Elevation" instead of "Depth" in the header.
+- The Python version has a different format for the surface depths, using "Elevation" instead of "Depth".
+- The C version shows Lat and Lon in the header, which are not the actual Lat and Lon of the input profile.
+  They are the Lat and Lon on the mesh it created during the calculation.
+  The Python version instead shows the input Lat and Lon, and shows "On Mesh" lat/lon as well to compare with the C version.
+- The C version uses "Surface_name" and "Depth (m)" in the surface depths file, while the Python version uses "Surface_name" and "Elevation (m)".
+- The C version uses the surface name defined in the code, the Python version show the surface file names as defined in the registry.
+
+The test script below generates a random profile configuration, runs both the C and Python versions of the NZVM velocity model,
+and compares their outputs for consistency. It checks both the profile data and surface depths, ensuring that they match within a specified tolerance.
+The test script is aware of the differences mentioned above and accounts for them in the comparison logic.
+
+"""
+
 import csv
 import random
 import re
@@ -190,7 +279,7 @@ def compare_surface_depths(c_path: Path, py_path: Path, atol: float = 1e-5):
 
 
 @pytest.mark.repeat(5)
-def test_c_vs_python_profile(
+def test_gen_1dprofile_c_vs_python(
     tmp_path: Path,
     nzvm_c_binary_path: Path,
 ):

@@ -426,29 +426,6 @@ def generate_3d_model(
     )
 
 
-@app.callback()
-def callback():
-    """
-    Dummy callback function to enforce command specification.
-    This function does nothing and is used to ensure that the command is specified
-
-    Typer behaves differently when only one command is available, and when multiple commands are available.
-    When there is only one command, it does not require the command to be specified, and executes the command without it
-    When there are multiple commands, it requires the command to be specified
-
-    eg. "nzcvm generate-velocity-model" instead of "nzvm" since there is only one command available
-
-    This is a problem because we currently only have one command available, but we expect to have more commands.
-    We want to enforce the command to be specified to maintain consistency and avoid confusion when we add more commands.
-
-    So we create a dummy callback function that does nothing. This can be removed once we have more than one command.
-    Ref: https://typer.tiangolo.com/tutorial/commands/one-or-multiple/#one-command-and-one-callback
-
-
-    """
-    pass
-
-
 def parse_nzcvm_config(config_path: Path, logger: Logger | None = None) -> dict:
     """
     Parse the nzcvm config file and convert it to a dictionary format.
