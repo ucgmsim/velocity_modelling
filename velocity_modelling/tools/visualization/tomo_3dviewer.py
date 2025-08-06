@@ -528,7 +528,7 @@ def launch_viewer(
             for d in elevations
         }
 
-    app_qt = QApplication(sys.argv)
+    app_qt = QApplication.instance() or QApplication(sys.argv)
 
     # validate clim input
     if clim is None:
@@ -547,6 +547,9 @@ def launch_viewer(
         debug=debug,
     )
     window.show()
+    # Ensure clean shutdown
+    app_qt.lastWindowClosed.connect(app_qt.quit)
+
     sys.exit(app_qt.exec_())
 
 
