@@ -8,10 +8,12 @@ Intended for use with the NZCVM velocity modelling framework.
 
 This script is part of the velocity_modelling package and is designed to be run from the command line.
 Usage:
-    python generate_1d_profiles.py --out-dir <output_directory> --model-version <version> --location-csv <csv_file> --min-vs <min_vs> --topo-type <topo_type> [--custom-depth <depth_file>] [--nzcvm-registry <registry_file>] [--data-root <data_root>] [--log-level <log_level>]
+    python generate_1d_profiles.py --out-dir <output_directory> --model-version <version> --location-csv <csv_file>
+    --min-vs <min_vs> --topo-type <topo_type> [--custom-depth <depth_file>] [--nzcvm-registry <registry_file>]
+    [--data-root <data_root>] [--log-level <log_level>]
 
 Example:
-    python generate_1d_profiles.py --out-dir ./profiles --model-version 1.0 --location-csv locations.csv --min-vs 0.2 --topo-type TRUE
+    python generate_1d_profiles.py --out-dir ./profiles --model-version 2.07 --location-csv locations.csv --min-vs 0.2 --topo-type TRUE
 
     where, locations.csv is a CSV file with columns: id, lon, lat, zmin, zmax, spacing. zmin, zmax and spacing are in kilometers.
 
