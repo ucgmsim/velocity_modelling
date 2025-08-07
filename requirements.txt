@@ -23,7 +23,7 @@ numba
 qcore @ git+https://github.com/ucgmsim/qcore.git
 pyyaml
 tqdm
-typer[all]
+typer
 
 # Tool dependencies
 cartopy
