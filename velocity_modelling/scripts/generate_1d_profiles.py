@@ -34,7 +34,7 @@ Properties at Lat : -43.902401 Lon: 171.747604 (On Mesh Lat: -43.902396 Lon: 171
 Model Version: 2.07
 Topo Type: TRUE
 Minimum Vs: 0.000000
-Elevation (km) 	 Vp (km/s) 	 Vs (km/s) 	 Rho (t/m^3)
+Elevation (km) 	 Vp (km/s) 	 Vs (km/s) 	 Rho (g/cm^3)
 -0.000000 	 1.800000 	 0.380000 	 1.810000
 -0.100000 	 1.800000 	 0.480000 	 1.810000
 -0.200000 	 1.800000 	 0.608600 	 1.810000
@@ -86,7 +86,7 @@ from velocity_modelling.basin_model import (
 )
 from velocity_modelling.constants import DATA_ROOT, NZCVM_REGISTRY_PATH, TopoTypes
 from velocity_modelling.geometry import (
-    extract_mesh_vector,
+    MeshVector,
     gen_full_model_grid_great_circle,
 )
 from velocity_modelling.global_model import (
@@ -113,7 +113,7 @@ def read_depth_points_text_file(file_path: Path, logger: logging.Logger) -> list
     """
     Read depth points from a text file using numpy.loadtxt.
 
-    The file is expected to contain one depth value (in kilometers) per line.
+    The file is expected to contain one depth value (in kilometres) per line.
 
     Parameters
     ----------
@@ -227,7 +227,7 @@ def write_profiles(
             f.write(f"Model Version: {vm_params['model_version']}\n")
             f.write(f"Topo Type: {vm_params['topo_type'].name}\n")
             f.write(f"Minimum Vs: {vm_params['min_vs']:.6f}\n")
-            f.write("Elevation (km) \t Vp (km/s) \t Vs (km/s) \t Rho (t/m^3)\n")
+            f.write("Elevation (km) \t Vp (km/s) \t Vs (km/s) \t Rho (g/cm^3)\n")
             for i in range(mesh_vector.nz):
                 vs = max(qualities_vector.vs[i], vm_params["min_vs"])
                 f.write(
@@ -433,9 +433,6 @@ def generate_1d_profiles(
     # Read profile parameters from location_csv
     try:
         df = pd.read_csv(location_csv, skipinitialspace=True)
-        if df.empty:
-            logger.log(logging.ERROR, f"CSV file {location_csv} is empty.")
-            raise ValueError(f"CSV file {location_csv} is empty.")
     except pd.errors.EmptyDataError:
         logger.log(logging.ERROR, f"CSV file {location_csv} is empty or invalid.")
         raise ValueError(f"CSV file {location_csv} is empty or invalid.")
@@ -549,7 +546,7 @@ def generate_1d_profiles(
         for basin_idx in basin_indices:
             if basin_idx >= 0:
                 in_basin_list[basin_idx].in_basin_lat_lon = True
-        mesh_vector = extract_mesh_vector(partial_global_mesh, 0)
+        mesh_vector = MeshVector(partial_global_mesh, 0)
         partial_global_surface_depths = PartialGlobalSurfaceDepths(len(global_surfaces))
         partial_basin_surface_depths = [
             PartialBasinSurfaceDepths(basin_data) for basin_data in basin_data_list

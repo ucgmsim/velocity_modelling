@@ -21,7 +21,6 @@ from velocity_modelling.geometry import (
     MeshVector,
     PartialGlobalMesh,
     SmoothingBoundary,
-    extract_partial_mesh,
     point_on_vertex,
 )
 from velocity_modelling.interpolate import (
@@ -281,7 +280,7 @@ class InBasinGlobalMesh:
 
         nx, ny = in_basin_mesh.nx, in_basin_mesh.ny
         partial_global_mesh_list = [
-            extract_partial_mesh(global_mesh, j) for j in range(ny)
+            PartialGlobalMesh(global_mesh, j) for j in range(ny)
         ]
 
         for j in range(ny):

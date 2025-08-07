@@ -8,7 +8,7 @@ C version
 # Profile.txt
 
 Properties at Lat: -43.902396 Lon: 171.747599
-Depth (km) 	 Vp (km/s) 	 Vs (km/s) 	 Rho (g/cm^3)
+Depth (km) 	 Vp (km/s) 	 Vs (km/s) 	 Rho (t/m^3)
 -0.000000 	 1.800000 	 0.380000 	 1.810000
 -0.100000 	 1.800000 	 0.480000 	 1.810000
 -0.200000 	 1.800000 	 0.608600 	 1.810000
@@ -79,15 +79,15 @@ Canterbury_v19p1
 Differences:
 - The Python version includes the site ID as a suffix in the output filenames.
 - The Python version includes additional metadata in the profile header (model version, topo type, minimum Vs).
+- The Python version uses "g/cm^3" for density instead of "t/m^3" (the number is the same, just different units).
 - The Python version uses "Elevation" instead of "Depth" in the header.
-- The Python version has a different format for the surface depths, using "Elevation" instead of "Depth".
-- The C version shows Lat and Lon in the header, which are not the actual Lat and Lon of the input profile.
-  They are the Lat and Lon on the mesh it created during the calculation.
-  The Python version instead shows the input Lat and Lon, and shows "On Mesh" lat/lon as well to compare with the C version.
+
+- The C version shows Lat and Lon *on the mesh it created during calculation*, in the header.
+  The Python version shows both the Lat and Lon on the calculated mesh and in the actual input profile.
 - The C version uses "Surface_name" and "Depth (m)" in the surface depths file, while the Python version uses "Surface_name" and "Elevation (m)".
 - The C version uses the surface name defined in the code, the Python version show the surface file names as defined in the registry.
 
-The test script below generates a random profile configuration, runs both the C and Python versions of the NZVM velocity model,
+The test script below generates a random profile configuration, runs both the C and Python versions,
 and compares their outputs for consistency. It checks both the profile data and surface depths, ensuring that they match within a specified tolerance.
 The test script is aware of the differences mentioned above and accounts for them in the comparison logic.
 
@@ -281,7 +281,7 @@ def compare_surface_depths(c_path: Path, py_path: Path, atol: float = 1e-5):
         matched += 1
         break
 
-        assert matched > 0, "No matching surface names found between files"
+    assert matched > 0, "No matching surface names found between files"
 
 
 @pytest.mark.repeat(5)

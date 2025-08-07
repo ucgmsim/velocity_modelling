@@ -75,7 +75,7 @@ from velocity_modelling.constants import (
 )
 from velocity_modelling.geometry import (
     GlobalMesh,
-    extract_mesh_vector,
+    MeshVector,
     gen_full_model_grid_great_circle,
 )
 from velocity_modelling.global_model import PartialGlobalSurfaceDepths
@@ -361,7 +361,7 @@ def generate_3d_model(
                 # Placeholder for future implementation
             else:
                 try:
-                    mesh_vector = extract_mesh_vector(partial_global_mesh, k)
+                    mesh_vector = MeshVector(partial_global_mesh, k)
                     qualities_vector.assign_qualities(
                         cvm_registry,
                         vm1d_data,
