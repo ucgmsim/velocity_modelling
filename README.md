@@ -55,7 +55,7 @@ For detailed data downloading and installation instructions, see the [Installati
 
 ### Running the script
 
-Currently, the NZCVM provides 3 Python scripts  located in the `scripts` directory. 
+Currently, the NZCVM provides 3 python scripts located in the `scripts` directory. 
 - `generate_3d_model.py`: Generates velocity models based on the configuration files.
 - `generate_1d_profiles.py`: Generates 1D velocity profiles.
 - `extract_cross_section.py`: Extracts cross-sections from the velocity models.
