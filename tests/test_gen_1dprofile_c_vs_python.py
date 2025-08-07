@@ -48,7 +48,7 @@ Properties at Lat : -43.902401 Lon: 171.747604 (On Mesh Lat: -43.902396 Lon: 171
 Model Version: 2.07
 Topo Type: TRUE
 Minimum Vs: 0.000000
-Elevation (km) 	 Vp (km/s) 	 Vs (km/s) 	 Rho (t/m^3)
+Elevation (km) 	 Vp (km/s) 	 Vs (km/s) 	 Rho (g/cm^3)
 -0.000000 	 1.800000 	 0.380000 	 1.810000
 -0.100000 	 1.800000 	 0.480000 	 1.810000
 -0.200000 	 1.800000 	 0.608600 	 1.810000
