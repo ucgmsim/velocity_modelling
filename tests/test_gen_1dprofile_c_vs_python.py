@@ -234,8 +234,8 @@ def compare_profiles(c_path: Path, py_path: Path, atol: float = 1e-5):
     )
 
 
-def read_surface_depths(file_path: Path) -> dict:
-    surface_depths = {}
+def read_surface_depths(file_path: Path) -> list:
+    surface_depths = []
     with open(file_path, "r") as f:
         for line in f:
             line = re.sub(r"\s+", " ", line).strip()
@@ -256,25 +256,25 @@ def read_surface_depths(file_path: Path) -> dict:
                 try:
                     name = parts[0]
                     value = float(parts[-1])
-                    surface_depths[name] = value
+                    surface_depths.append((name, value))
                 except ValueError:
                     continue
     return surface_depths
 
 
 def compare_surface_depths(c_path: Path, py_path: Path, atol: float = 1e-5):
-    c_dict = read_surface_depths(c_path)
-    py_dict = read_surface_depths(py_path)
+    c_list = read_surface_depths(c_path)
+    py_list = read_surface_depths(py_path)
 
     matched = 0
-    print(c_dict)
-    print(py_dict)
-    assert len(c_dict) == len(py_dict), f"Mismatch: {len(c_dict)} vs {py_dict}"
-    c_items = list(c_dict.items())
-    py_items = list(py_dict.items())
+    print(c_list)
+    print(py_list)
+    assert len(c_list) == len(py_list), f"Mismatch: {len(c_list)} vs {py_list}"
+    c_values = [item[1] for item in c_list]
 
-    for i, (c_key, c_val) in enumerate(c_items):
-        py_key, py_val = py_items[i]
+    for i, (c_val) in enumerate(c_values):
+        c_key = c_list[i][0]
+        py_key, py_val = py_list[i]
         assert abs(c_val - py_val) < atol, (
             f"Mismatch in surface '{c_key}': {c_val} (C) vs '{py_key}' : {py_val} (Python)"
         )
