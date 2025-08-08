@@ -56,11 +56,11 @@ For detailed data downloading and installation instructions, see the [Installati
 ### Running the script
 
 Currently, the NZCVM provides 3 python scripts located in the `scripts` directory. 
-- `generate_3d_model.py`: Generates velocity models based on the configuration files.
+- `generate_3d_model.py`: Generates a 3D velocity model.
 - `generate_1d_profiles.py`: Generates 1D velocity profiles.
 - `extract_cross_section.py`: Extracts cross-sections from the velocity models.
 
-#### `generate_3d_model.py`
+#### Generating a 3D Velocity Model: `generate_3d_model.py`
 To run the `generate_3d_model.py` script, provide specific arguments, including the configuration file and the output directory:
 
 ```sh
@@ -95,7 +95,7 @@ After successful execution, the output files will be located in the specified ou
 
 
 
-#### `generate_1d_profiles.py`
+#### Generates 1D velocity profiles: `generate_1d_profiles.py`
 To generate 1D velocity profiles, use the `generate_1d_profiles.py` script:
 
 ```sh
@@ -103,7 +103,7 @@ To generate 1D velocity profiles, use the `generate_1d_profiles.py` script:
 ```
 For detailed instructions, see the [Generating 1D Profiles](wiki/Generating-1D-Profiles) page.
 
-#### `extract_cross_section.py`
+#### Extracts cross-sections : `extract_cross_section.py`
 To extract cross-sections from a HDF5-format velocity model, use the `extract_cross_section.py` script:
 
 ```sh
