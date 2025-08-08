@@ -212,7 +212,7 @@ def write_profiles(
                 else:
                     delta_depth = 2 * (mesh_vector.z[i] - dep_bot)
                     dep_bot += delta_depth
-                qs = 41.0 + 34.0 * vs # Empirical relation for Qs (Exact reference to be added here)
+                qs = 41.0 + 34.0 * vs # Graves and Pitarka (2010)
                 qp = 2.0 * qs # We usually assume Qp = 2 * Qs
 
                 f.write(
