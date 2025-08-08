@@ -413,7 +413,7 @@ def generate_1d_profiles(
 
     # Validate and import the appropriate writer based on format
     try:
-        _ = TopoTypes[topo_type.upper()]
+        topo_type = TopoTypes[topo_type.upper()]
     except KeyError:
         logger.log(logging.ERROR, f"Unsupported topo type: {topo_type}")
         raise ValueError(f"Unsupported output topo type: {topo_type}")
@@ -421,8 +421,8 @@ def generate_1d_profiles(
     # Create vm_params dictionary
     vm_params = {
         "model_version": model_version,
-        "topo_type": TopoTypes[topo_type.upper()],
-        "min_vs": min_vs,
+        "topo_type": topo_type,
+         "min_vs": min_vs,
     }
 
     # Ensure output directory exists
