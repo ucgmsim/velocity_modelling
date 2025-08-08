@@ -198,17 +198,8 @@ def generate_location_csv(csv_path: Path, params: dict):
 
 def read_profile_data(file_path: Path) -> np.ndarray:
     with open(file_path, "r") as f:
-        lines = [
-            line.strip() for line in f if line.strip() and not line.startswith("#")
-        ]
-    header_idx = next(
-        i
-        for i, line in enumerate(lines)
-        if line.startswith("Depth") or line.startswith("Elevation")
-    )
-    data_lines = lines[header_idx + 1 :]
-    data = np.genfromtxt(data_lines)
-    return data
+        header_idx = next(line for line in f if re.match(r"^\s*(Depth|Elevation)", line))
+    return np.genfromtxt(file_path, skip_header=header_idx + 1)
 
 
 def compare_profiles(c_path: Path, py_path: Path, atol: float = 1e-5):
