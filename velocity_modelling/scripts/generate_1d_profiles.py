@@ -189,6 +189,7 @@ def write_profiles(
     OSError
         If there are issues creating or writing to the output file.
     """
+
     profiles_dir = out_dir / "Profiles"
     profiles_dir.mkdir(exist_ok=True, parents=True)
     output_type = vm_params.get(
@@ -211,12 +212,13 @@ def write_profiles(
                 else:
                     delta_depth = 2 * (mesh_vector.z[i] - dep_bot)
                     dep_bot += delta_depth
-                quality_factor_1 = 2.0 * (41.0 + 34.0 * vs)
-                quality_factor_2 = 41.0 + 34.0 * vs
+                qs = 41.0 + 34.0 * vs # Empirical relation for Qs (Exact reference to be added here)
+                qp = 2.0 * qs # We usually assume Qp = 2 * Qs
+
                 f.write(
                     f"{-delta_depth / 1000:.3f} \t {qualities_vector.vp[i]:.3f} \t "
                     f"{vs:.3f} \t {qualities_vector.rho[i]:.3f} \t "
-                    f"{quality_factor_1:.3f} \t {quality_factor_2:.3f}\n"
+                    f"{qp:.3f} \t {qs:.3f}\n"
                 )
         logger.log(logging.INFO, f"Wrote 1D site response profile to {file_path}")
 
@@ -255,6 +257,7 @@ def write_profile_surface_depths(
     mesh_vector: QualitiesVector,
     df: pd.DataFrame,
     profile_idx: int,
+
     logger: logging.Logger,
 ) -> None:
     """
@@ -291,27 +294,33 @@ def write_profile_surface_depths(
     profiles_dir = out_dir / "Profiles"
     profiles_dir.mkdir(exist_ok=True, parents=True)
     file_path = profiles_dir / f"ProfileSurfaceDepths_{df['id'].iloc[profile_idx]}.txt"
-    lines = [
-        f"Surface Elevation (in m) at Lat : {df['lat'].iloc[profile_idx]:.6f} Lon: {df['lon'].iloc[profile_idx]:.6f} (On Mesh Lat: {mesh_vector.lat:.6f} Lon: {mesh_vector.lon:.6f})\n",
-        "\nGlobal surfaces\n",
-        "Surface_name \t Elevation (m)\n",
-        *[
-            f"- {Path(global_surfaces[i].file_path).stem}\t{partial_global_surface_depths.depths[i]:.6f}\n"
-            for i in range(len(global_surfaces))
-        ],
-        "\nBasin surfaces (if applicable)\n",
-    ]
 
-    for i, basin in enumerate(basin_data_list):
-        if in_basin_list[i].in_basin_lat_lon:
-            lines.append(f"\n{basin.name}\n")
-            lines.extend(
-                f"- {Path(basin.surfaces[j].file_path).stem}\t{partial_basin_surface_depths[i].depths[j]:.6f}\n"
-                for j in range(len(basin.surfaces))
-            )
+    surface_latitude = df['lat'].iloc[profile_idx]
+    surface_longitude = df['lon'].iloc[profile_idx]
+    surface_elevation_header = f"Surface Elevation (in m) at Lat : {surface_latitude:.6f} Lon: {surface_longitude:.6f} (On Mesh Lat: {mesh_vector.lat:.6f} Lon: {mesh_vector.lon:.6f})\n"
+
+    def write_surface_depths(
+        f, surfaces:list, depths:list[float]
+    ):
+        for surface, depth in zip(surfaces, depths):
+            surface_path = Path(surface.file_path)
+            f.write(f'- {surface_path.stem}\t{depth:.6f}\n')
 
     with file_path.open("w") as f:
-        f.writelines(lines)
+        f.writelines([
+            surface_elevation_header,
+            '\nGlobal Surfaces\n',
+            'Surface_name \t Elevation (m)\n'
+        ])
+
+        write_surface_depths(f, global_surfaces, partial_global_surface_depths.depths)
+
+        f.write('\nBasin surfaces (if applicable)\n')
+        for i, basin in enumerate(basin_data_list):
+            if in_basin_list[i].in_basin_lat_lon:
+                f.write(f"\n{basin.name}\n")
+                write_surface_depths(f, basin.surfaces, partial_basin_surface_depths[i].depths)
+
     logger.log(logging.INFO, f"Wrote surface depths to {file_path}")
 
 

@@ -181,7 +181,7 @@ TOPO_TYPE={topo_type}
 
 
 def generate_location_csv(csv_path: Path, params: dict):
-    with open(csv_path, "w", newline="") as csvfile:
+    with open(csv_path, "w") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(["id", "lon", "lat", "zmin", "zmax", "spacing"])
         writer.writerow(
@@ -195,11 +195,16 @@ def generate_location_csv(csv_path: Path, params: dict):
             ]
         )
 
-
 def read_profile_data(file_path: Path) -> np.ndarray:
     with open(file_path, "r") as f:
-        header_idx = next(line for line in f if re.match(r"^\s*(Depth|Elevation)", line))
+        for idx, line in enumerate(f):
+            if re.match(r"^\s*(Depth|Elevation)", line):
+                header_idx = idx
+                break
+        else:
+            raise ValueError("No header line found")
     return np.genfromtxt(file_path, skip_header=header_idx + 1)
+
 
 
 def compare_profiles(c_path: Path, py_path: Path, atol: float = 1e-5):
