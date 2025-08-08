@@ -128,9 +128,8 @@ Canterbury_v19p1
 
 - Ensure all required arguments are provided.
 - Check that the model version YAML exists and is correctly named.
-- For more details on the velocity model system, see the [Generating a Velocity Model](Generating-3D-Model) documentation.
 
 ---
 
-Let me know if you want to add or modify any sections!
+
 
