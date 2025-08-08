@@ -88,11 +88,11 @@ Properties at Lat : -43.514919 Lon: 172.724416 (On Mesh Lat: -43.514913 Lon: 172
 Model Version: 2.08
 Topo Type: SQUASHED_TAPERED
 Minimum Vs: 0.500000
-Elevation (km) \t Vp (km/s) \t Vs (km/s) \t Rho (g/cm^3)
--0.000000 \t 1.800000 \t 0.500000 \t 1.810000
--0.050000 \t 1.800000 \t 0.500000 \t 1.810000
+Elevation (km) Vp (km/s)   Vs (km/s)   Rho (g/cm^3)
+-0.000000      1.800000    0.500000    1.810000
+-0.050000      1.800000    0.500000    1.810000
 ...
--3.000000 \t 4.813934 \t 2.762850 \t 2.578671
+-3.000000 4.813934 2.762850 2.578671
 ```
 
 ### Example: ProfileSurfaceDepths_158.txt
@@ -101,16 +101,16 @@ Elevation (km) \t Vp (km/s) \t Vs (km/s) \t Rho (g/cm^3)
 Surface Elevation (in m) at Lat : -43.514919 Lon: 172.724416 (On Mesh Lat: -43.514913 Lon: 172.724411)
 
 Global Surfaces
-Surface_name \t Elevation (m)
-- posInf\t1000000.000000
-- NZ_DEM_HD\t1.807371
-- negInf\t-1000000.000000
+Surface_name Elevation (m)
+- posInf     1000000.000000
+- NZ_DEM_HD  1.807371
+- negInf    -1000000.000000
 
 Basin surfaces (if applicable)
 
 Canterbury_v19p1
-- CantDEM\t1.882188
-- Canterbury_Pliocene_46_WGS84_v8p9p18\t-202.709242
+- CantDEM    1.882188
+- Canterbury_Pliocene_46_WGS84_v8p9p18    -202.709242
 ...
 ```
 
