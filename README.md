@@ -66,26 +66,7 @@ To run the `generate_3d_model.py` script, provide specific arguments, including 
 ```sh
 python scripts/generate_3d_model.py  /path/to/config/nzcvm.cfg --out-dir /path/to/output
 ```
-#### `generate_1d_profiles.py`
-To generate 1D velocity profiles, use the `generate_1d_profiles.py` script:
-
-```sh
- python generate_1d_profiles.py --out-dir <output_directory> --model-version <version> --location-csv <csv_file> --min-vs <min_vs> --topo-type <topo_type> [--custom-depth <depth_file>] 
-```
-
-#### `extract_cross_section.py`
-To extract cross-sections from a HDF5-format velocity model, use the `extract_cross_section.py` script:
-
-```sh
-    python extract_cross_section.py <h5file> [options]
-    --lat1 <lat1> --lon1 <lon1> --lat2 <lat2> --lon2 <lon2>
-    --x1 <x1> --y1 <y1> --x2 <x2> --y2 <y2>
-    --property <property_name> --xaxis <xaxis> --n_points <n_points>
-    --vmin <vmin> --vmax <vmax> --max_depth <max_depth>
-    --cmap <cmap> --png <output_png> --csv <csv_output>
-
-```
-### Configuration File: `nzcvm.cfg`
+##### Configuration File: `nzcvm.cfg`
 
 The `nzcvm.cfg` file is a configuration file used by the `generate_3d_model.py` script to generate velocity models. It contains parameters defining the properties and settings of the velocity model. Below is an example:
 
@@ -106,11 +87,35 @@ TOPO_TYPE=BULLDOZED
 OUTPUT_DIR=/tmp
 ```
 
-For detailed instructions, see the [Generating Velocity Model](wiki/Generating-Velocity-Model.md) page.
+For detailed instructions, see the [Generating 3D Model](wiki/Generating-3D-Model) page.
 
-### Output Files
+##### Output Files
 
 After successful execution, the output files will be located in the specified output directory. See [Output Formats](wiki/OutputFormats.md) for details on the format and contents of these files.
+
+
+
+#### `generate_1d_profiles.py`
+To generate 1D velocity profiles, use the `generate_1d_profiles.py` script:
+
+```sh
+ python generate_1d_profiles.py --out-dir <output_directory> --model-version <version> --location-csv <csv_file> --min-vs <min_vs> --topo-type <topo_type> [--custom-depth <depth_file>] 
+```
+For detailed instructions, see the [Generating 1D Profiles](wiki/Generating-1D-Profiles) page.
+
+#### `extract_cross_section.py`
+To extract cross-sections from a HDF5-format velocity model, use the `extract_cross_section.py` script:
+
+```sh
+    python extract_cross_section.py <h5file> [options]
+    --lat1 <lat1> --lon1 <lon1> --lat2 <lat2> --lon2 <lon2>
+    --x1 <x1> --y1 <y1> --x2 <x2> --y2 <y2>
+    --property <property_name> --xaxis <xaxis> --n_points <n_points>
+    --vmin <vmin> --vmax <vmax> --max_depth <max_depth>
+    --cmap <cmap> --png <output_png> --csv <csv_output>
+
+```
+
 
 ## Data Files
 
