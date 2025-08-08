@@ -87,7 +87,7 @@ TOPO_TYPE=BULLDOZED
 OUTPUT_DIR=/tmp
 ```
 
-For detailed instructions, see the [Generating 3D Model](wiki/Generating-3D-Model) page.
+For detailed instructions, see the [Generating 3D Model](wiki/Generating-3D-Model.md) page.
 
 ##### Output Files
 
@@ -101,7 +101,7 @@ To generate 1D velocity profiles, use the `generate_1d_profiles.py` script:
 ```sh
  python generate_1d_profiles.py --out-dir <output_directory> --model-version <version> --location-csv <csv_file> --min-vs <min_vs> --topo-type <topo_type> [--custom-depth <depth_file>] 
 ```
-For detailed instructions, see the [Generating 1D Profiles](wiki/Generating-1D-Profiles) page.
+For detailed instructions, see the [Generating 1D Profiles](wiki/Generating-1D-Profiles.md) page.
 
 #### Extracts cross-sections : `extract_cross_section.py`
 To extract cross-sections from a HDF5-format velocity model, use the `extract_cross_section.py` script:
