@@ -212,8 +212,8 @@ def write_profiles(
                 else:
                     delta_depth = 2 * (mesh_vector.z[i] - dep_bot)
                     dep_bot += delta_depth
-                qs = 41.0 + 34.0 * vs # Graves and Pitarka (2010)
-                qp = 2.0 * qs # We usually assume Qp = 2 * Qs
+                qs = 41.0 + 34.0 * vs  # Graves and Pitarka (2010)
+                qp = 2.0 * qs  # We usually assume Qp = 2 * Qs
 
                 f.write(
                     f"{-delta_depth / 1000:.3f} \t {qualities_vector.vp[i]:.3f} \t "
@@ -257,7 +257,6 @@ def write_profile_surface_depths(
     mesh_vector: QualitiesVector,
     df: pd.DataFrame,
     profile_idx: int,
-
     logger: logging.Logger,
 ) -> None:
     """
@@ -295,8 +294,8 @@ def write_profile_surface_depths(
     profiles_dir.mkdir(exist_ok=True, parents=True)
     file_path = profiles_dir / f"ProfileSurfaceDepths_{df['id'].iloc[profile_idx]}.txt"
 
-    surface_latitude = df['lat'].iloc[profile_idx]
-    surface_longitude = df['lon'].iloc[profile_idx]
+    surface_latitude = df["lat"].iloc[profile_idx]
+    surface_longitude = df["lon"].iloc[profile_idx]
     surface_elevation_header = f"Surface Elevation (in m) at Lat : {surface_latitude:.6f} Lon: {surface_longitude:.6f} (On Mesh Lat: {mesh_vector.lat:.6f} Lon: {mesh_vector.lon:.6f})\n"
 
     def write_surface_depths(
@@ -314,29 +313,29 @@ def write_profile_surface_depths(
         depths : list[float]
             List of depths corresponding to the surfaces.
 
-        Returns
-        -------
-        None
-
         """
         for surface, depth in zip(surfaces, depths):
             surface_path = Path(surface.file_path)
-            f.write(f'- {surface_path.stem}\t{depth:.6f}\n')
+            f.write(f"- {surface_path.stem}\t{depth:.6f}\n")
 
     with file_path.open("w") as f:
-        f.writelines([
-            surface_elevation_header,
-            '\nGlobal Surfaces\n',
-            'Surface_name \t Elevation (m)\n'
-        ])
+        f.writelines(
+            [
+                surface_elevation_header,
+                "\nGlobal Surfaces\n",
+                "Surface_name \t Elevation (m)\n",
+            ]
+        )
 
         write_surface_depths(f, global_surfaces, partial_global_surface_depths.depths)
 
-        f.write('\nBasin surfaces (if applicable)\n')
+        f.write("\nBasin surfaces (if applicable)\n")
         for i, basin in enumerate(basin_data_list):
             if in_basin_list[i].in_basin_lat_lon:
                 f.write(f"\n{basin.name}\n")
-                write_surface_depths(f, basin.surfaces, partial_basin_surface_depths[i].depths)
+                write_surface_depths(
+                    f, basin.surfaces, partial_basin_surface_depths[i].depths
+                )
 
     logger.log(logging.INFO, f"Wrote surface depths to {file_path}")
 
@@ -448,7 +447,7 @@ def generate_1d_profiles(
     vm_params = {
         "model_version": model_version,
         "topo_type": topo_type,
-         "min_vs": min_vs,
+        "min_vs": min_vs,
     }
 
     # Ensure output directory exists

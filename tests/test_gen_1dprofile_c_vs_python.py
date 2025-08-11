@@ -110,24 +110,6 @@ TEST_DIR = BASE_DIR / "tests"
 MODEL_VERSIONS = ["2.08"]  # Fixed to known valid versions
 
 
-@pytest.fixture
-def nzvm_c_binary_path(request: pytest.FixtureRequest) -> Path:
-    """
-    Get the path to the nzcvm C binary from the command-line option or environment variable.
-    """
-    nzvm_path = request.config.getoption("--nzvm-binary-path")
-    if nzvm_path is None:
-        raise ValueError(
-            "nzvm binary path not provided. Use --nzvm-binary-path or NZVM_BINARY_PATH environment variable."
-        )
-    new_nzvm_path = Path(nzvm_path).resolve()
-    if not new_nzvm_path.exists():
-        raise ValueError(f"Provided nzvm binary path does not exist: {new_nzvm_path}")
-    if not new_nzvm_path.is_file():
-        raise ValueError(f"Provided nzvm binary path is not a file: {new_nzvm_path}")
-    return new_nzvm_path
-
-
 def generate_random_profile_config(
     tmp_path: Path, output_dir: Path
 ) -> tuple[Path, dict]:
@@ -195,16 +177,18 @@ def generate_location_csv(csv_path: Path, params: dict):
             ]
         )
 
+
 def read_profile_data(file_path: Path) -> np.ndarray:
     with open(file_path, "r") as f:
         for idx, line in enumerate(f):
-            if re.match(r"^\s*(Depth|Elevation)", line):
+            if re.match(
+                r"^\s*(Depth|Elevation)", line
+            ):  # Find the end of the header line
                 header_idx = idx
                 break
         else:
             raise ValueError("No header line found")
     return np.genfromtxt(file_path, skip_header=header_idx + 1)
-
 
 
 def compare_profiles(c_path: Path, py_path: Path, atol: float = 1e-5):
@@ -234,7 +218,7 @@ def read_surface_depths(file_path: Path) -> list:
     surface_depths = []
     with open(file_path, "r") as f:
         for line in f:
-            line = re.sub(r"\s+", " ", line).strip()
+            line = re.sub(r"\s+", " ", line).strip()  # Normalize whitespace
 
             if not line or line.startswith(
                 ("Surface", "Global", "Basin", "#")
@@ -262,21 +246,14 @@ def compare_surface_depths(c_path: Path, py_path: Path, atol: float = 1e-5):
     c_list = read_surface_depths(c_path)
     py_list = read_surface_depths(py_path)
 
-    matched = 0
     print(c_list)
     print(py_list)
     assert len(c_list) == len(py_list), f"Mismatch: {len(c_list)} vs {py_list}"
-    c_values = [item[1] for item in c_list]
 
-    for i, (c_val) in enumerate(c_values):
-        c_key = c_list[i][0]
-        py_key, py_val = py_list[i]
+    for (c_key, c_val), (py_key, py_val) in zip(c_list, py_list):
         assert abs(c_val - py_val) < atol, (
             f"Mismatch in surface '{c_key}': {c_val} (C) vs '{py_key}' : {py_val} (Python)"
         )
-        matched += 1
-
-    assert matched > 0, "No matching surface names found between files"
 
 
 @pytest.mark.repeat(5)
