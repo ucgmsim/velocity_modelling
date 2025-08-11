@@ -142,7 +142,7 @@ def generate_random_profile_config(
     topo_type = random.choice(["TRUE", "BULLDOZED", "SQUASHED", "SQUASHED_TAPERED"])
     model_version = random.choice(MODEL_VERSIONS)
 
-    output_subdir = output_dir / f"c_output/{profile_id}"
+    output_subdir = output_dir / "c_output" / str(profile_id)
     # Ensure C output directory doesn't exist before running C binary
     if output_subdir.exists():
         shutil.rmtree(output_subdir)
