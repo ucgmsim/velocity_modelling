@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pytest
 
+from .common import nzvm_c_binary_path
+
 from velocity_modelling.tools.compare_emod3d import (
     compare_output_files,
     parse_nzcvm_config,

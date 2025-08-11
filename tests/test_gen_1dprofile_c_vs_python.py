@@ -103,6 +103,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from .common import nzvm_c_binary_path
+
 BASE_DIR = Path(__file__).parent.parent  # project root directory
 SCRIPT_DIR = BASE_DIR / "velocity_modelling/scripts"
 TEST_DIR = BASE_DIR / "tests"

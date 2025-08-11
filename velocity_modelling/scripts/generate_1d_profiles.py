@@ -157,7 +157,7 @@ def write_profiles(
     out_dir: Path,
     qualities_vector: QualitiesVector,
     vm_params: dict,
-    mesh_vector: QualitiesVector,
+    mesh_vector: MeshVector,
     df: pd.DataFrame,
     profile_idx: int,
     logger: logging.Logger,
@@ -173,7 +173,7 @@ def write_profiles(
         Velocity and density data (Vp, Vs, Rho) for the profile.
     vm_params : dict
         Configuration parameters, including model_version, topo_type, min_vs, and output_type.
-    mesh_vector : QualitiesVector
+    mesh_vector : MeshVector
         Mesh data containing depth points (Z), latitude (Lat), and longitude (Lon).
     df : pd.DataFrame
         DataFrame containing profile parameters (id, lon, lat, zmin, zmax, spacing).
@@ -252,9 +252,9 @@ def write_profile_surface_depths(
     global_surfaces: list[GlobalSurfaceRead],
     basin_data_list: list[BasinData],
     partial_global_surface_depths: PartialGlobalSurfaceDepths,
-    partial_basin_surface_depths: PartialBasinSurfaceDepths,
+    partial_basin_surface_depths: list[PartialBasinSurfaceDepths],
     in_basin_list: list[InBasin],
-    mesh_vector: QualitiesVector,
+    mesh_vector: MeshVector,
     df: pd.DataFrame,
     profile_idx: int,
     logger: logging.Logger,
@@ -272,11 +272,11 @@ def write_profile_surface_depths(
         List of basin data objects.
     partial_global_surface_depths : PartialGlobalSurfaceDepths
         Depths of global surfaces at the profile location.
-    partial_basin_surface_depths : PartialBasinSurfaceDepths
-        Depths of basin surfaces at the profile location.
+    partial_basin_surface_depths : list[PartialBasinSurfaceDepths]
+        List of PartialBasinSurfaceDepths(depths of basin surfaces) at the profile location.
     in_basin_list : list[InBasin]
         List of InBasin objects indicating basin membership for the profile location.
-    mesh_vector : QualitiesVector
+    mesh_vector : MeshVector
         Mesh vector containing latitude and longitude of the profile location.
     df : pd.DataFrame
         DataFrame containing profile parameters (id, lon, lat, zmin, zmax, spacing).
