@@ -275,7 +275,6 @@ def compare_surface_depths(c_path: Path, py_path: Path, atol: float = 1e-5):
             f"Mismatch in surface '{c_key}': {c_val} (C) vs '{py_key}' : {py_val} (Python)"
         )
         matched += 1
-        break
 
     assert matched > 0, "No matching surface names found between files"
 
