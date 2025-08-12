@@ -17,10 +17,20 @@ SCRIPT_DIR = BASE_DIR / "velocity_modelling/scripts"
 TEST_DIR = BASE_DIR / "tests"
 
 
-@pytest.fixture
+@pytest.fixture()
 def nzvm_c_binary_path(request: pytest.FixtureRequest) -> Path:
     """
     Get the path to the nzcvm C binary from the command-line option or environment variable.
+
+    Parameters
+    ----------
+    request : pytest.FixtureRequest
+        The pytest request object to access command-line options.
+
+    Returns
+    -------
+    Path
+        The resolved path to the nzcvm C binary.
     """
     nzvm_path = request.config.getoption("--nzvm-binary-path")
     if nzvm_path is None:
@@ -33,7 +43,6 @@ def nzvm_c_binary_path(request: pytest.FixtureRequest) -> Path:
     if not new_nzvm_path.is_file():
         raise ValueError(f"Provided nzvm binary path is not a file: {new_nzvm_path}")
     return new_nzvm_path
-
 
 @pytest.fixture
 def data_root_path(request: pytest.FixtureRequest) -> Path:
@@ -103,7 +112,7 @@ OUTPUT_DIR={c_output_dir}
 
 
 @pytest.mark.repeat(5)
-def test_nzcvm_c_vs_python(
+def test_gen_3dvm_c_vs_python(
     tmp_path: Path, nzvm_c_binary_path: Path, data_root_path: Path
 ):
     """Test C binary vs Python script with random config"""
@@ -143,8 +152,7 @@ def test_nzcvm_c_vs_python(
     python_result = subprocess.run(
         [
             "python",
-            str(SCRIPT_DIR / "nzcvm.py"),
-            "generate-velocity-model",
+            str(SCRIPT_DIR / "generate_3d_model.py"),
             str(config_file),
             "--out-dir",
             str(python_output_dir),

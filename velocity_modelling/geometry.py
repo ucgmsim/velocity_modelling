@@ -52,12 +52,12 @@ class GlobalMesh:
         Maximum longitude.
     min_lon : float
         Minimum longitude.
-    x : np.ndarray
+    x : np.ndarray (indexed by nx)
         Array of X coordinates.
-    y : np.ndarray
+    y : np.ndarray (indexed by ny)
         Array of Y coordinates.
     z : np.ndarray
-        Array of Z coordinates.
+        Array of Z coordinates. (in metres)
 
     """
 
@@ -79,14 +79,14 @@ class GlobalMesh:
 
 class PartialGlobalMesh:
     """
-    A partial mesh slice of a global mesh at a specific latitude index.
+    A partial mesh (nX x 1 x nZ) sliced from the full 3D global mesh (nX x nY x nZ)
 
     Parameters
     ----------
     global_mesh : GlobalMesh
-        The full global mesh object.
+        The model grid containing latitude, longitude, and depth points.
     lat_ind : int
-        Latitude index for the slice.
+        The latitude index of the slice to be extracted.
 
     Attributes
     ----------
@@ -144,14 +144,15 @@ class PartialGlobalMesh:
 
 class MeshVector:
     """
-    A single mesh vector at a specific longitude index.
+    A single mesh vector at a specific longitude index  from the partial global mesh.
+
 
     Parameters
     ----------
     partial_global_mesh : PartialGlobalMesh
-        Slice of the global mesh.
+        The partial mesh containing a slice in latitude.
     lon_ind : int
-        Longitude index for the vector.
+        Longitude index to extract from the partial global mesh.
 
     Attributes
     ----------
@@ -1156,43 +1157,3 @@ def gen_full_model_grid_great_circle(
 
     logger.log(logging.INFO, "Completed Generation of Model Grid.")
     return global_mesh
-
-
-def extract_partial_mesh(global_mesh: GlobalMesh, lat_ind: int) -> PartialGlobalMesh:
-    """
-    Extract a partial mesh (slice) based on a single latitude index.
-
-    Parameters
-    ----------
-    global_mesh : GlobalMesh
-        The full global mesh object.
-    lat_ind : int
-        The index of the latitude slice.
-
-    Returns
-    -------
-    PartialGlobalMesh
-        The partial slice of the global mesh.
-    """
-
-    return PartialGlobalMesh(global_mesh, lat_ind)
-
-
-def extract_mesh_vector(partial_global_mesh: PartialGlobalMesh, lon_ind: int):
-    """
-    Extract a mesh vector for a specific longitude index from the partial global mesh.
-
-    Parameters
-    ----------
-    partial_global_mesh : PartialGlobalMesh
-        The partial mesh containing a slice in latitude.
-    lon_ind : int
-        The longitude index to extract.
-
-    Returns
-    -------
-    MeshVector
-        Mesh vector with the given "lon_ind" across depth points.
-    """
-
-    return MeshVector(partial_global_mesh, lon_ind)

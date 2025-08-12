@@ -42,7 +42,7 @@ import numpy as np
 import typer
 
 from qcore import cli
-from velocity_modelling.scripts.nzcvm import (
+from velocity_modelling.scripts.generate_3d_model import (
     parse_nzcvm_config,
 )
 from velocity_modelling.write.emod3d import (
