@@ -14,7 +14,6 @@ This page provides detailed instructions for installing and using the NZCVM soft
 
 ```bash
 git clone https://github.com/ucgmsim/velocity_modelling.git
-cd velocity_modelling
 ```
 
 ### Step 2: Create a Virtual Environment (Optional but Recommended)
@@ -32,6 +31,7 @@ conda activate velocity_modelling
 ### Step 3: Install Dependencies
 
 ```bash
+cd velocity_modelling
 pip install -r requirements.txt
 ```
 
