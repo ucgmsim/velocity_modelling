@@ -14,7 +14,6 @@ This page provides detailed instructions for installing and using the NZCVM soft
 
 ```bash
 git clone https://github.com/ucgmsim/velocity_modelling.git
-cd velocity_modelling
 ```
 
 ### Step 2: Create a Virtual Environment (Optional but Recommended)
@@ -29,10 +28,11 @@ conda create -n velocity_modelling python=3.10
 conda activate velocity_modelling
 ```
 
-### Step 3: Install Dependencies
+### Step 3: Install
 
 ```bash
-pip install -r requirements.txt
+cd velocity_modelling
+pip install -r requirements.txt && pip install -e .
 ```
 
 The requirements include:
@@ -43,7 +43,10 @@ The requirements include:
 - Project dependencies: numba, qcore, pyyaml, tqdm, typer
 - Tool dependencies: cartopy, pytz, requests
 
+Installing with the -e (editable) option allows you to modify the source code locally and have changes reflected immediately—ideal for active development and keeping the software up to date.
+
 ### Step 4: Download Data
+
 
 Some data files need to be downloaded separately due to their size. This script downloads the data and places the extracted data files in the correct location.
 
