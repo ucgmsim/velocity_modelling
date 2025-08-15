@@ -106,15 +106,8 @@ For detailed instructions, see the [Generating 1D Profiles](wiki/Generating-1D-P
 #### Extracts cross-sections : `extract_cross_section.py`
 To extract cross-sections from a HDF5-format velocity model, use the `extract_cross_section.py` script:
 
-```sh
-    python extract_cross_section.py <h5file> [options]
-    --lat1 <lat1> --lon1 <lon1> --lat2 <lat2> --lon2 <lon2>
-    --x1 <x1> --y1 <y1> --x2 <x2> --y2 <y2>
-    --property <property_name> --xaxis <xaxis> --n_points <n_points>
-    --vmin <vmin> --vmax <vmax> --max_depth <max_depth>
-    --cmap <cmap> --png <output_png> --csv <csv_output>
+See [Extracting Cross-Sections](wiki/Extracting-Cross-Sections.md) for detailed instructions.
 
-```
 
 
 ## Data Files
