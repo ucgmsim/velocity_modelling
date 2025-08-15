@@ -61,7 +61,7 @@ python extract_cross_section.py --lat1 -43.5 --lon1 171 --lat2 -44.5 --lon2 172 
 
 - **PNG Image**: Visual representation of the cross-section. If `--png` is specified, the value is used as a prefix for the output files:
   - `{prefix}_map.png`: Map view of the cross-section.
-  - `{prefix}.png`: Plot view of the cross-section.
+  - `{prefix}_plot.png`: Plot view of the cross-section.
 <p align="center">
   <img src="https://github.com/user-attachments/assets/f5d953f5-e2b6-482d-9b32-7d3b3953b4fb" alt="AA_map" width="50%">
 </p>

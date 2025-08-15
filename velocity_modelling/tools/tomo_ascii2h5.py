@@ -1,5 +1,6 @@
+#!/usr/bin/env python3
 """
-Convert ASCII tomography files to HDF5 format (with dtype/compression options)..
+Convert ASCII tomography files to HDF5 format (with dtype/compression options).
 
 This script converts ASCII tomography files to HDF5 format. The input directory contains
 files with names like "surf_tomography_vp_elev0p25.in", "surf_tomography_vs_elev0p25.in" etc, where
@@ -15,8 +16,6 @@ This will convert the tomography files in /path/to/tomography_files to a file na
 in the same directory. If --out-dir is specified, the output file will be saved in that directory
 instead.
 """
-
-#!/usr/bin/env python3
 
 import re
 from datetime import datetime
@@ -57,9 +56,9 @@ def get_elevations_from_files(input_dir: Path) -> set[float]:
     elev_pattern = re.compile(r"surf_tomography_(vp|vs|rho)_elev(-?\d+(?:p\d+)?)\.in")
     elevations_by_type: dict[str, set[float]] = {v: set() for v in vtypes}
     for filename in input_dir.glob("surf_tomography_*.in"):
-        m = elev_pattern.match(filename.name)
-        if m:
-            vtype, elev_str = m.groups()
+        match = elev_pattern.match(filename.name)
+        if match:
+            vtype, elev_str = match.groups()
             elev = float(elev_str.replace("p", "."))
             elevations_by_type[vtype].add(elev)
             print(f"Found file: {filename.name}, vtype: {vtype}, elev: {elev}")
@@ -251,7 +250,7 @@ def convert_ascii_to_hdf5(
                     "float32" if data_dtype == np.float32 else "float64"
                 )
 
-            print(f"Wrote {vtype} at elevation {elev_group_name} to {output_path}")
+                print(f"Wrote {vtype} at elevation {elev_group_name} to {output_path}")
     print(f"Done: {output_path}")
 
 
