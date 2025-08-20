@@ -3,7 +3,10 @@ surfaces:
   - path: global/surface/NZ_DEM_HD.h5
     submodel: ep_tomography_submod_v2010
 
-tomography: 2020_NZ_OFFSHORE
+tomography:
+  - name: 2020_NZ
+    vs30: nz_with_offshore
+    special_offshore_tapering: true
 basin_edge_smoothing: true
 basins:
   - Canterbury_v19p1
