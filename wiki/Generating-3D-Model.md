@@ -140,13 +140,18 @@ python scripts/generate_3d_model.py /path/to/nzcvm.cfg --out-dir /path/to/output
 The `2p03.yaml` file defines the components and parameters for model version 2.03. Here's a detailed explanation of its contents:
 
 ```yaml
-GTL: true
 surfaces:
   - path: global/surface/NZ_DEM_HD.h5
     submodel: ep_tomography_submod_v2010
 
-tomography: 2010_NZ_OFFSHORE
+tomography:
+  - name: EP2010
+    vs30: nz_with_offshore
+    special_offshore_tapering: true
+    GTL: true
+
 basin_edge_smoothing: true
+
 basins:
   - Canterbury_v19p1
   - NorthCanterbury_v19p1
@@ -161,21 +166,31 @@ basins:
 ```
 
 
-**Explanation of key components:**
-
-1. **GTL** (Geotechnical Layer): When set to `true`, enables the use of a geotechnical layer that models near-surface velocity structures based on Vs30 values.
-
-2. **surfaces**: Defines the global surfaces used in the model. Each surface has:
+##### Explanation of key components:
+1. **surfaces**: Defines the global surfaces used in the model. Each surface has:
    - **path**: The location of the surface data file
    - **submodel**: The velocity model submodule used for assigning velocity values below this surface
    
    In this example, `NZ_DEM_HD.h5` is a high-definition digital elevation model for New Zealand, and `ep_tomography_submod_v2010` is the submodel that computes velocities using the 2010 tomography model.
 
-3. **tomography**: Specifies which tomography model to use. `2010_NZ_OFFSHORE` is an extension of the 2010 Eberhart-Phillips tomography model that includes offshore regions.
+2. **tomography**: Specifies which tomography model to use. `EP2010` is an extension of the 2010 Eberhart-Phillips tomography model.  Its parameters include:
+   - **vs30**: The name of the Vs30 model used for near-surface velocity adjustments. In this case, it uses `nz_with_offshore`, which is defined in the registry.
+   - **special_offshore_tapering**: Indicates whether to apply a specialized 1D velocity model for offshore regions with very soft sediments. See the section below for more details.
+   - **GTL**: Indicates whether to use the Geotechnical Layer (GTL) model, which adjusts near-surface velocities based on Vs30 values (Ely 2010).
 
-4. **basin_edge_smoothing**: When set to `true`, applies smoothing at basin edges to avoid sharp transitions between basin and non-basin regions.
+3. **basin_edge_smoothing**: When set to `true`, applies smoothing at basin edges to avoid sharp transitions between basin and non-basin regions.
 
-5. **basins**: Lists all the basin models incorporated into this version. Each basin is defined in the `nzcvm_registry.yaml` file with its own surfaces, boundaries, and submodels.
+4. **basins**: Lists all the basin models incorporated into this version. Each basin is defined in the `nzcvm_registry.yaml` file with its own surfaces, boundaries, and submodels.
+
+
+##### Special Offshore Tapering
+If `special_offshore_tapering` is true, a specialized velocity adjustment is triggered for offshore regions with very soft sediments. This ensures a *smooth transition* from land-based velocity models to offshore conditions
+
+It is designed to provide a more accurate and consistent velocity profile in offshore areas, particularly in shallow waters where low-velocity sediments may not be captured accurately by the tomography model alone.
+
+The offshore point is determined by its distance from the shoreline (> 0) and the Vs30 value at that point (< 100 m/s, indicating soft ground).
+The code applies a pre-defined 1D velocity model to the offshore points that are deeper than desired depth (empirically derived from the shoreline distance).
+This creates a "smooth transition" from the land-based model to a more appropriate offshore model, preventing abrupt velocity changes.
 
 
 ### Creating Custom Model Versions
@@ -193,19 +208,21 @@ Steps to create a custom model version:
 Example of a minimal custom model version:
 
 ```yaml
-GTL: true
 surfaces:
   - path: global/surface/NZ_DEM_HD.h5
     submodel: ep_tomography_submod_v2020
-
-tomography: 2020_NZ_OFFSHORE
+tomography:
+  - name: EP2010
+    vs30: nz_with_offshore
+    special_offshore_tapering: true
+    GTL: true
 basin_edge_smoothing: true
 basins:
   - Wellington_v19p6
-  - GreaterWellington_v19p6
+  - Canterbury_v19p1
 ```
 
-This custom version uses the 2020 tomography model and only includes the Wellington and Greater Wellington basins.
+This custom version uses the EP2020 tomography model and only includes the Wellington and Canterbury basins.
 
 
 ## Running the Model
