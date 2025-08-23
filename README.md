@@ -4,26 +4,22 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
-The NZ Community Velocity Model (NZCVM) provide detailed 3D representations of New Zealand's subsurface velocity structure. These models are crucial for seismic hazard analysis and earthquake engineering.
+This repository contains the **code** for generating and working with the NZ Community Velocity Model (NZCVM). The NZCVM provides detailed 3D representations of New Zealand's subsurface velocity structure for seismic hazard analysis and earthquake engineering.
+
+**Note:** The actual data files are maintained in a separate repository: [nzcvm_data](https://github.com/ucgmsim/nzcvm_data)
 
 ## Overview
 
-The NZCVM integrates various datasets from numerous geophysical and geological studies. It specifies the compression or primary wave velocity (Vp), the shear or secondary wave velocity (Vs), and density (Rho) at specified locations in a 3D grid.
+This codebase provides tools to:
 
-The model includes the following components:
+- Generate 3D velocity models from various geophysical datasets
+- Extract 1D velocity profiles at specific locations
+- Create cross-sections from 3D velocity models
+- Process and integrate multiple data sources (tomography, basin models, surface geology)
 
-- **New Zealand-wide travel-time-derived seismic tomography model**: ~10 km length scale
-    - 2010 NZ: based on Eberhart-Philips et al. (2010)
-    - 2020 NZ: based on Eberhart-Philips et al. (2020)
-
-- **Embedded subregion (sedimentary basin) models**: 41 basins with varying levels of characterization (version 2.08)
-
-By embedding discrete regional models into the lower-resolution tomography data, the NZCVM provides a unified velocity model that incorporates data across multiple length scales and resolutions. This model is suitable for broadband physics-based ground motion simulations and other engineering applications.
+The NZCVM integrates datasets from numerous geophysical and geological studies, specifying compression wave velocity (Vp), shear wave velocity (Vs), and density (Rho) at specified locations in a 3D grid. By embedding discrete regional models into lower-resolution tomography data, the NZCVM provides a unified velocity model suitable for broadband physics-based ground motion simulations.
 
 ## Key Components
-
-- [**Basins**](wiki/Basins.md): Detailed information about the 41 basin models integrated into the NZCVM
-- [**Tomography**](wiki/Tomography.md): Information about available tomography models
 - [**Data Formats**](wiki/DataFormats.md): Explanation of formats for surface, boundary, tomography, 1D velocity models, and smoothing data
 - [**Output Formats**](wiki/OutputFormats.md): Details about the output formats, including the emod3d, csv and HDF5 formats
 
@@ -130,7 +126,9 @@ See [Extracting Cross-Sections](wiki/Extracting-Cross-Sections.md) for detailed 
 
 ## Data Files
 
-All data, such as surface, boundary, DEM, and 1D velocity model files, are located in the [velocity_modelling/data](velocity_modelling/data) folder. For details on the data format, see the [Data Formats Guide](wiki/DataFormats.md).
+All data files (surface models, boundaries, DEM, tomography models, etc.) are maintained in the separate [nzcvm_data](https://github.com/ucgmsim/nzcvm_data) repository. See the [nzcvm_data README](https://github.com/ucgmsim/nzcvm_data) for details on available datasets and their formats.
+
+For information about data format specifications used by this code, see the [Data Formats Guide](wiki/DataFormats.md).
 
 ## Changelogs and Development Plans
 
