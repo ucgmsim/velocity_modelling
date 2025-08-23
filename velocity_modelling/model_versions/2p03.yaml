@@ -1,10 +1,15 @@
-GTL: true
 surfaces:
   - path: global/surface/NZ_DEM_HD.h5
     submodel: ep_tomography_submod_v2010
 
-tomography: 2010_NZ_OFFSHORE
+tomography:
+  - name: EP2010
+    vs30: nz_with_offshore
+    special_offshore_tapering: true
+    GTL: true
+
 basin_edge_smoothing: true
+
 basins:
   - Canterbury_v19p1
   - NorthCanterbury_v19p1

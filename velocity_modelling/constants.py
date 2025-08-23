@@ -14,14 +14,14 @@ EARTH_RADIUS_MEAN = 6378.139
 
 CVM_ROOT = Path(__file__).parent
 DATA_ROOT = (
-    CVM_ROOT / "data"
+    CVM_ROOT / "nzcvm_data"
 )  # default value, can be overridden with --data-root argument
 MODEL_VERSIONS_ROOT = CVM_ROOT / "model_versions"
-NZCVM_REGISTRY_PATH = CVM_ROOT / "nzcvm_registry.yaml"
+NZCVM_REGISTRY_PATH = DATA_ROOT / "nzcvm_registry.yaml"
 
 DEFAULT_OFFSHORE_1D_MODEL = "canterbury1d_v2"  # vm1d name for offshore 1D model
 DEFAULT_OFFSHORE_DISTANCE = (
-    "global/surface/shoreline_distance_2k.in"  # surface for offshore distance
+    "global/surface/shoreline_distance_2k.h5"  # surface for offshore distance
 )
 LON_GRID_DIM_MAX = 10260  # Maximum number of grid points in longitude dimension
 LAT_GRID_DIM_MAX = 19010  # Maximum number of grid points in latitude dimension

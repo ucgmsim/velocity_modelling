@@ -365,6 +365,8 @@ class TomographyData:
         Flag indicating if the tomography data has been loaded.
     special_offshore_tapering : bool
         Flag for special offshore tapering.
+    gtl : bool
+        Flag indicating if the GTL model is applied.
     smooth_boundary : None
         Placeholder for smooth boundary.
     vs30 : GlobalSurfaceRead
@@ -383,6 +385,7 @@ class TomographyData:
         name: str,
         surf_depth: list[float],
         special_offshore_tapering: bool,
+        gtl: bool,
         vs30: GlobalSurfaceRead,
         surfaces: list[dict[str, GlobalSurfaceRead]],
         offshore_distance_surface: GlobalSurfaceRead,
@@ -396,6 +399,7 @@ class TomographyData:
         self.surf_depth = surf_depth
         self.surfaces = surfaces
         self.special_offshore_tapering = special_offshore_tapering
+        self.gtl = gtl
         self.smooth_boundary = None
         self.vs30 = vs30
         self.offshore_distance_surface = offshore_distance_surface

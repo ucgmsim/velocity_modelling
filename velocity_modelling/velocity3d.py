@@ -376,7 +376,7 @@ class QualitiesVector:
             )
 
         # calculate vs30 (used as a proxy to determine if point is on- or off-shore, only if using tomography)
-        if cvm_registry.global_params["GTL"]:
+        if nz_tomography_data.gtl:
             nz_tomography_data.calculate_vs30_from_tomo_vs30_surface(
                 mesh_vector
             )  # mesh_vector.vs30 updated
@@ -390,9 +390,7 @@ class QualitiesVector:
         if (
             distance <= MAX_DIST_SMOOTH
             and not in_any_basin
-            and cvm_registry.global_params[
-                "GTL"
-            ]  # Ely et al. 2010: Geotechnical Layer. If True, then apply the offshore basin depth
+            and nz_tomography_data.gtl  # Ely et al. 2010: Geotechnical Layer. If True, then apply the offshore basin depth
             and mesh_vector.vs30 < 100
         ):
             # point lies within smoothing zone and is not in any basin (i.e., outside any boundaries)
@@ -597,7 +595,6 @@ class QualitiesVector:
                     mesh_vector,
                     nz_tomography_data,
                     partial_global_surface_depths,
-                    global_params["GTL"],
                     in_any_basin_lat_lon,
                     on_boundary,
                     interpolated_global_surface_values,

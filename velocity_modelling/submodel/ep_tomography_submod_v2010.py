@@ -146,7 +146,6 @@ def main_vectorized(
     mesh_vector: MeshVector,
     nz_tomography_data: TomographyData,
     partial_global_surface_depths: PartialGlobalSurfaceDepths,
-    gtl: bool,
     in_any_basin_lat_lon: bool,
     on_boundary: bool,
     interpolated_global_surface_values: dict,
@@ -170,8 +169,6 @@ def main_vectorized(
         Struct containing New Zealand tomography data.
     partial_global_surface_depths : PartialGlobalSurfaceDepths
         Struct containing global surfaces depths.
-    gtl : bool
-        Flag indicating whether GTL (Geotechnical Layer) is applied.
     in_any_basin_lat_lon : bool
         Flag indicating if the point is in any basin latitude-longitude.
     on_boundary : bool
@@ -233,7 +230,7 @@ def main_vectorized(
     relative_depths = partial_global_surface_depths.depths[1] - depths
 
     # Apply GTL and offshore smoothing
-    if gtl:
+    if nz_tomography_data.gtl:
         if nz_tomography_data.special_offshore_tapering:
             # Determine if the offshore model should be applied (point-level condition)
             apply_offshore = (
