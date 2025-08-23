@@ -36,20 +36,38 @@ By embedding discrete regional models into the lower-resolution tomography data,
 
 ### Installation
 
-1. Clone the repository:
+1. Clone the code repository:
      ```bash
      git clone https://github.com/ucgmsim/velocity_modelling.git
      cd velocity_modelling
      ```
 
-2. Install the required dependencies:
+2. Clone the data repository:
+     ```bash
+     git clone https://github.com/ucgmsim/nzcvm_data.git
+     ```
+     See [nzcvm_data installation instructions](https://github.com/ucgmsim/nzcvm_data#installation) for details.
+
+3. Connect the data to the codebase:
+
+    - **Option 1 (recommended):** Create a symbolic link:
+      ```bash
+      ln -s /path/to/nzcvm_data /path/to/velocity_modelling/velocity_modelling/nzcvm_data
+      ```
+      Replace `/path/to/` with your actual paths.
+
+    - **Option 2:** Edit `DATA_ROOT` in `velocity_modelling/constants.py` to point to your data location:
+      ```python
+      # velocity_modelling/constants.py
+      DATA_ROOT = "/absolute/path/to/nzcvm_data"
+      ```
+
+4. Install the required dependencies:
      ```bash
      pip install -r requirements.txt
      ```
 
-3. Download the data from the external link.
-
-For detailed data downloading and installation instructions, see the [Installation Guide](wiki/Installation.md).
+For detailed installation and data setup instructions, see the [Installation Guide](wiki/Installation.md).
 
 
 
