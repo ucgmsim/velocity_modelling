@@ -92,8 +92,12 @@ def offshore_basinmodel_vectorized(
     nz_tomography_data : TomographyData
         Struct containing New Zealand tomography data.
     """
-    offshore_depths = offshore_basin_depth_vectorized(distance_from_shoreline) # calculate offshore basin depths based on distance from shoreline
-    offshore_apply_mask = offshore_depths < depths # identify points where the actual depth values (depths) are greater than the calculated offshore basin depths
+    offshore_depths = offshore_basin_depth_vectorized(
+        distance_from_shoreline
+    )  # calculate offshore basin depths based on distance from shoreline
+    offshore_apply_mask = (
+        offshore_depths < depths
+    )  # identify points where the actual depth values (depths) are greater than the calculated offshore basin depths
     z_indices_offshore = z_indices[offshore_apply_mask]
     depths_offshore = depths[offshore_apply_mask]
     if z_indices_offshore.size > 0:
@@ -102,7 +106,7 @@ def offshore_basinmodel_vectorized(
             depths_offshore,
             qualities_vector,
             nz_tomography_data.offshore_basin_model_1d,
-        ) # apply the Canterbury 1D model (=DEFAULT_OFFSHORE_1D_MODEL) to the offshore points
+        )  # apply the Canterbury 1D model (=DEFAULT_OFFSHORE_1D_MODEL) to the offshore points
 
 
 def _apply_gtl(

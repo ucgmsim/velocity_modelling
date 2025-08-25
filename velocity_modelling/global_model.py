@@ -344,6 +344,8 @@ class TomographyData:
         The list of surfaces depths.
     special_offshore_tapering : bool
         Flag for special offshore tapering.
+    gtl : bool
+        Flag indicating if the GTL model is applied.
     vs30 : GlobalSurfaceRead
         The vs30 surfaces data.
     surfaces : list[dict[str, GlobalSurfaceRead]]
