@@ -9,7 +9,6 @@ tomography:
     GTL: true
 
 basin_edge_smoothing: true
-
 basins:
   - Canterbury_v19p1
   - NorthCanterbury_v19p1

@@ -819,9 +819,6 @@ class CVMRegistry:
             )
         offshore_basin_model_1d = self.load_vm1d_submodel(offshore_v1d_info["data"])
 
-        # NOTE: we don't yet store GTL in TomographyData (leave to your GTL logic),
-        #       but we *could* attach it if you want to wire through later.
-
         return TomographyData(
             name=tomo_name,
             surf_depth=surf_depth,
