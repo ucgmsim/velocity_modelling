@@ -12,9 +12,9 @@ from velocity_modelling.tools.compare_emod3d import (
 
 # Define the scenarios
 SCENARIOS = [
-    "Cant1D_2p03",
+#    "Cant1D_2p03",
     "Cant1D_2p07",
-    "Wellington_2p03",
+#    "Wellington_2p03",
     "Wellington_2p07",
     "Multi_Boundary",
 ]
