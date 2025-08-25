@@ -9,6 +9,17 @@ pipeline {
             }
         }
 
+        stage('Update nzcvm_data Repository') {
+            agent any
+            steps {
+                sh """
+                    cd /mnt/mantle_data/jenkins/nzvm/nzcvm_data
+                    git pull origin main
+                    git lfs pull
+                """
+            }
+        }
+
         stage('Run Tests in Container') {
             agent {
                 docker { image 'earthquakesuc/nzvm'
@@ -16,7 +27,7 @@ pipeline {
                     // as the user with uid = 0. This user is, by default, the
                     // root user. So it is effectively saying run the commands
                     // as root.
-                    args "-u 0 -v /mnt/mantle_data/jenkins/nzvm/Data:/nzvm/Data -v /mnt/mantle_data/jenkins/nzvm/benchmarks:/nzvm/benchmarks -v /mnt/mantle_data/jenkins/nzvm/global:/nzvm/global"
+                    args "-u 0 -v /mnt/mantle_data/jenkins/nzvm/Data:/nzvm/Data -v /mnt/mantle_data/jenkins/nzvm/benchmarks:/nzvm/benchmarks -v /mnt/mantle_data/jenkins/nzvm/nzcvm_data:/nzvm/nzcvm_data"
                 }
             }
             stages {
@@ -63,7 +74,8 @@ pipeline {
                         sh """
                             cd ${env.WORKSPACE}
                             source .venv/bin/activate
-                            cp -r /nzvm/global/* ${env.WORKSPACE}/velocity_modelling/data/global
+                            rm -f ${env.WORKSPACE}/velocity_modelling/nzcvm_data
+                            ln -s /nzvm/nzcvm_data ${env.WORKSPACE}/velocity_modelling/nzcvm_data
                             pytest -s tests/ --benchmark-dir /nzvm/benchmarks --nzvm-binary-path /nzvm/NZVM
                         """
                     }
@@ -72,5 +84,3 @@ pipeline {
         } // stage('Run Tests in Container')
     } // stages
 } // pipeline
-
-
