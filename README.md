@@ -32,7 +32,6 @@ This separation allows independent version control of code and data while mainta
 ## Key Components
 
 - [**Model Versions**](wiki/Model-Versions.md): Primary interface defining which data components to use
-- [**Data Formats**](wiki/DataFormats.md): Explanation of formats for surface, boundary, tomography, 1D velocity models, and smoothing data
 - [**Output Formats**](wiki/OutputFormats.md): Details about the output formats, including the emod3d, csv and HDF5 formats
 
 ## Requirements and Installation
@@ -154,7 +153,7 @@ All data files (surface models, boundaries, DEM, tomography models, etc.) are ma
 
 See the [nzcvm_data README](https://github.com/ucgmsim/nzcvm_data) for details on available datasets and their formats.
 
-For information about data format specifications used by this code, see the [Data Formats Guide](wiki/DataFormats.md).
+For information about data format specifications used by this code, see the [Data Formats Guide](https://github.com/ucgmsim/nzcvm_data/blob/main/wiki/DataFormats.md).
 
 ## Quick Start Example
 
