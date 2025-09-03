@@ -8,9 +8,7 @@ matplotlib
 
 # Geospatial
 shapely
-fiona
 geopandas
-pyproj
 
 # Testing
 hypothesis[numpy]
@@ -27,5 +25,3 @@ typer
 
 # Tool dependencies
 cartopy
-pytz
-requests

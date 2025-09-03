@@ -17,6 +17,7 @@ from logging import Logger
 from pathlib import Path
 from typing import Optional, Union
 
+import geopandas as gpd
 import h5py
 import numpy as np
 import yaml
@@ -117,20 +118,20 @@ class CVMRegistry:
 
         # Check if posInfSurf and negInfSurf paths are present
         has_pos_inf = any(
-            s.get("path") == "global/surface/posInf.in" for s in global_surfaces_list
+            s.get("path") == "global/surface/posInf.h5" for s in global_surfaces_list
         )
         has_neg_inf = any(
-            s.get("path") == "global/surface/negInf.in" for s in global_surfaces_list
+            s.get("path") == "global/surface/negInf.h5" for s in global_surfaces_list
         )
 
         # Add posInfSurf and negInfSurf if needed
         if not has_pos_inf:
             global_surfaces_list.insert(
-                0, {"path": "global/surface/posInf.in", "submodel": "nan_submod"}
+                0, {"path": "global/surface/posInf.h5", "submodel": "nan_submod"}
             )
         if not has_neg_inf:
             global_surfaces_list.append(
-                {"path": "global/surface/negInf.in", "submodel": None}
+                {"path": "global/surface/negInf.h5", "submodel": None}
             )
 
         self.global_params["surfaces"] = global_surfaces_list
@@ -271,9 +272,9 @@ class CVMRegistry:
             all_basin_data.append(basin_data)
         return all_basin_data
 
-    def load_basin_boundary(self, basin_boundary_path: Union[Path, str]):
+    def load_basin_boundary(self, basin_boundary_path: Path | str) -> np.ndarray:
         """
-        Load a basin boundary from a file.
+        Load a basin boundary from a .txt (lon lat per line) or .geojson file.
 
         Parameters
         ----------
@@ -289,42 +290,102 @@ class CVMRegistry:
         ------
         FileNotFoundError
             If the boundary file cannot be found.
-        ValueError
-            If the boundary is not closed (first and last points do not match).
         RuntimeError
             If the file cannot be read or parsed correctly.
         """
-        basin_boundary_path = self.get_full_path(basin_boundary_path)
-        try:
-            data = np.loadtxt(basin_boundary_path)
-            lon, lat = data[:, 0], data[:, 1]
-            boundary_data = np.column_stack((lon, lat))
+        path = self.get_full_path(basin_boundary_path)
+        if not path.exists():
+            raise FileNotFoundError(f"Basin boundary file {path} not found")
 
-            if lon[-1] != lon[0] or lat[-1] != lat[0]:
-                self.logger.log(
-                    logging.ERROR,
-                    f"Error: Basin boundary {basin_boundary_path} is not closed.",
-                )
-                raise ValueError(f"Basin boundary {basin_boundary_path} is not closed")
-            return boundary_data
-        except FileNotFoundError:
-            self.logger.log(
-                logging.ERROR,
-                f"Error: Basin boundary file {basin_boundary_path} not found.",
-            )
-            raise FileNotFoundError(
-                f"Basin boundary file {basin_boundary_path} not found"
-            )
+        try:
+            if path.suffix.lower() in (".geojson", ".json"):
+                return self._load_geojson_boundary(path)
+            else:
+                return self._load_ascii_boundary(path)
         except Exception as e:
             if isinstance(e, (SystemExit, KeyboardInterrupt)):
                 raise
-            self.logger.log(
-                logging.ERROR,
-                f"Error reading basin boundary file {basin_boundary_path}: {e}",
-            )
-            raise RuntimeError(
-                f"Failed to load basin boundary from {basin_boundary_path}: {str(e)}"
-            )
+            self.logger.log(logging.ERROR, f"Error reading basin boundary {path}: {e}")
+            raise RuntimeError(f"Failed to load basin boundary from {path}: {e}")
+
+    def _load_geojson_boundary(self, path: Path) -> np.ndarray:
+        """
+        Load boundary from GeoJSON file.
+
+        Parameters
+        ----------
+        path : Path
+            Path to the GeoJSON file containing boundary data.
+
+        Returns
+        -------
+        np.ndarray
+            Array of boundary coordinates as [longitude, latitude] pairs.
+
+        Raises
+        ------
+        ValueError
+            If the GeoJSON contains unsupported geometry types or no coordinates.
+        """
+        gdf = gpd.read_file(path)
+
+        parts = []
+        for geom in gdf.geometry:
+            if geom is None:
+                continue
+
+            # Extract coordinate rings based on geometry type
+            if geom.geom_type == "Polygon":
+                rings = [geom.exterior]
+            elif geom.geom_type == "MultiPolygon":
+                rings = [poly.exterior for poly in geom.geoms]
+            elif geom.geom_type in ("LineString", "MultiLineString"):
+                rings = [geom] if geom.geom_type == "LineString" else list(geom.geoms)
+            else:
+                raise ValueError(f"Unsupported geometry type: {geom.geom_type}")
+
+            # Convert rings to coordinates and ensure closure
+            for ring in rings:
+                coords = np.asarray(ring.coords, dtype=float)
+                if not np.allclose(coords[0], coords[-1], equal_nan=False):
+                    coords = np.vstack([coords, coords[0]])
+                parts.extend([coords, np.array([[np.nan, np.nan]])])
+
+        if not parts:
+            raise ValueError("No coordinates found in GeoJSON")
+
+        return np.vstack(parts[:-1])  # Remove trailing separator
+
+    def _load_ascii_boundary(self, path: Path) -> np.ndarray:
+        """
+        Load boundary from ASCII file.
+        This function will be deprecated in future versions in favor of GeoJSON.
+
+        Parameters
+        ----------
+        path : Path
+            Path to the ASCII file with 'lon lat' format per line.
+
+        Returns
+        -------
+        np.ndarray
+            Array of boundary coordinates as [longitude, latitude] pairs.
+
+        Raises
+        ------
+        ValueError
+            If the file format is invalid (not 'lon lat' per line).
+        """
+        data = np.loadtxt(path)
+        if data.ndim != 2 or data.shape[1] < 2:
+            raise ValueError(f"Invalid format in {path}, expected 'lon lat' per line")
+
+        boundary = data[:, :2]  # Take only first two columns
+        # Ensure closure
+        if not np.allclose(boundary[0], boundary[-1], equal_nan=False):
+            boundary = np.vstack([boundary, boundary[0]])
+
+        return boundary
 
     def load_basin_submodel(self, basin_surface: dict):
         """
@@ -369,13 +430,13 @@ class CVMRegistry:
                     logging.ERROR, f"Error: {submodel['name']} is not a 1D model."
                 )
                 raise KeyError(f"{submodel['name']} is not a 1D model")
-            return (submodel_name, self.load_vm1d_submodel(vm1d["data"]))
-        elif submodel["type"] in {"relation", "perturbation"}:
+            return submodel_name, self.load_vm1d_submodel(vm1d["data"])
+        elif submodel["type"] in ["relation", "perturbation"]:
             self.logger.log(
                 logging.DEBUG,
                 f"Using {submodel['type']} submodel {submodel_name} with no additional data",
             )
-            return (submodel_name, None)
+            return submodel_name, None
         return None
 
     def load_basin_surface(self, basin_surface: dict):
@@ -445,6 +506,7 @@ class CVMRegistry:
     def _load_ascii_basin_surface(self, surface_path: Path):
         """
         Load a basin surface from an ASCII file.
+        This function will be deprecated in future versions in favor of HDF5.
 
         Parameters
         ----------
@@ -455,6 +517,13 @@ class CVMRegistry:
         -------
         BasinSurfaceRead
             The loaded basin surface data.
+
+        Raises
+        ------
+        IOError
+            If the ASCII file cannot be read.
+        ValueError
+            If the file format is incorrect or data is malformed.
         """
         from velocity_modelling.basin_model import BasinSurfaceRead
 
@@ -494,6 +563,13 @@ class CVMRegistry:
         -------
         BasinSurfaceRead
             The loaded basin surface data.
+
+        Raises
+        ------
+        IOError
+            If the HDF5 file cannot be read.
+        KeyError
+            If required datasets are missing from the HDF5 file.
         """
         from velocity_modelling.basin_model import BasinSurfaceRead
 
@@ -505,7 +581,7 @@ class CVMRegistry:
 
         return basin_surf_read
 
-    def load_global_surface(self, surface_file: Path | str) -> GlobalSurfaceRead:
+    def load_global_surface(self, surface_file: Path | str) -> GlobalSurfaceRead | None:
         """
         Load a global surface raster from a file.
 
@@ -516,7 +592,7 @@ class CVMRegistry:
 
         Returns
         -------
-        GlobalSurfaceRead
+        GlobalSurfaceRead or None
             Object containing the surface grid data with latitude, longitude, and values.
 
         Raises
@@ -562,6 +638,7 @@ class CVMRegistry:
     def _load_ascii_global_surface(self, surface_path: Path):
         """
         Load a global surface from an ASCII file.
+        This function will be deprecated in future versions in favor of HDF5.
 
         Parameters
         ----------
@@ -572,6 +649,13 @@ class CVMRegistry:
         -------
         GlobalSurfaceRead
             The loaded global surface data.
+
+        Raises
+        ------
+        IOError
+            If the ASCII file cannot be read.
+        ValueError
+            If the file format is incorrect or data dimensions don't match.
         """
         from velocity_modelling.global_model import GlobalSurfaceRead
 
@@ -613,6 +697,13 @@ class CVMRegistry:
         -------
         GlobalSurfaceRead
             The loaded global surface data.
+
+        Raises
+        ------
+        IOError
+            If the HDF5 file cannot be read.
+        KeyError
+            If required datasets are missing from the HDF5 file.
         """
         from velocity_modelling.global_model import GlobalSurfaceRead
 
@@ -634,20 +725,27 @@ class CVMRegistry:
 
     def load_tomo_surface_data(
         self,
-        tomo_name: str,
-        offshore_surface_path: Optional[Path] = DEFAULT_OFFSHORE_DISTANCE,
-        offshore_v1d_name: Optional[str] = DEFAULT_OFFSHORE_1D_MODEL,
+        tomo_cfg: dict,
+        offshore_surface_path: Path = DEFAULT_OFFSHORE_DISTANCE,
+        offshore_v1d_name: str = DEFAULT_OFFSHORE_1D_MODEL,
     ):
         """
-        Load tomography surface data from registry.
+         Load tomography surfaces by combining base info from the registry (intrinsic)
+        with per-version overrides from the model version file (operational params).
+        Expected tomography entry example (from model version yaml):
+          - name: EP2010
+            vs30: nz_with_offshore
+            special_offshore_tapering: true
+            GTL: true
 
         Parameters
         ----------
-        tomo_name : str
-            The name of the tomography data in the registry.
-        offshore_surface_path : Path, optional
+        tomo_cfg : dict
+            Configuration dictionary for the tomography data, containing:
+
+        offshore_surface_path : Path, optional, default=DEFAULT_OFFSHORE_DISTANCE
             The path to the offshore distance surface.
-        offshore_v1d_name : str, optional
+        offshore_v1d_name : str, optional, default=DEFAULT_OFFSHORE_1D_MODEL
             The name of the offshore 1D velocity model in the registry.
 
         Returns
@@ -666,68 +764,74 @@ class CVMRegistry:
         """
         from velocity_modelling.global_model import TomographyData
 
-        tomo = self.get_info("tomography", tomo_name)
-        if tomo is None:
-            raise KeyError(f"Tomography data {tomo_name} not found")
+        # 1) intrinsic info from registry (name, elev, path, author, title, url)
+        tomo_name = tomo_cfg["name"]
+        base = self.get_info("tomography", tomo_name)
+        if base is None:
+            raise KeyError(f"Tomography {tomo_name} not found in registry")
 
-        surf_depth = tomo["elev"]
-        special_offshore_tapering = tomo["special_offshore_tapering"]
-        vs30 = self.load_global_surface(tomo["vs30_path"])
+        surf_depth = base["elev"]
+        tomo_rel_path = base["path"]
 
-        # Determine format based on the path rather than an explicit format attribute
-        tomo_path = self.get_full_path(tomo["path"])
-        if tomo_path.is_file() and tomo_path.suffix == ".h5":
-            data_format = "HDF5"
-        else:
-            data_format = "ASCII"
+        # 2) per-version options (may be absent; provide sensible defaults)
+        special_offshore_tapering = bool(
+            tomo_cfg.get("special_offshore_tapering", False)
+        )
+        vs30_name = tomo_cfg.get("vs30")  # e.g., "nz_with_offshore"
+        gtl_enabled = bool(tomo_cfg.get("GTL", False))
 
+        # Resolve vs30 from registry if provided as a named asset
+        vs30_surface = None
+        if vs30_name is not None:
+            vs30_info = self.get_info("vs30", vs30_name)
+            if vs30_info is None:
+                raise KeyError(f"vs30 '{vs30_name}' not found in registry")
+            vs30_surface = self.load_global_surface(vs30_info["path"])
+
+        # Detect data format by file extension
+        tomo_path = self.get_full_path(tomo_rel_path)
+        data_format = (
+            "HDF5"
+            if (tomo_path.is_file() and tomo_path.suffix.lower() == ".h5")
+            else "ASCII"
+        )
         self.logger.log(
             logging.INFO,
-            f"Loading tomography data '{tomo_name}' ({data_format} format) with {len(surf_depth)} depth levels",
+            f"Loading tomography '{tomo_name}' ({data_format}) with {len(surf_depth)} levels",
         )
 
-        # Load surfaces based on data format
+        # Load tomography surfaces
         if data_format == "HDF5":
-            surfaces = self._load_hdf5_tomo_surface_data(
-                tomo["path"], tomo_name, surf_depth
-            )
-        else:  # ASCII
-            surfaces = self._load_ascii_tomo_surface_data(tomo["path"], surf_depth)
+            surfaces = self._load_hdf5_tomo_surface_data(tomo_rel_path, surf_depth)
+        else:
+            surfaces = self._load_ascii_tomo_surface_data(tomo_rel_path, surf_depth)
 
-        # Load offshore data (unchanged)
+        # Offshore distance & default offshore 1D
         self.logger.log(
-            logging.INFO,
-            f"Loading offshore distance surface: {offshore_surface_path}",
+            logging.INFO, f"Loading offshore distance surface: {offshore_surface_path}"
         )
         offshore_distance_surface = self.load_global_surface(offshore_surface_path)
 
         offshore_v1d_info = self.get_info("submodel", offshore_v1d_name)
-        if offshore_v1d_info is None:
-            self.logger.log(
-                logging.ERROR,
-                f"Error: Offshore 1D model {offshore_v1d_name} not found",
+        if offshore_v1d_info is None or offshore_v1d_info.get("type") != "vm1d":
+            raise KeyError(
+                f"Offshore 1D model {offshore_v1d_name} not found or not a vm1d"
             )
-            raise KeyError(f"Offshore 1D model {offshore_v1d_name} not found")
-        if offshore_v1d_info["type"] != "vm1d":
-            self.logger.log(
-                logging.ERROR,
-                f"Error: Offshore 1D model {offshore_v1d_name} is not a 1D model",
-            )
-            raise KeyError(f"Offshore 1D model {offshore_v1d_name} is not a 1D model")
         offshore_basin_model_1d = self.load_vm1d_submodel(offshore_v1d_info["data"])
 
         return TomographyData(
             name=tomo_name,
             surf_depth=surf_depth,
             special_offshore_tapering=special_offshore_tapering,
-            vs30=vs30,
+            gtl=gtl_enabled,
+            vs30=vs30_surface,
             surfaces=surfaces,
             offshore_distance_surface=offshore_distance_surface,
             offshore_basin_model_1d=offshore_basin_model_1d,
         )
 
     def _load_hdf5_tomo_surface_data(
-        self, path: Path, tomo_name: str, surf_depth: list
+        self, path: Path, surf_depth: list
     ) -> list[dict[str, GlobalSurfaceRead]]:
         """
         Load tomography surfaces from an HDF5 file.
@@ -736,8 +840,6 @@ class CVMRegistry:
         ----------
         path : Path
             The relative path to the HDF5 file.
-        tomo_name : str
-            The name of the tomography data.
         surf_depth : list
             List of elevation depths for the tomography surfaces.
 
@@ -745,6 +847,13 @@ class CVMRegistry:
         -------
         list[dict[str, GlobalSurfaceRead]]
             List of dictionaries containing GlobalSurfaceRead objects per velocity type (ie. vp, vs, rho) for each elevation.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the HDF5 file or required elevation data is not found.
+        RuntimeError
+            If the HDF5 file cannot be opened or read.
         """
         surfaces = []
         hdf5_path = self.get_full_path(path)
@@ -801,6 +910,7 @@ class CVMRegistry:
     ) -> list[dict[str, GlobalSurfaceRead]]:
         """
         Load tomography surfaces from ASCII files.
+        This function will be deprecated in future versions in favor of HDF5.
 
         Parameters
         ----------
@@ -814,6 +924,10 @@ class CVMRegistry:
         list[dict[str, GlobalSurfaceRead]]
             List of dictionaries containing GlobalSurfaceRead objects per velocity type (ie. vp, vs, rho) for each elevation.
 
+        Raises
+        ------
+        FileNotFoundError
+            If any required tomography ASCII files are missing.
         """
         surfaces = []
         base_path = self.get_full_path(path)
@@ -874,6 +988,7 @@ class CVMRegistry:
         )
 
         self.logger.log(logging.INFO, "Loading global velocity submodel data")
+
         for submodel_name in self.global_params["submodels"]:
             submodel_info = self.get_info("submodel", submodel_name)
             if submodel_info is None:
@@ -890,13 +1005,18 @@ class CVMRegistry:
                 vm1d_data = self.load_vm1d_submodel(submodel_info["data"])
                 self.logger.log(logging.INFO, "Loaded 1D velocity model data")
             elif submodel_info["type"] == "tomography":
-                if self.global_params.get("tomography"):
-                    tomography_data = self.load_tomo_surface_data(
-                        self.global_params["tomography"]
+                # New: self.global_params["tomography"] can be a list of dicts
+                tomo_list = self.global_params.get("tomography", [])
+                if not tomo_list:
+                    self.logger.log(
+                        logging.ERROR,
+                        "Error: Tomography config missing in version file",
                     )
-                else:
-                    self.logger.log(logging.ERROR, "Error: Tomography data not found")
-                    raise KeyError("Tomography data not found")
+                    raise KeyError("Tomography config missing in version file")
+
+                # For now, if your engine expects a single TomographyData, use the first.
+                # If you plan multi-tomography mixes, store the list and adapt downstream.
+                tomography_data = self.load_tomo_surface_data(tomo_list[0])
             elif submodel_info["type"] == "relation":
                 self.logger.log(
                     logging.DEBUG,

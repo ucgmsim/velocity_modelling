@@ -14,10 +14,46 @@ This page provides detailed instructions for installing and using the NZCVM soft
 
 ```bash
 git clone https://github.com/ucgmsim/velocity_modelling.git
-cd velocity_modelling
 ```
 
-### Step 2: Create a Virtual Environment (Optional but Recommended)
+### Step 2: Clone the Data Repository
+
+The NZCVM data files are now maintained in a separate repository: [`nzcvm_data`](https://github.com/ucgmsim/nzcvm_data).
+
+Clone the data repository:
+
+```bash
+git clone https://github.com/ucgmsim/nzcvm_data.git
+```
+
+Follow any additional instructions in the [`nzcvm_data` README](https://github.com/ucgmsim/nzcvm_data#installation) if required.
+
+### Step 3: Connect the Data to the Code
+
+You have two options to make the data available to the NZCVM code:
+
+**Option 1: Create a symbolic link (recommended)**
+
+Create a symbolic link from the cloned `nzcvm_data` directory to the expected location inside the codebase:
+
+```bash
+ln -s /path/to/nzcvm_data /path/to/velocity_modelling/velocity_modelling/nzcvm_data
+```
+
+Replace `/path/to/` with your actual paths.
+
+**Option 2: Update DATA_ROOT in constants.py**
+
+Alternatively, you can edit the `DATA_ROOT` variable in `velocity_modelling/constants.py` to point directly to your `nzcvm_data` location:
+
+```python
+# velocity_modelling/constants.py
+DATA_ROOT = "/absolute/path/to/nzcvm_data"
+```
+
+This is useful if you do not wish to use a symbolic link.
+
+### Step 4: Create a Virtual Environment (Optional but Recommended)
 
 ```bash
 # Using venv
@@ -29,10 +65,11 @@ conda create -n velocity_modelling python=3.10
 conda activate velocity_modelling
 ```
 
-### Step 3: Install Dependencies
+### Step 5: Install
 
 ```bash
-pip install -r requirements.txt
+cd velocity_modelling
+pip install -r requirements.txt && pip install -e .
 ```
 
 The requirements include:
@@ -43,17 +80,5 @@ The requirements include:
 - Project dependencies: numba, qcore, pyyaml, tqdm, typer
 - Tool dependencies: cartopy, pytz, requests
 
-### Step 4: Download Data
-
-Some data files need to be downloaded separately due to their size. This script downloads the data and places the extracted data files in the correct location.
-
-```bash
-python tools/download_data.py
-```
-
-Alternatively, download the file from Dropbox link. 
-https://www.dropbox.com/scl/fi/53235uy9vmq8gdd58so4t/nzcvm_global_data.tar.gz?rlkey=0fpqa22fk6mf39iloe8s7lsa1&st=14xlz9or&dl=1
-
-Then extract it and place the `global` folder under `velocity_modelling/data`
-
+Installing with the -e (editable) option allows you to modify the source code locally and have changes reflected immediately—ideal for active development and keeping the software up to date.
 

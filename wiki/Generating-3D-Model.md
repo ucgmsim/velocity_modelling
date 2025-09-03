@@ -1,48 +1,45 @@
-## Basic Usage
+# Generating 3D Models
 
-### Generating a Velocity Model
+## Overview
 
 <img src="images/nzcvm_diagram.png" width="80%">
 
-`nzcvm.py` needs three input files to generate a velocity model.
+The `generate_3d_model.py` script creates 3D velocity models by combining various geophysical datasets according to a specified model version configuration.
 
-(1)  `nzcvm_registry.yaml` : A wide range of community data that is curated and registered in this YAML file. This is an interface layer between NZCVM code and the storage of data files. A default file is used unless user overrides.
+## Input Requirements
 
-(2)  A model version (`.yaml`) : This YAML file defines different configurations of the velocity model. This allows users to select different combinations of tomography models, basins, and other parameters. Model versions 2.03 and 2.07 are pre-configured and the corresponding YAML files, `2p03.yaml` and `2p07.yaml` are located in `model_versions`. Users are allowed to create a custom model version and place the `.yaml` file in the folder. 
+The script requires one primary input file:
 
-(3) `nzcvm.cfg`: The details of the velocity model to generate. In most scenarios, this is the only file users need to provide to `nzcvm.py`
+1. **`nzcvm.cfg`**: Configuration file defining the 3D model parameters (grid, location, output settings)
 
+The script automatically uses:
+- **Model version YAML file**: Defines which data components to combine (see [Model Versions](Model-Versions.md))
+- **`nzcvm_registry.yaml`**: Data registry from the `nzcvm_data` repository
 
-The simplest command will look like:
+## Basic Usage
 
 ```bash
 python scripts/generate_3d_model.py /path/to/config/nzcvm.cfg
 ```
 
+### Required Arguments
+- **Configuration File**: Path to the `nzcvm.cfg` file
 
-#### Required Arguments
+### Optional Arguments
+- **--out-dir**: Output directory (overrides `OUTPUT_DIR` in config)
+- **--model-version**: Override model version from config file
+- **--output-format**: Format (EMOD3D, CSV, HDF5)
+- **--nzcvm-registry**: Custom registry file path
+- **--data-root**: Override default data directory
+- **--log-level**: Logging level (DEBUG, INFO, WARNING, ERROR)
 
-- **Configuration File**: Path to the `nzcvm.cfg` file that defines the model parameters
+## Configuration File (nzcvm.cfg)
 
-
-#### Optional Arguments
-
-- **--out-dir**: Directory where the output files will be saved. If not supplied, `OUTPUT_DIR` from nzcvm.cfg will be used
-- **--nzcvm-registry**: Path to the model registry file. If not specified, the default `nzcvm_registry.yaml` is used
-- **--model-version**: Override the model version specified in the configuration file
-- **--output-format**: Specify the output format (EMOD3D, CSV, or HDF5)
-- **--data-root**: Override the default DATA_ROOT directory. If not specified, the default `data` is used
-- **--smoothing**: Enable smoothing at model boundaries (not currently implemented)
-- **--log-level**: Set the logging level (DEBUG, INFO, WARNING, ERROR)
-
-
-### Example Usage Scenarios
-
-1. Create a custom nzcvm.cfg configuration file:
+The configuration file defines the 3D model grid and generation parameters:
 
 ```ini
 CALL_TYPE=GENERATE_VELOCITY_MOD
-MODEL_VERSION=2.03  
+MODEL_VERSION=2.03
 ORIGIN_LAT=-43.4776
 ORIGIN_LON=172.6870
 ORIGIN_ROT=23.0
@@ -57,201 +54,182 @@ TOPO_TYPE=BULLDOZED
 OUTPUT_DIR=/tmp
 ```
 
-- **CALL_TYPE**: Specifies the type of operation to perform. In this case, it is set to `GENERATE_VELOCITY_MOD` to generate a velocity model.
-- **MODEL_VERSION**: Indicates the version of the velocity model. Will use 2p03.yaml from `model_version` folder
-- **ORIGIN_LAT**: Latitude of the origin point for the model grid.
-- **ORIGIN_LON**: Longitude of the origin point for the model grid.
-- **ORIGIN_ROT**: Rotation angle of the model grid in degrees,  as a bearing measured clockwise from north.
-- **EXTENT_X**: Extent of the model grid in the X direction (in kilometers).
-- **EXTENT_Y**: Extent of the model grid in the Y direction (in kilometers).
-- **EXTENT_ZMAX**: Maximum depth of the model grid (in kilometers).
-- **EXTENT_ZMIN**: Minimum depth of the model grid (in kilometers).
-- **EXTENT_Z_SPACING**: Spacing between grid points in the Z direction (in kilometers).
-- **EXTENT_LATLON_SPACING**: Spacing between grid points in the latitude and longitude directions (in degrees).
-- **MIN_VS**: Minimum shear wave velocity (in meter per second).
-- **TOPO_TYPE**: Type of topography to use. Possible values are `BULLDOZED`, `SQUASHED`, `SQUASHED_TAPERED` and `TRUE`. 
-- **OUTPUT_DIR**: Directory where the generated velocity model files will be saved.
+### Parameter Descriptions
 
+#### Model Definition
+- **CALL_TYPE**: Must be `GENERATE_VELOCITY_MOD`
+- **MODEL_VERSION**: Version identifier (links to YAML file in `model_versions/`)
+
+#### Grid Geometry
+- **ORIGIN_LAT/LON**: Grid origin coordinates
+- **ORIGIN_ROT**: Grid rotation (degrees clockwise from north)
+- **EXTENT_X/Y**: Grid size in kilometers
+- **EXTENT_ZMIN/ZMAX**: Depth range in kilometers
+- **EXTENT_Z_SPACING**: Vertical grid spacing in kilometers
+- **EXTENT_LATLON_SPACING**: Horizontal grid spacing in degrees
+
+#### Model Parameters
+- **MIN_VS**: Minimum shear wave velocity (m/s)
+- **TOPO_TYPE**: Topography handling method
+- **OUTPUT_DIR**: Output file location
+
+### Topography Types
 
 <img src="images/topography_types.png" width="70%">
 
-*Figure 1: Different types of topography used in the NZCVM, including TRUE (top left), BULLDOZED (top right), SQUASHED (bottom left), and SQUASHED_TAPERED (bottom right).*
+- **TRUE**: Follows actual surface topography
+- **BULLDOZED**: Flat surface at sea level
+- **SQUASHED**: Compressed topography
+- **SQUASHED_TAPERED**: Compressed with edge tapering
 
+### Web Configuration Tool
 
-
-An nzcvm.cfg file can be configured and downloaded via a web-based interface at https://quakecoresoft.canterbury.ac.nz/nzcvm_config/
-
+Generate configuration files at: https://quakecoresoft.canterbury.ac.nz/nzcvm_config/
 
 <img src="images/nzcvm_config.png" width="100%">
 
-*Figure 2: Web interface for nzcvm.cfg generation and download*
+## Example Usage Scenarios
 
-
-2. Run the script with the custom configuration:
-
+### 1. Basic Canterbury Region Model
 ```bash
-python scripts/generate_3d_model.py /path/to/custom/nzcvm.cfg --out-dir /path/to/output
+# Create config file for Canterbury
+cat > canterbury.cfg << EOF
+CALL_TYPE=GENERATE_VELOCITY_MOD
+MODEL_VERSION=2.03
+ORIGIN_LAT=-43.4776
+ORIGIN_LON=172.6870
+ORIGIN_ROT=23.0
+EXTENT_X=20
+EXTENT_Y=20
+EXTENT_ZMAX=45.0
+EXTENT_ZMIN=0.0
+EXTENT_Z_SPACING=0.2
+EXTENT_LATLON_SPACING=0.2
+MIN_VS=0.5
+TOPO_TYPE=BULLDOZED
+OUTPUT_DIR=/tmp/canterbury
+EOF
+
+# Generate model
+python scripts/generate_3d_model.py canterbury.cfg
 ```
 
+### 2. Wellington Model with CSV Output
+```bash
+python scripts/generate_3d_model.py wellington.cfg \
+  --output-format CSV \
+  --out-dir /path/to/wellington_output
+```
+
+### 3. Custom Model Version
+```bash
+python scripts/generate_3d_model.py config.cfg \
+  --model-version custom_1.0 \
+  --log-level DEBUG
+```
 
 ## Output Files
 
-After successful execution, the output files will be located in the specified output directory. The main output files include:
+The script generates files in the specified output directory:
 
-- **EMOD3D Files**: Binary files containing velocity and density values
-  - `vp3dfile.p`: P-wave velocity values
-  - `vs3dfile.s`: S-wave velocity values
-  - `rho3dfile.d`: Density values
-  - `in_basin_mask.b`: Basin membership (ID of the basin the grid point belongs to; -1 indicates not inside any basin)
+### EMOD3D Format (Default)
+- **`vp3dfile.p`**: P-wave velocity values
+- **`vs3dfile.s`**: S-wave velocity values  
+- **`rho3dfile.d`**: Density values
+- **`in_basin_mask.b`**: Basin membership IDs
 
-CSV and HDF5 formats are also supported with `--output-format CSV` or `--output-format HDF5` option.
+### Alternative Formats
+- **CSV**: `velocity_model.csv` (with `--output-format CSV`)
+- **HDF5**: `velocity_model.h5` (with `--output-format HDF5`)
 
-For more details on the output formats, see the [Output Formats](OutputFormats.md) page.
+For detailed format specifications, see [Output Formats](OutputFormats.md).
 
+## Model Version Integration
 
-
-## Detailed Configuration Guide
-
-### Model Version System
-
-The NZCVM uses a model version system to define different configurations of the velocity model. This allows users to select different combinations of tomography models, basins, and other parameters.
-
-
-#### Relationship Between nzcvm.cfg and Model Version Files
-
-
-From the `nzcvm.cfg` above, notice this line.
-```ini
-MODEL_VERSION=2.03  
-```
-
-When you specify a `MODEL_VERSION` in your nzcvm.cfg file (e.g., `MODEL_VERSION=2.03`), the system looks for a corresponding YAML file in the `model_version` folder. 
-The naming convention replaces dots with 'p', so for `MODEL_VERSION=2.03`, the system looks for `2p03.yaml`.
-
-You can also override the model version at runtime using the `--model-version` parameter:
-
-```bash
-python scripts/generate_3d_model.py /path/to/nzcvm.cfg --out-dir /path/to/output --model-version 2.07
-```
-
-
-#### Explaining 2p03.yaml
-
-The `2p03.yaml` file defines the components and parameters for model version 2.03. Here's a detailed explanation of its contents:
-
-```yaml
-GTL: true
-surfaces:
-  - path: global/surface/NZ_DEM_HD.h5
-    submodel: ep_tomography_submod_v2010
-
-tomography: 2010_NZ_OFFSHORE
-basin_edge_smoothing: true
-basins:
-  - Canterbury_v19p1
-  - NorthCanterbury_v19p1
-  - BanksPeninsulaVolcanics_v19p1
-  - Kaikoura_v19p1
-  - Cheviot_v19p1
-  - Hanmer_v19p1
-  - Marlborough_v19p1
-  - Nelson_v19p1
-  - Wellington_v19p6
-  - WaikatoHauraki_v19p7
-```
-
-
-**Explanation of key components:**
-
-1. **GTL** (Geotechnical Layer): When set to `true`, enables the use of a geotechnical layer that models near-surface velocity structures based on Vs30 values.
-
-2. **surfaces**: Defines the global surfaces used in the model. Each surface has:
-   - **path**: The location of the surface data file
-   - **submodel**: The velocity model submodule used for assigning velocity values below this surface
-   
-   In this example, `NZ_DEM_HD.h5` is a high-definition digital elevation model for New Zealand, and `ep_tomography_submod_v2010` is the submodel that computes velocities using the 2010 tomography model.
-
-3. **tomography**: Specifies which tomography model to use. `2010_NZ_OFFSHORE` is an extension of the 2010 Eberhart-Phillips tomography model that includes offshore regions.
-
-4. **basin_edge_smoothing**: When set to `true`, applies smoothing at basin edges to avoid sharp transitions between basin and non-basin regions.
-
-5. **basins**: Lists all the basin models incorporated into this version. Each basin is defined in the `nzcvm_registry.yaml` file with its own surfaces, boundaries, and submodels.
-
-
-### Creating Custom Model Versions
-
-You can create your own model version by placing a new YAML file in the `model_version` folder. Follow the naming convention of using 'p' in place of dots (e.g., `custom_1p0.yaml` for version 1.0).
-
-Steps to create a custom model version:
-
-1. Create a new YAML file in the `model_version` folder (e.g., `custom_1p0.yaml`)
-2. Define the required components (GTL, surfaces, tomography, and basins)
-3. Run the model with your custom version by either:
-   - Setting `MODEL_VERSION=custom_1.0` in your nzcvm.cfg file
-   - Using the `--model-version custom_1.0` argument when running nzcvm.py
-
-Example of a minimal custom model version:
-
-```yaml
-GTL: true
-surfaces:
-  - path: global/surface/NZ_DEM_HD.h5
-    submodel: ep_tomography_submod_v2020
-
-tomography: 2020_NZ_OFFSHORE
-basin_edge_smoothing: true
-basins:
-  - Wellington_v19p6
-  - GreaterWellington_v19p6
-```
-
-This custom version uses the 2020 tomography model and only includes the Wellington and Greater Wellington basins.
-
-
-## Running the Model
-
-To generate a velocity model using a specific configuration:
-
-1. Prepare your nzcvm.cfg file with the desired parameters, including MODEL_VERSION
-2. Run the nzcvm.py script with the necessary arguments
-
-
-### Complete Example: Wellington Model with Version 2.07
-
-1. Create or use an existing nzcvm.cfg file:
+The `MODEL_VERSION` parameter in your config file determines which components are used:
 
 ```ini
-CALL_TYPE=GENERATE_VELOCITY_MOD
-MODEL_VERSION=2.07
-ORIGIN_LAT=-41.2865
-ORIGIN_LON=174.7762
-ORIGIN_ROT=0.0
-EXTENT_X=50
-EXTENT_Y=50
-EXTENT_ZMAX=50.0
-EXTENT_ZMIN=0.0
-EXTENT_Z_SPACING=0.1
-EXTENT_LATLON_SPACING=0.1
-MIN_VS=0.5
-TOPO_TYPE=BULLDOZED
-OUTPUT_DIR=/path/to/output
+MODEL_VERSION=2.03  # Uses model_versions/2p03.yaml
 ```
 
-2. Run the script:
+This YAML file specifies:
+- Which tomography model to use
+- Which basins to include
+- Surface handling methods
+- Special processing options
 
+For details on model versions, see [Model Versions](Model-Versions.md).
+
+## Performance Considerations
+
+### Grid Size Impact
+- Smaller spacing = higher resolution but longer computation time
+- Balance resolution needs with available resources
+
+### Memory Requirements
+- Large grids may require significant RAM
+- Consider chunking for very large models
+
+### Typical Processing Times
+- Small regional model (10×10×20 km): Minutes
+- Large regional model (100×100×50 km): Hours
+- Full country model: Multiple hours to days
+
+## Troubleshooting
+
+### Common Issues
+1. **Model version not found**: Check `model_versions/` folder for corresponding YAML file
+2. **Data files missing**: Ensure `nzcvm_data` repository is properly linked
+3. **Memory errors**: Reduce grid size or increase system memory
+4. **Permission errors**: Check write permissions for output directory
+
+### Debug Mode
 ```bash
-python velocity_modelling/scripts/generate_3d_model.py /path/to/nzcvm.cfg --out-dir /path/to/output
+python scripts/generate_3d_model.py config.cfg --log-level DEBUG
 ```
 
-3. The script will:
-   - Read the configuration from nzcvm.cfg
-   - Load the model version 2.07 from 2p07.yaml
-   - Set up the model grid based on the specified origin and extent
-   - Apply the tomography model specified in 2p07.yaml
-   - Incorporate the basins listed in 2p07.yaml
-   - Generate the velocity model files in the output directory
+This provides detailed information about:
+- Model version loading
+- Data file access
+- Grid generation progress
+- Component integration
 
-4. Check the output directory for the generated files:
-   - EMOD3D binary files (`vp3dfile.p`, `vs3dfile.s`, `rho3dfile.d`, `in_basin_mask.b`)
-   - CSV file (if requested): `velocity_model.csv`
-   - HDF5 file (if requested): `velocity_model.h5`
+### Validation
+Check output files:
+```bash
+# Verify file sizes are reasonable
+ls -lh /path/to/output/
+
+# For CSV output, check first few lines
+head /path/to/output/velocity_model.csv
+```
+
+## Advanced Usage
+
+### Custom Data Registry
+```bash
+python scripts/generate_3d_model.py config.cfg \
+  --nzcvm-registry /path/to/custom_registry.yaml
+```
+
+### Multiple Output Formats
+```bash
+# Generate EMOD3D files (default)
+python scripts/generate_3d_model.py config.cfg
+
+# Also generate CSV version
+python scripts/generate_3d_model.py config.cfg --output-format CSV
+
+# Also generate HDF5 version  
+python scripts/generate_3d_model.py config.cfg --output-format HDF5
+```
+
+## Integration with Other Tools
+
+The generated 3D models can be used with:
+- Ground motion simulation software (e.g., EMOD3D)
+- Visualization tools
+- Cross-section extraction (`extract_cross_section.py`)
+- 1D profile generation (`generate_1d_profiles.py`)
+
+For workflow examples, see the main [README](../README.md).

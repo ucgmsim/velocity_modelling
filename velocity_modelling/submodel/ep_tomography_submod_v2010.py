@@ -1,9 +1,23 @@
 """
 Eberhart-Phillips et al. (2010) Tomography Model
 
-This module implements the 3D velocity model based on the tomography study by
-Eberhart-Phillips et al. (2010) for New Zealand. It provides depth and location-dependent
-P-wave velocity, S-wave velocity, and density values derived from tomographic inversions.
+This module implements a 3D velocity model based on the tomography study by
+Eberhart-Phillips et al. (2010) for New Zealand. It provides location-dependent
+P-wave velocity, S-wave velocity, and density values derived from tomographic
+inversions, and it also handles a range of data corrections.
+
+Key features of this submodel include:
+- **Depth-based Interpolation**: Calculates velocity values at specified depths by
+  interpolating between the discrete elevation layers defined in the tomography model.
+- **Geotechnical Layer (GTL) Correction**: Applies a near-surface velocity adjustment
+  using the Ely (2010) GTL model, based on Vs30 values from a global surface.
+- **Special Offshore Tapering**: A unique tapering feature that applies a
+  separate 1D velocity model in specific offshore locations (Vs30 < 100 m/s, indicating soft sediments),
+  to ensure a smooth and geologically sound transition from land to sea.
+
+This module is designed to be called by the main velocity calculation module
+(e.g., `velocity3d.py`) and is configured via the `nzcvm_registry.yaml` file.
+
 """
 
 import logging
@@ -64,6 +78,7 @@ def offshore_basinmodel_vectorized(
     """
     Calculate the rho, vp, and vs values for multiple lat-long-depth points within this velocity submodel.
 
+
     Parameters
     ----------
     distance_from_shoreline : np.ndarray
@@ -77,8 +92,12 @@ def offshore_basinmodel_vectorized(
     nz_tomography_data : TomographyData
         Struct containing New Zealand tomography data.
     """
-    offshore_depths = offshore_basin_depth_vectorized(distance_from_shoreline)
-    offshore_apply_mask = offshore_depths < depths
+    offshore_depths = offshore_basin_depth_vectorized(
+        distance_from_shoreline
+    )  # calculate offshore basin depths based on distance from shoreline
+    offshore_apply_mask = (
+        offshore_depths < depths
+    )  # identify points where the actual depth values (depths) are greater than the calculated offshore basin depths
     z_indices_offshore = z_indices[offshore_apply_mask]
     depths_offshore = depths[offshore_apply_mask]
     if z_indices_offshore.size > 0:
@@ -87,7 +106,7 @@ def offshore_basinmodel_vectorized(
             depths_offshore,
             qualities_vector,
             nz_tomography_data.offshore_basin_model_1d,
-        )
+        )  # apply the Canterbury 1D model (=DEFAULT_OFFSHORE_1D_MODEL) to the offshore points
 
 
 def _apply_gtl(
@@ -131,7 +150,6 @@ def main_vectorized(
     mesh_vector: MeshVector,
     nz_tomography_data: TomographyData,
     partial_global_surface_depths: PartialGlobalSurfaceDepths,
-    gtl: bool,
     in_any_basin_lat_lon: bool,
     on_boundary: bool,
     interpolated_global_surface_values: dict,
@@ -155,8 +173,6 @@ def main_vectorized(
         Struct containing New Zealand tomography data.
     partial_global_surface_depths : PartialGlobalSurfaceDepths
         Struct containing global surfaces depths.
-    gtl : bool
-        Flag indicating whether GTL (Geotechnical Layer) is applied.
     in_any_basin_lat_lon : bool
         Flag indicating if the point is in any basin latitude-longitude.
     on_boundary : bool
@@ -218,7 +234,7 @@ def main_vectorized(
     relative_depths = partial_global_surface_depths.depths[1] - depths
 
     # Apply GTL and offshore smoothing
-    if gtl:
+    if nz_tomography_data.gtl:
         if nz_tomography_data.special_offshore_tapering:
             # Determine if the offshore model should be applied (point-level condition)
             apply_offshore = (

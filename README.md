@@ -4,27 +4,34 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
-The NZ Community Velocity Model (NZCVM) provide detailed 3D representations of New Zealand's subsurface velocity structure. These models are crucial for seismic hazard analysis and earthquake engineering.
+This repository contains the **code** for generating and working with the NZ Community Velocity Model (NZCVM). The NZCVM provides detailed 3D representations of New Zealand's subsurface velocity structure for seismic hazard analysis and earthquake engineering.
+
+**Note:** The actual data files are maintained in a separate repository: [nzcvm_data](https://github.com/ucgmsim/nzcvm_data)
 
 ## Overview
 
-The NZCVM integrates various datasets from numerous geophysical and geological studies. It specifies the compression or primary wave velocity (Vp), the shear or secondary wave velocity (Vs), and density (Rho) at specified locations in a 3D grid.
+This codebase provides tools to:
 
-The model includes the following components:
+- Generate 3D velocity models from various geophysical datasets
+- Extract 1D velocity profiles at specific locations
+- Create cross-sections from 3D velocity models
+- Process and integrate multiple data sources (tomography, basin models, surface geology)
 
-- **New Zealand-wide travel-time-derived seismic tomography model**: ~10 km length scale
-    - 2010 NZ: based on Eberhart-Philips et al. (2010)
-    - 2020 NZ: based on Eberhart-Philips et al. (2020)
+The NZCVM integrates datasets from numerous geophysical and geological studies, specifying compression wave velocity (Vp), shear wave velocity (Vs), and density (Rho) at specified locations in a 3D grid. By embedding discrete regional models into lower-resolution tomography data, the NZCVM provides a unified velocity model suitable for broadband physics-based ground motion simulations.
 
-- **Embedded subregion (sedimentary basin) models**: 41 basins with varying levels of characterization (version 2.08)
+## Architecture
 
-By embedding discrete regional models into the lower-resolution tomography data, the NZCVM provides a unified velocity model that incorporates data across multiple length scales and resolutions. This model is suitable for broadband physics-based ground motion simulations and other engineering applications.
+The system uses a **model version system** as the primary interface between code and data:
+
+- **Code Repository** (this repo): Contains processing algorithms and model version definitions
+- **Data Repository** ([nzcvm_data](https://github.com/ucgmsim/nzcvm_data)): Contains geophysical datasets and data registry
+- **Model Versions**: YAML files that specify which data components to use and how to combine them
+
+This separation allows independent version control of code and data while maintaining flexible model configurations.
 
 ## Key Components
 
-- [**Basins**](wiki/Basins.md): Detailed information about the 41 basin models integrated into the NZCVM
-- [**Tomography**](wiki/Tomography.md): Information about available tomography models
-- [**Data Formats**](wiki/DataFormats.md): Explanation of formats for surface, boundary, tomography, 1D velocity models, and smoothing data
+- [**Model Versions**](wiki/Model-Versions.md): Primary interface defining which data components to use
 - [**Output Formats**](wiki/OutputFormats.md): Details about the output formats, including the emod3d, csv and HDF5 formats
 
 ## Requirements and Installation
@@ -36,90 +43,160 @@ By embedding discrete regional models into the lower-resolution tomography data,
 
 ### Installation
 
-1. Clone the repository:
+1. Clone the code repository:
      ```bash
      git clone https://github.com/ucgmsim/velocity_modelling.git
      cd velocity_modelling
      ```
 
-2. Install the required dependencies:
+2. Clone the data repository:
+     ```bash
+     git clone https://github.com/ucgmsim/nzcvm_data.git
+     cd nzcvm_data
+     git lfs pull
+     ```
+     See [nzcvm_data installation instructions](https://github.com/ucgmsim/nzcvm_data#installation) for details.
+
+3. Connect the data to the codebase:
+
+    - **Option 1 (recommended):** Create a symbolic link:
+      ```bash
+      ln -s /path/to/nzcvm_data /path/to/velocity_modelling/velocity_modelling/nzcvm_data
+      ```
+      Replace `/path/to/` with your actual paths.
+
+    - **Option 2:** Edit `DATA_ROOT` in `velocity_modelling/constants.py` to point to your data location:
+      ```python
+      # velocity_modelling/constants.py
+      DATA_ROOT = "/absolute/path/to/nzcvm_data"
+      ```
+
+4. Install the required dependencies:
      ```bash
      pip install -r requirements.txt
      ```
 
-3. Download the data from the external link.
+For detailed installation and data setup instructions, see the [Installation Guide](wiki/Installation.md).
 
-For detailed data downloading and installation instructions, see the [Installation Guide](wiki/Installation.md).
+## Tools
 
+The NZCVM provides 3 main command-line tools:
 
+### 1. Generate 3D Models: `generate_3d_model`
+Creates 3D velocity models from configuration files.
 
-### Running the script
-
-Currently, the NZCVM provides 3 python scripts located in the `scripts` directory. 
-- `generate_3d_model.py`: Generates a 3D velocity model.
-- `generate_1d_profiles.py`: Generates 1D velocity profiles.
-- `extract_cross_section.py`: Extracts cross-sections from the velocity models.
-
-#### Generating a 3D Velocity Model: `generate_3d_model.py`
-To run the `generate_3d_model.py` script, provide specific arguments, including the configuration file and the output directory:
-
-```sh
-python scripts/generate_3d_model.py  /path/to/config/nzcvm.cfg --out-dir /path/to/output
+```bash
+generate_3d_model /path/to/config/nzcvm.cfg --out-dir /path/to/output
 ```
-##### Configuration File: `nzcvm.cfg`
 
-The `nzcvm.cfg` file is a configuration file used by the `generate_3d_model.py` script to generate velocity models. It contains parameters defining the properties and settings of the velocity model. Below is an example:
+Key features:
+- Uses **model versions** to specify data components
+- Supports multiple output formats (EMOD3D, CSV, HDF5)
+- Configurable grid geometry and topography handling
+- Web interface for configuration generation
 
+For detailed instructions, see [Generating 3D Models](wiki/Generating-3D-Model.md).
+
+### 2. Generate 1D Profiles: `generate_1d_profiles`
+Extracts 1D velocity profiles at specific locations.
+
+```bash
+generate_1d_profiles --model-version 2.03 --location-csv sites.csv --out-dir /path/to/output
+```
+
+Key features:
+- Uses same **model versions** as 3D generation
+- Supports custom depth sampling
+- Batch processing from CSV coordinates
+- Multiple output formats
+
+For detailed instructions, see [Generating 1D Profiles](wiki/Generating-1D-Profiles.md).
+
+### 3. Extract Cross-sections: `extract_cross_section`
+Creates cross-sections from existing 3D velocity models.
+
+```bash
+extract_cross_section /path/to/velocity_model.h5 --start-lat -41.0 --start-lon 174.0 --end-lat -41.5 --end-lon 175.0
+```
+
+For detailed instructions, see [Extracting Cross-Sections](wiki/Extracting-Cross-Sections.md).
+
+## Model Version System
+
+The **model version system** is the core interface that connects the velocity modeling code with the data repository. Model versions are YAML files (e.g., `2p03.yaml`, `2p07.yaml`) that specify:
+
+- Which tomography models to use
+- Which basin models to include  
+- Surface handling methods
+- Special processing options (offshore tapering, GTL, smoothing)
+
+Example model version specification:
 ```ini
-CALL_TYPE=GENERATE_VELOCITY_MOD
+# In nzcvm.cfg
 MODEL_VERSION=2.03
-ORIGIN_LAT=-43.4776
-ORIGIN_LON=172.6870
-ORIGIN_ROT=23.0
-EXTENT_X=20
-EXTENT_Y=20
-EXTENT_ZMAX=45.0
-EXTENT_ZMIN=0.0
-EXTENT_Z_SPACING=0.2
-EXTENT_LATLON_SPACING=0.2
-MIN_VS=0.5
-TOPO_TYPE=BULLDOZED
-OUTPUT_DIR=/tmp
 ```
 
-For detailed instructions, see the [Generating 3D Model](wiki/Generating-3D-Model.md) page.
+This automatically loads `model_versions/2p03.yaml` which defines the complete model configuration.
 
-##### Output Files
+All tools (`generate_3d_model`, `generate_1d_profiles`, `extract_cross_section`) use this same model version system, ensuring consistency across different analysis workflows.
 
-After successful execution, the output files will be located in the specified output directory. See [Output Formats](wiki/OutputFormats.md) for details on the format and contents of these files.
-
-
-
-#### Generates 1D velocity profiles: `generate_1d_profiles.py`
-To generate 1D velocity profiles, use the `generate_1d_profiles.py` script:
-
-```sh
- python generate_1d_profiles.py --out-dir <output_directory> --model-version <version> --location-csv <csv_file> --min-vs <min_vs> --topo-type <topo_type> [--custom-depth <depth_file>] 
-```
-For detailed instructions, see the [Generating 1D Profiles](wiki/Generating-1D-Profiles.md) page.
-
-#### Extracts cross-sections : `extract_cross_section.py`
-To extract cross-sections from a HDF5-format velocity model, use the `extract_cross_section.py` script:
-
-```sh
-    python extract_cross_section.py <h5file> [options]
-    --lat1 <lat1> --lon1 <lon1> --lat2 <lat2> --lon2 <lon2>
-    --x1 <x1> --y1 <y1> --x2 <x2> --y2 <y2>
-    --property <property_name> --xaxis <xaxis> --n_points <n_points>
-    --vmin <vmin> --vmax <vmax> --max_depth <max_depth>
-    --cmap <cmap> --png <output_png> --csv <csv_output>
-
-```
-
+For complete details, see [Model Versions](wiki/Model-Versions.md).
 
 ## Data Files
 
-All data, such as surface, boundary, DEM, and 1D velocity model files, are located in the [velocity_modelling/data](velocity_modelling/data) folder. For details on the data format, see the [Data Formats Guide](wiki/DataFormats.md).
+All data files (surface models, boundaries, DEM, tomography models, etc.) are maintained in the separate [nzcvm_data](https://github.com/ucgmsim/nzcvm_data) repository. The data repository includes:
+
+- **`nzcvm_registry.yaml`**: Catalog of all available datasets and their locations
+- **Tomography models**: Regional and national velocity models
+- **Basin models**: Detailed velocity structures for sedimentary basins
+- **Surface data**: Topography, geology, and Vs30 datasets
+
+See the [nzcvm_data README](https://github.com/ucgmsim/nzcvm_data) for details on available datasets and their formats.
+
+For information about data format specifications used by this code, see the [Data Formats Guide](https://github.com/ucgmsim/nzcvm_data/blob/main/wiki/DataFormats.md).
+
+## Quick Start Example
+
+1. **Install** both repositories:
+   ```bash
+   git clone https://github.com/ucgmsim/velocity_modelling.git
+   git clone https://github.com/ucgmsim/nzcvm_data.git
+   ln -s /path/to/nzcvm_data /path/to/velocity_modelling/velocity_modelling/nzcvm_data
+   ```
+
+2. **Generate a 3D model**:
+   ```bash
+   # Create basic configuration
+   cat > test.cfg << EOF
+   CALL_TYPE=GENERATE_VELOCITY_MOD
+   MODEL_VERSION=2.03
+   ORIGIN_LAT=-43.5
+   ORIGIN_LON=172.5
+   ORIGIN_ROT=0.0
+   EXTENT_X=10
+   EXTENT_Y=10
+   EXTENT_ZMAX=20.0
+   EXTENT_ZMIN=0.0
+   EXTENT_Z_SPACING=0.5
+   EXTENT_LATLON_SPACING=0.1
+   MIN_VS=0.5
+   TOPO_TYPE=BULLDOZED
+   OUTPUT_DIR=/tmp/test_model
+   EOF
+   
+   # Generate model
+   generate_3d_model test.cfg
+   ```
+
+3. **Extract 1D profiles**:
+   ```bash
+   # Create location file
+   echo "lat,lon,name" > sites.csv
+   echo "-43.5,172.5,site1" >> sites.csv
+   
+   # Generate profiles  
+   generate_1d_profiles --model-version 2.03 --location-csv sites.csv --out-dir /tmp/profiles
+   ```
 
 ## Changelogs and Development Plans
 

@@ -11,7 +11,7 @@ tomography:
 basin_edge_smoothing: true
 basins:
   - Canterbury_v19p1
-  - NorthCanterbury_v19p1
+  - NorthCanterbury_v25p8
   - BanksPeninsulaVolcanics_v19p1
   - Kaikoura_v25p5
   - Cheviot_v19p1
@@ -44,10 +44,13 @@ basins:
   - Wairarapa_v21p12
   - OmaioBay_v25p5
   - Whangaparoa_v23p4
-  - PalmerstonNorth_v25p5
+  - PalmerstonNorth_v25p8
   - Southland_v25p5
   - TeAnau_v25p5
   - TolagaBay_v25p5
   - Waiapu_v25p5
   - WestCoast_v25p5
   - Westport_v25p5
+  - QueensCharlotte_v25p8
+  - CastleHill_v25p8
+  - Whakatane_v25p8
