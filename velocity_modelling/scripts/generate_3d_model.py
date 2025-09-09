@@ -223,25 +223,27 @@ def generate_3d_model(
     logger.log(logging.DEBUG, f"Logger initialized with level {log_level}")
     logger.log(logging.INFO, "Beginning velocity model generation")
 
-    # Resolve nzcvm_data_root: prefer explicit CLI value if provided
-    data_root = (
-        nzcvm_data_root.expanduser().resolve() if nzcvm_data_root else get_data_root()
-    )
-
-    if not data_root.exists():
-        raise FileNotFoundError(
-            f"NZCVM data root not found: {data_root}. "
-            " Run `nzcvm-data install'. Alternatively, set --nzcvm-data-root or $NZCVM_DATA_ROOT."
+    # Resolve data root path, giving precedence to the CLI argument
+    try:
+        data_root = get_data_root(
+            cli_override=str(nzcvm_data_root) if nzcvm_data_root else None
         )
+        logger.log(logging.INFO, f"Using NZCVM data root : {data_root}")
+    except FileNotFoundError as e:
+        logger.log(logging.ERROR, str(e))
+        raise
 
-    logger.log(logging.INFO, f"Using NZCVM data root : {data_root}")
+    # Resolve registry path
+    if nzcvm_registry:
+        registry_path = nzcvm_registry.expanduser().resolve()
+    else:
+        registry_path = data_root / "nzcvm_registry.yaml"
 
-    registry_path = (
-        nzcvm_registry.expanduser().resolve() if nzcvm_registry else get_registry_path()
-    )
     # Validate registry path
     if not registry_path.exists():
-        raise FileNotFoundError(f"NZCVM registry file not found: {registry_path}")
+        msg = f"NZCVM registry file not found: {registry_path}"
+        logger.log(logging.ERROR, msg)
+        raise FileNotFoundError(msg)
     logger.log(logging.INFO, f"Using registry: {registry_path}")
 
     # Parse the config file

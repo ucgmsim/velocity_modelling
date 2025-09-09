@@ -38,27 +38,24 @@ def _load_cfg_path() -> Path | None:
         try:
             with open(CONFIG_FILE, "r") as f:  # Use with open for file handling
                 data = json.load(f)  # Use json.load to parse the JSON
-            path_str = data.get("data_root", "")
+            path_str = data.get("data_root")
+            if not path_str:
+                return None
             p = Path(path_str)
             return p if p.exists() else None
-        except FileNotFoundError:
-            print(
-                f"Error: Config file not found at {CONFIG_FILE}"
-            )  # Specific error message
-            return None
         except json.JSONDecodeError:
             print(
-                f"Error: Invalid JSON format in {CONFIG_FILE}"
+                f"Error: Invalid JSON format in {CONFIG_FILE}", file=sys.stderr
             )  # Specific error message
             return None
         except (
             TypeError,
             ValueError,
         ):  # Catch errors related to data type or value issues
-            print(f"Error: Invalid data_root value in {CONFIG_FILE}")
+            print(f"Error: Invalid data_root value in {CONFIG_FILE}", file=sys.stderr)
             return None
         except OSError as e:  # Catch file-related errors
-            print(f"Error: OS error occurred: {e}")
+            print(f"Error: OS error occurred: {e}", file=sys.stderr)
             return None
     return None
 
@@ -89,7 +86,7 @@ def _try_candidates() -> Path | None:
 
 
 def resolve_data_root(
-    cli_override: str | None = None, interactive: bool | None = None
+    cli_override: str | None = None
 ) -> Path:
     """
     Resolve NZCVM data root with precedence.
@@ -98,8 +95,6 @@ def resolve_data_root(
     ----------
     cli_override : str | None
         If provided, this path takes highest precedence.
-    interactive : bool | None
-        If None (default), prompt if stdin/stdout are TTY. If True/False
 
     Returns
     -------
@@ -130,25 +125,6 @@ def resolve_data_root(
     if p:
         return p
 
-    # 5) interactive prompt (if TTY)
-    if interactive is None:
-        interactive = sys.stdin.isatty() and sys.stdout.isatty()
-    if interactive:
-        entered = input(
-            "Enter NZCVM_DATA_ROOT (or leave blank to run 'nzcvm-data install'): "
-        ).strip()
-        if entered:
-            p = Path(entered).expanduser().resolve()
-            if p.exists():
-                return p
-            print(f"Path not found: {p}", file=sys.stderr)
-        exe = shutil.which("nzcvm-data")
-        if exe:
-            print("Running 'nzcvm-data install' to set up data...")
-            subprocess.run([exe, "install"], check=False)
-            p2 = _load_cfg_path()
-            if p2 and p2.exists():
-                return p2
 
     raise FileNotFoundError(
         "Cannot locate NZCVM data root. "
