@@ -45,7 +45,7 @@ nzcvm-data where
 ```
 If you already have a clone, you can register it instead:
 ```bash
-nzdvm-data install --path /path/to/existing/nzcvm_data
+nzcvm-data install --path /path/to/existing/nzcvm_data
 ```
 
 
