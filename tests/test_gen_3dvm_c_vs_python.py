@@ -70,9 +70,9 @@ OUTPUT_DIR={c_output_dir}
 
 @pytest.mark.repeat(5)
 def test_gen_3dvm_c_vs_python(
-    tmp_path: Path, 
-    nzvm_binary_path: Path, # provided by conftest.py
-    data_root: Path, # provided by conftest.py
+    tmp_path: Path,
+    nzvm_binary_path: Path,  # provided by conftest.py
+    data_root: Path,  # provided by conftest.py
 ):
     """Test C binary vs Python script with random config"""
     # Define output directories but don't create them yet

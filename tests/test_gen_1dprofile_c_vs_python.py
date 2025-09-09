@@ -110,7 +110,6 @@ TEST_DIR = BASE_DIR / "tests"
 MODEL_VERSIONS = ["2.08"]  # Fixed to known valid versions
 
 
-
 def generate_random_profile_config(
     tmp_path: Path, output_dir: Path
 ) -> tuple[Path, dict]:
@@ -260,8 +259,8 @@ def compare_surface_depths(c_path: Path, py_path: Path, atol: float = 1e-5):
 @pytest.mark.repeat(5)
 def test_gen_1dprofile_c_vs_python(
     tmp_path: Path,
-    nzvm_binary_path: Path, # from conftest.py
-    data_root: Path, # from conftest.py
+    nzvm_binary_path: Path,  # from conftest.py
+    data_root: Path,  # from conftest.py
 ):
     root_out_dir = tmp_path / "1d_profiles"
     config_path, params = generate_random_profile_config(tmp_path, root_out_dir)
@@ -287,7 +286,7 @@ def test_gen_1dprofile_c_vs_python(
     # Run Python version
     location_csv = tmp_path / "locations.csv"
     generate_location_csv(location_csv, params)
-    subprocess.run(
+    py_result = subprocess.run(
         [
             "python",
             str(SCRIPT_DIR / "generate_1d_profiles.py"),
@@ -311,7 +310,7 @@ def test_gen_1dprofile_c_vs_python(
     print(f"Python return code: {py_result.returncode}")
     print(f"Python stdout: {py_result.stdout}")
     print(f"Python stderr: {py_result.stderr}")
-    assert py_result.returncode == 0, (f"Python script failed: {py_result.stderr}")
+    assert py_result.returncode == 0, f"Python script failed: {py_result.stderr}"
 
     # Compare Profile
     cid = params["id"]

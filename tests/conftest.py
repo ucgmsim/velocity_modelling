@@ -1,12 +1,13 @@
 import os
 from pathlib import Path
-
 from typing import Optional
 
 import pytest
 
-
-from velocity_modelling.constants import get_data_root, get_registry_path  # lazy resolver
+from velocity_modelling.constants import (  # lazy resolver
+    get_data_root,
+    get_registry_path,
+)
 
 
 def _env_path(var: str) -> Optional[Path]:
@@ -47,6 +48,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         help="Path to nzcvm_registry.yaml (overrides the default under data root).",
     )
 
+
 @pytest.fixture(scope="session")
 def benchmark_dir(pytestconfig: pytest.Config) -> Path:
     p = Path(pytestconfig.getoption("--benchmark-dir")).expanduser().resolve()
@@ -60,11 +62,11 @@ def benchmark_dir(pytestconfig: pytest.Config) -> Path:
 @pytest.fixture(scope="session")
 def data_root(pytestconfig: pytest.Config) -> Path:
     """Resolve NZCVM data root with precedence:
-      1) --data-root (this option)
-      2) NZCVM_DATA_ROOT env var
-      3) ~/.config/nzcvm_data/config.json (written by `nzcvm-data install`)
-      4) sensible defaults
-      5) interactive prompt (disabled in tests)
+    1) --data-root (this option)
+    2) NZCVM_DATA_ROOT env var
+    3) ~/.config/nzcvm_data/config.json (written by `nzcvm-data install`)
+    4) sensible defaults
+    5) interactive prompt (disabled in tests)
     """
     cli_value: Optional[Path] = pytestconfig.getoption("--data-root")
     resolved = get_data_root(str(cli_value) if cli_value else None)
@@ -81,12 +83,11 @@ def nzvm_binary_path(pytestconfig: pytest.Config) -> Optional[Path]:
     p: Optional[Path] = pytestconfig.getoption("--nzvm-binary-path")
     return p.expanduser().resolve() if p else None
 
+
 @pytest.fixture(scope="session")
 def registry_path(pytestconfig: pytest.Config) -> Path:
     cli_value: Path | None = pytestconfig.getoption("--nzcvm-registry")
-    rp = (cli_value.expanduser().resolve() if cli_value else get_registry_path())
+    rp = cli_value.expanduser().resolve() if cli_value else get_registry_path()
     if not rp.exists():
         raise FileNotFoundError(f"NZCVM registry file not found: {rp}")
     return rp
-
-
