@@ -131,7 +131,7 @@ def resolve_data_root(cli_override: str | None = None) -> Path:
     if p:
         return p
 
-    # this is a hack, to make sure nzdvm_data is imported and keep depty happy (DEP002)
+    # this is a hack, to make sure nzcvm_data is imported and keep deptry happy (DEP002)
     if not _NZCVM_DATA_RUNTIME_AVAILABLE:
     # We won't fail here; just a hint. The CLI may still be on PATH if installed differently.
         pass
