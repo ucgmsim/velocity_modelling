@@ -30,7 +30,7 @@ python scripts/generate_3d_model.py /path/to/config/nzcvm.cfg
 - **--model-version**: Override model version from config file
 - **--output-format**: Format (EMOD3D, CSV, HDF5)
 - **--nzcvm-registry**: Custom registry file path
-- **--data-root**: Override default data directory
+- **--nzcvm-data-root**: Override default data directory
 - **--log-level**: Logging level (DEBUG, INFO, WARNING, ERROR)
 
 ## Configuration File (nzcvm.cfg)

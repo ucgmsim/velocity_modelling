@@ -182,7 +182,6 @@ def generate_3d_model(
       2) NZCVM_DATA_ROOT env var
       3) ~/.config/nzcvm_data/config.json (written by `nzcvm-data install`)
       4) sensible defaults
-      5) interactive prompt (if available)
 
     Parameters
     ----------
