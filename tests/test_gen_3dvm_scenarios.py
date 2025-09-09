@@ -41,29 +41,7 @@ BENCHMARK_DIR = TEST_DIR / "benchmarks"  # Default value, can be overridden
 
 
 @pytest.fixture
-def test_paths(request: pytest.FixtureRequest) -> tuple[Path, Path]:
-    """Configure BENCHMARK_DIR, DATA_ROOT based on command-line option."""
-    global BENCHMARK_DIR  # Use the global variable directly
-    benchmark_dir = request.config.getoption("--benchmark-dir")
-    # benchmark_dir is not None
-    new_benchmark_dir = Path(benchmark_dir).resolve()
-    if not new_benchmark_dir.exists():
-        raise ValueError(f"Provided BENCHMARK_DIR does not exist: {new_benchmark_dir}")
-    if not new_benchmark_dir.is_dir():
-        raise ValueError(
-            f"Provided BENCHMARK_DIR is not a directory: {new_benchmark_dir}"
-        )
-    benchmark_dir = new_benchmark_dir
-
-    data_root = request.config.getoption("--data-root")
-    # data_root is not None
-    new_data_root = Path(data_root).resolve()
-    if not new_data_root.exists():
-        raise ValueError(f"Provided DATA_ROOT does not exist: {new_data_root}")
-    if not new_data_root.is_dir():
-        raise ValueError(f"Provided DATA_ROOT is not a directory: {new_data_root}")
-    data_root = new_data_root
-
+def test_paths(benchmark_dir: Path, data_root: Path) -> tuple[Path, Path]:
     return benchmark_dir, data_root
 
 
@@ -105,7 +83,7 @@ def test_gen_3dvm_scenarios(scenario: ScenarioDict):
             str(scenario["config_file"]),
             "--out-dir",
             str(scenario["output_path"]),
-            "--data-root",
+            "--nzcvm-data-root",
             str(scenario["data_root"]),
         ],
         capture_output=True,

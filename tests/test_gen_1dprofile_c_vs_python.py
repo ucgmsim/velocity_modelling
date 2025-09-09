@@ -110,32 +110,6 @@ TEST_DIR = BASE_DIR / "tests"
 MODEL_VERSIONS = ["2.08"]  # Fixed to known valid versions
 
 
-@pytest.fixture()
-def nzvm_c_binary_path(request: pytest.FixtureRequest) -> Path:
-    """
-    Get the path to the nzcvm C binary from the command-line option or environment variable.
-
-    Parameters
-    ----------
-    request : pytest.FixtureRequest
-        The pytest request object to access command-line options.
-
-    Returns
-    -------
-    Path
-        The resolved path to the nzcvm C binary.
-    """
-    nzvm_path = request.config.getoption("--nzvm-binary-path")
-    if nzvm_path is None:
-        raise ValueError(
-            "nzvm binary path not provided. Use --nzvm-binary-path or NZVM_BINARY_PATH environment variable."
-        )
-    new_nzvm_path = Path(nzvm_path).resolve()
-    if not new_nzvm_path.exists():
-        raise ValueError(f"Provided nzvm binary path does not exist: {new_nzvm_path}")
-    if not new_nzvm_path.is_file():
-        raise ValueError(f"Provided nzvm binary path is not a file: {new_nzvm_path}")
-    return new_nzvm_path
 
 def generate_random_profile_config(
     tmp_path: Path, output_dir: Path
@@ -286,7 +260,8 @@ def compare_surface_depths(c_path: Path, py_path: Path, atol: float = 1e-5):
 @pytest.mark.repeat(5)
 def test_gen_1dprofile_c_vs_python(
     tmp_path: Path,
-    nzvm_c_binary_path: Path,
+    nzvm_binary_path: Path, # from conftest.py
+    data_root: Path, # from conftest.py
 ):
     root_out_dir = tmp_path / "1d_profiles"
     config_path, params = generate_random_profile_config(tmp_path, root_out_dir)
@@ -294,10 +269,10 @@ def test_gen_1dprofile_c_vs_python(
     # Run C binary from its directory with relative path
     c_result = subprocess.run(
         [
-            nzvm_c_binary_path,
+            nzvm_binary_path,
             str(config_path),
         ],  # Relative path since we're in C_BINARY_DIR
-        cwd=str(nzvm_c_binary_path.parent),
+        cwd=str(nzvm_binary_path.parent),
         capture_output=True,
         text=True,
     )
@@ -326,9 +301,17 @@ def test_gen_1dprofile_c_vs_python(
             params["topo_type"],
             "--min-vs",
             str(params["min_vs"]),
+            "--nzcvm-data-root",
+            str(data_root),
         ],
+        capture_output=True,
         check=True,
     )
+
+    print(f"Python return code: {py_result.returncode}")
+    print(f"Python stdout: {py_result.stdout}")
+    print(f"Python stderr: {py_result.stderr}")
+    assert py_result.returncode == 0, (f"Python script failed: {py_result.stderr}")
 
     # Compare Profile
     cid = params["id"]

@@ -1,10 +1,12 @@
 import os
 from pathlib import Path
 
+from typing import Optional
+
 import pytest
 
 
-from velocity_modelling.constants import get_data_root  # lazy resolver
+from velocity_modelling.constants import get_data_root, get_registry_path  # lazy resolver
 
 
 def _env_path(var: str) -> Optional[Path]:
@@ -21,7 +23,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         help="Override the default BENCHMARK_DIR directory.",
     )
 
-    # NOTE: do NOT resolve here; keep default None and resolve in a fixture.
+    # Keep default None; resolve later in fixture with get_data_root()
     parser.addoption(
         "--data-root",
         action="store",
@@ -37,18 +39,27 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=_env_path("NZVM_BINARY_PATH"),
         help="Path to nzvm binary (or set NZVM_BINARY_PATH env var).",
     )
-
-
+    parser.addoption(
+        "--nzcvm-registry",
+        action="store",
+        type=Path,
+        default=None,
+        help="Path to nzcvm_registry.yaml (overrides the default under data root).",
+    )
 
 @pytest.fixture(scope="session")
 def benchmark_dir(pytestconfig: pytest.Config) -> Path:
-    return Path(pytestconfig.getoption("--benchmark-dir")).expanduser().resolve()
+    p = Path(pytestconfig.getoption("--benchmark-dir")).expanduser().resolve()
+    if not p.exists():
+        raise ValueError(f"Provided BENCHMARK_DIR does not exist: {p}")
+    if not p.is_dir():
+        raise ValueError(f"Provided BENCHMARK_DIR is not a directory: {p}")
+    return p
 
 
 @pytest.fixture(scope="session")
 def data_root(pytestconfig: pytest.Config) -> Path:
-    """
-    Resolve NZCVM data root with precedence:
+    """Resolve NZCVM data root with precedence:
       1) --data-root (this option)
       2) NZCVM_DATA_ROOT env var
       3) ~/.config/nzcvm_data/config.json (written by `nzcvm-data install`)
@@ -56,7 +67,6 @@ def data_root(pytestconfig: pytest.Config) -> Path:
       5) interactive prompt (disabled in tests)
     """
     cli_value: Optional[Path] = pytestconfig.getoption("--data-root")
-    # Pass the CLI override as a string if provided; otherwise None
     resolved = get_data_root(str(cli_value) if cli_value else None)
     if not resolved.exists():
         raise FileNotFoundError(
@@ -70,4 +80,13 @@ def data_root(pytestconfig: pytest.Config) -> Path:
 def nzvm_binary_path(pytestconfig: pytest.Config) -> Optional[Path]:
     p: Optional[Path] = pytestconfig.getoption("--nzvm-binary-path")
     return p.expanduser().resolve() if p else None
+
+@pytest.fixture(scope="session")
+def registry_path(pytestconfig: pytest.Config) -> Path:
+    cli_value: Path | None = pytestconfig.getoption("--nzcvm-registry")
+    rp = (cli_value.expanduser().resolve() if cli_value else get_registry_path())
+    if not rp.exists():
+        raise FileNotFoundError(f"NZCVM registry file not found: {rp}")
+    return rp
+
 
