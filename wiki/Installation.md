@@ -10,6 +10,19 @@ This page provides detailed instructions for installing and using the NZCVM soft
 
 ## Installation
 
+### Create a Virtual Environment (Optional but Recommended)
+
+```bash
+# Using venv
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Or using conda
+conda create -n velocity_modelling python=3.11
+conda activate velocity_modelling
+```
+
+
 ### Step 1: Install the Code
 
 You can install directly from GitHub:
@@ -58,19 +71,6 @@ When locating the `nzcvm_data` repository, tools use this precedence:
 3. `~/.config/nzcvm_data/config.json` (set by `nzcvm-data install`)
 4.  Default: `~/.local/cache/nzcvm_data_root`
 
-
-
-### Create a Virtual Environment (Optional but Recommended)
-
-```bash
-# Using venv
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Or using conda
-conda create -n velocity_modelling python=3.10
-conda activate velocity_modelling
-```
 
 ### Development Dependencies
 If you install from source, `requirements.txt` includes:
