@@ -9,12 +9,14 @@ import sys
 from pathlib import Path
 
 # Mark the nzcvm-data runtime dependency as intentionally used (for deptry DEP002).
-# We do not *need* to import it for functionality, but the CLI must be present.
+# We don't *need* the module API at runtime, but we ensure it's importable so deptry
+# doesn't flag it as unused. Safe: only checks for presence.
 try:
     import nzcvm_data as _nzcvm_data  # noqa: F401
-    _NZCVM_DATA_RUNTIME_AVAILABLE = True
-except Exception:
-    _NZCVM_DATA_RUNTIME_AVAILABLE = False
+except (ImportError, ModuleNotFoundError):
+    _nzcvm_data = None
+
+_NZCVM_DATA_RUNTIME_AVAILABLE = _nzcvm_data is not None
 
 
 
