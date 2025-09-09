@@ -308,10 +308,10 @@ def test_gen_1dprofile_c_vs_python(
         check=True,
     )
 
-    print(f"Python return code: {py_result.returncode}")
-    print(f"Python stdout: {py_result.stdout}")
-    print(f"Python stderr: {py_result.stderr}")
-    assert py_result.returncode == 0, (f"Python script failed: {py_result.stderr}")
+#    print(f"Python return code: {py_result.returncode}")
+#    print(f"Python stdout: {py_result.stdout}")
+#    print(f"Python stderr: {py_result.stderr}")
+#    assert py_result.returncode == 0, (f"Python script failed: {py_result.stderr}")
 
     # Compare Profile
     cid = params["id"]
