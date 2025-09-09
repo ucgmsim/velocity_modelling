@@ -111,7 +111,6 @@ exclude = [  # don't report on objects that match any of these regex
 
 
 [tool.deptry.package_module_name_map]
-# hyphenated package -> importable module name (helps other rules, too)
 "nzcvm-data" = "nzcvm_data"
 
 [tool.deptry.per_rule_ignores]
