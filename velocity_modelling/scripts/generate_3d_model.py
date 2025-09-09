@@ -71,7 +71,6 @@ from velocity_modelling.constants import (
     TopoTypes,
     WriteFormat,
     get_data_root,
-    get_registry_path,
 )
 from velocity_modelling.geometry import (
     GlobalMesh,

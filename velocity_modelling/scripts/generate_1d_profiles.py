@@ -86,7 +86,7 @@ from velocity_modelling.basin_model import (
     InBasinGlobalMesh,
     PartialBasinSurfaceDepths,
 )
-from velocity_modelling.constants import TopoTypes, get_data_root, get_registry_path
+from velocity_modelling.constants import TopoTypes, get_data_root
 from velocity_modelling.geometry import (
     MeshVector,
     gen_full_model_grid_great_circle,

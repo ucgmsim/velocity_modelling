@@ -7,8 +7,6 @@ from __future__ import annotations
 
 import json
 import os
-import shutil
-import subprocess
 import sys
 from pathlib import Path
 
@@ -85,9 +83,7 @@ def _try_candidates() -> Path | None:
     return None
 
 
-def resolve_data_root(
-    cli_override: str | None = None
-) -> Path:
+def resolve_data_root(cli_override: str | None = None) -> Path:
     """
     Resolve NZCVM data root with precedence.
 
@@ -124,7 +120,6 @@ def resolve_data_root(
     p = _try_candidates()
     if p:
         return p
-
 
     raise FileNotFoundError(
         "Cannot locate NZCVM data root. "
