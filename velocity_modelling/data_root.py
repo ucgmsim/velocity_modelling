@@ -12,12 +12,12 @@ from pathlib import Path
 # We don't *need* the module API at runtime, but we ensure it's importable so deptry
 # doesn't flag it as unused. Safe: only checks for presence.
 try:
-    import nzcvm_data as _nzcvm_data  # noqa: F401
+    import nzcvm_data  # noqa: F401
 except (ImportError, ModuleNotFoundError):
-    _nzcvm_data = None
-
-_NZCVM_DATA_RUNTIME_AVAILABLE = _nzcvm_data is not None
-
+    raise ImportError(
+        "The 'nzcvm_data' package is required but not installed. "
+        "Please install it via 'pip install nzcvm-data & nzcvm-data install'."
+    )
 
 
 CONFIG_FILE = (
@@ -130,11 +130,6 @@ def resolve_data_root(cli_override: str | None = None) -> Path:
     p = _try_candidates()
     if p:
         return p
-
-    # this is a hack, to make sure nzcvm_data is imported and keep deptry happy (DEP002)
-    if not _NZCVM_DATA_RUNTIME_AVAILABLE:
-    # We won't fail here; just a hint. The CLI may still be on PATH if installed differently.
-        pass
 
     raise FileNotFoundError(
         "Cannot locate NZCVM data root. "
