@@ -6,22 +6,26 @@ Constants for the velocity modelling package.
 from enum import Enum, auto
 from pathlib import Path
 
+from .data_root import resolve_data_root
+
 MAX_DIST_SMOOTH = 10  # distance in KM to smooth tomography over
 
 MAX_LAT_SURFACE_EXTENSION = 10  # value in degrees the global (Vs30, DEM, tomography) surface files may be extended by
 MAX_LON_SURFACE_EXTENSION = 10  # value in degrees the global (Vs30, DEM, tomography) surface files may be extended by
 EARTH_RADIUS_MEAN = 6378.139
 
+
 CVM_ROOT = Path(__file__).parent
-DATA_ROOT = (
-    CVM_ROOT / "nzcvm_data"
-)  # default value, can be overridden with --data-root argument
+
+# Cache after first resolve
+_DATA_ROOT: Path | None = None
+
+
 MODEL_VERSIONS_ROOT = CVM_ROOT / "model_versions"
-NZCVM_REGISTRY_PATH = DATA_ROOT / "nzcvm_registry.yaml"
 
 DEFAULT_OFFSHORE_1D_MODEL = "canterbury1d_v2"  # vm1d name for offshore 1D model
 DEFAULT_OFFSHORE_DISTANCE = (
-    "global/surface/shoreline_distance_2k.h5"  # surface for offshore distance
+    "surface/shoreline_distance_2k.h5"  # surface for offshore distance
 )
 LON_GRID_DIM_MAX = 10260  # Maximum number of grid points in longitude dimension
 LAT_GRID_DIM_MAX = 19010  # Maximum number of grid points in latitude dimension
@@ -29,6 +33,46 @@ DEP_GRID_DIM_MAX = 4500  # Maximum number of grid points in depth dimension
 FLAT_CONST = 298.256  # Earth's flattening constant (1/f)
 ERAD = 6378.139  # Earth's radius in km
 RPERD = 0.017453292  # Radians per degree (π/180) conversion factor
+
+
+def get_data_root(cli_override: str | None = None) -> Path:
+    """
+    Resolve NZCVM data root with precedence and cache the result.
+
+    Parameters
+    ----------
+    cli_override : str | None
+        If provided, this path takes highest precedence.
+
+    Returns
+    -------
+    Path
+        Resolved data root path.
+
+    """
+    global _DATA_ROOT
+    if _DATA_ROOT is None or cli_override:
+        _DATA_ROOT = resolve_data_root(cli_override=cli_override)
+    return _DATA_ROOT
+
+
+def get_registry_path(cli_override: str | None = None) -> Path:
+    """
+    Get the path to the nzcvm_registry.yaml file.
+
+    Parameters
+    ----------
+    cli_override : str | None
+        If provided, this path takes highest precedence.
+
+    Returns
+    -------
+    Path
+        Path to the nzcvm_registry.yaml file.
+
+
+    """
+    return get_data_root(cli_override=cli_override) / "nzcvm_registry.yaml"
 
 
 class VelocityTypes(Enum):

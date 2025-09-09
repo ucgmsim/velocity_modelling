@@ -18,10 +18,13 @@ pytest-repeat
 
 # Project dependencies
 numba
-qcore @ git+https://github.com/ucgmsim/qcore.git
 pyyaml
 tqdm
 typer
 
 # Tool dependencies
 cartopy
+
+# In-house dependencies
+qcore @ git+https://github.com/ucgmsim/qcore.git
+nzcvm-data @ git+https://github.com/ucgmsim/nzcvm_data

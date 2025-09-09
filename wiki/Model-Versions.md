@@ -21,7 +21,7 @@ Model version files are YAML files located in the `model_versions/` folder. The 
 
 ```yaml
 surfaces:
-  - path: global/surface/NZ_DEM_HD.h5
+  - path: surface/NZ_DEM_HD.h5
     submodel: ep_tomography_submod_v2010
 
 tomography:
@@ -115,7 +115,7 @@ touch model_versions/1p5.yaml
 ### Step 2: Define Components
 ```yaml
 surfaces:
-  - path: global/surface/NZ_DEM_HD.h5
+  - path: surface/NZ_DEM_HD.h5
     submodel: ep_tomography_submod_v2020
 
 tomography:
