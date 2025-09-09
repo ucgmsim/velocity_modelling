@@ -17,7 +17,7 @@ You can install directly from GitHub:
 ```bash
 pip install git+https://github.com/ucgmsim/velocity_modelling.git
 ```
-This will also install the lightweight[] [`nzcvm-data`](https://github.com/ucgmsim/nzcvm_data)
+This will also install the lightweight [`nzcvm-data`](https://github.com/ucgmsim/nzcvm_data)
  package, which manages the dataset.
 
 If you are developing the codebase:
@@ -45,7 +45,7 @@ nzcvm-data where
 ```
 If you already have a clone, you can register it instead:
 ```bash
-nzdvm-data install --path /path/to/existing/nzcvm_data
+nzcvm-data install --path /path/to/existing/nzcvm_data
 ```
 
 
