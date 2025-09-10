@@ -41,7 +41,7 @@ pip install -r requirements.txt && pip install -e .
 ```
 
 ### Step 2: Install the Data (via the CLI)
-The actual model data are hosted in the separate [`nzcvm_data`](https://github.com/ucgmsim/nzcvm_data)repository.
+The actual model data are hosted in the separate [`nzcvm_data`](https://github.com/ucgmsim/nzcvm_data) repository.
 You do *not* need to clone it manually. Instead, use the `nzcvm-data` CLI to set it up:
 ```bash
 # Full dataset (requires git-lfs, includes large HDF5 files)
