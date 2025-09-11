@@ -17,49 +17,6 @@ SCRIPT_DIR = BASE_DIR / "velocity_modelling/scripts"
 TEST_DIR = BASE_DIR / "tests"
 
 
-@pytest.fixture()
-def nzvm_c_binary_path(request: pytest.FixtureRequest) -> Path:
-    """
-    Get the path to the nzcvm C binary from the command-line option or environment variable.
-
-    Parameters
-    ----------
-    request : pytest.FixtureRequest
-        The pytest request object to access command-line options.
-
-    Returns
-    -------
-    Path
-        The resolved path to the nzcvm C binary.
-    """
-    nzvm_path = request.config.getoption("--nzvm-binary-path")
-    if nzvm_path is None:
-        raise ValueError(
-            "nzvm binary path not provided. Use --nzvm-binary-path or NZVM_BINARY_PATH environment variable."
-        )
-    new_nzvm_path = Path(nzvm_path).resolve()
-    if not new_nzvm_path.exists():
-        raise ValueError(f"Provided nzvm binary path does not exist: {new_nzvm_path}")
-    if not new_nzvm_path.is_file():
-        raise ValueError(f"Provided nzvm binary path is not a file: {new_nzvm_path}")
-    return new_nzvm_path
-
-@pytest.fixture
-def data_root_path(request: pytest.FixtureRequest) -> Path:
-    """Configure DATA_ROOT based on command-line option."""
-    data_root = request.config.getoption("--data-root")
-
-    # data_root is not None
-    new_data_root = Path(data_root).resolve()
-    if not new_data_root.exists():
-        raise ValueError(f"Provided DATA_ROOT does not exist: {new_data_root}")
-    if not new_data_root.is_dir():
-        raise ValueError(f"Provided DATA_ROOT is not a directory: {new_data_root}")
-    data_root = new_data_root
-
-    return data_root
-
-
 def generate_random_nzcvm_config(tmp_path: Path, c_output_dir: Path) -> Path:
     """Generate a random but sensible nzcvm.cfg file with specified parameters"""
     # Sensible ranges and choices for parameters
@@ -113,7 +70,9 @@ OUTPUT_DIR={c_output_dir}
 
 @pytest.mark.repeat(5)
 def test_gen_3dvm_c_vs_python(
-    tmp_path: Path, nzvm_c_binary_path: Path, data_root_path: Path
+    tmp_path: Path,
+    nzvm_binary_path: Path,  # provided by conftest.py
+    data_root: Path,  # provided by conftest.py
 ):
     """Test C binary vs Python script with random config"""
     # Define output directories but don't create them yet
@@ -129,8 +88,8 @@ def test_gen_3dvm_c_vs_python(
 
     # Run C binary from its directory with relative path
     c_result = subprocess.run(
-        [nzvm_c_binary_path, config_file],  # Relative path since we're in C_BINARY_DIR
-        cwd=str(nzvm_c_binary_path.parent),
+        [nzvm_binary_path, config_file],  # Relative path since we're in C_BINARY_DIR
+        cwd=str(nzvm_binary_path.parent),
         capture_output=True,
         text=True,
     )
@@ -156,8 +115,8 @@ def test_gen_3dvm_c_vs_python(
             str(config_file),
             "--out-dir",
             str(python_output_dir),
-            "--data-root",
-            str(data_root_path),
+            "--nzcvm-data-root",
+            str(data_root),
         ],
         capture_output=True,
         text=True,

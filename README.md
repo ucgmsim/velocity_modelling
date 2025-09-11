@@ -1,6 +1,5 @@
 # NZ Community Velocity Model
 
-[![GitHub Actions](https://github.com/ucgmsim/velocity_modelling/workflows/CI/badge.svg)](https://github.com/ucgmsim/velocity_modelling/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
@@ -43,42 +42,30 @@ This separation allows independent version control of code and data while mainta
 
 ### Installation
 
-1. Clone the code repository:
-     ```bash
-     git clone https://github.com/ucgmsim/velocity_modelling.git
-     cd velocity_modelling
-     ```
+#### **A. If you already installed `nzcvm_data`**
 
-2. Clone the data repository:
-     ```bash
-     git clone https://github.com/ucgmsim/nzcvm_data.git
-     cd nzcvm_data
-     git lfs pull
-     ```
-     See [nzcvm_data installation instructions](https://github.com/ucgmsim/nzcvm_data#installation) for details.
+```bash
+pip install git+https://github.com/ucgmsim/velocity_modelling.git
+```
 
-3. Connect the data to the codebase:
+Your existing `NZCVM_DATA_ROOT` (set via nzcvm-data install) will be used automatically.
+You can override at runtime with `--nzcvm-data-root /path/to/nzcvm_data` option.
 
-    - **Option 1 (recommended):** Create a symbolic link:
-      ```bash
-      ln -s /path/to/nzcvm_data /path/to/velocity_modelling/velocity_modelling/nzcvm_data
-      ```
-      Replace `/path/to/` with your actual paths.
+#### **B. If you have not installed `nzcvm_data` yet**
+When you install `velocity_modelling`, the lightweight `nzcvm-data` CLI is also installed.
 
-    - **Option 2:** Edit `DATA_ROOT` in `velocity_modelling/constants.py` to point to your data location:
-      ```python
-      # velocity_modelling/constants.py
-      DATA_ROOT = "/absolute/path/to/nzcvm_data"
-      ```
+Run it once to fetch/register the dataset:
+```bash
+pip install git+https://github.com/ucgmsim/velocity_modelling.git
+nzcvm-data install  # full data (via git-lfs)
+# or
+nzcvm-data install --no-lfs  # lightweight data only
+```
 
-4. Install the required dependencies:
-     ```bash
-     pip install -r requirements.txt
-     ```
 
 For detailed installation and data setup instructions, see the [Installation Guide](wiki/Installation.md).
 
-## Tools
+## Command-Line Tools
 
 The NZCVM provides 3 main command-line tools:
 
@@ -121,6 +108,7 @@ extract_cross_section /path/to/velocity_model.h5 --start-lat -41.0 --start-lon 1
 
 For detailed instructions, see [Extracting Cross-Sections](wiki/Extracting-Cross-Sections.md).
 
+
 ## Model Version System
 
 The **model version system** is the core interface that connects the velocity modeling code with the data repository. Model versions are YAML files (e.g., `2p03.yaml`, `2p07.yaml`) that specify:
@@ -155,17 +143,18 @@ See the [nzcvm_data README](https://github.com/ucgmsim/nzcvm_data) for details o
 
 For information about data format specifications used by this code, see the [Data Formats Guide](https://github.com/ucgmsim/nzcvm_data/blob/main/wiki/DataFormats.md).
 
+
 ## Quick Start Example
 
 1. **Install** both repositories:
-   ```bash
-   git clone https://github.com/ucgmsim/velocity_modelling.git
-   git clone https://github.com/ucgmsim/nzcvm_data.git
-   ln -s /path/to/nzcvm_data /path/to/velocity_modelling/velocity_modelling/nzcvm_data
-   ```
+```bash
+# Install code + data
+pip install git+https://github.com/ucgmsim/velocity_modelling.git
+nzcvm-data install
+```
 
 2. **Generate a 3D model**:
-   ```bash
+```bash
    # Create basic configuration
    cat > test.cfg << EOF
    CALL_TYPE=GENERATE_VELOCITY_MOD
@@ -186,17 +175,17 @@ For information about data format specifications used by this code, see the [Dat
    
    # Generate model
    generate_3d_model test.cfg
-   ```
+```
 
 3. **Extract 1D profiles**:
-   ```bash
+```bash
    # Create location file
    echo "lat,lon,name" > sites.csv
    echo "-43.5,172.5,site1" >> sites.csv
    
    # Generate profiles  
    generate_1d_profiles --model-version 2.03 --location-csv sites.csv --out-dir /tmp/profiles
-   ```
+```
 
 ## Changelogs and Development Plans
 

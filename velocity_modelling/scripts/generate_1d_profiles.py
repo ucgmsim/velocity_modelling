@@ -86,7 +86,7 @@ from velocity_modelling.basin_model import (
     InBasinGlobalMesh,
     PartialBasinSurfaceDepths,
 )
-from velocity_modelling.constants import DATA_ROOT, NZCVM_REGISTRY_PATH, TopoTypes
+from velocity_modelling.constants import TopoTypes, get_data_root
 from velocity_modelling.geometry import (
     MeshVector,
     gen_full_model_grid_great_circle,
@@ -367,16 +367,21 @@ def generate_1d_profiles(
         ),
     ] = None,
     nzcvm_registry: Annotated[
-        Path, typer.Option(exists=True, dir_okay=False)
-    ] = NZCVM_REGISTRY_PATH,
-    data_root: Annotated[
-        Path,
+        Path | None,
+        typer.Option(
+            exists=False,
+            dir_okay=False,
+            help="Path to nzcvm_registry.yaml (default: nzcvm_data/nzcvm_registry.yaml",
+        ),
+    ] = None,
+    nzcvm_data_root: Annotated[
+        Path | None,
         typer.Option(
             file_okay=False,
-            exists=True,
+            exists=False,  # will validate later
             help="Override the default DATA_ROOT directory",
         ),
-    ] = DATA_ROOT,
+    ] = None,
     log_level: Annotated[str, typer.Option(help="Logging level")] = "INFO",
 ) -> None:
     """
@@ -404,9 +409,9 @@ def generate_1d_profiles(
     custom_depth : Path, optional
         Path to the text file containing custom depth points (overrides zmin, zmax, spacing in CSV).
     nzcvm_registry : Path, optional
-        Path to the model registry file (default: NZCVM_REGISTRY_PATH).
-    data_root : Path, optional
-        Override the default DATA_ROOT directory (default: derived from constants.py).
+        Path to the model registry file (default: nzcvm_data/nzcvm_registry.yaml).
+    nzcvm_data_root : Path, optional
+        Override the default nzcvm_data directory.
     log_level : str, optional
         Logging level for the script (default: "INFO").
 
@@ -427,9 +432,28 @@ def generate_1d_profiles(
     logger.log(logging.DEBUG, f"Logger initialized with level {log_level}")
     logger.log(logging.INFO, "Beginning multiple profiles generation")
 
-    # Validate DATA_ROOT
-    data_root = data_root.resolve()
-    logger.log(logging.INFO, f"data_root set to {data_root}")
+    # Resolve data root path, giving precedence to the CLI argument
+    try:
+        data_root = get_data_root(
+            cli_override=str(nzcvm_data_root) if nzcvm_data_root else None
+        )
+        logger.log(logging.INFO, f"Using NZCVM data root : {data_root}")
+    except FileNotFoundError as e:
+        logger.log(logging.ERROR, str(e))
+        raise
+
+    # Resolve registry path
+    if nzcvm_registry:
+        registry_path = nzcvm_registry.expanduser().resolve()
+    else:
+        registry_path = data_root / "nzcvm_registry.yaml"
+
+    # Validate registry path
+    if not registry_path.exists():
+        msg = f"NZCVM registry file not found: {registry_path}"
+        logger.log(logging.ERROR, msg)
+        raise FileNotFoundError(msg)
+    logger.log(logging.INFO, f"Using registry: {registry_path}")
 
     # Validate min_vs
     if min_vs < 0:
@@ -454,7 +478,7 @@ def generate_1d_profiles(
     out_dir = out_dir.resolve()
     out_dir.mkdir(exist_ok=True, parents=True)
     cvm_registry = CVMRegistry(
-        vm_params["model_version"], data_root, nzcvm_registry, logger
+        vm_params["model_version"], data_root, registry_path, logger
     )
 
     # Read profile parameters from location_csv

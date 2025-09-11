@@ -1,5 +1,5 @@
 surfaces:
-  - path: global/surface/NZ_DEM_HD.h5
+  - path: surface/NZ_DEM_HD.h5
     submodel: ep_tomography_submod_v2010
 
 tomography:

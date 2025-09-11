@@ -108,3 +108,11 @@ exclude = [  # don't report on objects that match any of these regex
     '\.__repr__$',
     '\.__init__$'
 ]
+
+
+[tool.deptry.package_module_name_map]
+"nzcvm-data" = "nzcvm_data"
+
+[tool.deptry.per_rule_ignores]
+# We deliberately depend on the CLI without importing the module
+DEP002 = ["nzcvm-data"]

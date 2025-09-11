@@ -76,7 +76,7 @@ pipeline {
                             source .venv/bin/activate
                             rm -f ${env.WORKSPACE}/velocity_modelling/nzcvm_data
                             ln -s /nzvm/nzcvm_data ${env.WORKSPACE}/velocity_modelling/nzcvm_data
-                            pytest -s tests/ --benchmark-dir /nzvm/benchmarks --nzvm-binary-path /nzvm/NZVM
+                            pytest -s tests/ --benchmark-dir /nzvm/benchmarks --nzvm-binary-path /nzvm/NZVM --data-root ${env.WORKSPACE}/velocity_modelling/nzcvm_data
                         """
                     }
                 }

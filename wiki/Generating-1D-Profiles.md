@@ -39,7 +39,7 @@ python velocity_modelling/scripts/generate_1d_profiles.py \
 - **--topo-type**: Topography type (`TRUE`, `BULLDOZED`, `SQUASHED`, `SQUASHED_TAPERED`; default: `TRUE`)
 - **--custom-depth**: Text file with custom depth points (overrides zmin, zmax, spacing in CSV)
 - **--nzcvm-registry**: Path to the model registry file (default: nzcvm_registry.yaml)
-- **--data-root**: Override the default data root directory
+- **--nzcvm-data-root**: Override the default data root directory
 - **--log-level**: Logging level (default: INFO)
 
 ---

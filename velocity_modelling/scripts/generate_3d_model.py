@@ -68,10 +68,9 @@ from velocity_modelling.basin_model import (
     PartialBasinSurfaceDepths,
 )
 from velocity_modelling.constants import (
-    DATA_ROOT,
-    NZCVM_REGISTRY_PATH,
     TopoTypes,
     WriteFormat,
+    get_data_root,
 )
 from velocity_modelling.geometry import (
     GlobalMesh,
@@ -146,18 +145,23 @@ def generate_3d_model(
     nzcvm_cfg_path: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
     out_dir: Annotated[Path | None, typer.Option(file_okay=False)] = None,
     nzcvm_registry: Annotated[
-        Path, typer.Option(exists=True, dir_okay=False)
-    ] = NZCVM_REGISTRY_PATH,
+        Path | None,
+        typer.Option(
+            exists=False,
+            dir_okay=False,
+            help="Path to nzcvm_registry.yaml (default: nzcvm_data/nzcvm_registry.yaml",
+        ),
+    ] = None,
     model_version: Annotated[str | None, typer.Option()] = None,
     output_format: Annotated[str, typer.Option()] = WriteFormat.EMOD3D.name,
-    data_root: Annotated[
-        Path,
+    nzcvm_data_root: Annotated[
+        Path | None,
         typer.Option(
             file_okay=False,
-            exists=True,
-            help="Override the default DATA_ROOT directory",
+            exists=False,  # will validate later
+            help="Override the default nzcvm_data directory",
         ),
-    ] = DATA_ROOT,
+    ] = None,
     smoothing: Annotated[
         bool, typer.Option()
     ] = False,  # placeholder for smoothing, not implemented yet
@@ -172,6 +176,12 @@ def generate_3d_model(
     3. Processes each latitude slice and populates velocity/density values
     4. Writes results to disk in the specified format
 
+    The data root resolution order is:
+      1) --nzcvm-data-root (this option)
+      2) NZCVM_DATA_ROOT env var
+      3) ~/.config/nzcvm_data/config.json (written by `nzcvm-data install`)
+      4) sensible defaults
+
     Parameters
     ----------
     nzcvm_cfg_path : Path
@@ -180,14 +190,14 @@ def generate_3d_model(
         Path to the output directory where the velocity model files will be written (overrides OUTPUT_DIR in config file).
         If not provided, the directory specified in the config file will be used.
     nzcvm_registry : Path, optional
-        Path to the model registry file (default: NZCVM_REGISTRY_PATH).
+        Path to the model registry file (default: nzcvm_data/nzcvm_registry.yaml).
     model_version : str, optional
         Version of the model to use (overrides MODEL_VERSION in config file).
         If not provided, the version from the config file will be used.
     output_format : str, optional
         Format to write the output. Options: "EMOD3D", "CSV", "HDF5" (default: "EMOD3D").
-    data_root : Path, optional
-        Override the default DATA_ROOT directory (default: derived from constants.py).
+    nzcvm_data_root : Path, optional
+        Override the default nzcvm_data directory.
     smoothing : bool, optional
         Unsupported option for future smoothing implementation at model boundaries (default: False).
 
@@ -212,19 +222,28 @@ def generate_3d_model(
     logger.log(logging.DEBUG, f"Logger initialized with level {log_level}")
     logger.log(logging.INFO, "Beginning velocity model generation")
 
-    # Override DATA_ROOT if provided
+    # Resolve data root path, giving precedence to the CLI argument
+    try:
+        data_root = get_data_root(
+            cli_override=str(nzcvm_data_root) if nzcvm_data_root else None
+        )
+        logger.log(logging.INFO, f"Using NZCVM data root : {data_root}")
+    except FileNotFoundError as e:
+        logger.log(logging.ERROR, str(e))
+        raise
 
-    data_root = data_root.resolve()
-    logger.log(logging.INFO, f"data_root set to {data_root}")
+    # Resolve registry path
+    if nzcvm_registry:
+        registry_path = nzcvm_registry.expanduser().resolve()
+    else:
+        registry_path = data_root / "nzcvm_registry.yaml"
 
-    # Validate DATA_ROOT (default or overridden)
-    if not data_root.exists():
-        logger.log(logging.ERROR, f"data_root path does not exist: {data_root}")
-        raise ValueError(f"data_root path does not exist: {data_root}")
-    if not data_root.is_dir():
-        logger.log(logging.ERROR, f"data_root is not a directory: {data_root}")
-        raise ValueError(f"data_root is not a directory: {data_root}")
-    logger.log(logging.DEBUG, f"data_root validated as {data_root}")
+    # Validate registry path
+    if not registry_path.exists():
+        msg = f"NZCVM registry file not found: {registry_path}"
+        logger.log(logging.ERROR, msg)
+        raise FileNotFoundError(msg)
+    logger.log(logging.INFO, f"Using registry: {registry_path}")
 
     # Parse the config file
     try:

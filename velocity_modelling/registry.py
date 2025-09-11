@@ -26,8 +26,8 @@ from velocity_modelling.constants import (
     DEFAULT_OFFSHORE_1D_MODEL,
     DEFAULT_OFFSHORE_DISTANCE,
     MODEL_VERSIONS_ROOT,
-    NZCVM_REGISTRY_PATH,
     VelocityTypes,
+    get_registry_path,
 )
 from velocity_modelling.geometry import SmoothingBoundary
 from velocity_modelling.global_model import GlobalSurfaceRead
@@ -78,7 +78,7 @@ class CVMRegistry:
         self,
         version: str,
         data_root: Path,
-        registry_path: Optional[Path] = NZCVM_REGISTRY_PATH,
+        registry_path: Optional[Path] = None,
         logger: Optional[Logger] = None,
     ):
         """
@@ -92,8 +92,16 @@ class CVMRegistry:
 
         self.data_root = data_root
 
-        with open(registry_path, "r") as f:
-            self.registry = yaml.safe_load(f)
+        if not registry_path:
+            registry_path = get_registry_path()
+        try:
+            with open(registry_path, "r") as f:
+                self.registry = yaml.safe_load(f)
+        except FileNotFoundError:
+            self.logger.log(
+                logging.ERROR, f"Error: Registry file {registry_path} not found."
+            )
+            raise FileNotFoundError(f"Registry file {registry_path} not found")
 
         # Normalize version (replace '.' with 'p' if present)
         self.version = version.replace(".", "p")
@@ -118,21 +126,19 @@ class CVMRegistry:
 
         # Check if posInfSurf and negInfSurf paths are present
         has_pos_inf = any(
-            s.get("path") == "global/surface/posInf.h5" for s in global_surfaces_list
+            s.get("path") == "surface/posInf.h5" for s in global_surfaces_list
         )
         has_neg_inf = any(
-            s.get("path") == "global/surface/negInf.h5" for s in global_surfaces_list
+            s.get("path") == "surface/negInf.h5" for s in global_surfaces_list
         )
 
         # Add posInfSurf and negInfSurf if needed
         if not has_pos_inf:
             global_surfaces_list.insert(
-                0, {"path": "global/surface/posInf.h5", "submodel": "nan_submod"}
+                0, {"path": "surface/posInf.h5", "submodel": "nan_submod"}
             )
         if not has_neg_inf:
-            global_surfaces_list.append(
-                {"path": "global/surface/negInf.h5", "submodel": None}
-            )
+            global_surfaces_list.append({"path": "surface/negInf.h5", "submodel": None})
 
         self.global_params["surfaces"] = global_surfaces_list
 
