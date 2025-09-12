@@ -10,6 +10,22 @@ This page provides detailed instructions for installing and using the NZCVM soft
 
 ## Installation
 
+
+### Create a Virtual Environment (Optional but Recommended)
+
+```bash
+# Using venv
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Or using conda
+conda create -n velocity_modelling python=3.11
+conda activate velocity_modelling
+```
+
+
+### Install and Ensure the Data
+
 You can install directly from GitHub:
 
 ```bash
@@ -28,7 +44,6 @@ export NZCVM_DATA_ROOT="$(nzcvm-data-helper where)"
 ```
 
 
-
 ### Data Root Resolution
 
 When locating the `nzcvm_data` repository, tools use this precedence:
@@ -38,19 +53,6 @@ When locating the `nzcvm_data` repository, tools use this precedence:
 3. `~/.config/nzcvm_data/config.json` (set by `nzcvm-data-helper ensure`)
 4.  Default: `~/.local/cache/nzcvm_data_root`
 
-
-
-### Create a Virtual Environment (Optional but Recommended)
-
-```bash
-# Using venv
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Or using conda
-conda create -n velocity_modelling python=3.10
-conda activate velocity_modelling
-```
 
 ### Development Dependencies
 If you install from source, `requirements.txt` includes:
@@ -63,3 +65,81 @@ If you install from source, `requirements.txt` includes:
 
 Installing with the -e (editable) option allows you to modify the source code locally and have changes reflected immediately—ideal for active development and keeping the software up to date.
 
+## Install and Run with Docker
+
+You can run the tools inside a container to avoid host setup differences.
+
+### Option A — Use your existing data (recommended)
+
+Mount your existing NZCVM data root (created by `nzcvm-data install` on the host) into the container.
+
+**Dockerfile (example):**
+```dockerfile
+FROM python:3.11-slim
+
+# System deps for scientific stack & git-lfs
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git git-lfs build-essential gfortran ca-certificates \
+ && git lfs install \
+ && rm -rf /var/lib/apt/lists/*
+
+# Install velocity_modelling (pulls the nzcvm-data CLI)
+RUN pip install --no-cache-dir git+https://github.com/ucgmsim/velocity_modelling.git
+
+# Path where we'll mount the dataset
+ENV NZCVM_DATA_ROOT=/opt/nzcvm_data
+
+WORKDIR /work
+```
+
+**Build the image:**
+```bash
+docker build -t nzcvm:latest .
+```
+
+**Run (mount your working dir and the host data root):**
+```bash
+# Replace the right-hand side of the second -v with your host data root path
+docker run --rm -it \
+  -v "$PWD":/work \
+  -v "$HOME/.local/cache/nzcvm_data_root":/opt/nzcvm_data:ro \
+  -w /work \
+  nzcvm:latest \
+  generate_3d_model path/to/nzcvm.cfg --out-dir out/
+```
+
+Notes:
+- The data volume is mounted **read-only** (`:ro`) for safety.
+- You can override the location with `--nzcvm-data-root /opt/nzcvm_data` if desired, but the `ENV` above already points there.
+
+### Option B — Install data inside the container
+
+You can also fetch data in the container (useful for CI). This makes the image heavier.
+
+Add to the Dockerfile **after** installing the package:
+```dockerfile
+# (Optional) Install full dataset inside the image
+# Remove --no-lfs if you want the full HDF5s
+RUN nzcvm-data install --no-lfs \
+ && nzcvm-data where
+```
+
+Then run the container *without* a data mount:
+```bash
+docker run --rm -it -v "$PWD":/work -w /work nzcvm:latest   generate_3d_model path/to/nzcvm.cfg --out-dir out/
+```
+
+**Tip for CI**: you can toggle a full install vs. light install using build args or environment variables (e.g., `--no-lfs`).
+
+### Passing config & writing outputs
+
+Make sure to mount the directory containing your config and a place to write outputs:
+```bash
+docker run --rm -it \
+  -v "/abs/path/to/configs":/configs \
+  -v "/abs/path/to/outputs":/outputs \
+  -v "$HOME/.local/cache/nzcvm_data_root":/opt/nzcvm_data:ro \
+  -w /configs \
+  nzcvm:latest \
+  generate_3d_model nzcvm.cfg --out-dir /outputs
+```
