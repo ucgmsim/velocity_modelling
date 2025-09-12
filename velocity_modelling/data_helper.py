@@ -174,33 +174,62 @@ def ensure(
     if not quiet:
         typer.echo(f"[{APP_NAME}] target: {path}")
 
+    def _detect_upstream_branch(p: Path) -> str:
+        """
+        Detect the current upstream branch name (e.g., origin/main); fallback to 'main'
+
+        Parameters
+        ----------
+        p : Path
+            The path to the git repository.
+
+        Returns
+        -------
+        str
+            The name of the upstream branch, or 'main' if detection fails.
+
+        """
+        try:
+            out = subprocess.check_output(
+                ["git", "-C", str(p), "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"],
+                text=True,
+                stderr=subprocess.DEVNULL,
+            ).strip()
+            if out and "/" in out:
+                return out.split("/", 1)[1]  # e.g., origin/main -> main
+        except Exception:
+            pass
+        return "main"
+
     if path.exists() and _looks_like_repo(path):
         if not quiet:
             typer.echo(f"[{APP_NAME}] updating existing repo: {path}")
-        # Fetch & fast-forward pull
-        if _run(["git", "-C", str(path), "fetch", "--prune"]) != 0:
-            typer.echo(f"[{APP_NAME}] git fetch failed", err=True)
-            raise typer.Exit(code=1)
-
-        pull_rc = _run(["git", "-C", str(path), "pull", "--ff-only"])
-        if pull_rc != 0:
-            if force:
-                # Align to remote branch (default main), then continue
-                target = branch or "main"
-                typer.echo(f"[{APP_NAME}] git pull not possible, forcing alignment to {target}")
-                if _run(["git", "-C", str(path), "reset", "--hard", f"origin/{target}"]) != 0:
-                    typer.echo(f"[{APP_NAME}] git reset --hard origin/{target} failed", err=True)
-                    raise typer.Exit(code=1)
-            else:
-                typer.echo(f"[{APP_NAME}] git pull failed (not a fast-forward). Use --force to align to remote.", err=True)
-                raise typer.Exit(code=1)
-            typer.echo(f"[{APP_NAME}] git pull failed", err=True)
-            raise typer.Exit(code=1)
-        # Optional branch checkout
+        target_branch = branch or _detect_upstream_branch(path)
+        # Ensure on the desired branch
         if branch:
             if _run(["git", "-C", str(path), "checkout", branch]) != 0:
                 typer.echo(f"[{APP_NAME}] git checkout {branch} failed", err=True)
                 raise typer.Exit(code=1)
+
+        # Fetch latest
+        if _run(["git", "-C", str(path), "fetch", "--prune"]) != 0:
+            typer.echo(f"[{APP_NAME}] git fetch failed", err=True)
+            raise typer.Exit(code=1)
+
+        # Attempt fast-forward pull
+        pull_rc = _run(["git", "-C", str(path), "pull", "--ff-only"])
+        if pull_rc != 0:
+            if force:
+                if not quiet:
+                    typer.echo(f"[{APP_NAME}] pull not possible. Forcing reset to origin/{target_branch} ...")
+                if _run(["git", "-C", str(path), "reset", "--hard", f"origin/{target_branch}"]) != 0:
+                    typer.echo(f"[{APP_NAME}] git reset --hard origin/{target_branch} failed", err=True)
+                    raise typer.Exit(code=1)
+                # Treat as success from here — continue to optional LFS/config steps
+            else:
+                typer.echo(f"[{APP_NAME}] git pull failed (not a fast-forward). Use --force to align to remote.", err=True)
+                raise typer.Exit(code=1)
+
     else:
         # (Re)clone
         path.parent.mkdir(parents=True, exist_ok=True)
