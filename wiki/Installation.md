@@ -32,17 +32,21 @@ You can install directly from GitHub:
 # Install the modelling code
 pip install git+https://github.com/ucgmsim/velocity_modelling.git
 
-# Fetch/update the data (no Python package needed)
-nzcvm-data-helper ensure                 # clone or pull, no LFS
+# Fetch/update the data 
+nzcvm-data-helper ensure                 # clone if missing, else pull (by default also fetches LFS for full dataset)
 # or
-nzcvm-data-helper ensure --full          # fetch large LFS files too
+nzcvm-data-helper ensure --no-full          # fetch only small files, skip LFS
 
 # Confirm where it is
 nzcvm-data-helper where
 # Optionally export for your shell
 export NZCVM_DATA_ROOT="$(nzcvm-data-helper where)"
 ```
+### Notes
 
+- By default, `nzcvm-data-helper ensure` fetches the **full dataset**, including large LFS files (multi-GB).
+- Use `--no-full` for lightweight CI/test runs without LFS.
+- The helper always re-aligns your local repo to the remote (using reset if needed).
 
 ### Data Root Resolution
 
@@ -63,7 +67,6 @@ If you install from source, `requirements.txt` includes:
 - Project dependencies: `numba`, `qcore`, `pyyaml`, `tqdm`, `typer`
 - Tool dependencies: `pytz`, `requests`
 
-Installing with the -e (editable) option allows you to modify the source code locally and have changes reflected immediately—ideal for active development and keeping the software up to date.
 
 ## Install and Run with Docker
 

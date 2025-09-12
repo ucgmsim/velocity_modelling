@@ -46,10 +46,11 @@ This separation allows independent version control of code and data while mainta
 # Install the modelling code
 pip install git+https://github.com/ucgmsim/velocity_modelling.git
 
-# Fetch/update the data (no Python package needed)
-nzcvm-data-helper ensure                 # clone or pull, no LFS
+# Fetch/update the data
+nzcvm-data-helper ensure               # clone if missing, else pull (by default also fetches LFS for full dataset)
 # or
-nzcvm-data-helper ensure --full          # fetch large LFS files too
+nzcvm-data-helper ensure --no-full          # fetch only small files, skip LFS
+
 
 # Confirm where it is
 nzcvm-data-helper where

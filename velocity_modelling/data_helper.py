@@ -131,10 +131,10 @@ def ensure(
         None, "--branch", "-b", help="Branch to checkout (clone or existing)."
     ),
     full: bool = typer.Option(
-        False, "--full", help="Fetch large files via git-lfs (HDF5, etc.)."
+        True,
+        "--full/--no-full",
+        help="Fetch large files via git-lfs (default: full). Use --no-full for lightweight CI/test runs.",
     ),
-    force: bool = typer.Option(False, "--force", help="Force align to remote by hard reset if fast-forward is not possible."),
-
     write_config: bool = typer.Option(
         True,
         "--write-config/--no-write-config",
@@ -155,10 +155,9 @@ def ensure(
         Git URL for the data repository. Default is https://github.com/ucgmsim/nzcvm_data.git
     branch : str | None , optional
         Branch to checkout (clone or existing). Default is None.
+
     full : bool, optional
-        Fetch large files via git-lfs (HDF5, etc.). Requires git-lfs to be installed. Default is False.
-    force : bool, optional
-        If True, force align to remote by hard reset if fast-forward is not possible. Default is False.
+            Fetch large files via git-lfs (HDF5, etc.). Requires git-lfs to be installed. Default is True.
     write_config : bool, optional
         If True, (over)write ~/.config/nzcvm_data/config.json. for auto-discovery. Default is True.
 
@@ -191,13 +190,21 @@ def ensure(
         """
         try:
             out = subprocess.check_output(
-                ["git", "-C", str(p), "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"],
+                [
+                    "git",
+                    "-C",
+                    str(p),
+                    "rev-parse",
+                    "--abbrev-ref",
+                    "--symbolic-full-name",
+                    "@{u}",
+                ],
                 text=True,
                 stderr=subprocess.DEVNULL,
             ).strip()
             if out and "/" in out:
                 return out.split("/", 1)[1]  # e.g., origin/main -> main
-        except Exception:
+        except (subprocess.CalledProcessError, OSError, FileNotFoundError):
             pass
         return "main"
 
@@ -216,18 +223,28 @@ def ensure(
             typer.echo(f"[{APP_NAME}] git fetch failed", err=True)
             raise typer.Exit(code=1)
 
-        # Attempt fast-forward pull
         pull_rc = _run(["git", "-C", str(path), "pull", "--ff-only"])
         if pull_rc != 0:
-            if force:
-                if not quiet:
-                    typer.echo(f"[{APP_NAME}] pull not possible. Forcing reset to origin/{target_branch} ...")
-                if _run(["git", "-C", str(path), "reset", "--hard", f"origin/{target_branch}"]) != 0:
-                    typer.echo(f"[{APP_NAME}] git reset --hard origin/{target_branch} failed", err=True)
-                    raise typer.Exit(code=1)
-                # Treat as success from here — continue to optional LFS/config steps
-            else:
-                typer.echo(f"[{APP_NAME}] git pull failed (not a fast-forward). Use --force to align to remote.", err=True)
+            typer.echo(
+                f"[{APP_NAME}] pull not possible. Resetting to origin/{target_branch} ..."
+            )
+            if (
+                _run(
+                    [
+                        "git",
+                        "-C",
+                        str(path),
+                        "reset",
+                        "--hard",
+                        f"origin/{target_branch}",
+                    ]
+                )
+                != 0
+            ):
+                typer.echo(
+                    f"[{APP_NAME}] git reset --hard origin/{target_branch} failed",
+                    err=True,
+                )
                 raise typer.Exit(code=1)
 
     else:
