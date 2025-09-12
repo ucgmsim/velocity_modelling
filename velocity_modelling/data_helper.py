@@ -40,6 +40,8 @@ Helper to fetch/update the NZCVM data repository (no separate package required).
 Examples:
   nzcvm-data-helper ensure            # clone if missing, else pull (no LFS)
   nzcvm-data-helper ensure --full     # clone/pull and fetch LFS files
+  nzcvm-data-helper ensure --path /data/nzcvm --repo <git-url> --branch develop --no-write-config
+  nzcvm-data-helper ensure --force  # force align to remote if not a fast-forward
   nzcvm-data-helper where             # print configured data root
 """,
 )
@@ -131,6 +133,8 @@ def ensure(
     full: bool = typer.Option(
         False, "--full", help="Fetch large files via git-lfs (HDF5, etc.)."
     ),
+    force: bool = typer.Option(False, "--force", help="Force align to remote by hard reset if fast-forward is not possible."),
+
     write_config: bool = typer.Option(
         True,
         "--write-config/--no-write-config",
@@ -153,6 +157,8 @@ def ensure(
         Branch to checkout (clone or existing). Default is None.
     full : bool, optional
         Fetch large files via git-lfs (HDF5, etc.). Requires git-lfs to be installed. Default is False.
+    force : bool, optional
+        If True, force align to remote by hard reset if fast-forward is not possible. Default is False.
     write_config : bool, optional
         If True, (over)write ~/.config/nzcvm_data/config.json. for auto-discovery. Default is True.
 
@@ -175,7 +181,19 @@ def ensure(
         if _run(["git", "-C", str(path), "fetch", "--prune"]) != 0:
             typer.echo(f"[{APP_NAME}] git fetch failed", err=True)
             raise typer.Exit(code=1)
-        if _run(["git", "-C", str(path), "pull", "--ff-only"]) != 0:
+
+        pull_rc = _run(["git", "-C", str(path), "pull", "--ff-only"])
+        if pull_rc != 0:
+            if force:
+                # Align to remote branch (default main), then continue
+                target = branch or "main"
+                typer.echo(f"[{APP_NAME}] git pull not possible, forcing alignment to {target}")
+                if _run(["git", "-C", str(path), "reset", "--hard", f"origin/{target}"]) != 0:
+                    typer.echo(f"[{APP_NAME}] git reset --hard origin/{target} failed", err=True)
+                    raise typer.Exit(code=1)
+            else:
+                typer.echo(f"[{APP_NAME}] git pull failed (not a fast-forward). Use --force to align to remote.", err=True)
+                raise typer.Exit(code=1)
             typer.echo(f"[{APP_NAME}] git pull failed", err=True)
             raise typer.Exit(code=1)
         # Optional branch checkout
