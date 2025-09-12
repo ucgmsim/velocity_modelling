@@ -26,27 +26,46 @@ conda activate velocity_modelling
 
 ### Install and Ensure the Data
 
-You can install directly from GitHub:
+Install the NZCVM modeling code, which includes the `nzcvm-data-helper` CLI tool:
+```bash
+# Install the modelling codes
+pip install git+https://github.com/ucgmsim/velocity_modelling.git
+```
+
+Then, ensure you have the data repository. If you don't have it yet, the helper will clone it for you. 
+If you already have it, the helper will pull the latest changes. 
+If you have it in a custom location, you can specify that too.
 
 ```bash
-# Install the modelling code
-pip install git+https://github.com/ucgmsim/velocity_modelling.git
+# Full dataset (default, includes LFS)
+nzcvm-data-helper ensure
 
-# Fetch/update the data 
-nzcvm-data-helper ensure                 # clone if missing, else pull (by default also fetches LFS for full dataset)
-# or
-nzcvm-data-helper ensure --no-full          # fetch only small files, skip LFS
+# For lightweight CI/test installs (skip LFS, *Not* recommended for production):
+nzcvm-data-helper ensure --no-full
 
+# Use a custom path if you already cloned nzcvm_data:
+nzcvm-data-helper ensure --path /path/to/nzcvm_data
+```
+
+Check where the data is located:
+
+```bash
 # Confirm where it is
 nzcvm-data-helper where
+```
+Then, you can optionally export the path for your shell:
+```bash
 # Optionally export for your shell
 export NZCVM_DATA_ROOT="$(nzcvm-data-helper where)"
 ```
+
 ### Notes
 
-- By default, `nzcvm-data-helper ensure` fetches the **full dataset**, including large LFS files (multi-GB).
-- Use `--no-full` for lightweight CI/test runs without LFS.
-- The helper always re-aligns your local repo to the remote (using reset if needed).
+- By default, `nzcvm-data-helper ensure` installs the **full dataset**, including large LFS files (multi-GB).
+
+- Use `--no-full `to skip LFS for lightweight test. This is useful for CI or if you only need metadata.
+
+- The helper always re-aligns your local clone to the remote (reset if necessary).
 
 ### Data Root Resolution
 

@@ -45,15 +45,31 @@ This separation allows independent version control of code and data while mainta
 ```bash
 # Install the modelling code
 pip install git+https://github.com/ucgmsim/velocity_modelling.git
+```
 
-# Fetch/update the data
-nzcvm-data-helper ensure               # clone if missing, else pull (by default also fetches LFS for full dataset)
-# or
-nzcvm-data-helper ensure --no-full          # fetch only small files, skip LFS
+Then, ensure you have the data repository. If you don't have it yet, the helper will clone it for you. 
+If you already have it, the helper will pull the latest changes. 
+If you have it in a custom location, you can specify that too.
 
+```bash
+# Fetch/update the dataset (default includes large LFS files)
+nzcvm-data-helper ensure
 
+# For lightweight CI/test installs (skip LFS, *Not* recommended for production):
+nzcvm-data-helper ensure --no-full
+
+# Use a custom path if you already cloned nzcvm_data:
+nzcvm-data-helper ensure --path /path/to/nzcvm_data
+```
+
+Check where the data is located:
+
+```bash
 # Confirm where it is
 nzcvm-data-helper where
+```
+Then, you can optionally export the path for your shell:
+```bash
 # Optionally export for your shell
 export NZCVM_DATA_ROOT="$(nzcvm-data-helper where)"
 ```
