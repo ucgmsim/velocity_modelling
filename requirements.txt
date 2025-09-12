@@ -27,4 +27,3 @@ cartopy
 
 # In-house dependencies
 qcore @ git+https://github.com/ucgmsim/qcore.git
-nzcvm-data @ git+https://github.com/ucgmsim/nzcvm_data.git

@@ -8,18 +8,6 @@ import os
 import sys
 from pathlib import Path
 
-# Mark the nzcvm-data runtime dependency as intentionally used (for deptry DEP002).
-# We don't *need* the module API at runtime, but we ensure it's importable so deptry
-# doesn't flag it as unused. Safe: only checks for presence.
-try:
-    import nzcvm_data as _nzcvm_data  # noqa: F401
-except (ImportError, ModuleNotFoundError):
-    _nzcvm_data = None
-
-_NZCVM_DATA_RUNTIME_AVAILABLE = _nzcvm_data is not None
-
-
-
 CONFIG_FILE = (
     Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
     / "nzcvm_data"
@@ -121,7 +109,7 @@ def resolve_data_root(cli_override: str | None = None) -> Path:
         if p.exists():
             return p
 
-    # 3) config written by `nzcvm-data install`
+    # 3) config file (optional)
     p = _load_cfg_path()
     if p:
         return p
@@ -131,13 +119,7 @@ def resolve_data_root(cli_override: str | None = None) -> Path:
     if p:
         return p
 
-    # this is a hack, to make sure nzdvm_data is imported and keep depty happy (DEP002)
-    if not _NZCVM_DATA_RUNTIME_AVAILABLE:
-    # We won't fail here; just a hint. The CLI may still be on PATH if installed differently.
-        pass
-
     raise FileNotFoundError(
-        "Cannot locate NZCVM data root. "
-        "Install or register the dataset with 'nzcvm-data install' "
-        "or set --nzcvm-data-root / NZCVM_DATA_ROOT."
+        "Cannot locate NZCVM data root. Clone https://github.com/ucgmsim/nzcvm_data"
+        "and set --nzcvm-data-root or NZCVM_DATA_ROOT to its path."
     )

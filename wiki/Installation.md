@@ -10,43 +10,23 @@ This page provides detailed instructions for installing and using the NZCVM soft
 
 ## Installation
 
-### Step 1: Install the Code
-
 You can install directly from GitHub:
 
 ```bash
+# Install the modelling code
 pip install git+https://github.com/ucgmsim/velocity_modelling.git
-```
-This will also install the lightweight [`nzcvm-data`](https://github.com/ucgmsim/nzcvm_data)
- package, which manages the dataset.
 
-If you are developing the codebase:
-```bash
-git clone https://github.com/ucgmsim/velocity_modelling.git
-cd velocity_modelling
-pip install -r requirements.txt && pip install -e .
+# Fetch/update the data (no Python package needed)
+nzcvm-data-helper ensure                 # clone or pull, no LFS
+# or
+nzcvm-data-helper ensure --full          # fetch large LFS files too
+
+# Confirm where it is
+nzcvm-data-helper where
+# Optionally export for your shell
+export NZCVM_DATA_ROOT="$(nzcvm-data-helper where)"
 ```
 
-### Step 2: Install the Data (via the CLI)
-The actual model data are hosted in the separate [`nzcvm_data`](https://github.com/ucgmsim/nzcvm_data)repository.
-You do *not* need to clone it manually. Instead, use the `nzcvm-data` CLI to set it up:
-```bash
-# Full dataset (requires git-lfs, includes large HDF5 files)
-nzcvm-data install
-
-# Or, lightweight mode (skips LFS; only small files and boundaries)
-nzcvm-data install --no-lfs
-```
-The CLI clones the data repository into a cache location (default: ~/.local/cache/nzcvm_data_root) and writes a config file at ~/.config/nzcvm_data/config.json.
-
-You can check the configured location:
-```bash
-nzcvm-data where
-```
-If you already have a clone, you can register it instead:
-```bash
-nzcvm-data install --path /path/to/existing/nzcvm_data
-```
 
 
 ### Data Root Resolution
@@ -55,7 +35,7 @@ When locating the `nzcvm_data` repository, tools use this precedence:
 
 1. `--nzcvm-data-root` CLI option
 2. `NZCVM_DATA_ROOT` environment variable
-3. `~/.config/nzcvm_data/config.json` (set by `nzcvm-data install`)
+3. `~/.config/nzcvm_data/config.json` (set by `nzcvm-data-helper ensure`)
 4.  Default: `~/.local/cache/nzcvm_data_root`
 
 

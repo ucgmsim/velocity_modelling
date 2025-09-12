@@ -42,24 +42,19 @@ This separation allows independent version control of code and data while mainta
 
 ### Installation
 
-#### **A. If you already installed `nzcvm_data`**
-
 ```bash
+# Install the modelling code
 pip install git+https://github.com/ucgmsim/velocity_modelling.git
-```
 
-Your existing `NZCVM_DATA_ROOT` (set via nzcvm-data install) will be used automatically.
-You can override at runtime with `--nzcvm-data-root /path/to/nzcvm_data` option.
-
-#### **B. If you have not installed `nzcvm_data` yet**
-When you install `velocity_modelling`, the lightweight `nzcvm-data` CLI is also installed.
-
-Run it once to fetch/register the dataset:
-```bash
-pip install git+https://github.com/ucgmsim/velocity_modelling.git
-nzcvm-data install  # full data (via git-lfs)
+# Fetch/update the data (no Python package needed)
+nzcvm-data-helper ensure                 # clone or pull, no LFS
 # or
-nzcvm-data install --no-lfs  # lightweight data only
+nzcvm-data-helper ensure --full          # fetch large LFS files too
+
+# Confirm where it is
+nzcvm-data-helper where
+# Optionally export for your shell
+export NZCVM_DATA_ROOT="$(nzcvm-data-helper where)"
 ```
 
 
@@ -139,7 +134,7 @@ All data files (surface models, boundaries, DEM, tomography models, etc.) are ma
 - **Basin models**: Detailed velocity structures for sedimentary basins
 - **Surface data**: Topography, geology, and Vs30 datasets
 
-See the [nzcvm_data README](https://github.com/ucgmsim/nzcvm_data) for details on available datasets and their formats.
+See the [nzcvm_data README](https://github.com/ucgmsim/nzcvm_data) for details on available datasets and their formats. You can manage the dataset via `nzcvm-data-helper`.
 
 For information about data format specifications used by this code, see the [Data Formats Guide](https://github.com/ucgmsim/nzcvm_data/blob/main/wiki/DataFormats.md).
 
@@ -150,7 +145,7 @@ For information about data format specifications used by this code, see the [Dat
 ```bash
 # Install code + data
 pip install git+https://github.com/ucgmsim/velocity_modelling.git
-nzcvm-data install
+nzcvm-data-helper ensure
 ```
 
 2. **Generate a 3D model**:
