@@ -8,18 +8,6 @@ import os
 import sys
 from pathlib import Path
 
-# Mark the nzcvm-data runtime dependency as intentionally used (for deptry DEP002).
-# We don't *need* the module API at runtime, but we ensure it's importable so deptry
-# doesn't flag it as unused. Safe: only checks for presence.
-try:
-    import nzcvm_data  # noqa: F401
-except (ImportError, ModuleNotFoundError):
-    raise ImportError(
-        "The 'nzcvm_data' package is required but not installed. "
-        "Please install it via 'pip install nzcvm-data & nzcvm-data install'."
-    )
-
-
 CONFIG_FILE = (
     Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
     / "nzcvm_data"
@@ -121,7 +109,7 @@ def resolve_data_root(cli_override: str | None = None) -> Path:
         if p.exists():
             return p
 
-    # 3) config written by `nzcvm-data install`
+    # 3) config file (optional)
     p = _load_cfg_path()
     if p:
         return p
@@ -132,7 +120,6 @@ def resolve_data_root(cli_override: str | None = None) -> Path:
         return p
 
     raise FileNotFoundError(
-        "Cannot locate NZCVM data root. "
-        "Install or register the dataset with 'nzcvm-data install' "
-        "or set --nzcvm-data-root / NZCVM_DATA_ROOT."
+        "Cannot locate NZCVM data root. Clone https://github.com/ucgmsim/nzcvm_data"
+        "and set --nzcvm-data-root or NZCVM_DATA_ROOT to its path."
     )

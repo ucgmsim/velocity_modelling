@@ -84,7 +84,7 @@ OUTPUT_DIR=/tmp
 
 ### Web Configuration Tool
 
-Generate configuration files at: https://quakecoresoft.canterbury.ac.nz/nzcvm_config/
+Generate configuration files at: [https://quakecoresoft.canterbury.ac.nz/nzcvm_config/](https://quakecoresoft.canterbury.ac.nz/nzcvm_webapp)
 
 <img src="images/nzcvm_config.png" width="100%">
 

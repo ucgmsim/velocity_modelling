@@ -613,7 +613,7 @@ def generate_1d_profiles(
             partial_global_surface_depths,
             partial_basin_surface_depths,
             in_basin_list,
-            None,
+            in_basin_mesh,
             vm_params["topo_type"],
         )
         write_profiles(

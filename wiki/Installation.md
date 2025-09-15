@@ -10,6 +10,7 @@ This page provides detailed instructions for installing and using the NZCVM soft
 
 ## Installation
 
+
 ### Create a Virtual Environment (Optional but Recommended)
 
 ```bash
@@ -23,45 +24,48 @@ conda activate velocity_modelling
 ```
 
 
-### Step 1: Install the Code
+### Install and Ensure the Data
 
-You can install directly from GitHub:
-
+Install the NZCVM modeling code, which includes the `nzcvm-data-helper` CLI tool:
 ```bash
+# Install the modelling codes
 pip install git+https://github.com/ucgmsim/velocity_modelling.git
 ```
-This will also install the lightweight [`nzcvm-data`](https://github.com/ucgmsim/nzcvm_data)
- package, which manages the dataset.
 
-If you are developing the codebase:
+Then, ensure you have the data repository. If you don't have it yet, the helper will clone it for you. 
+If you already have it, the helper will pull the latest changes. 
+If you have it in a custom location, you can specify that too.
+
 ```bash
-git clone https://github.com/ucgmsim/velocity_modelling.git
-cd velocity_modelling
-pip install -r requirements.txt && pip install -e .
+# Full dataset (default, includes LFS)
+nzcvm-data-helper ensure
+
+# For lightweight CI/test installs (skip LFS, *Not* recommended for production):
+nzcvm-data-helper ensure --no-full
+
+# Use a custom path if you already cloned nzcvm_data:
+nzcvm-data-helper ensure --path /path/to/nzcvm_data
 ```
 
-### Step 2: Install the Data (via the CLI)
-The actual model data are hosted in the separate [`nzcvm_data`](https://github.com/ucgmsim/nzcvm_data) repository.
-You do *not* need to clone it manually. Instead, use the `nzcvm-data` CLI to set it up:
-```bash
-# Full dataset (requires git-lfs, includes large HDF5 files)
-nzcvm-data install
+Check where the data is located:
 
-# Or, lightweight mode (skips LFS; only small files and boundaries) 
-# - useful for testing, but cannot generate full models
-nzcvm-data install --no-lfs
-```
-The CLI clones the data repository into a cache location (default: ~/.local/cache/nzcvm_data_root) and writes a config file at ~/.config/nzcvm_data/config.json.
-
-You can check the configured location:
 ```bash
-nzcvm-data where
+# Confirm where it is
+nzcvm-data-helper where
 ```
-If you already have a clone, you can register it instead:
+Then, you can optionally export the path for your shell:
 ```bash
-nzcvm-data install --path /path/to/existing/nzcvm_data
+# Optionally export for your shell
+export NZCVM_DATA_ROOT="$(nzcvm-data-helper where)"
 ```
 
+### Notes
+
+- By default, `nzcvm-data-helper ensure` installs the **full dataset**, including large LFS files (multi-GB).
+
+- Use `--no-full `to skip LFS for lightweight test. This is useful for CI or if you only need metadata.
+
+- The helper always re-aligns your local clone to the remote (reset if necessary).
 
 ### Data Root Resolution
 
@@ -69,7 +73,7 @@ When locating the `nzcvm_data` repository, tools use this precedence:
 
 1. `--nzcvm-data-root` CLI option
 2. `NZCVM_DATA_ROOT` environment variable
-3. `~/.config/nzcvm_data/config.json` (set by `nzcvm-data install`)
+3. `~/.config/nzcvm_data/config.json` (set by `nzcvm-data-helper ensure`)
 4.  Default: `~/.local/cache/nzcvm_data_root`
 
 
@@ -82,7 +86,6 @@ If you install from source, `requirements.txt` includes:
 - Project dependencies: `numba`, `qcore`, `pyyaml`, `tqdm`, `typer`
 - Tool dependencies: `pytz`, `requests`
 
-Installing with the -e (editable) option allows you to modify the source code locally and have changes reflected immediately—ideal for active development and keeping the software up to date.
 
 ## Install and Run with Docker
 

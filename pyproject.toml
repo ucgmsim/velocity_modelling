@@ -23,6 +23,7 @@ dynamic = ["version", "dependencies"]
 generate_3d_model = "velocity_modelling.scripts.generate_3d_model:app"
 generate_1d_profiles = "velocity_modelling.scripts.generate_1d_profiles:app"
 extract_cross_section = "velocity_modelling.scripts.extract_cross_section:app"
+nzcvm-data-helper = "velocity_modelling.data_helper:app"
 # Add more scripts as needed:
 # script_name = "module.path:app"
 
@@ -110,9 +111,3 @@ exclude = [  # don't report on objects that match any of these regex
 ]
 
 
-[tool.deptry.package_module_name_map]
-"nzcvm-data" = "nzcvm_data"
-
-[tool.deptry.per_rule_ignores]
-# We deliberately depend on the CLI without importing the module
-DEP002 = ["nzcvm-data"]
