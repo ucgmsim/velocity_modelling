@@ -34,9 +34,9 @@ from velocity_modelling.geometry import SmoothingBoundary
 from velocity_modelling.global_model import GlobalSurfaceRead
 
 
-def get_basin_versions(registry_path: Path):
+def get_all_basins_dict(registry_path: Path):
     """
-    Reads and parses the registry yaml file to group models by basin name.
+    Reads and parses the registry yaml file to group basin info into a dictionary.by basin name.
 
     Parameters
     ----------
