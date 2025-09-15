@@ -11,8 +11,6 @@ auto-discover the data root via get_data_root().
 
 """
 
-from __future__ import annotations
-
 import json
 import os
 import shutil
@@ -21,6 +19,8 @@ from json import JSONDecodeError
 from pathlib import Path
 
 import typer
+
+from qcore import cli
 
 APP_NAME = "nzcvm-data-helper"
 DEFAULT_URL = "https://github.com/ucgmsim/nzcvm_data.git"
@@ -32,8 +32,7 @@ CONFIG_PATH = (
 )
 
 app = typer.Typer(
-    add_completion=False,
-    no_args_is_help=True,
+    pretty_exceptions_enable=False,
     help="""
 Helper to fetch/update the NZCVM data repository (no separate package required).
 
@@ -47,9 +46,9 @@ Examples:
 )
 
 
-def _run(cmd: list[str], cwd: Path | None = None) -> int:
+def _run(cmd: list[str], cwd: Path | None = None, check: bool = True) -> None:
     """
-    Run a command, returning the exit code.
+    Run a command, raising CalledProcessError on failure.
 
     Parameters
     ----------
@@ -57,14 +56,16 @@ def _run(cmd: list[str], cwd: Path | None = None) -> int:
         Command and arguments to run.
     cwd : Path | None
         Working directory to run the command in.
+    check : bool
+        If True, raise CalledProcessError on non-zero exit. Default is True.
 
-    Returns
-    -------
-    int
-        Exit code of the command.
+    Raises
+    ------
+    subprocess.CalledProcessError
+        If the command fails and check=True.
 
     """
-    return subprocess.run(cmd, cwd=str(cwd) if cwd else None, check=False).returncode
+    subprocess.run(cmd, cwd=str(cwd) if cwd else None, check=check)
 
 
 def _require_bin(name: str, msg: str | None = None):
@@ -78,7 +79,10 @@ def _require_bin(name: str, msg: str | None = None):
     msg : str | None
         Custom error message if not found.
 
-
+    Raises
+    ------
+    typer.Exit
+        If the binary is not found.
     """
     if not shutil.which(name):
         typer.echo(msg or f"[{APP_NAME}] required command not found: {name}", err=True)
@@ -93,7 +97,6 @@ def _write_config(path: Path):
     ----------
     path : Path
         The data root path to write to the config.
-
     """
     CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
     data = {"data_root": str(path)}
@@ -113,34 +116,54 @@ def _looks_like_repo(path: Path) -> bool:
     -------
     bool
         True if the path looks like a valid repo, False otherwise.
-
     """
     # Heuristic: must be a git repo and contain the registry file
     return (path / ".git").exists() and (path / "nzcvm_registry.yaml").exists()
 
 
-@app.command()
+def _detect_upstream_branch(repo_path: Path) -> str:
+    """
+    Detect the current upstream branch name (e.g., origin/main); fallback to 'main'
+
+    Parameters
+    ----------
+    repo_path : Path
+        The path to the git repository.
+
+    Returns
+    -------
+    str
+        The name of the upstream branch, or 'main' if detection fails.
+    """
+    try:
+        out = subprocess.check_output(
+            [
+                "git",
+                "-C",
+                str(repo_path),
+                "rev-parse",
+                "--abbrev-ref",
+                "--symbolic-full-name",
+                "@{u}",
+            ],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+        if out and "/" in out:
+            return out.split("/", 1)[1]  # e.g., origin/main -> main
+    except (subprocess.CalledProcessError, OSError, FileNotFoundError):
+        pass
+    return "main"
+
+
+@cli.from_docstring(app)
 def ensure(
-    path: Path = typer.Option(
-        DEFAULT_ROOT, "--path", "-p", help="Where to place/update the local clone."
-    ),
-    repo: str = typer.Option(
-        DEFAULT_URL, "--repo", help="Git URL for the data repository."
-    ),
-    branch: str | None = typer.Option(
-        None, "--branch", "-b", help="Branch to checkout (clone or existing)."
-    ),
-    full: bool = typer.Option(
-        True,
-        "--full/--no-full",
-        help="Fetch large files via git-lfs (default: full). Use --no-full for lightweight CI/test runs.",
-    ),
-    write_config: bool = typer.Option(
-        True,
-        "--write-config/--no-write-config",
-        help="Write ~/.config/nzcvm_data/config.json",
-    ),
-    quiet: bool = typer.Option(False, "--quiet", "-q", help="Reduce logging."),
+    path: Path = DEFAULT_ROOT,
+    repo: str = DEFAULT_URL,
+    branch: str | None = None,
+    full: bool = True,
+    write_config: bool = True,
+    quiet: bool = False,
 ):
     """
     Clone if missing; otherwise pull. Optionally fetch LFS files with --full.
@@ -160,53 +183,18 @@ def ensure(
             Fetch large files via git-lfs (HDF5, etc.). Requires git-lfs to be installed. Default is True.
     write_config : bool, optional
         If True, (over)write ~/.config/nzcvm_data/config.json. for auto-discovery. Default is True.
-
     quiet : bool
         Reduce logging.
 
-
-
-
+    Raises
+    ------
+    typer.Exit
+        On various errors (git not found, git commands fail, unexpected layout, etc.)
     """
     _require_bin("git")
 
     if not quiet:
         typer.echo(f"[{APP_NAME}] target: {path}")
-
-    def _detect_upstream_branch(p: Path) -> str:
-        """
-        Detect the current upstream branch name (e.g., origin/main); fallback to 'main'
-
-        Parameters
-        ----------
-        p : Path
-            The path to the git repository.
-
-        Returns
-        -------
-        str
-            The name of the upstream branch, or 'main' if detection fails.
-
-        """
-        try:
-            out = subprocess.check_output(
-                [
-                    "git",
-                    "-C",
-                    str(p),
-                    "rev-parse",
-                    "--abbrev-ref",
-                    "--symbolic-full-name",
-                    "@{u}",
-                ],
-                text=True,
-                stderr=subprocess.DEVNULL,
-            ).strip()
-            if out and "/" in out:
-                return out.split("/", 1)[1]  # e.g., origin/main -> main
-        except (subprocess.CalledProcessError, OSError, FileNotFoundError):
-            pass
-        return "main"
 
     if path.exists() and _looks_like_repo(path):
         if not quiet:
@@ -214,21 +202,26 @@ def ensure(
         target_branch = branch or _detect_upstream_branch(path)
         # Ensure on the desired branch
         if branch:
-            if _run(["git", "-C", str(path), "checkout", branch]) != 0:
+            try:
+                _run(["git", "-C", str(path), "checkout", branch])
+            except subprocess.CalledProcessError:
                 typer.echo(f"[{APP_NAME}] git checkout {branch} failed", err=True)
                 raise typer.Exit(code=1)
 
         # Fetch latest
-        if _run(["git", "-C", str(path), "fetch", "--prune"]) != 0:
+        try:
+            _run(["git", "-C", str(path), "fetch", "--prune"])
+        except subprocess.CalledProcessError:
             typer.echo(f"[{APP_NAME}] git fetch failed", err=True)
             raise typer.Exit(code=1)
 
-        pull_rc = _run(["git", "-C", str(path), "pull", "--ff-only"])
-        if pull_rc != 0:
+        try:
+            _run(["git", "-C", str(path), "pull", "--ff-only"])
+        except subprocess.CalledProcessError:
             typer.echo(
                 f"[{APP_NAME}] pull not possible. Resetting to origin/{target_branch} ..."
             )
-            if (
+            try:
                 _run(
                     [
                         "git",
@@ -239,8 +232,7 @@ def ensure(
                         f"origin/{target_branch}",
                     ]
                 )
-                != 0
-            ):
+            except subprocess.CalledProcessError:
                 typer.echo(
                     f"[{APP_NAME}] git reset --hard origin/{target_branch} failed",
                     err=True,
@@ -256,7 +248,9 @@ def ensure(
         if branch:
             clone_cmd += ["-b", branch]
         clone_cmd += [repo, str(path)]
-        if _run(clone_cmd) != 0:
+        try:
+            _run(clone_cmd)
+        except subprocess.CalledProcessError:
             typer.echo(f"[{APP_NAME}] git clone failed", err=True)
             raise typer.Exit(code=1)
 
@@ -264,13 +258,15 @@ def ensure(
     if full:
         _require_bin(
             "git-lfs",
-            "git-lfs is required for --full. Install it or rerun without --full.",
+            "git-lfs is required for --full. Install it (See https://git-lfs.com) or rerun without --full.",
         )
         # Install LFS hooks in this environment (safe if repeated)
         _run(["git", "-C", str(path), "lfs", "install"])
         if not quiet:
             typer.echo(f"[{APP_NAME}] fetching LFS objects...")
-        if _run(["git", "-C", str(path), "lfs", "pull"]) != 0:
+        try:
+            _run(["git", "-C", str(path), "lfs", "pull"])
+        except subprocess.CalledProcessError:
             typer.echo(f"[{APP_NAME}] git lfs pull failed", err=True)
             raise typer.Exit(code=1)
 
@@ -294,13 +290,9 @@ def ensure(
         typer.echo(f'export NZCVM_DATA_ROOT="{path}"')
 
 
-@app.command()
+@cli.from_docstring(app)
 def where(
-    print_export: bool = typer.Option(
-        False,
-        "--print-export",
-        help='Print as shell export line: export NZCVM_DATA_ROOT="..."',
-    ),
+    print_export: bool = False,
 ):
     """
     Print the currently configured data root, if any.
@@ -308,8 +300,7 @@ def where(
     Parameters
     ----------
     print_export : bool, optional
-        If True, print as shell export line: export NZCVM_DATA_ROOT="...".
-
+        If True, print as shell export line: export NZCVM_DATA_ROOT="...". Default is False.
 
     """
     # 1) config file

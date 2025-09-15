@@ -13,6 +13,7 @@ specific data components, handling file loading, caching, and path resolution.
 """
 
 import logging
+import re
 from logging import Logger
 from pathlib import Path
 from typing import Optional, Union
@@ -31,6 +32,56 @@ from velocity_modelling.constants import (
 )
 from velocity_modelling.geometry import SmoothingBoundary
 from velocity_modelling.global_model import GlobalSurfaceRead
+
+
+def get_basin_versions(registry_path: Path):
+    """
+    Reads and parses the registry yaml file to group models by basin name.
+
+    Parameters
+    ----------
+    registry_path : Path
+        Path to the nzcvm_registry.yaml file.
+
+    Returns
+    -------
+    dict
+        A dictionary where keys are basin names and values are lists of dictionaries
+        containing basin details, including full name, version, version tuple, and data.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the registry file is not found.
+    """
+    if not registry_path.exists():
+        raise FileNotFoundError(f"Registry file not found at {registry_path}")
+
+    with open(registry_path, "r", encoding="utf-8") as file:
+        data = yaml.safe_load(file)
+
+    basin_versions = {}
+    for basin_item in data.get("basin", []):
+        full_name = basin_item.pop("name")
+        match = re.match(r"^(.*?)_v(\d+p\d+)$", full_name)
+        if not match:
+            continue
+        basin_name, version = match.groups()
+        version_parts = version.replace("v", "").split("p")
+        version_tuple = (int(version_parts[0]), int(version_parts[1]))
+
+        if basin_name not in basin_versions:
+            basin_versions[basin_name] = []
+        basin_versions[basin_name].append(
+            {
+                "full_name": full_name,
+                "version": version,
+                "version_tuple": version_tuple,
+                "data": basin_item,
+            }
+        )
+
+    return basin_versions
 
 
 class CVMRegistry:
