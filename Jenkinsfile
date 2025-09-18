@@ -27,7 +27,7 @@ pipeline {
                     // as the user with uid = 0. This user is, by default, the
                     // root user. So it is effectively saying run the commands
                     // as root.
-                    args "-u 0 -v /mnt/mantle_data/jenkins/nzvm/Data:/nzvm/Data -v /mnt/mantle_data/jenkins/nzvm/benchmarks:/nzvm/benchmarks -v /mnt/mantle_data/jenkins/nzvm/nzcvm_data:/nzvm/nzcvm_data -v /tmp/jenkins:/tmp"
+                    args "-u 0 -v /mnt/mantle_data/jenkins/nzvm/Data:/nzvm/Data -v /mnt/mantle_data/jenkins/nzvm/benchmarks:/nzvm/benchmarks -v /mnt/mantle_data/jenkins/nzvm/nzcvm_data:/nzvm/nzcvm_data"
                 }
             }
             stages {
@@ -78,6 +78,22 @@ pipeline {
                             ln -s /nzvm/nzcvm_data ${env.WORKSPACE}/velocity_modelling/nzcvm_data
                             pytest -s tests/ --benchmark-dir /nzvm/benchmarks --nzvm-binary-path /nzvm/NZVM --data-root ${env.WORKSPACE}/velocity_modelling/nzcvm_data
                         """
+                    }
+                    post {
+                        always {
+                            // This 'archiveArtifacts' step will run even if the tests fail.
+                            // It collects the files from the specified path.
+                            script {
+                                // Find the directory pytest created in /tmp
+                                def pytest_tmp_dir = sh(script: 'ls -d /tmp/pytest-of-root/pytest-*', returnStdout: true).trim()
+                                if (pytest_tmp_dir) {
+                                    echo "Archiving files from: ${pytest_tmp_dir}..."
+                                    archiveArtifacts artifacts: "${pytest_tmp_dir}/**", fingerprint: true
+                                } else {
+                                    echo "No pytest temporary directory found to archive."
+                                }
+                            }
+                        }
                     }
                 }
             }
