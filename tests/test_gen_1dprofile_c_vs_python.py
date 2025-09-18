@@ -112,9 +112,7 @@ TEST_DIR = BASE_DIR / "tests"
 MODEL_VERSIONS = ["2.08"]  # Fixed to known valid versions
 
 
-def generate_random_profile_config(
-    tmp_path: Path, output_dir: Path
-) -> tuple[Path, dict]:
+def generate_random_profile_config(profile_rootdir: Path) -> tuple[Path, dict]:
     """Generate a random profile config file for the C version."""
     profile_id = random.randint(100, 999)
     profile_lat = random.uniform(-45.0, -35.0)
@@ -126,7 +124,7 @@ def generate_random_profile_config(
     topo_type = random.choice(["TRUE", "BULLDOZED", "SQUASHED", "SQUASHED_TAPERED"])
     model_version = random.choice(MODEL_VERSIONS)
 
-    output_subdir = output_dir / "c_output" / str(profile_id)
+    output_subdir = profile_rootdir / "c_output" / str(profile_id)
     # Ensure C output directory doesn't exist before running C binary
     if output_subdir.exists():
         shutil.rmtree(output_subdir)
@@ -145,7 +143,7 @@ PROFILE_MIN_VS={min_vs}
 TOPO_TYPE={topo_type}
     """
 
-    config_path = tmp_path / f"nzcvm_profile_{profile_id}.cfg"
+    config_path = profile_rootdir / f"nzcvm_profile_{profile_id}.cfg"
     with open(config_path, "w") as f:
         f.write(config.strip())
         f.write("\n")
@@ -265,8 +263,8 @@ def test_gen_1dprofile_c_vs_python(
     data_root: Path,  # from conftest.py
 ):
     tmp_dir = env_path("JENKINS_OUTPUT_DIR") or tmp_path
-    root_out_dir = tmp_dir / "1d_profiles"
-    config_path, params = generate_random_profile_config(tmp_dir, root_out_dir)
+    profile_rootdir = tmp_dir / "1d_profiles"
+    config_path, params = generate_random_profile_config(profile_rootdir)
 
     # Run C binary from its directory with relative path
     c_result = subprocess.run(
@@ -286,8 +284,9 @@ def test_gen_1dprofile_c_vs_python(
         f"C binary failed with return code {c_result.returncode}: {c_result.stderr} (stdout: {c_result.stdout})"
     )
 
+    cid = params["id"]
     # Run Python version
-    location_csv = tmp_path / "locations.csv"
+    location_csv = profile_rootdir / f"locations_{cid}.csv"
     generate_location_csv(location_csv, params)
     py_result = subprocess.run(
         [
@@ -296,7 +295,7 @@ def test_gen_1dprofile_c_vs_python(
             "--model-version",
             params["model_version"],
             "--out-dir",
-            str(root_out_dir / "output"),
+            str(profile_rootdir / "output"),
             "--location-csv",
             str(location_csv),
             "--topo-type",
@@ -316,14 +315,14 @@ def test_gen_1dprofile_c_vs_python(
     assert py_result.returncode == 0, f"Python script failed: {py_result.stderr}"
 
     # Compare Profile
-    cid = params["id"]
+
     compare_profiles(
-        root_out_dir / f"c_output/{cid}/Profile/Profile.txt",
-        root_out_dir / f"output/Profiles/Profile_{cid}.txt",
+        profile_rootdir / f"c_output/{cid}/Profile/Profile.txt",
+        profile_rootdir / f"output/Profiles/Profile_{cid}.txt",
     )
     compare_surface_depths(
-        root_out_dir / f"c_output/{cid}/Profile/ProfileSurfaceDepths.txt",
-        root_out_dir / f"output/Profiles/ProfileSurfaceDepths_{cid}.txt",
+        profile_rootdir / f"c_output/{cid}/Profile/ProfileSurfaceDepths.txt",
+        profile_rootdir / f"output/Profiles/ProfileSurfaceDepths_{cid}.txt",
     )
 
 
