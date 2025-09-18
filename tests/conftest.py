@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from typing import Optional
 
 import pytest
 
@@ -10,7 +9,7 @@ from velocity_modelling.constants import (  # lazy resolver
 )
 
 
-def _env_path(var: str) -> Optional[Path]:
+def env_path(var: str) -> Path | None:
     val = os.environ.get(var)
     return Path(val).expanduser().resolve() if val else None
 
@@ -37,7 +36,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         "--nzvm-binary-path",
         action="store",
         type=Path,
-        default=_env_path("NZVM_BINARY_PATH"),
+        default=env_path("NZVM_BINARY_PATH"),
         help="Path to nzvm binary (or set NZVM_BINARY_PATH env var).",
     )
     parser.addoption(
@@ -68,7 +67,7 @@ def data_root(pytestconfig: pytest.Config) -> Path:
     4) sensible defaults
     5) interactive prompt (disabled in tests)
     """
-    cli_value: Optional[Path] = pytestconfig.getoption("--data-root")
+    cli_value: Path | None = pytestconfig.getoption("--data-root")
     resolved = get_data_root(str(cli_value) if cli_value else None)
     if not resolved.exists():
         raise FileNotFoundError(
@@ -79,8 +78,8 @@ def data_root(pytestconfig: pytest.Config) -> Path:
 
 
 @pytest.fixture(scope="session")
-def nzvm_binary_path(pytestconfig: pytest.Config) -> Optional[Path]:
-    p: Optional[Path] = pytestconfig.getoption("--nzvm-binary-path")
+def nzvm_binary_path(pytestconfig: pytest.Config) -> Path | None:
+    p: Path | None = pytestconfig.getoption("--nzvm-binary-path")
     return p.expanduser().resolve() if p else None
 
 

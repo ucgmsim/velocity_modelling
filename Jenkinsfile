@@ -71,28 +71,22 @@ pipeline {
 
                 stage('Run regression tests') {
                     steps {
-                        sh """
-                            cd ${env.WORKSPACE}
-                            source .venv/bin/activate
-                            rm -f ${env.WORKSPACE}/velocity_modelling/nzcvm_data
-                            ln -s /nzvm/nzcvm_data ${env.WORKSPACE}/velocity_modelling/nzcvm_data
-                            pytest -s tests/ --benchmark-dir /nzvm/benchmarks --nzvm-binary-path /nzvm/NZVM --data-root ${env.WORKSPACE}/velocity_modelling/nzcvm_data
-                        """
+                        withEnv(["JENKINS_OUTPUT_DIR=${env.WORKSPACE}/test_output"]) {
+                            sh """
+                                cd ${env.WORKSPACE}
+                                source .venv/bin/activate
+                                rm -f ${env.WORKSPACE}/velocity_modelling/nzcvm_data
+                                ln -s /nzvm/nzcvm_data ${env.WORKSPACE}/velocity_modelling/nzcvm_data
+                                # Create a dedicated temp directory for this build
+                                mkdir -p ${env.WORKSPACE}/test_output
+                                pytest -s tests/  --benchmark-dir /nzvm/benchmarks --nzvm-binary-path /nzvm/NZVM --data-root ${env.WORKSPACE}/velocity_modelling/nzcvm_data
+                            """
+                        }
                     }
                     post {
                         always {
-                            // This 'archiveArtifacts' step will run even if the tests fail.
-                            // It collects the files from the specified path.
-                            script {
-                                // Find the directory pytest created in /tmp
-                                def pytest_tmp_dir = sh(script: 'ls -d /tmp/pytest-of-root/pytest-*', returnStdout: true).trim()
-                                if (pytest_tmp_dir) {
-                                    echo "Archiving files from: ${pytest_tmp_dir}..."
-                                    archiveArtifacts artifacts: "${pytest_tmp_dir}/**", fingerprint: true
-                                } else {
-                                    echo "No pytest temporary directory found to archive."
-                                }
-                            }
+                             // Archive all files from the dedicated test output directory
+                            archiveArtifacts artifacts: "test_output/**", fingerprint: true, allowEmptyArchive: true
                         }
                     }
                 }
