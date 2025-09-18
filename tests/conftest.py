@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+
 import pytest
 
 from velocity_modelling.constants import (  # lazy resolver
@@ -7,7 +8,8 @@ from velocity_modelling.constants import (  # lazy resolver
     get_registry_path,
 )
 
-def env_path(var: str) -> Path|None:
+
+def env_path(var: str) -> Path | None:
     val = os.environ.get(var)
     return Path(val).expanduser().resolve() if val else None
 
@@ -65,7 +67,7 @@ def data_root(pytestconfig: pytest.Config) -> Path:
     4) sensible defaults
     5) interactive prompt (disabled in tests)
     """
-    cli_value: Path|None = pytestconfig.getoption("--data-root")
+    cli_value: Path | None = pytestconfig.getoption("--data-root")
     resolved = get_data_root(str(cli_value) if cli_value else None)
     if not resolved.exists():
         raise FileNotFoundError(
@@ -76,8 +78,8 @@ def data_root(pytestconfig: pytest.Config) -> Path:
 
 
 @pytest.fixture(scope="session")
-def nzvm_binary_path(pytestconfig: pytest.Config) -> Path|None:
-    p: Path|None = pytestconfig.getoption("--nzvm-binary-path")
+def nzvm_binary_path(pytestconfig: pytest.Config) -> Path | None:
+    p: Path | None = pytestconfig.getoption("--nzvm-binary-path")
     return p.expanduser().resolve() if p else None
 
 

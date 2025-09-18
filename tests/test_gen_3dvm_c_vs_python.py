@@ -6,12 +6,11 @@ from pathlib import Path
 
 import pytest
 
+from tests.conftest import env_path
 from velocity_modelling.tools.compare_emod3d import (
     compare_output_files,
     parse_nzcvm_config,
 )
-from tests.conftest import env_path
-
 
 # Define paths
 BASE_DIR = Path(__file__).parent.parent  # project root directory
