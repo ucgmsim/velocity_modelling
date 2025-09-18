@@ -1,5 +1,4 @@
 # tests/test_gen_3dvm_scenarios.py
-import os
 import subprocess
 from pathlib import Path
 from typing import TypedDict
@@ -10,6 +9,7 @@ from velocity_modelling.tools.compare_emod3d import (
     compare_output_files,
     parse_nzcvm_config,
 )
+from tests.conftest import env_path
 
 # Define the scenarios
 SCENARIOS = [
@@ -55,7 +55,8 @@ def scenario(
     scenario_path = SCENARIO_DIR / scenario_name
     config_file = scenario_path / "nzcvm.cfg"
     benchmark_path = test_paths[0] / scenario_name
-    output_path = Path(os.environ.get("JENKINS_OUTPUT_DIR", tmp_path)) / scenario_name
+    tmp_dir = env_path("JENKINS_OUTPUT_DIR") or tmp_path
+    output_path =tmp_dir / scenario_name
     data_root = test_paths[1]
 
     return ScenarioDict(

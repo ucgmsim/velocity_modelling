@@ -10,6 +10,8 @@ from velocity_modelling.tools.compare_emod3d import (
     compare_output_files,
     parse_nzcvm_config,
 )
+from tests.conftest import env_path
+
 
 # Define paths
 BASE_DIR = Path(__file__).parent.parent  # project root directory
@@ -76,7 +78,7 @@ def test_gen_3dvm_c_vs_python(
 ):
     """Test C binary vs Python script with random config"""
     # Define output directories but don't create them yet
-    tmp_dir = Path(os.environ.get("JENKINS_OUTPUT_DIR", tmp_path))
+    tmp_dir = env_path("JENKINS_OUTPUT_DIR") or tmp_path
 
     c_output_dir = tmp_dir / "C"
     python_output_dir = tmp_dir / "Python"
