@@ -86,7 +86,7 @@ pipeline {
                     post {
                         always {
                              // Archive all files from the dedicated test output directory
-                            archiveArtifacts artifacts: "test_output/**", fingerprint: true, allowEmpty: true
+                            archiveArtifacts artifacts: "test_output/**", fingerprint: true, allowEmptyArchive: true
                         }
                     }
                 }
