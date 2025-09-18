@@ -71,17 +71,17 @@ pipeline {
 
                 stage('Run regression tests') {
                     steps {
-                        sh """
-                            cd ${env.WORKSPACE}
-                            source .venv/bin/activate
-                            rm -f ${env.WORKSPACE}/velocity_modelling/nzcvm_data
-                            ln -s /nzvm/nzcvm_data ${env.WORKSPACE}/velocity_modelling/nzcvm_data
-
-                            # Create a dedicated temp directory for this build
-                            mkdir -p ${env.WORKSPACE}/test_output
-                            # Tell pytest to use this directory for its temp directory
-                            pytest -s tests/ --tempdir=${env.WORKSPACE}/test_output  --benchmark-dir /nzvm/benchmarks --nzvm-binary-path /nzvm/NZVM --data-root ${env.WORKSPACE}/velocity_modelling/nzcvm_data
-                        """
+                        withEnv(["JENKINS_OUTPUT_DIR=${env.WORKSPACE}/test_output"]) {
+                            sh """
+                                cd ${env.WORKSPACE}
+                                source .venv/bin/activate
+                                rm -f ${env.WORKSPACE}/velocity_modelling/nzcvm_data
+                                ln -s /nzvm/nzcvm_data ${env.WORKSPACE}/velocity_modelling/nzcvm_data
+                                # Create a dedicated temp directory for this build
+                                mkdir -p ${env.WORKSPACE}/test_output
+                                pytest -s tests/  --benchmark-dir /nzvm/benchmarks --nzvm-binary-path /nzvm/NZVM --data-root ${env.WORKSPACE}/velocity_modelling/nzcvm_data
+                            """
+                        }
                     }
                     post {
                         always {

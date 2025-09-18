@@ -94,6 +94,7 @@ The test script is aware of the differences mentioned above and accounts for the
 """
 
 import csv
+import os
 import random
 import re
 import shutil
@@ -262,7 +263,10 @@ def test_gen_1dprofile_c_vs_python(
     nzvm_binary_path: Path,  # from conftest.py
     data_root: Path,  # from conftest.py
 ):
-    root_out_dir = tmp_path / "1d_profiles"
+
+    root_out_dir = Path(os.environ.get("JENKINS_OUTPUT_DIR", tmp_path)) / "1d_profiles"
+    root_out_dir.mkdir(parents=True, exist_ok=True)
+
     config_path, params = generate_random_profile_config(tmp_path, root_out_dir)
 
     # Run C binary from its directory with relative path

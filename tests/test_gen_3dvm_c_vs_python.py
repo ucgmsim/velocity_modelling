@@ -76,15 +76,17 @@ def test_gen_3dvm_c_vs_python(
 ):
     """Test C binary vs Python script with random config"""
     # Define output directories but don't create them yet
-    c_output_dir = tmp_path / "C"
-    python_output_dir = tmp_path / "Python"
+    tmp_dir = Path(os.environ.get("JENKINS_OUTPUT_DIR", tmp_path))
+
+    c_output_dir = tmp_dir / "C"
+    python_output_dir = tmp_dir / "Python"
 
     # Ensure C output directory doesn't exist before running C binary
     if c_output_dir.exists():
         shutil.rmtree(c_output_dir)
 
     # Generate random config with C output directory
-    config_file = generate_random_nzcvm_config(tmp_path, c_output_dir)
+    config_file = generate_random_nzcvm_config(tmp_dir, c_output_dir)
 
     # Run C binary from its directory with relative path
     c_result = subprocess.run(
