@@ -36,12 +36,23 @@ app = typer.Typer(
     help="""
 Helper to fetch/update the NZCVM data repository (no separate package required).
 
+Behavior:
+- Always re-aligns local repo to remote (fast-forward if possible, otherwise reset).
+- Fetches large LFS files by default (full dataset). Use --no-full to skip LFS.
+
 Examples:
-  nzcvm-data-helper ensure            # clone if missing, else pull (no LFS)
-  nzcvm-data-helper ensure --full     # clone/pull and fetch LFS files
-  nzcvm-data-helper ensure --path /data/nzcvm --repo <git-url> --branch develop --no-write-config
-  nzcvm-data-helper ensure --force  # force align to remote if not a fast-forward
-  nzcvm-data-helper where             # print configured data root
+  # Full dataset (default): clone if missing, else fetch/pull/reset, then fetch LFS
+  nzcvm-data-helper ensure
+
+  # Lightweight/CI: skip LFS (Only for testing or lightweight use cases. Not recommended for real use.)
+  nzcvm-data-helper ensure --no-full
+
+  # Use an already-cloned repo at a custom path, or specify remote/branch
+  nzcvm-data-helper ensure --path /data/nzcvm_data
+  nzcvm-data-helper ensure --repo https://github.com/ucgmsim/nzcvm_data.git --branch develop
+
+  # Print the currently configured data root
+  nzcvm-data-helper where
 """,
 )
 
@@ -193,6 +204,11 @@ def ensure(
     """
     _require_bin("git")
 
+    # If full dataset requested, require git-lfs *before* doing any clone/pull work.
+
+    if full:
+        _require_bin("git-lfs","git-lfs is required for full dataset. Install git-lfs (See https://git-lfs.com) and try again.")
+
     if not quiet:
         typer.echo(f"[{APP_NAME}] target: {path}")
 
@@ -254,19 +270,13 @@ def ensure(
             typer.echo(f"[{APP_NAME}] git clone failed", err=True)
             raise typer.Exit(code=1)
 
-    # Optionally fetch LFS assets
+    # Optionally fetch LFS assets (default = full)
     if full:
-        _require_bin(
-            "git-lfs",
-            "git-lfs is required for --full. Install it (See https://git-lfs.com) or rerun without --full.",
-        )
         # Install LFS hooks in this environment (safe if repeated)
         _run(["git", "-C", str(path), "lfs", "install"])
         if not quiet:
             typer.echo(f"[{APP_NAME}] fetching LFS objects...")
-        try:
-            _run(["git", "-C", str(path), "lfs", "pull"])
-        except subprocess.CalledProcessError:
+        if _run(["git", "-C", str(path), "lfs", "pull"]) != 0:
             typer.echo(f"[{APP_NAME}] git lfs pull failed", err=True)
             raise typer.Exit(code=1)
 

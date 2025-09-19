@@ -120,6 +120,5 @@ def resolve_data_root(cli_override: str | None = None) -> Path:
         return p
 
     raise FileNotFoundError(
-        "Cannot locate NZCVM data root. Clone https://github.com/ucgmsim/nzcvm_data"
-        "and set --nzcvm-data-root or NZCVM_DATA_ROOT to its path."
+        "Cannot locate NZCVM data root. See README.md or Installation.md for setup instructions."
     )

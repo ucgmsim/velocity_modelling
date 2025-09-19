@@ -71,13 +71,36 @@ pipeline {
 
                 stage('Run regression tests') {
                     steps {
-                        sh """
-                            cd ${env.WORKSPACE}
-                            source .venv/bin/activate
-                            rm -f ${env.WORKSPACE}/velocity_modelling/nzcvm_data
-                            ln -s /nzvm/nzcvm_data ${env.WORKSPACE}/velocity_modelling/nzcvm_data
-                            pytest -s tests/ --benchmark-dir /nzvm/benchmarks --nzvm-binary-path /nzvm/NZVM --data-root ${env.WORKSPACE}/velocity_modelling/nzcvm_data
-                        """
+                        script {
+                            def test_output_dir = "${env.WORKSPACE}/test_output-${env.BUILD_ID}"
+                            withEnv(["JENKINS_OUTPUT_DIR=${test_output_dir}"]) {
+                                sh """
+                                    cd ${env.WORKSPACE}
+                                    source .venv/bin/activate
+                                    rm -f ${env.WORKSPACE}/velocity_modelling/nzcvm_data
+                                    ln -s /nzvm/nzcvm_data ${env.WORKSPACE}/velocity_modelling/nzcvm_data
+
+                                    # Create the unique test output directory
+                                    mkdir -p ${test_output_dir}
+                                    pytest -s tests/ --benchmark-dir /nzvm/benchmarks --nzvm-binary-path /nzvm/NZVM --data-root ${env.WORKSPACE}/velocity_modelling/nzcvm_data
+                                """
+                            }
+                        }
+                    }
+                    post {
+                        failure {
+                            script {
+                                def test_output_dir = "${env.WORKSPACE}/test_output-${env.BUILD_ID}"
+                                archiveArtifacts artifacts: "${test_output_dir}/**", allowEmptyArchive: true
+                            }
+                        }
+                        always {
+                            script {
+                                // Delete the unique temporary directory
+                                def test_output_dir = "${env.WORKSPACE}/test_output-${env.BUILD_ID}"
+                                sh "rm -rf ${test_output_dir}"
+                            }
+                        }
                     }
                 }
             }

@@ -153,7 +153,11 @@ class PartialGlobalSurfaceDepths:
                 f"Error: Some depths not found in global sub-velocity model: {invalid_depths}"
             )
 
-        indices = np.searchsorted(self.depths[::-1], depths, side="right")
+        # for each x in "depths", find the index "j" of self.depths (ie. global surface depths) that satisfies
+        # self.depths[j] >= x > self.depths[j+1]
+        # Here, "j" is the index of the global sub-velocity model
+        # np.searchsorted finds the index where the element should be inserted to maintain order
+        indices = np.searchsorted(self.depths[::-1], depths, side="left")
         n_velo_indices = len(self.depths) - indices - 1
 
         if np.any(n_velo_indices >= len(self.depths)):

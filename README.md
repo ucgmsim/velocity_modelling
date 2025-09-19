@@ -39,6 +39,9 @@ This separation allows independent version control of code and data while mainta
 
 - Python 3.11 or later
 - Git (for cloning the repository)
+- Git LFS (for large data files in the data repository. See [Git LFS Installation](https://git-lfs.github.com/))
+- Approximately 3GB of disk space for the full dataset and code
+- (Optional) Virtual environment tool (e.g., `venv`, `conda`)
 
 ### Installation
 
