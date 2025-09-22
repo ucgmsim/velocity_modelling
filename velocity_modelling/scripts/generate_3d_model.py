@@ -50,7 +50,7 @@ pip install -e  .
     TOPO_TYPE=BULLDOZED
     OUTPUT_DIR=/tmp
 """
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor,  as_completed
 import logging
 import sys
 import time
@@ -90,6 +90,28 @@ logging.basicConfig(
 logger = logging.getLogger("nzcvm")
 
 app = typer.Typer(pretty_exceptions_enable=False)
+
+
+import os
+import platform
+
+def log_mem(when: str) -> None:
+    try:
+        if platform.system() == "Darwin":
+            # macOS: use 'resource' for max RSS in KB; current RSS not trivial without psutil
+            import resource
+            rss_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            logger.log(logging.DEBUG, f"[mem] {when}: maxrss≈{rss_kb/1024:.1f} MB")
+        else:
+            # Linux: read current RSS from /proc
+            with open(f"/proc/{os.getpid()}/status") as f:
+                for line in f:
+                    if line.startswith("VmRSS:"):
+                        logger.log(logging.DEBUG, f"[mem] {when}: {line.strip()}")
+                        break
+    except Exception:
+        # best-effort only
+        pass
 
 
 def write_velo_mod_corners_text_file(
@@ -318,10 +340,38 @@ def generate_3d_model(
     # Create model grid
     logger.log(logging.INFO, "Generating model grid")
     global_mesh = gen_full_model_grid_great_circle(vm_params, logger)
+
+    # ↓↓↓ minimal footprint tweak: cast lon/lat to float32 (halve memory), with no visible precision loss.
+    try:
+        import numpy as np
+        # lon/lat are [nx, ny]; casting is safe for plotting/indexing and downstream math.
+        global_mesh.lon = np.asarray(global_mesh.lon, dtype=np.float32)
+        global_mesh.lat = np.asarray(global_mesh.lat, dtype=np.float32)
+
+        # Optional (commented by default): if x,y,z are float64 and large, also cast.
+        # global_mesh.x = np.asarray(global_mesh.x, dtype=np.float32)
+        # global_mesh.y = np.asarray(global_mesh.y, dtype=np.float32)
+        # global_mesh.z = np.asarray(global_mesh.z, dtype=np.float32)
+
+        logger.log(logging.DEBUG, "[grid] dtypes -> "
+                                  f"lon:{global_mesh.lon.dtype} lat:{global_mesh.lat.dtype}")
+        logger.log(logging.DEBUG, "[grid] shapes -> "
+                                  f"lon:{getattr(global_mesh.lon, 'shape', None)} lat:{getattr(global_mesh.lat, 'shape', None)}")
+        # Crude byte estimate:
+        lon_bytes = getattr(global_mesh.lon, "nbytes", 0)
+        lat_bytes = getattr(global_mesh.lat, "nbytes", 0)
+        logger.log(logging.DEBUG, f"[grid] lon+lat bytes ≈ {(lon_bytes + lat_bytes) / 1e6:.2f} MB")
+    except Exception as _e:
+        logger.log(logging.DEBUG, f"[grid] float32 cast skipped: {_e}")
+
+    log_mem("after grid build")
+
     write_velo_mod_corners_text_file(global_mesh, out_dir, logger)
 
     # Load all required data
     logger.log(logging.INFO, "Loading model data")
+    log_mem("after load_all_global_data")
+
     try:
         vm1d_data, nz_tomography_data, global_surfaces, basin_data_list = (
             cvm_registry.load_all_global_data()
@@ -334,6 +384,8 @@ def generate_3d_model(
 
     # Preprocess basin membership for efficiency
     logger.log(logging.INFO, "Pre-processing basin membership")
+    log_mem("after preprocess_basin_membership")
+    
     try:
         in_basin_mesh, partial_global_mesh_list = (
             InBasinGlobalMesh.preprocess_basin_membership(
@@ -350,28 +402,24 @@ def generate_3d_model(
         raise RuntimeError(f"Error preprocessing basin membership: {str(e)}")
 
     # Process each latitude slice (serial by default; threaded if --np > 1)
+    # Process each latitude slice
     total_slices = len(global_mesh.y)
 
-    def _process_slice(j: int) -> None:
+    # --- tiny wrapper: compute one slice, return results (no writing here) ---
+    def _compute_slice(j: int):
         partial_global_mesh = partial_global_mesh_list[j]
         partial_global_qualities = PartialGlobalQualities(
             partial_global_mesh.nx, partial_global_mesh.nz
         )
-
         for k in range(len(partial_global_mesh.x)):
-            partial_global_surface_depths = PartialGlobalSurfaceDepths(
-                len(global_surfaces)
-            )
+            partial_global_surface_depths = PartialGlobalSurfaceDepths(len(global_surfaces))
             partial_basin_surface_depths_list = [
                 PartialBasinSurfaceDepths(basin_data) for basin_data in basin_data_list
             ]
             qualities_vector = QualitiesVector(partial_global_mesh.nz)
 
             basin_indices = in_basin_mesh.get_basin_membership(k, j)
-            in_basin_list = [
-                InBasin(basin_data, len(global_mesh.z))
-                for basin_data in basin_data_list
-            ]
+            in_basin_list = [InBasin(basin_data, len(global_mesh.z)) for basin_data in basin_data_list]
             for basin_idx in basin_indices:
                 if basin_idx >= 0:
                     in_basin_list[basin_idx].in_basin_lat_lon = True
@@ -398,33 +446,37 @@ def generate_3d_model(
                 partial_global_qualities.vs[k] = qualities_vector.vs
                 partial_global_qualities.inbasin[k] = qualities_vector.inbasin
 
-        # Write this latitude slice to disk
-        write_global_qualities(
-            out_dir,
-            partial_global_mesh,
-            partial_global_qualities,
-            j,
-            vm_params,
-            logger,
-        )
+        return j, partial_global_mesh, partial_global_qualities
 
-    # Serial path (default): preserves your current “NumPy > C” speed
+    # --- SERIAL (default): exactly your previous behavior ---
     if not np_workers or np_workers <= 1:
         for j in tqdm(range(total_slices), desc="Generating velocity model", unit="slice"):
-            _process_slice(j)
-    else:
-        # Conservative threaded fan-out; keeps NumPy’s own multithreading intact.
-        max_workers = max(1, int(np_workers))
-        with ThreadPoolExecutor(max_workers=max_workers) as ex:
-            list(
-                tqdm(
-                    ex.map(_process_slice, range(total_slices)),
-                    total=total_slices,
-                    desc="Generating velocity model",
-                    unit="slice",
-                )
-            )
+            _, pgm, pgq = _compute_slice(j)
+            write_global_qualities(out_dir, pgm, pgq, j, vm_params, logger)
 
+    # --- THREADED: compute in parallel, write in-order on the main thread ---
+    else:
+        max_workers = max(1, int(np_workers))
+
+        # submit all jobs
+        with ThreadPoolExecutor(max_workers=max_workers) as ex:
+            future_to_j = {ex.submit(_compute_slice, j): j for j in range(total_slices)}
+
+            # buffer holds completed slices until it's their turn to write
+            buffer: dict[int, tuple] = {}
+            next_to_write = 0
+
+            for fut in tqdm(as_completed(future_to_j), total=total_slices,
+                            desc="Generating velocity model", unit="slice"):
+                j_done, pgm, pgq = fut.result()
+                buffer[j_done] = (pgm, pgq)
+
+                # write as many contiguous slices as we can in order
+                while next_to_write in buffer:
+                    pgm_w, pgq_w = buffer.pop(next_to_write)
+                    write_global_qualities(out_dir, pgm_w, pgq_w,
+                                           next_to_write, vm_params, logger)
+                    next_to_write += 1
 
     logger.log(logging.INFO, "Generation of velocity model 100% complete")
     logger.log(
