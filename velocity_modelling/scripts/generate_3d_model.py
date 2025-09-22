@@ -50,7 +50,7 @@ pip install -e  .
     TOPO_TYPE=BULLDOZED
     OUTPUT_DIR=/tmp
 """
-
+from concurrent.futures import ThreadPoolExecutor
 import logging
 import sys
 import time
@@ -165,6 +165,7 @@ def generate_3d_model(
     smoothing: Annotated[
         bool, typer.Option()
     ] = False,  # placeholder for smoothing, not implemented yet
+    np_workers: Annotated[int | None, typer.Option("--np", help="Parallel slices using threads (set to number of workers). Omit or 1 = serial.")] = None,
     log_level: Annotated[str, typer.Option()] = "INFO",
 ) -> None:
     """
@@ -200,7 +201,8 @@ def generate_3d_model(
         Override the default nzcvm_data directory.
     smoothing : bool, optional
         Unsupported option for future smoothing implementation at model boundaries (default: False).
-
+    np_workers : int, optional
+        Number of parallel threads to use for processing latitude slices (default: None, meaning serial processing or 1 thread).
     log_level : str, optional
         Logging level for the script (default: "INFO").
 
@@ -347,9 +349,10 @@ def generate_3d_model(
         logger.log(logging.ERROR, f"Error preprocessing basin membership: {e}")
         raise RuntimeError(f"Error preprocessing basin membership: {str(e)}")
 
-    # Process each latitude slice
+    # Process each latitude slice (serial by default; threaded if --np > 1)
     total_slices = len(global_mesh.y)
-    for j in tqdm(range(total_slices), desc="Generating velocity model", unit="slice"):
+
+    def _process_slice(j: int) -> None:
         partial_global_mesh = partial_global_mesh_list[j]
         partial_global_qualities = PartialGlobalQualities(
             partial_global_mesh.nx, partial_global_mesh.nz
@@ -374,64 +377,54 @@ def generate_3d_model(
                     in_basin_list[basin_idx].in_basin_lat_lon = True
 
             if smoothing:
-                logger.log(
-                    logging.DEBUG, "Smoothing option selected but not implemented"
-                )
-                # Placeholder for future implementation
+                logger.log(logging.DEBUG, "Smoothing option selected but not implemented")
             else:
-                try:
-                    mesh_vector = MeshVector(partial_global_mesh, k)
-                    qualities_vector.assign_qualities(
-                        cvm_registry,
-                        vm1d_data,
-                        nz_tomography_data,
-                        global_surfaces,
-                        basin_data_list,
-                        mesh_vector,
-                        partial_global_surface_depths,
-                        partial_basin_surface_depths_list,
-                        in_basin_list,
-                        in_basin_mesh,
-                        vm_params["topo_type"],
-                    )
-                    partial_global_qualities.rho[k] = qualities_vector.rho
-                    partial_global_qualities.vp[k] = qualities_vector.vp
-                    partial_global_qualities.vs[k] = qualities_vector.vs
-                    partial_global_qualities.inbasin[k] = qualities_vector.inbasin
-                except AttributeError as e:
-                    logger.log(
-                        logging.ERROR,
-                        f"Error accessing qualities vector attributes at j={j}, k={k}: {e}",
-                    )
-                    raise RuntimeError(
-                        f"Error processing point at j={j}, k={k}: {str(e)}"
-                    )
-                except Exception as e:
-                    if isinstance(e, (SystemExit, KeyboardInterrupt)):
-                        raise  # Re-raise critical exceptions
-                    logger.log(
-                        logging.ERROR, f"Error processing point at j={j}, k={k}: {e}"
-                    )
-                    raise RuntimeError(
-                        f"Error processing point at j={j}, k={k}: {str(e)}"
-                    )
+                mesh_vector = MeshVector(partial_global_mesh, k)
+                qualities_vector.assign_qualities(
+                    cvm_registry,
+                    vm1d_data,
+                    nz_tomography_data,
+                    global_surfaces,
+                    basin_data_list,
+                    mesh_vector,
+                    partial_global_surface_depths,
+                    partial_basin_surface_depths_list,
+                    in_basin_list,
+                    in_basin_mesh,
+                    vm_params["topo_type"],
+                )
+                partial_global_qualities.rho[k] = qualities_vector.rho
+                partial_global_qualities.vp[k] = qualities_vector.vp
+                partial_global_qualities.vs[k] = qualities_vector.vs
+                partial_global_qualities.inbasin[k] = qualities_vector.inbasin
 
         # Write this latitude slice to disk
-        try:
-            # Use a single function call format for all writer modules
-            write_global_qualities(
-                out_dir,
-                partial_global_mesh,
-                partial_global_qualities,
-                j,
-                vm_params,
-                logger,
+        write_global_qualities(
+            out_dir,
+            partial_global_mesh,
+            partial_global_qualities,
+            j,
+            vm_params,
+            logger,
+        )
+
+    # Serial path (default): preserves your current “NumPy > C” speed
+    if not np_workers or np_workers <= 1:
+        for j in tqdm(range(total_slices), desc="Generating velocity model", unit="slice"):
+            _process_slice(j)
+    else:
+        # Conservative threaded fan-out; keeps NumPy’s own multithreading intact.
+        max_workers = max(1, int(np_workers))
+        with ThreadPoolExecutor(max_workers=max_workers) as ex:
+            list(
+                tqdm(
+                    ex.map(_process_slice, range(total_slices)),
+                    total=total_slices,
+                    desc="Generating velocity model",
+                    unit="slice",
+                )
             )
-        except Exception as e:
-            if isinstance(e, (SystemExit, KeyboardInterrupt)):
-                raise  # Re-raise critical exceptions
-            logger.log(logging.ERROR, f"Error writing slice j={j}: {e}")
-            raise OSError(f"Failed to write slice j={j} to {out_dir}: {str(e)}")
+
 
     logger.log(logging.INFO, "Generation of velocity model 100% complete")
     logger.log(
