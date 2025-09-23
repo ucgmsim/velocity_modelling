@@ -56,6 +56,8 @@ import logging
 import sys
 import time
 from logging import Logger
+import numpy as np
+from numpy import asarray
 from pathlib import Path
 from typing import Annotated
 
@@ -82,6 +84,14 @@ from velocity_modelling.global_model import PartialGlobalSurfaceDepths
 from velocity_modelling.registry import CVMRegistry
 from velocity_modelling.velocity3d import PartialGlobalQualities, QualitiesVector
 
+
+### for _compute_and_write_slice() workers
+from velocity_modelling.velocity3d import PartialGlobalQualities, QualitiesVector
+from velocity_modelling.global_model import PartialGlobalSurfaceDepths
+from velocity_modelling.basin_model import PartialBasinSurfaceDepths, InBasin
+from velocity_modelling.geometry import MeshVector
+
+
 # Configure logging at the module level
 logging.basicConfig(
     level=logging.INFO,
@@ -94,7 +104,6 @@ app = typer.Typer(pretty_exceptions_enable=False)
 
 
 import os
-import platform
 
 # Worker-visible globals, set once in the parent
 _CVM = None
@@ -102,14 +111,18 @@ _DATA = None           # (vm1d_data, nz_tomo, global_surfaces, basin_data_list)
 _GLOBALS = None        # (global_mesh, in_basin_mesh, partial_global_mesh_list)
 _WRITER = None
 _VM_PARAMS = None
+_out_queue = None  # set in parent when we start the writer process
 
-
+def _init_worker_queue(q):
+    # Called once per worker by ProcessPoolExecutor(initializer=..., initargs=...)
+    global _out_queue
+    _out_queue = q
 
 def _compute_and_write_slice(j: int, out_dir: str):
-    from velocity_modelling.velocity3d import PartialGlobalQualities, QualitiesVector
-    from velocity_modelling.global_model import PartialGlobalSurfaceDepths
-    from velocity_modelling.basin_model import PartialBasinSurfaceDepths, InBasin
-    from velocity_modelling.geometry import MeshVector
+
+    if any(x is None for x in (_CVM, _DATA, _GLOBALS, _VM_PARAMS, _WRITER)):
+        raise RuntimeError("Worker globals not initialized; ensure 'fork' is used.")
+
 
     cvm_registry = _CVM
     vm1d_data, nz_tomography_data, global_surfaces, basin_data_list = _DATA
@@ -136,12 +149,38 @@ def _compute_and_write_slice(j: int, out_dir: str):
                             pg_sd, pb_sd_list, in_basin_list,
                             in_basin_mesh, _VM_PARAMS["topo_type"])
 
-        pgq.rho[k] = qv.rho; pgq.vp[k] = qv.vp; pgq.vs[k] = qv.vs; pgq.inbasin[k] = qv.inbasin
+        pgq.rho[k] = qv.rho
+        pgq.vp[k] = qv.vp
+        pgq.vs[k] = qv.vs
+        pgq.inbasin[k] = qv.inbasin
 
-    # EMOD3D writes one file per slice → safe to write in parallel
-    _WRITER(Path(out_dir), pgm, pgq, j, _VM_PARAMS, logger)
 
+    _out_queue.put((j, pgm, pgq))  # for official HDF5 writer module
+    #_out_queue.put((j, pgq.vp, pgq.vs, pgq.rho, pgq.inbasin))  # for custom HDF5 writer process
     return j
+
+
+# ---- HDF5 writer process: use the official writer module ----
+def _h5_writer_proc(q, out_dir_str, vm_params, log_level):
+    import logging, importlib
+    from pathlib import Path
+    logging.getLogger("nzcvm").setLevel(log_level)
+
+    out_dir = Path(out_dir_str)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Import your existing HDF5 writer (same one serial runs use)
+    h5_writer = importlib.import_module("velocity_modelling.write.hdf5")
+    write_global_qualities = h5_writer.write_global_qualities
+
+    # Consume items in any order; the writer module handles file layout & metadata
+    while True:
+        item = q.get()
+        if item is None:  # sentinel
+            break
+        j, pgm, pgq = item
+        write_global_qualities(out_dir, pgm, pgq, j, vm_params, logging.getLogger("nzcvm"))
+
 
 
 def write_velo_mod_corners_text_file(
@@ -348,6 +387,10 @@ def generate_3d_model(
         logger.log(logging.ERROR, f"Unsupported output format: {output_format}")
         raise ValueError(f"Unsupported output format: {output_format}")
 
+    if np_workers and np_workers > 1 and output_format.upper() != "HDF5":
+        logger.info("np>1 requested → forcing output_format=HDF5 for safe parallel writes.")
+        output_format = "HDF5"
+
     import importlib
 
     try:
@@ -412,16 +455,16 @@ def generate_3d_model(
         raise RuntimeError(f"Error preprocessing basin membership: {str(e)}")
 
 
-    global _WRITER, _VM_PARAMS, _DATA_ROOT, _REGISTRY_PATH, _DATA_BUNDLE, _GLOBALS
+    global _CVM, _DATA, _GLOBALS, _WRITER, _VM_PARAMS
     # Expose to workers (inherited on fork)
     _CVM = cvm_registry
     _DATA = (vm1d_data, nz_tomography_data, global_surfaces, basin_data_list)
     _GLOBALS = (global_mesh, in_basin_mesh, partial_global_mesh_list)
     _WRITER = write_global_qualities
     _VM_PARAMS = vm_params
-    from velocity_modelling.write.emod3d import write_global_qualities as EMOD3D_WRITE
-    _WRITER = EMOD3D_WRITE  # or your dynamic writer import
 
+    slices_tmp = out_dir / "slices_tmp"
+    slices_tmp.mkdir(parents=True, exist_ok=True)
 
     # Process each latitude slice (serial by default; threaded if --np > 1)
     # Process each latitude slice
@@ -527,13 +570,33 @@ def generate_3d_model(
 
         # Use fork so workers inherit _CVM/_DATA/_GLOBALS without pickling
         ctx = mp.get_context("fork")  # IMPORTANT: fork to inherit globals
+        logger.info(f"[mp] using context: {ctx.get_start_method()}")
 
-        with ProcessPoolExecutor(max_workers=W, mp_context=ctx) as ex:
-            futures = [ex.submit(_compute_and_write_slice, j, str(out_dir))
-                       for j in range(total_slices)]
+        ny, nx, nz = len(global_mesh.y), len(global_mesh.x), len(global_mesh.z)
+        h5_path = out_dir / "velocity_model.h5"
+
+        # 1) start writer
+        from multiprocessing import Process
+        _out_queue = ctx.Queue(maxsize=32)  # small bounded queue is enough
+        writer = ctx.Process(
+            target=_h5_writer_proc,
+            args=(_out_queue, out_dir, vm_params, logger.level), # use this line to use the official writer module
+            #args=(_out_queue, str(h5_path), ny, nx, nz, vm_params, logger.level),
+
+            daemon=True,
+        )
+        writer.start()
+
+        # 2) launch compute processes (each enqueue slices)
+        with ProcessPoolExecutor(max_workers=W, mp_context=ctx, initializer=_init_worker_queue, initargs=(_out_queue,),) as ex:
+            futures = [ex.submit(_compute_and_write_slice, j, str(out_dir)) for j in range(total_slices)]
             for f in tqdm(as_completed(futures), total=total_slices,
                           desc="Generating velocity model", unit="slice"):
-                f.result()  # raise on worker error
+                f.result()
+
+        # 3) tell writer to finish and wait
+        _out_queue.put(None)  # sentinel
+        writer.join()
 
     logger.log(logging.INFO, "Generation of velocity model 100% complete")
     logger.log(

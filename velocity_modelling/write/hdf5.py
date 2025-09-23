@@ -96,7 +96,6 @@ def create_xdmf_file(hdf5_file: Path, vm_params: dict, logger: logging.Logger) -
         logger.log(logging.ERROR, f"Error creating XDMF file: {e}")
         raise RuntimeError(f"Failed to create XDMF file: {e}")
 
-
 def write_global_qualities(
     out_dir: Path,
     partial_global_mesh: PartialGlobalMesh,
@@ -201,12 +200,18 @@ def write_global_qualities(
                     logging.DEBUG,
                     f"Creating datasets with shape (nz={nz}, ny={ny}, nx={nx})",
                 )
-                props.create_dataset("vp", shape=shape, dtype="f4", compression="gzip")
-                props.create_dataset("vs", shape=shape, dtype="f4", compression="gzip")
-                props.create_dataset("rho", shape=shape, dtype="f4", compression="gzip")
+                # props.create_dataset("vp", shape=shape, dtype="f4", compression="gzip")
+                # props.create_dataset("vs", shape=shape, dtype="f4", compression="gzip")
+                # props.create_dataset("rho", shape=shape, dtype="f4", compression="gzip")
+                # props.create_dataset(
+                #     "inbasin", shape=shape, dtype="i1", compression="gzip"
+                # )
+
+                props.create_dataset("vp", shape=shape, dtype="f4")
+                props.create_dataset("vs", shape=shape, dtype="f4")
+                props.create_dataset("rho", shape=shape, dtype="f4")
                 props.create_dataset(
-                    "inbasin", shape=shape, dtype="i1", compression="gzip"
-                )
+                    "inbasin", shape=shape, dtype="i1")
 
                 # Add metadata
                 props["vp"].attrs["units"] = "km/s"
