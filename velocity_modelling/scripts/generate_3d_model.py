@@ -50,7 +50,8 @@ pip install -e  .
     TOPO_TYPE=BULLDOZED
     OUTPUT_DIR=/tmp
 """
-from concurrent.futures import ThreadPoolExecutor,  as_completed
+from concurrent.futures import ProcessPoolExecutor,  as_completed
+import multiprocessing as mp
 import logging
 import sys
 import time
@@ -95,23 +96,52 @@ app = typer.Typer(pretty_exceptions_enable=False)
 import os
 import platform
 
-def log_mem(when: str) -> None:
-    try:
-        if platform.system() == "Darwin":
-            # macOS: use 'resource' for max RSS in KB; current RSS not trivial without psutil
-            import resource
-            rss_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-            logger.log(logging.DEBUG, f"[mem] {when}: maxrss≈{rss_kb/1024:.1f} MB")
-        else:
-            # Linux: read current RSS from /proc
-            with open(f"/proc/{os.getpid()}/status") as f:
-                for line in f:
-                    if line.startswith("VmRSS:"):
-                        logger.log(logging.DEBUG, f"[mem] {when}: {line.strip()}")
-                        break
-    except Exception:
-        # best-effort only
-        pass
+# Worker-visible globals, set once in the parent
+_CVM = None
+_DATA = None           # (vm1d_data, nz_tomo, global_surfaces, basin_data_list)
+_GLOBALS = None        # (global_mesh, in_basin_mesh, partial_global_mesh_list)
+_WRITER = None
+_VM_PARAMS = None
+
+
+
+def _compute_and_write_slice(j: int, out_dir: str):
+    from velocity_modelling.velocity3d import PartialGlobalQualities, QualitiesVector
+    from velocity_modelling.global_model import PartialGlobalSurfaceDepths
+    from velocity_modelling.basin_model import PartialBasinSurfaceDepths, InBasin
+    from velocity_modelling.geometry import MeshVector
+
+    cvm_registry = _CVM
+    vm1d_data, nz_tomography_data, global_surfaces, basin_data_list = _DATA
+    global_mesh, in_basin_mesh, partial_global_mesh_list = _GLOBALS
+
+    pgm = partial_global_mesh_list[j]
+    pgq = PartialGlobalQualities(pgm.nx, pgm.nz)
+
+
+    for k in range(len(pgm.x)):
+        pg_sd = PartialGlobalSurfaceDepths(len(global_surfaces))
+        pb_sd_list = [PartialBasinSurfaceDepths(b) for b in basin_data_list]
+        qv = QualitiesVector(pgm.nz)
+
+        basin_indices = in_basin_mesh.get_basin_membership(k, j)
+        in_basin_list = [InBasin(b, len(global_mesh.z)) for b in basin_data_list]
+        for bi in basin_indices:
+            if bi >= 0:
+                in_basin_list[bi].in_basin_lat_lon = True
+
+        mv = MeshVector(pgm, k)
+        qv.assign_qualities(cvm_registry, vm1d_data, nz_tomography_data,
+                            global_surfaces, basin_data_list, mv,
+                            pg_sd, pb_sd_list, in_basin_list,
+                            in_basin_mesh, _VM_PARAMS["topo_type"])
+
+        pgq.rho[k] = qv.rho; pgq.vp[k] = qv.vp; pgq.vs[k] = qv.vs; pgq.inbasin[k] = qv.inbasin
+
+    # EMOD3D writes one file per slice → safe to write in parallel
+    _WRITER(Path(out_dir), pgm, pgq, j, _VM_PARAMS, logger)
+
+    return j
 
 
 def write_velo_mod_corners_text_file(
@@ -187,8 +217,12 @@ def generate_3d_model(
     smoothing: Annotated[
         bool, typer.Option()
     ] = False,  # placeholder for smoothing, not implemented yet
-    np_workers: Annotated[int | None, typer.Option("--np", help="Parallel slices using threads (set to number of workers). Omit or 1 = serial.")] = None,
-    log_level: Annotated[str, typer.Option()] = "INFO",
+    np_workers: Annotated[
+        int | None, typer.Option("--np")] = None,
+    blas_threads: Annotated[
+        int | None, typer.Option()] = None,
+
+        log_level: Annotated[str, typer.Option()] = "INFO",
 ) -> None:
     """
     Generate a 3D velocity model and write it to disk.
@@ -224,7 +258,10 @@ def generate_3d_model(
     smoothing : bool, optional
         Unsupported option for future smoothing implementation at model boundaries (default: False).
     np_workers : int, optional
-        Number of parallel threads to use for processing latitude slices (default: None, meaning serial processing or 1 thread).
+        Number of worker processes to use for parallel processing (default: 1 = serial).
+
+    blas_threads : int, optional
+        Number of BLAS threads per worker process (default: auto).
     log_level : str, optional
         Logging level for the script (default: "INFO").
 
@@ -341,36 +378,10 @@ def generate_3d_model(
     logger.log(logging.INFO, "Generating model grid")
     global_mesh = gen_full_model_grid_great_circle(vm_params, logger)
 
-    # ↓↓↓ minimal footprint tweak: cast lon/lat to float32 (halve memory), with no visible precision loss.
-    try:
-        import numpy as np
-        # lon/lat are [nx, ny]; casting is safe for plotting/indexing and downstream math.
-        global_mesh.lon = np.asarray(global_mesh.lon, dtype=np.float32)
-        global_mesh.lat = np.asarray(global_mesh.lat, dtype=np.float32)
-
-        # Optional (commented by default): if x,y,z are float64 and large, also cast.
-        # global_mesh.x = np.asarray(global_mesh.x, dtype=np.float32)
-        # global_mesh.y = np.asarray(global_mesh.y, dtype=np.float32)
-        # global_mesh.z = np.asarray(global_mesh.z, dtype=np.float32)
-
-        logger.log(logging.DEBUG, "[grid] dtypes -> "
-                                  f"lon:{global_mesh.lon.dtype} lat:{global_mesh.lat.dtype}")
-        logger.log(logging.DEBUG, "[grid] shapes -> "
-                                  f"lon:{getattr(global_mesh.lon, 'shape', None)} lat:{getattr(global_mesh.lat, 'shape', None)}")
-        # Crude byte estimate:
-        lon_bytes = getattr(global_mesh.lon, "nbytes", 0)
-        lat_bytes = getattr(global_mesh.lat, "nbytes", 0)
-        logger.log(logging.DEBUG, f"[grid] lon+lat bytes ≈ {(lon_bytes + lat_bytes) / 1e6:.2f} MB")
-    except Exception as _e:
-        logger.log(logging.DEBUG, f"[grid] float32 cast skipped: {_e}")
-
-    log_mem("after grid build")
-
     write_velo_mod_corners_text_file(global_mesh, out_dir, logger)
 
     # Load all required data
     logger.log(logging.INFO, "Loading model data")
-    log_mem("after load_all_global_data")
 
     try:
         vm1d_data, nz_tomography_data, global_surfaces, basin_data_list = (
@@ -384,8 +395,7 @@ def generate_3d_model(
 
     # Preprocess basin membership for efficiency
     logger.log(logging.INFO, "Pre-processing basin membership")
-    log_mem("after preprocess_basin_membership")
-    
+
     try:
         in_basin_mesh, partial_global_mesh_list = (
             InBasinGlobalMesh.preprocess_basin_membership(
@@ -401,82 +411,129 @@ def generate_3d_model(
         logger.log(logging.ERROR, f"Error preprocessing basin membership: {e}")
         raise RuntimeError(f"Error preprocessing basin membership: {str(e)}")
 
+
+    global _WRITER, _VM_PARAMS, _DATA_ROOT, _REGISTRY_PATH, _DATA_BUNDLE, _GLOBALS
+    # Expose to workers (inherited on fork)
+    _CVM = cvm_registry
+    _DATA = (vm1d_data, nz_tomography_data, global_surfaces, basin_data_list)
+    _GLOBALS = (global_mesh, in_basin_mesh, partial_global_mesh_list)
+    _WRITER = write_global_qualities
+    _VM_PARAMS = vm_params
+    from velocity_modelling.write.emod3d import write_global_qualities as EMOD3D_WRITE
+    _WRITER = EMOD3D_WRITE  # or your dynamic writer import
+
+
     # Process each latitude slice (serial by default; threaded if --np > 1)
     # Process each latitude slice
     total_slices = len(global_mesh.y)
 
-    # --- tiny wrapper: compute one slice, return results (no writing here) ---
-    def _compute_slice(j: int):
-        partial_global_mesh = partial_global_mesh_list[j]
-        partial_global_qualities = PartialGlobalQualities(
-            partial_global_mesh.nx, partial_global_mesh.nz
-        )
-        for k in range(len(partial_global_mesh.x)):
-            partial_global_surface_depths = PartialGlobalSurfaceDepths(len(global_surfaces))
-            partial_basin_surface_depths_list = [
-                PartialBasinSurfaceDepths(basin_data) for basin_data in basin_data_list
-            ]
-            qualities_vector = QualitiesVector(partial_global_mesh.nz)
-
-            basin_indices = in_basin_mesh.get_basin_membership(k, j)
-            in_basin_list = [InBasin(basin_data, len(global_mesh.z)) for basin_data in basin_data_list]
-            for basin_idx in basin_indices:
-                if basin_idx >= 0:
-                    in_basin_list[basin_idx].in_basin_lat_lon = True
-
-            if smoothing:
-                logger.log(logging.DEBUG, "Smoothing option selected but not implemented")
-            else:
-                mesh_vector = MeshVector(partial_global_mesh, k)
-                qualities_vector.assign_qualities(
-                    cvm_registry,
-                    vm1d_data,
-                    nz_tomography_data,
-                    global_surfaces,
-                    basin_data_list,
-                    mesh_vector,
-                    partial_global_surface_depths,
-                    partial_basin_surface_depths_list,
-                    in_basin_list,
-                    in_basin_mesh,
-                    vm_params["topo_type"],
-                )
-                partial_global_qualities.rho[k] = qualities_vector.rho
-                partial_global_qualities.vp[k] = qualities_vector.vp
-                partial_global_qualities.vs[k] = qualities_vector.vs
-                partial_global_qualities.inbasin[k] = qualities_vector.inbasin
-
-        return j, partial_global_mesh, partial_global_qualities
-
-    # --- SERIAL (default): exactly your previous behavior ---
     if not np_workers or np_workers <= 1:
+        # serial (unchanged)
         for j in tqdm(range(total_slices), desc="Generating velocity model", unit="slice"):
-            _, pgm, pgq = _compute_slice(j)
-            write_global_qualities(out_dir, pgm, pgq, j, vm_params, logger)
+            partial_global_mesh = partial_global_mesh_list[j]
+            partial_global_qualities = PartialGlobalQualities(
+                partial_global_mesh.nx, partial_global_mesh.nz
+            )
 
-    # --- THREADED: compute in parallel, write in-order on the main thread ---
+            for k in range(len(partial_global_mesh.x)):
+                partial_global_surface_depths = PartialGlobalSurfaceDepths(
+                    len(global_surfaces)
+                )
+                partial_basin_surface_depths_list = [
+                    PartialBasinSurfaceDepths(basin_data) for basin_data in basin_data_list
+                ]
+                qualities_vector = QualitiesVector(partial_global_mesh.nz)
+
+                basin_indices = in_basin_mesh.get_basin_membership(k, j)
+                in_basin_list = [
+                    InBasin(basin_data, len(global_mesh.z))
+                    for basin_data in basin_data_list
+                ]
+                for basin_idx in basin_indices:
+                    if basin_idx >= 0:
+                        in_basin_list[basin_idx].in_basin_lat_lon = True
+
+                if smoothing:
+                    logger.log(
+                        logging.DEBUG, "Smoothing option selected but not implemented"
+                    )
+                    # Placeholder for future implementation
+                else:
+                    try:
+                        mesh_vector = MeshVector(partial_global_mesh, k)
+                        qualities_vector.assign_qualities(
+                            cvm_registry,
+                            vm1d_data,
+                            nz_tomography_data,
+                            global_surfaces,
+                            basin_data_list,
+                            mesh_vector,
+                            partial_global_surface_depths,
+                            partial_basin_surface_depths_list,
+                            in_basin_list,
+                            in_basin_mesh,
+                            vm_params["topo_type"],
+                        )
+                        partial_global_qualities.rho[k] = qualities_vector.rho
+                        partial_global_qualities.vp[k] = qualities_vector.vp
+                        partial_global_qualities.vs[k] = qualities_vector.vs
+                        partial_global_qualities.inbasin[k] = qualities_vector.inbasin
+                    except AttributeError as e:
+                        logger.log(
+                            logging.ERROR,
+                            f"Error accessing qualities vector attributes at j={j}, k={k}: {e}",
+                        )
+                        raise RuntimeError(
+                            f"Error processing point at j={j}, k={k}: {str(e)}"
+                        )
+                    except Exception as e:
+                        if isinstance(e, (SystemExit, KeyboardInterrupt)):
+                            raise  # Re-raise critical exceptions
+                        logger.log(
+                            logging.ERROR, f"Error processing point at j={j}, k={k}: {e}"
+                        )
+                        raise RuntimeError(
+                            f"Error processing point at j={j}, k={k}: {str(e)}"
+                        )
+
+            # Write this latitude slice to disk
+            try:
+                # Use a single function call format for all writer modules
+                write_global_qualities(
+                    out_dir,
+                    partial_global_mesh,
+                    partial_global_qualities,
+                    j,
+                    vm_params,
+                    logger,
+                )
+            except Exception as e:
+                if isinstance(e, (SystemExit, KeyboardInterrupt)):
+                    raise  # Re-raise critical exceptions
+                logger.log(logging.ERROR, f"Error writing slice j={j}: {e}")
+                raise OSError(f"Failed to write slice j={j} to {out_dir}: {str(e)}")
     else:
-        max_workers = max(1, int(np_workers))
+        # processes + BLAS budgeting
+        cores = os.cpu_count() or 2
+        W = min(np_workers, cores)
+        T = blas_threads or max(1, cores // W)
 
-        # submit all jobs
-        with ThreadPoolExecutor(max_workers=max_workers) as ex:
-            future_to_j = {ex.submit(_compute_slice, j): j for j in range(total_slices)}
+        os.environ.setdefault("OPENBLAS_NUM_THREADS", str(T))
+        os.environ.setdefault("OMP_NUM_THREADS", str(T))
+        os.environ.setdefault("MKL_NUM_THREADS", str(T))
 
-            # buffer holds completed slices until it's their turn to write
-            buffer: dict[int, tuple] = {}
-            next_to_write = 0
+        os.environ.setdefault("MKL_DYNAMIC", "FALSE")
+        os.environ.setdefault("OMP_DYNAMIC", "FALSE")
 
-            for fut in tqdm(as_completed(future_to_j), total=total_slices,
-                            desc="Generating velocity model", unit="slice"):
-                j_done, pgm, pgq = fut.result()
-                buffer[j_done] = (pgm, pgq)
+        # Use fork so workers inherit _CVM/_DATA/_GLOBALS without pickling
+        ctx = mp.get_context("fork")  # IMPORTANT: fork to inherit globals
 
-                # write as many contiguous slices as we can in order
-                while next_to_write in buffer:
-                    pgm_w, pgq_w = buffer.pop(next_to_write)
-                    write_global_qualities(out_dir, pgm_w, pgq_w,
-                                           next_to_write, vm_params, logger)
-                    next_to_write += 1
+        with ProcessPoolExecutor(max_workers=W, mp_context=ctx) as ex:
+            futures = [ex.submit(_compute_and_write_slice, j, str(out_dir))
+                       for j in range(total_slices)]
+            for f in tqdm(as_completed(futures), total=total_slices,
+                          desc="Generating velocity model", unit="slice"):
+                f.result()  # raise on worker error
 
     logger.log(logging.INFO, "Generation of velocity model 100% complete")
     logger.log(
