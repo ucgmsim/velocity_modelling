@@ -194,6 +194,8 @@ def _h5_writer_proc(q, out_dir_str, vm_params, log_level):
     # Import your existing HDF5 writer (same one serial runs use)
     h5_writer = importlib.import_module("velocity_modelling.write.hdf5")
     write_global_qualities = h5_writer.write_global_qualities
+    # cache closer (public or private, whichever you exposed)
+    close_cache = getattr(h5_writer, "close_cache", None) or getattr(h5_writer, "_close_cache")
 
     # Consume items in any order; the writer module handles file layout & metadata
     while True:
@@ -203,7 +205,15 @@ def _h5_writer_proc(q, out_dir_str, vm_params, log_level):
         j, pgm, pgq = item
         write_global_qualities(out_dir, pgm, pgq, j, vm_params, logging.getLogger("nzcvm"))
 
-
+    # All slices done: emit XDMF **once**, then close cached file cleanly
+    try:
+        h5_writer.create_xdmf_file(out_dir / "velocity_model.h5", vm_params, logging.getLogger("nzcvm"))
+    except Exception as e:
+        logging.getLogger("nzcvm").warning("create_xdmf_file failed: %s", e)
+    try:
+        close_cache(out_dir)  # closes the single open handle in this process
+    except Exception as e:
+        logging.getLogger("nzcvm").warning("close_cache failed: %s", e)
 
 def write_velo_mod_corners_text_file(
     global_mesh: GlobalMesh, output_dir: Path | str, logger: logging.Logger
