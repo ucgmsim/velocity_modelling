@@ -194,8 +194,7 @@ def _h5_writer_proc(q, out_dir_str, vm_params, log_level):
     # Import your existing HDF5 writer (same one serial runs use)
     h5_writer = importlib.import_module("velocity_modelling.write.hdf5")
     write_global_qualities = h5_writer.write_global_qualities
-    # cache closer (public or private, whichever you exposed)
-    close_cache = getattr(h5_writer, "close_cache", None) or getattr(h5_writer, "_close_cache")
+    close_cache = getattr(h5_writer, "close_cache", None)
 
     # Consume items in any order; the writer module handles file layout & metadata
     while True:

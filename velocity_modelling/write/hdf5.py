@@ -181,7 +181,7 @@ def _ensure_open(out_dir: Path, vm_params: dict, nx: int, ny: int, nz: int, logg
         )
     return _FILE_CACHE[key]
 
-def _close_cache(out_dir: Optional[Path] = None):
+def close_cache(out_dir: Optional[Path] = None):
     """Optional manual close (useful in tests/resets)."""
     if out_dir is None:
         keys = list(_FILE_CACHE.keys())
