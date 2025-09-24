@@ -84,6 +84,8 @@ from velocity_modelling.global_model import PartialGlobalSurfaceDepths
 from velocity_modelling.registry import CVMRegistry
 from velocity_modelling.velocity3d import PartialGlobalQualities, QualitiesVector
 
+from threadpoolctl import threadpool_limits
+import threadpoolctl
 
 ### for _compute_and_write_slice() workers
 from velocity_modelling.velocity3d import PartialGlobalQualities, QualitiesVector
@@ -111,12 +113,33 @@ _DATA = None           # (vm1d_data, nz_tomo, global_surfaces, basin_data_list)
 _GLOBALS = None        # (global_mesh, in_basin_mesh, partial_global_mesh_list)
 _WRITER = None
 _VM_PARAMS = None
-_out_queue = None  # set in parent when we start the writer process
+_OUT_QUEUE = None  # set in parent when we start the writer process
 
-def _init_worker_queue(q):
-    # Called once per worker by ProcessPoolExecutor(initializer=..., initargs=...)
-    global _out_queue
-    _out_queue = q
+
+def _init_worker_queue_and_blas(q, blas_threads: int):
+    """Runs once in each worker process."""
+    import os
+    global _OUT_QUEUE
+    _OUT_QUEUE = q
+
+    # Bullet-proof BLAS cap inside the worker
+    try:
+        from threadpoolctl import threadpool_limits, threadpool_info
+        threadpool_limits(limits=blas_threads)
+        #print("threadpools in worker:", threadpool_info())
+
+    except Exception:
+        # Fallback via env if threadpoolctl isn't present
+        os.environ["OPENBLAS_NUM_THREADS"] = str(blas_threads)
+        os.environ["OMP_NUM_THREADS"] = str(blas_threads)
+        os.environ["OMP_DYNAMIC"] = "FALSE"
+
+
+
+def _compute_and_write_block(j_block, out_dir):
+    for j in j_block:
+        _compute_and_write_slice(j, out_dir)  # your existing per-slice code
+    return j_block.start  # anything; just to surface exceptions
 
 def _compute_and_write_slice(j: int, out_dir: str):
 
@@ -130,7 +153,6 @@ def _compute_and_write_slice(j: int, out_dir: str):
 
     pgm = partial_global_mesh_list[j]
     pgq = PartialGlobalQualities(pgm.nx, pgm.nz)
-
 
     for k in range(len(pgm.x)):
         pg_sd = PartialGlobalSurfaceDepths(len(global_surfaces))
@@ -155,8 +177,8 @@ def _compute_and_write_slice(j: int, out_dir: str):
         pgq.inbasin[k] = qv.inbasin
 
 
-    _out_queue.put((j, pgm, pgq))  # for official HDF5 writer module
-    #_out_queue.put((j, pgq.vp, pgq.vs, pgq.rho, pgq.inbasin))  # for custom HDF5 writer process
+    _OUT_QUEUE.put((j, pgm, pgq))  # for official HDF5 writer module
+    #_OUT_QUEUE.put((j, pgq.vp, pgq.vs, pgq.rho, pgq.inbasin))  # for custom HDF5 writer process
     return j
 
 
@@ -561,41 +583,46 @@ def generate_3d_model(
         W = min(np_workers, cores)
         T = blas_threads or max(1, cores // W)
 
-        os.environ.setdefault("OPENBLAS_NUM_THREADS", str(T))
-        os.environ.setdefault("OMP_NUM_THREADS", str(T))
-        os.environ.setdefault("MKL_NUM_THREADS", str(T))
-
-        os.environ.setdefault("MKL_DYNAMIC", "FALSE")
-        os.environ.setdefault("OMP_DYNAMIC", "FALSE")
+        BLOCK = 4
+        blocks = [range(s, min(s + BLOCK, total_slices)) for s in range(0, total_slices, BLOCK)]
 
         # Use fork so workers inherit _CVM/_DATA/_GLOBALS without pickling
         ctx = mp.get_context("fork")  # IMPORTANT: fork to inherit globals
         logger.info(f"[mp] using context: {ctx.get_start_method()}")
 
+        parallel_setup_start_time = time.time()
+
         ny, nx, nz = len(global_mesh.y), len(global_mesh.x), len(global_mesh.z)
-        h5_path = out_dir / "velocity_model.h5"
+
 
         # 1) start writer
         from multiprocessing import Process
-        _out_queue = ctx.Queue(maxsize=32)  # small bounded queue is enough
+        _OUT_QUEUE = ctx.Queue(maxsize=32)  # small bounded queue is enough
         writer = ctx.Process(
             target=_h5_writer_proc,
-            args=(_out_queue, out_dir, vm_params, logger.level), # use this line to use the official writer module
-            #args=(_out_queue, str(h5_path), ny, nx, nz, vm_params, logger.level),
-
+            args=(_OUT_QUEUE, out_dir, vm_params, logger.level), # use this line to use the official writer module
             daemon=True,
         )
         writer.start()
 
         # 2) launch compute processes (each enqueue slices)
-        with ProcessPoolExecutor(max_workers=W, mp_context=ctx, initializer=_init_worker_queue, initargs=(_out_queue,),) as ex:
-            futures = [ex.submit(_compute_and_write_slice, j, str(out_dir)) for j in range(total_slices)]
-            for f in tqdm(as_completed(futures), total=total_slices,
-                          desc="Generating velocity model", unit="slice"):
-                f.result()
+        with ProcessPoolExecutor(max_workers=W, mp_context=ctx, initializer=_init_worker_queue_and_blas, initargs=(_OUT_QUEUE,T),) as ex:
+            #futures = [ex.submit(_compute_and_write_slice, j, str(out_dir)) for j in range(total_slices)]
+            # for f in tqdm(as_completed(futures), total=total_slices,
+            #               desc="Generating velocity model", unit="slice"):
+            #     f.result()
+            futures = [ex.submit(_compute_and_write_block, jb, str(out_dir)) for jb in blocks]
+            for i, _ in enumerate(tqdm(as_completed(futures), total=len(blocks), desc="Generating velocity model", unit="block")):
+                _.result()
+                if i==0:
+                    parallel_setup_elapsed_time = time.time() - parallel_setup_start_time
+                    logger.log(
+                        logging.INFO,
+                        f"Getting ready for parallel computation in {parallel_setup_elapsed_time:.2f} seconds",
+                    )
 
         # 3) tell writer to finish and wait
-        _out_queue.put(None)  # sentinel
+        _OUT_QUEUE.put(None)  # sentinel
         writer.join()
 
     logger.log(logging.INFO, "Generation of velocity model 100% complete")
