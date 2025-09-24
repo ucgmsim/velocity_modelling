@@ -93,6 +93,7 @@ from velocity_modelling.global_model import PartialGlobalSurfaceDepths
 from velocity_modelling.basin_model import PartialBasinSurfaceDepths, InBasin
 from velocity_modelling.geometry import MeshVector
 
+import os
 
 # Configure logging at the module level
 logging.basicConfig(
@@ -186,7 +187,12 @@ def _compute_and_write_slice(j: int, out_dir: str):
 def _h5_writer_proc(q, out_dir_str, vm_params, log_level):
     import logging, importlib
     from pathlib import Path
-    logging.getLogger("nzcvm").setLevel(log_level)
+
+    os.environ.setdefault("HDF5_USE_FILE_LOCKING", "FALSE")
+
+    logger = logging.getLogger("nzcvm")
+    logger.setLevel(log_level)
+    logger.log(logging.DEBUG,"[writer] started with spawn, waiting for first item…")
 
     out_dir = Path(out_dir_str)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -196,13 +202,19 @@ def _h5_writer_proc(q, out_dir_str, vm_params, log_level):
     write_global_qualities = h5_writer.write_global_qualities
     close_cache = getattr(h5_writer, "close_cache", None)
 
+
+
     # Consume items in any order; the writer module handles file layout & metadata
+    got_any = False
     while True:
         item = q.get()
-        if item is None:  # sentinel
+        if item is None:
             break
+        if not got_any:
+            logger.log(logging.DEBUG, "[writer] got first item")
+            got_any = True
         j, pgm, pgq = item
-        write_global_qualities(out_dir, pgm, pgq, j, vm_params, logging.getLogger("nzcvm"))
+        write_global_qualities(out_dir, pgm, pgq, j, vm_params, logger)
 
     # All slices done: emit XDMF **once**, then close cached file cleanly
     try:
@@ -443,6 +455,14 @@ def generate_3d_model(
         logger.log(logging.ERROR, f"Failed to create output directory {out_dir}: {e}")
         raise OSError(f"Failed to create output directory {out_dir}: {str(e)}")
 
+
+    if output_format == "HDF5":
+        h5_path = (out_dir / "velocity_model.h5").resolve()
+        # Pre-create empty file so writer opens with "r+"
+        import h5py
+        with h5py.File(h5_path, "w") as _:
+            pass
+
     # Initialize registry and generate model
     cvm_registry = CVMRegistry(
         vm_params["model_version"], data_root, nzcvm_registry, logger
@@ -597,7 +617,15 @@ def generate_3d_model(
 
         # Use fork so workers inherit _CVM/_DATA/_GLOBALS without pickling
         ctx = mp.get_context("fork")  # IMPORTANT: fork to inherit globals
-        logger.info(f"[mp] using context: {ctx.get_start_method()}")
+
+
+        # compute pool
+        fork_ctx = mp.get_context("fork")
+        logger.info(f"[mp] using context: {fork_ctx.get_start_method()}")
+
+        # writer process (spawned cleanly for HDF5)
+        spawn_ctx = mp.get_context("spawn")
+        logger.info(f"[mp] using context: {spawn_ctx.get_start_method()}")
 
         parallel_setup_start_time = time.time()
 
@@ -605,9 +633,10 @@ def generate_3d_model(
 
 
         # 1) start writer
-        from multiprocessing import Process
-        _OUT_QUEUE = ctx.Queue(maxsize=32)  # small bounded queue is enough
-        writer = ctx.Process(
+        # --- use the WRITER's context for the queue ---
+        _OUT_QUEUE = spawn_ctx.Queue(maxsize=64)  # small bounded queue is enough
+
+        writer = spawn_ctx.Process(
             target=_h5_writer_proc,
             args=(_OUT_QUEUE, out_dir, vm_params, logger.level), # use this line to use the official writer module
             daemon=True,
@@ -615,7 +644,7 @@ def generate_3d_model(
         writer.start()
 
         # 2) launch compute processes (each enqueue slices)
-        with ProcessPoolExecutor(max_workers=W, mp_context=ctx, initializer=_init_worker_queue_and_blas, initargs=(_OUT_QUEUE,T),) as ex:
+        with ProcessPoolExecutor(max_workers=W, mp_context=fork_ctx, initializer=_init_worker_queue_and_blas, initargs=(_OUT_QUEUE,T),) as ex:
             #futures = [ex.submit(_compute_and_write_slice, j, str(out_dir)) for j in range(total_slices)]
             # for f in tqdm(as_completed(futures), total=total_slices,
             #               desc="Generating velocity model", unit="slice"):

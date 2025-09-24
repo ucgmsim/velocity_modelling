@@ -101,6 +101,20 @@ _RDCC_NBYTES = 128 * 1024 * 1024  # 128MB file-level raw chunk cache
 _RDCC_NSLOTS = 1_000_003          # large prime, reduces hash collisions
 _RDCC_W0     = 0.75               # preemption policy
 
+import time
+
+def _open_file_update_or_create(hdf5_file: Path, rdcc_kwargs):
+    # tiny retry loop for HPC metadata latency
+    for attempt in range(10):
+        mode = "r+" if hdf5_file.exists() else "w"
+        try:
+            return h5py.File(hdf5_file, mode, libver="latest", **rdcc_kwargs)
+        except OSError as e:
+            # ENOENT or transient open error → sleep and retry
+            time.sleep(0.05 * (attempt + 1))
+    # final try; raise if still broken
+    return h5py.File(hdf5_file, "r+", libver="latest", **rdcc_kwargs)
+
 def _ensure_open(out_dir: Path, vm_params: dict, nx: int, ny: int, nz: int, logger: Logger):
     """
     Open/create velocity_model.h5 once and return (f, dsets).
@@ -116,10 +130,12 @@ def _ensure_open(out_dir: Path, vm_params: dict, nx: int, ny: int, nz: int, logg
     hdf5_file = out_dir / "velocity_model.h5"
 
     # Open once with tuned raw data chunk cache
-    f = h5py.File(
-        hdf5_file, "w", libver="latest",
-        rdcc_nbytes=_RDCC_NBYTES, rdcc_nslots=_RDCC_NSLOTS, rdcc_w0=_RDCC_W0
-    )
+    # f = h5py.File(
+    #     hdf5_file, "w", libver="latest",
+    #     rdcc_nbytes=_RDCC_NBYTES, rdcc_nslots=_RDCC_NSLOTS, rdcc_w0=_RDCC_W0
+    # )
+    rdcc_kwargs = dict(rdcc_nbytes=_RDCC_NBYTES, rdcc_nslots=_RDCC_NSLOTS, rdcc_w0=_RDCC_W0)
+    f = _open_file_update_or_create(hdf5_file, rdcc_kwargs)
 
     # File-level attrs
     f.attrs.update(
