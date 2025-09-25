@@ -556,25 +556,19 @@ def _init_worker_process(queue, blas_threads: int) -> None:
         os.environ["OMP_DYNAMIC"] = "FALSE"
 
 
-def _compute_slice_block(slice_indices: range, use_blocks: bool = True) -> int:
+def _compute_slice(slice_index: int) -> int:
     """
-    Compute a block of y-slices and send results to the writer process.
-
-    This function processes multiple consecutive y-slices as a block to improve
-    parallel efficiency and reduce queue overhead when use_blocks is True.
-    When False, processes slices individually.
+    Compute a single y-slice and send results to the writer process.
 
     Parameters
     ----------
-    slice_indices : range
-        Range of y-slice indices to process in this block
-    use_blocks : bool, optional
-        Whether to process as blocks or individual slices (default: True)
+    slice_index : int
+        Y-slice index to process
 
     Returns
     -------
     int
-        Starting index of the processed block (for exception handling)
+        The slice index that was processed (for exception handling)
 
     Raises
     ------
@@ -590,21 +584,18 @@ def _compute_slice_block(slice_indices: range, use_blocks: bool = True) -> int:
     vm1d_data, nz_tomography_data, global_surfaces, basin_data_list = _MODEL_DATA
     global_mesh, in_basin_mesh, partial_global_mesh_list = _MESH_DATA
 
-    # Process each slice in the block
-    for j in slice_indices:
-        partial_mesh = partial_global_mesh_list[j]
+    # Process this slice using the common function
+    partial_mesh = partial_global_mesh_list[slice_index]
+    partial_qualities = _process_single_slice(
+        slice_index, partial_mesh, global_mesh, in_basin_mesh,
+        cvm_registry, vm1d_data, nz_tomography_data,
+        global_surfaces, basin_data_list, _VM_PARAMS
+    )
 
-        # Process this slice using the common function
-        partial_qualities = _process_single_slice(
-            j, partial_mesh, global_mesh, in_basin_mesh,
-            cvm_registry, vm1d_data, nz_tomography_data,
-            global_surfaces, basin_data_list, _VM_PARAMS
-        )
+    # Send results to writer process
+    _OUTPUT_QUEUE.put((slice_index, partial_mesh, partial_qualities))
 
-        # Send results to writer process
-        _OUTPUT_QUEUE.put((j, partial_mesh, partial_qualities))
-
-    return slice_indices.start
+    return slice_index
 
 
 def _setup_parallel_globals(
@@ -653,38 +644,6 @@ def _setup_parallel_globals(
     _VM_PARAMS = vm_params
 
 
-def _create_slice_blocks(total_slices: int, num_workers: int, use_blocks: bool = True) -> list:
-    """
-    Create blocks of slice indices for parallel processing.
-
-    Parameters
-    ----------
-    total_slices : int
-        Total number of y-slices to process
-    num_workers : int
-        Number of worker processes
-    use_blocks : bool, optional
-        Whether to group slices into blocks (default: True)
-
-    Returns
-    -------
-    list
-        List of range objects representing slice blocks
-    """
-    if not use_blocks:
-        # Process individual slices
-        return [range(i, i + 1) for i in range(total_slices)]
-
-    # Group slices into blocks for better efficiency
-    slices_per_block = max(1, total_slices // (num_workers * 2))
-    blocks = []
-
-    for start in range(0, total_slices, slices_per_block):
-        end = min(start + slices_per_block, total_slices)
-        blocks.append(range(start, end))
-
-    return blocks
-
 
 def _run_parallel_processing(
         global_mesh: GlobalMesh,
@@ -699,14 +658,13 @@ def _run_parallel_processing(
         out_dir: Path,
         np_workers: int,
         blas_threads: int,
-        use_blocks: bool,
         logger: logging.Logger
 ) -> None:
     """
     Execute the complete parallel processing workflow.
 
     This function coordinates parallel processing using multiple worker processes
-    and a dedicated HDF5 writer process.
+    and a dedicated HDF5 writer process. Each worker processes individual slices.
 
     Parameters
     ----------
@@ -734,24 +692,13 @@ def _run_parallel_processing(
         Number of worker processes to use
     blas_threads : int
         Number of BLAS threads per worker process
-    use_blocks : bool
-        Whether to group slices into blocks for processing
     logger : logging.Logger
         Logger for progress reporting
     """
     from velocity_modelling.write.hdf5 import start_hdf5_writer_process
 
     total_slices = len(global_mesh.y)
-
-    if use_blocks:
-        slice_blocks = _create_slice_blocks(total_slices, np_workers, use_blocks)
-        logger.log(logging.INFO,f"Processing {total_slices} slices in {len(slice_blocks)} blocks using {np_workers} workers")
-        if len(slice_blocks) > 0:
-            avg_block_size = sum(len(block) for block in slice_blocks) / len(slice_blocks)
-            logger.log(logging.INFO,f"Average block size: {avg_block_size:.1f} slices per block")
-    else:
-        slice_blocks = _create_slice_blocks(total_slices, np_workers, use_blocks)
-        logger.log(logging.INFO,f"Processing {total_slices} slices individually using {np_workers} workers")
+    logger.info(f"Processing {total_slices} slices individually using {np_workers} workers")
 
     # Start timing parallel setup
     parallel_setup_start_time = time.time()
@@ -775,7 +722,7 @@ def _run_parallel_processing(
     )
 
     try:
-        # Submit slice blocks to worker processes
+        # Submit individual slices to worker processes
         with ProcessPoolExecutor(
                 max_workers=np_workers,
                 mp_context=mp.get_context("fork"),
@@ -783,39 +730,39 @@ def _run_parallel_processing(
                 initargs=(queue, blas_threads),
         ) as executor:
 
-            # Submit all blocks for processing
+            # Submit all slices for processing
             futures = {
-                executor.submit(_compute_slice_block, block, use_blocks): block
-                for block in slice_blocks
+                executor.submit(_compute_slice, j): j
+                for j in range(total_slices)
             }
 
-            # Process completed blocks with progress tracking
+            # Process completed slices with progress tracking
             completed_slices = 0
-            first_block_completed = False
+            first_slice_completed = False
+
             with tqdm(total=total_slices, desc="Processing slices", unit="slice") as pbar:
                 for future in as_completed(futures):
                     try:
-                        future.result()  # Raise any exceptions from workers
-                        block = futures[future]
-                        completed_slices += len(block)
-                        pbar.update(len(block))
+                        slice_index = future.result()  # Raise any exceptions from workers
+                        completed_slices += 1
+                        pbar.update(1)
 
-                        # Log parallel setup time after first block completes
-                        if not first_block_completed:
+                        # Log parallel setup time after first slice completes
+                        if not first_slice_completed:
                             parallel_setup_elapsed_time = time.time() - parallel_setup_start_time
-                            logger.log(logging.INFO,
+                            logger.info(
                                 f"Getting ready for parallel computation in {parallel_setup_elapsed_time:.2f} seconds"
                             )
-                            first_block_completed = True
+                            first_slice_completed = True
 
                     except (RuntimeError, ValueError) as e:
-                        logger.log(logging.ERROR,f"Worker process failed: {e}")
+                        logger.error(f"Worker process failed: {e}")
                         # Cancel remaining futures
                         for f in futures:
                             f.cancel()
                         raise RuntimeError(f"Parallel processing failed: {e}")
                     except (OSError, IOError) as e:
-                        logger.log(logging.ERROR,f"File system error in worker: {e}")
+                        logger.error(f"File system error in worker: {e}")
                         # Cancel remaining futures
                         for f in futures:
                             f.cancel()
@@ -830,7 +777,7 @@ def _run_parallel_processing(
             writer_process.terminate()
             writer_process.join()
 
-    logger.log(logging.INFO,"Parallel processing completed successfully")
+    logger.info("Parallel processing completed successfully")
 
 
 # ============================================================================
@@ -847,7 +794,6 @@ def _generate_velocity_model_impl(
         smoothing: bool = False,
         np_workers: Optional[int] = None,
         blas_threads: Optional[int] = None,
-        use_blocks: bool = True,
         log_level: str = "INFO",
 ) -> None:
     """
@@ -876,8 +822,6 @@ def _generate_velocity_model_impl(
         Number of worker processes (None for serial processing)
     blas_threads : int, optional
         Number of BLAS threads per worker process
-    use_blocks : bool
-        Whether to group slices into blocks for parallel processing
     log_level : str
         Logging level
     """
@@ -989,7 +933,7 @@ def _generate_velocity_model_impl(
                 global_mesh, in_basin_mesh, partial_global_mesh_list,
                 cvm_registry, vm1d_data, nz_tomography_data,
                 global_surfaces, basin_data_list, vm_params,
-                final_out_dir, actual_workers, actual_blas_threads, use_blocks, logger
+                final_out_dir, actual_workers, actual_blas_threads, logger
             )
 
     except KeyboardInterrupt:
@@ -1046,9 +990,7 @@ def generate_3d_model(
             int | None, typer.Option("--np")] = None,
         blas_threads: Annotated[
             int | None, typer.Option()] = None,
-        use_blocks: Annotated[
-            bool, typer.Option("--use-blocks/--no-use-blocks", help="Group slices into blocks for parallel processing")
-        ] = True,
+
         log_level: Annotated[str, typer.Option()] = "INFO",
 ) -> None:
     """
@@ -1082,7 +1024,6 @@ def generate_3d_model(
             smoothing=smoothing,
             np_workers=np_workers,
             blas_threads=blas_threads,
-            use_blocks=use_blocks,
             log_level=log_level,
         )
     except KeyboardInterrupt:
