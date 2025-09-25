@@ -50,15 +50,18 @@ pip install -e  .
     TOPO_TYPE=BULLDOZED
     OUTPUT_DIR=/tmp
 """
-import os
-import multiprocessing as mp
+
 import logging
+import multiprocessing as mp
+import os
 import sys
 import time
+from collections.abc import Callable
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from logging import Logger
+from multiprocessing import Queue
 from pathlib import Path
-from typing import Annotated, Optional, Tuple
+from typing import Annotated
 
 import numpy as np
 import typer
@@ -66,6 +69,7 @@ from tqdm import tqdm
 
 from qcore import cli
 from velocity_modelling.basin_model import (
+    BasinData,
     InBasin,
     InBasinGlobalMesh,
     PartialBasinSurfaceDepths,
@@ -78,10 +82,16 @@ from velocity_modelling.constants import (
 from velocity_modelling.geometry import (
     GlobalMesh,
     MeshVector,
+    PartialGlobalMesh,
     gen_full_model_grid_great_circle,
 )
-from velocity_modelling.global_model import PartialGlobalSurfaceDepths
+from velocity_modelling.global_model import (
+    GlobalSurfaceRead,
+    PartialGlobalSurfaceDepths,
+    TomographyData,
+)
 from velocity_modelling.registry import CVMRegistry
+from velocity_modelling.velocity1d import VelocityModel1D
 from velocity_modelling.velocity3d import PartialGlobalQualities, QualitiesVector
 
 # Configure logging at the module level
@@ -163,7 +173,7 @@ def parse_nzcvm_config(config_path: Path, logger: Logger | None = None) -> dict:
                     try:
                         vm_params[dest_key] = TopoTypes[value]
                     except KeyError:
-                        logger.log(logging.ERROR,f"Invalid topo type {value}")
+                        logger.log(logging.ERROR, f"Invalid topo type {value}")
                         raise KeyError(f"Invalid topo type {value}")
                 elif key in numeric_keys:
                     if float_value is None:
@@ -188,24 +198,25 @@ def parse_nzcvm_config(config_path: Path, logger: Logger | None = None) -> dict:
             + 0.5
         )
     except FileNotFoundError:
-        logger.log(logging.ERROR,f"Config file {config_path} not found")
+        logger.log(logging.ERROR, f"Config file {config_path} not found")
         raise FileNotFoundError(f"Config file {config_path} not found")
     except (ValueError, KeyError) as e:
-        logger.log(logging.ERROR,f"Error parsing config file {config_path}: {e}")
+        logger.log(logging.ERROR, f"Error parsing config file {config_path}: {e}")
         raise
     except KeyboardInterrupt:
         raise
-    except Exception as e:
-        logger.log(logging.ERROR,f"Error parsing config file {config_path}: {e}")
+    except (OSError, PermissionError) as e:
+        logger.log(logging.ERROR, f"Error parsing config file {config_path}: {e}")
         raise ValueError(f"Error parsing config file {config_path}: {str(e)}")
 
     return vm_params
 
+
 def _load_vm_params_from_cfg(
-        nzcvm_cfg_path: Path,
-        out_dir: Optional[Path] = None,
-        nzcvm_data_root: Optional[Path] = None,
-        model_version: Optional[str] = None,
+    nzcvm_cfg_path: Path,
+    out_dir: Path | None = None,
+    nzcvm_data_root: Path | None = None,
+    model_version: str | None = None,
 ) -> dict:
     """
     Load velocity model parameters from configuration file.
@@ -244,23 +255,25 @@ def _load_vm_params_from_cfg(
 
     return vm_params
 
+
 # ============================================================================
 # Common Processing Functions (shared between serial and parallel)
 # ============================================================================
 
+
 def _compute_point_qualities(
-        k: int,
-        j: int,
-        partial_mesh,
-        global_mesh: GlobalMesh,
-        in_basin_mesh: InBasinGlobalMesh,
-        cvm_registry: CVMRegistry,
-        vm1d_data,
-        nz_tomography_data,
-        global_surfaces: list,
-        basin_data_list: list,
-        vm_params: dict
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    k: int,
+    j: int,
+    partial_mesh: PartialGlobalMesh,
+    global_mesh: GlobalMesh,
+    in_basin_mesh: InBasinGlobalMesh,
+    cvm_registry: CVMRegistry,
+    vm1d_data: VelocityModel1D,
+    nz_tomography_data: TomographyData,
+    global_surfaces: list[GlobalSurfaceRead],
+    basin_data_list: list[BasinData],
+    vm_params: dict,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Compute velocity model properties for a single point (x,y) at all depths.
 
@@ -281,20 +294,20 @@ def _compute_point_qualities(
         Precomputed basin membership data
     cvm_registry : CVMRegistry
         Registry containing model data and configurations
-    vm1d_data : object
+    vm1d_data : VelocityModel1D
         1D velocity model data
-    nz_tomography_data : object
+    nz_tomography_data : TomographyData
         Tomography model data for New Zealand
-    global_surfaces : list
+    global_surfaces : list[GlobalSurfaceRead]
         List of global surface models
-    basin_data_list : list
+    basin_data_list : list[BasinData]
         List of basin model data
     vm_params : dict
         Velocity model parameters
 
     Returns
     -------
-    Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
+    tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
         Arrays of (rho, vp, vs, inbasin) for all depths at this point
     """
     # Initialize depth-dependent data structures
@@ -333,23 +346,23 @@ def _compute_point_qualities(
         qualities_vector.rho,
         qualities_vector.vp,
         qualities_vector.vs,
-        qualities_vector.inbasin
+        qualities_vector.inbasin,
     )
 
 
 def _process_single_slice(
-        j: int,
-        partial_mesh,
-        global_mesh: GlobalMesh,
-        in_basin_mesh: InBasinGlobalMesh,
-        cvm_registry: CVMRegistry,
-        vm1d_data,
-        nz_tomography_data,
-        global_surfaces: list,
-        basin_data_list: list,
-        vm_params: dict,
-        smoothing: bool = False,
-        logger: Optional[logging.Logger] = None
+    j: int,
+    partial_mesh: PartialGlobalMesh,
+    global_mesh: GlobalMesh,
+    in_basin_mesh: InBasinGlobalMesh,
+    cvm_registry: CVMRegistry,
+    vm1d_data: VelocityModel1D,
+    nz_tomography_data: TomographyData,
+    global_surfaces: list[GlobalSurfaceRead],
+    basin_data_list: list[BasinData],
+    vm_params: dict,
+    smoothing: bool = False,
+    logger: logging.Logger | None = None,
 ) -> PartialGlobalQualities:
     """
     Process a single y-slice to compute velocity model properties.
@@ -370,13 +383,13 @@ def _process_single_slice(
         Precomputed basin membership data
     cvm_registry : CVMRegistry
         Registry containing model data and configurations
-    vm1d_data : object
+    vm1d_data : VelocityModel1D
         1D velocity model data
-    nz_tomography_data : object
+    nz_tomography_data : TomographyData
         Tomography model data for New Zealand
-    global_surfaces : list
+    global_surfaces : list[GlobalSurfaceRead]
         List of global surface models
-    basin_data_list : list
+    basin_data_list : list[BasinData]
         List of basin model data
     vm_params : dict
         Velocity model parameters
@@ -399,14 +412,22 @@ def _process_single_slice(
     for k in range(len(partial_mesh.x)):
         # Apply smoothing if requested (placeholder for future implementation)
         if smoothing:
-            logger.log(logging.DEBUG,"Smoothing option selected but not implemented")
+            logger.log(logging.DEBUG, "Smoothing option selected but not implemented")
 
         try:
             # Compute velocity model properties for this point
             rho, vp, vs, inbasin = _compute_point_qualities(
-                k, j, partial_mesh, global_mesh, in_basin_mesh,
-                cvm_registry, vm1d_data, nz_tomography_data,
-                global_surfaces, basin_data_list, vm_params
+                k,
+                j,
+                partial_mesh,
+                global_mesh,
+                in_basin_mesh,
+                cvm_registry,
+                vm1d_data,
+                nz_tomography_data,
+                global_surfaces,
+                basin_data_list,
+                vm_params,
             )
 
             # Store computed properties
@@ -416,16 +437,23 @@ def _process_single_slice(
             partial_qualities.inbasin[k] = inbasin
 
         except AttributeError as e:
-            logger.log(logging.ERROR,f"Error accessing qualities vector attributes at j={j}, k={k}: {e}")
+            logger.log(
+                logging.ERROR,
+                f"Error accessing qualities vector attributes at j={j}, k={k}: {e}",
+            )
             raise RuntimeError(f"Error processing point at j={j}, k={k}: {str(e)}")
         except (ValueError, RuntimeError) as e:
-            logger.log(logging.ERROR,f"Error processing point at j={j}, k={k}: {e}")
+            logger.log(logging.ERROR, f"Error processing point at j={j}, k={k}: {e}")
             raise RuntimeError(f"Error processing point at j={j}, k={k}: {str(e)}")
         except KeyboardInterrupt:
             raise
-        except Exception as e:
-            logger.log(logging.ERROR,f"Unexpected error processing point at j={j}, k={k}: {e}")
-            raise RuntimeError(f"Unexpected error processing point at j={j}, k={k}: {str(e)}")
+        except (AttributeError, ValueError, RuntimeError) as e:
+            logger.log(
+                logging.ERROR, f"Unexpected error processing point at j={j}, k={k}: {e}"
+            )
+            raise RuntimeError(
+                f"Unexpected error processing point at j={j}, k={k}: {str(e)}"
+            )
 
     return partial_qualities
 
@@ -434,20 +462,21 @@ def _process_single_slice(
 # Serial Processing Implementation
 # ============================================================================
 
+
 def _run_serial_processing(
-        global_mesh: GlobalMesh,
-        in_basin_mesh: InBasinGlobalMesh,
-        partial_global_mesh_list: list,
-        cvm_registry: CVMRegistry,
-        vm1d_data,
-        nz_tomography_data,
-        global_surfaces: list,
-        basin_data_list: list,
-        vm_params: dict,
-        out_dir: Path,
-        write_global_qualities,
-        smoothing: bool,
-        logger: logging.Logger
+    global_mesh: GlobalMesh,
+    in_basin_mesh: InBasinGlobalMesh,
+    partial_global_mesh_list: list[PartialGlobalMesh],
+    cvm_registry: CVMRegistry,
+    vm1d_data: VelocityModel1D,
+    nz_tomography_data: TomographyData,
+    global_surfaces: list[GlobalSurfaceRead],
+    basin_data_list: list[BasinData],
+    vm_params: dict,
+    out_dir: Path,
+    write_global_qualities: Callable,
+    smoothing: bool,
+    logger: logging.Logger,
 ) -> None:
     """
     Execute the complete serial processing workflow.
@@ -462,23 +491,23 @@ def _run_serial_processing(
         The complete model mesh grid
     in_basin_mesh : InBasinGlobalMesh
         Precomputed basin membership data
-    partial_global_mesh_list : list
+    partial_global_mesh_list : list[PartialGlobalMesh]
         List of partial meshes for each y-slice
     cvm_registry : CVMRegistry
         Registry containing model data and configurations
-    vm1d_data : object
+    vm1d_data : VelocityModel1D
         1D velocity model data
-    nz_tomography_data : object
+    nz_tomography_data : TomographyData
         Tomography model data for New Zealand
-    global_surfaces : list
+    global_surfaces : list[GlobalSurfaceRead]
         List of global surface models
-    basin_data_list : list
+    basin_data_list : list[BasinData]
         List of basin model data
     vm_params : dict
         Velocity model parameters
     out_dir : Path
         Output directory for results
-    write_global_qualities : callable
+    write_global_qualities : Callable
         Function to write slice data to disk
     smoothing : bool
         Whether to apply smoothing
@@ -486,17 +515,25 @@ def _run_serial_processing(
         Logger for progress reporting
     """
     total_slices = len(global_mesh.y)
-    logger.log(logging.INFO,f"Starting serial processing of {total_slices} slices")
+    logger.log(logging.INFO, f"Starting serial processing of {total_slices} slices")
 
     for j in tqdm(range(total_slices), desc="Generating velocity model", unit="slice"):
         partial_mesh = partial_global_mesh_list[j]
 
         # Process this slice
         partial_qualities = _process_single_slice(
-            j, partial_mesh, global_mesh, in_basin_mesh,
-            cvm_registry, vm1d_data, nz_tomography_data,
-            global_surfaces, basin_data_list, vm_params,
-            smoothing, logger
+            j,
+            partial_mesh,
+            global_mesh,
+            in_basin_mesh,
+            cvm_registry,
+            vm1d_data,
+            nz_tomography_data,
+            global_surfaces,
+            basin_data_list,
+            vm_params,
+            smoothing,
+            logger,
         )
 
         # Write this latitude slice to disk
@@ -507,13 +544,13 @@ def _run_serial_processing(
         except KeyboardInterrupt:
             raise
         except (OSError, IOError) as e:
-            logger.log(logging.ERROR,f"File system error writing slice {j}: {e}")
+            logger.log(logging.ERROR, f"File system error writing slice {j}: {e}")
             raise OSError(f"Failed to write slice {j}: {str(e)}")
-        except Exception as e:
-            logger.log(logging.ERROR,f"Error writing slice {j} to disk: {e}")
+        except (ValueError, RuntimeError) as e:
+            logger.log(logging.ERROR, f"Error writing slice {j} to disk: {e}")
             raise RuntimeError(f"Error writing slice {j}: {str(e)}")
 
-    logger.log(logging.INFO,"Serial processing completed successfully")
+    logger.log(logging.INFO, "Serial processing completed successfully")
 
 
 # ============================================================================
@@ -528,7 +565,7 @@ _VM_PARAMS = None
 _OUTPUT_QUEUE = None
 
 
-def _init_worker_process(queue, blas_threads: int) -> None:
+def _init_worker_process(queue: Queue, blas_threads: int) -> None:
     """
     Initialize worker process with output queue and BLAS thread limits.
 
@@ -548,6 +585,7 @@ def _init_worker_process(queue, blas_threads: int) -> None:
     # Configure BLAS threading to prevent oversubscription
     try:
         from threadpoolctl import threadpool_limits
+
         threadpool_limits(limits=blas_threads)
     except ImportError:
         # Fallback using environment variables if threadpoolctl unavailable
@@ -577,7 +615,9 @@ def _compute_slice(slice_index: int) -> int:
     """
     # Verify worker globals are initialized
     if any(x is None for x in (_CVM_REGISTRY, _MODEL_DATA, _MESH_DATA, _VM_PARAMS)):
-        raise RuntimeError("Worker globals not initialized; ensure 'fork' context is used.")
+        raise RuntimeError(
+            "Worker globals not initialized; ensure 'fork' context is used."
+        )
 
     # Unpack global data once for efficiency
     cvm_registry = _CVM_REGISTRY
@@ -587,9 +627,16 @@ def _compute_slice(slice_index: int) -> int:
     # Process this slice using the common function
     partial_mesh = partial_global_mesh_list[slice_index]
     partial_qualities = _process_single_slice(
-        slice_index, partial_mesh, global_mesh, in_basin_mesh,
-        cvm_registry, vm1d_data, nz_tomography_data,
-        global_surfaces, basin_data_list, _VM_PARAMS
+        slice_index,
+        partial_mesh,
+        global_mesh,
+        in_basin_mesh,
+        cvm_registry,
+        vm1d_data,
+        nz_tomography_data,
+        global_surfaces,
+        basin_data_list,
+        _VM_PARAMS,
     )
 
     # Send results to writer process
@@ -599,15 +646,15 @@ def _compute_slice(slice_index: int) -> int:
 
 
 def _setup_parallel_globals(
-        cvm_registry: CVMRegistry,
-        vm1d_data,
-        nz_tomography_data,
-        global_surfaces: list,
-        basin_data_list: list,
-        global_mesh: GlobalMesh,
-        in_basin_mesh: InBasinGlobalMesh,
-        partial_global_mesh_list: list,
-        vm_params: dict
+    cvm_registry: CVMRegistry,
+    vm1d_data: VelocityModel1D,
+    nz_tomography_data: TomographyData,
+    global_surfaces: list[GlobalSurfaceRead],
+    basin_data_list: list[BasinData],
+    global_mesh: GlobalMesh,
+    in_basin_mesh: InBasinGlobalMesh,
+    partial_global_mesh_list: list[PartialGlobalMesh],
+    vm_params: dict,
 ) -> None:
     """
     Set up global variables for parallel worker processes.
@@ -619,19 +666,19 @@ def _setup_parallel_globals(
     ----------
     cvm_registry : CVMRegistry
         Registry containing model data and configurations
-    vm1d_data : object
+    vm1d_data : VelocityModel1D
         1D velocity model data
-    nz_tomography_data : object
+    nz_tomography_data : TomographyData
         Tomography model data for New Zealand
-    global_surfaces : list
+    global_surfaces : list[GlobalSurfaceRead]
         List of global surface models
-    basin_data_list : list
+    basin_data_list : list[BasinData]
         List of basin model data
     global_mesh : GlobalMesh
         The complete model mesh grid
     in_basin_mesh : InBasinGlobalMesh
         Precomputed basin membership data
-    partial_global_mesh_list : list
+    partial_global_mesh_list : list[PartialGlobalMesh]
         List of partial meshes for each y-slice
     vm_params : dict
         Velocity model parameters
@@ -644,21 +691,20 @@ def _setup_parallel_globals(
     _VM_PARAMS = vm_params
 
 
-
 def _run_parallel_processing(
-        global_mesh: GlobalMesh,
-        in_basin_mesh: InBasinGlobalMesh,
-        partial_global_mesh_list: list,
-        cvm_registry: CVMRegistry,
-        vm1d_data,
-        nz_tomography_data,
-        global_surfaces: list,
-        basin_data_list: list,
-        vm_params: dict,
-        out_dir: Path,
-        np_workers: int,
-        blas_threads: int,
-        logger: logging.Logger
+    global_mesh: GlobalMesh,
+    in_basin_mesh: InBasinGlobalMesh,
+    partial_global_mesh_list: list[PartialGlobalMesh],
+    cvm_registry: CVMRegistry,
+    vm1d_data: VelocityModel1D,
+    nz_tomography_data: TomographyData,
+    global_surfaces: list[GlobalSurfaceRead],
+    basin_data_list: list[BasinData],
+    vm_params: dict,
+    out_dir: Path,
+    np_workers: int,
+    blas_threads: int,
+    logger: logging.Logger,
 ) -> None:
     """
     Execute the complete parallel processing workflow.
@@ -672,17 +718,17 @@ def _run_parallel_processing(
         The complete model mesh grid
     in_basin_mesh : InBasinGlobalMesh
         Precomputed basin membership data
-    partial_global_mesh_list : list
+    partial_global_mesh_list : list[PartialGlobalMesh]
         List of partial meshes for each y-slice
     cvm_registry : CVMRegistry
         Registry containing model data and configurations
-    vm1d_data : object
+    vm1d_data : VelocityModel1D
         1D velocity model data
-    nz_tomography_data : object
+    nz_tomography_data : TomographyData
         Tomography model data for New Zealand
-    global_surfaces : list
+    global_surfaces : list[GlobalSurfaceRead]
         List of global surface models
-    basin_data_list : list
+    basin_data_list : list[BasinData]
         List of basin model data
     vm_params : dict
         Velocity model parameters
@@ -698,15 +744,24 @@ def _run_parallel_processing(
     from velocity_modelling.write.hdf5 import start_hdf5_writer_process
 
     total_slices = len(global_mesh.y)
-    logger.info(f"Processing {total_slices} slices individually using {np_workers} workers")
+    logger.info(
+        f"Processing {total_slices} slices individually using {np_workers} workers"
+    )
 
     # Start timing parallel setup
     parallel_setup_start_time = time.time()
 
     # Set up global variables for worker processes
     _setup_parallel_globals(
-        cvm_registry, vm1d_data, nz_tomography_data, global_surfaces,
-        basin_data_list, global_mesh, in_basin_mesh, partial_global_mesh_list, vm_params
+        cvm_registry,
+        vm1d_data,
+        nz_tomography_data,
+        global_surfaces,
+        basin_data_list,
+        global_mesh,
+        in_basin_mesh,
+        partial_global_mesh_list,
+        vm_params,
     )
 
     # Configure HDF5 for multiprocessing
@@ -717,39 +772,39 @@ def _run_parallel_processing(
     queue = mp_context.Queue(maxsize=np_workers * 2)
 
     # Start HDF5 writer process
-    writer_process = start_hdf5_writer_process(
-        queue, str(out_dir), vm_params, logger
-    )
+    writer_process = start_hdf5_writer_process(queue, str(out_dir), vm_params, logger)
 
     try:
         # Submit individual slices to worker processes
         with ProcessPoolExecutor(
-                max_workers=np_workers,
-                mp_context=mp.get_context("fork"),
-                initializer=_init_worker_process,
-                initargs=(queue, blas_threads),
+            max_workers=np_workers,
+            mp_context=mp.get_context("fork"),
+            initializer=_init_worker_process,
+            initargs=(queue, blas_threads),
         ) as executor:
-
             # Submit all slices for processing
             futures = {
-                executor.submit(_compute_slice, j): j
-                for j in range(total_slices)
+                executor.submit(_compute_slice, j): j for j in range(total_slices)
             }
 
             # Process completed slices with progress tracking
             completed_slices = 0
             first_slice_completed = False
 
-            with tqdm(total=total_slices, desc="Processing slices", unit="slice") as pbar:
+            with tqdm(
+                total=total_slices, desc="Processing slices", unit="slice"
+            ) as pbar:
                 for future in as_completed(futures):
                     try:
-                        slice_index = future.result()  # Raise any exceptions from workers
+                        future.result()  # Raise any exceptions from workers
                         completed_slices += 1
                         pbar.update(1)
 
                         # Log parallel setup time after first slice completes
                         if not first_slice_completed:
-                            parallel_setup_elapsed_time = time.time() - parallel_setup_start_time
+                            parallel_setup_elapsed_time = (
+                                time.time() - parallel_setup_start_time
+                            )
                             logger.info(
                                 f"Getting ready for parallel computation in {parallel_setup_elapsed_time:.2f} seconds"
                             )
@@ -784,17 +839,18 @@ def _run_parallel_processing(
 # Main Processing Function
 # ============================================================================
 
+
 def _generate_velocity_model_impl(
-        nzcvm_cfg_path: Path,
-        out_dir: Optional[Path] = None,
-        nzcvm_registry: Optional[Path] = None,
-        model_version: Optional[str] = None,
-        output_format_str: str = WriteFormat.EMOD3D.name,
-        nzcvm_data_root: Optional[Path] = None,
-        smoothing: bool = False,
-        np_workers: Optional[int] = None,
-        blas_threads: Optional[int] = None,
-        log_level: str = "INFO",
+    nzcvm_cfg_path: Path,
+    out_dir: Path | None = None,
+    nzcvm_registry: Path | None = None,
+    model_version: str | None = None,
+    output_format_str: str = WriteFormat.EMOD3D.name,
+    nzcvm_data_root: Path | None = None,
+    smoothing: bool = False,
+    np_workers: int | None = None,
+    blas_threads: int | None = None,
+    log_level: str = "INFO",
 ) -> None:
     """
     Implementation of velocity model generation.
@@ -834,13 +890,18 @@ def _generate_velocity_model_impl(
         output_format = WriteFormat[output_format_str]
     except KeyError:
         valid_formats = [fmt.name for fmt in WriteFormat]
-        raise ValueError(f"Invalid output format '{output_format_str}'. Valid options: {valid_formats}")
+        raise ValueError(
+            f"Invalid output format '{output_format_str}'. Valid options: {valid_formats}"
+        )
 
-    logger.log(logging.INFO,f"Starting velocity model generation with {output_format.value} output format")
+    logger.log(
+        logging.INFO,
+        f"Starting velocity model generation with {output_format.value} output format",
+    )
 
     # Determine processing mode and configure worker/thread allocation
     if np_workers is None or np_workers <= 1:
-        logger.log(logging.INFO,"Using serial processing")
+        logger.log(logging.INFO, "Using serial processing")
         use_parallel = False
         actual_workers = 1
         actual_blas_threads = blas_threads or (os.cpu_count() or 2)
@@ -850,63 +911,79 @@ def _generate_velocity_model_impl(
         actual_workers = min(np_workers, cores)
         actual_blas_threads = blas_threads or max(1, cores // actual_workers)
 
-        logger.log(logging.INFO,f"Using parallel processing with {actual_workers} workers")
-        logger.log(logging.INFO,f"BLAS threads per worker: {actual_blas_threads}")
+        logger.log(
+            logging.INFO, f"Using parallel processing with {actual_workers} workers"
+        )
+        logger.log(logging.INFO, f"BLAS threads per worker: {actual_blas_threads}")
         use_parallel = True
 
     try:
         # Load configuration and setup data paths
-        logger.log(logging.INFO,"Loading configuration parameters")
-        vm_params = _load_vm_params_from_cfg(nzcvm_cfg_path, out_dir, nzcvm_data_root, model_version)
+        logger.log(logging.INFO, "Loading configuration parameters")
+        vm_params = _load_vm_params_from_cfg(
+            nzcvm_cfg_path, out_dir, nzcvm_data_root, model_version
+        )
 
         # Set up data root and registry
         data_root = nzcvm_data_root or get_data_root()
         if nzcvm_registry is None:
             from velocity_modelling.constants import get_registry_path
+
             registry_path = get_registry_path()
         else:
             registry_path = nzcvm_registry
 
-        logger.log(logging.INFO,f"Using model version: {vm_params['model_version']}")
-        logger.log(logging.INFO,f"Using data root: {data_root}")
-        logger.log(logging.INFO,f"Using registry: {registry_path}")
+        logger.log(logging.INFO, f"Using model version: {vm_params['model_version']}")
+        logger.log(logging.INFO, f"Using data root: {data_root}")
+        logger.log(logging.INFO, f"Using registry: {registry_path}")
 
         # Initialize CVM registry
         cvm_registry = CVMRegistry(
-            version=vm_params['model_version'],
+            version=vm_params["model_version"],
             data_root=data_root,
             registry_path=registry_path,
-            logger=logger
+            logger=logger,
         )
 
         # Setup mesh and model data
-        logger.log(logging.INFO,"Generating global mesh")
+        logger.log(logging.INFO, "Generating global mesh")
         global_mesh = gen_full_model_grid_great_circle(vm_params, logger)
 
-        logger.log(logging.INFO,"Loading model data")
-        vm1d_data, nz_tomography_data, global_surfaces, basin_data_list = cvm_registry.load_all_global_data()
+        logger.log(logging.INFO, "Loading model data")
+        vm1d_data, nz_tomography_data, global_surfaces, basin_data_list = (
+            cvm_registry.load_all_global_data()
+        )
 
         # Preprocess basin membership for efficiency
-        logger.log(logging.INFO,"Preprocessing basin membership")
-        in_basin_mesh, partial_global_mesh_list = InBasinGlobalMesh.preprocess_basin_membership(
-            global_mesh, basin_data_list, logger, nz_tomography_data.smooth_boundary, actual_workers
+        logger.log(logging.INFO, "Preprocessing basin membership")
+        in_basin_mesh, partial_global_mesh_list = (
+            InBasinGlobalMesh.preprocess_basin_membership(
+                global_mesh,
+                basin_data_list,
+                logger,
+                nz_tomography_data.smooth_boundary,
+                actual_workers,
+            )
         )
 
         # Set final output directory
-        final_out_dir = out_dir or vm_params['output_dir']
+        final_out_dir = out_dir or vm_params["output_dir"]
         final_out_dir.mkdir(parents=True, exist_ok=True)
-        logger.log(logging.INFO,f"Output directory: {final_out_dir}")
+        logger.log(logging.INFO, f"Output directory: {final_out_dir}")
 
         # Determine output writer function based on format
         if output_format == WriteFormat.HDF5:
             from velocity_modelling.write.hdf5 import write_global_qualities
-            logger.log(logging.INFO,"Using HDF5 output format")
+
+            logger.log(logging.INFO, "Using HDF5 output format")
         elif output_format == WriteFormat.EMOD3D:
             from velocity_modelling.write.emod3d import write_global_qualities
-            logger.log(logging.INFO,"Using EMOD3D output format")
+
+            logger.log(logging.INFO, "Using EMOD3D output format")
         elif output_format == WriteFormat.CSV:
             from velocity_modelling.write.csv import write_global_qualities
-            logger.log(logging.INFO,"Using CSV output format")
+
+            logger.log(logging.INFO, "Using CSV output format")
         else:
             raise ValueError(f"Unsupported output format: {output_format}")
 
@@ -914,84 +991,108 @@ def _generate_velocity_model_impl(
         if not use_parallel:
             # Serial processing
             _run_serial_processing(
-                global_mesh, in_basin_mesh, partial_global_mesh_list,
-                cvm_registry, vm1d_data, nz_tomography_data,
-                global_surfaces, basin_data_list, vm_params,
-                final_out_dir, write_global_qualities, smoothing, logger
+                global_mesh,
+                in_basin_mesh,
+                partial_global_mesh_list,
+                cvm_registry,
+                vm1d_data,
+                nz_tomography_data,
+                global_surfaces,
+                basin_data_list,
+                vm_params,
+                final_out_dir,
+                write_global_qualities,
+                smoothing,
+                logger,
             )
         else:
             # Parallel processing - enforce HDF5 output format
             if output_format != WriteFormat.HDF5:
                 logger.warning(
-                    f"Parallel processing requires HDF5 output format, changing from {output_format.name} to HDF5")
+                    f"Parallel processing requires HDF5 output format, changing from {output_format.name} to HDF5"
+                )
                 output_format = WriteFormat.HDF5
                 # Re-import the correct writer function
                 from velocity_modelling.write.hdf5 import write_global_qualities
-                logger.log(logging.INFO,"Using HDF5 output format (enforced for parallel processing)")
+
+                logger.log(
+                    logging.INFO,
+                    "Using HDF5 output format (enforced for parallel processing)",
+                )
 
             _run_parallel_processing(
-                global_mesh, in_basin_mesh, partial_global_mesh_list,
-                cvm_registry, vm1d_data, nz_tomography_data,
-                global_surfaces, basin_data_list, vm_params,
-                final_out_dir, actual_workers, actual_blas_threads, logger
+                global_mesh,
+                in_basin_mesh,
+                partial_global_mesh_list,
+                cvm_registry,
+                vm1d_data,
+                nz_tomography_data,
+                global_surfaces,
+                basin_data_list,
+                vm_params,
+                final_out_dir,
+                actual_workers,
+                actual_blas_threads,
+                logger,
             )
 
     except KeyboardInterrupt:
         logger.warning("Processing interrupted by user")
         raise
     except (ValueError, KeyError) as e:
-        logger.log(logging.ERROR,f"Configuration or data error: {e}")
+        logger.log(logging.ERROR, f"Configuration or data error: {e}")
         raise
     except FileNotFoundError as e:
-        logger.log(logging.ERROR,f"Required file not found: {e}")
+        logger.log(logging.ERROR, f"Required file not found: {e}")
         raise
     except (OSError, IOError) as e:
-        logger.log(logging.ERROR,f"File system error: {e}")
+        logger.log(logging.ERROR, f"File system error: {e}")
         raise
     except RuntimeError as e:
-        logger.log(logging.ERROR,f"Processing error: {e}")
+        logger.log(logging.ERROR, f"Processing error: {e}")
         raise
 
     # Report completion
     elapsed_time = time.time() - start_time
-    logger.log(logging.INFO,f"Velocity model generation completed successfully in {elapsed_time:.1f} seconds")
+    logger.log(
+        logging.INFO,
+        f"Velocity model generation completed successfully in {elapsed_time:.1f} seconds",
+    )
 
 
 # ============================================================================
 # CLI Entry Point
 # ============================================================================
 
+
 @cli.from_docstring(app)
 def generate_3d_model(
-        nzcvm_cfg_path: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
-        out_dir: Annotated[Path | None, typer.Option(file_okay=False)] = None,
-        nzcvm_registry: Annotated[
-            Path | None,
-            typer.Option(
-                exists=False,
-                dir_okay=False,
-                help="Path to nzcvm_registry.yaml (default: nzcvm_data/nzcvm_registry.yaml)",
-            ),
-        ] = None,
-        model_version: Annotated[str | None, typer.Option()] = None,
-        output_format: Annotated[str, typer.Option()] = WriteFormat.EMOD3D.name,
-        nzcvm_data_root: Annotated[
-            Path | None,
-            typer.Option(
-                file_okay=False,
-                exists=False,  # will validate later
-                help="Override the default nzcvm_data directory",
-            ),
-        ] = None,
-        smoothing: Annotated[
-            bool, typer.Option()
-        ] = False,  # placeholder for smoothing, not implemented yet
-        np_workers: Annotated[
-            int | None, typer.Option("--np")] = None,
-        blas_threads: Annotated[
-            int | None, typer.Option()] = None,
-
-        log_level: Annotated[str, typer.Option()] = "INFO",
+    nzcvm_cfg_path: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
+    out_dir: Annotated[Path | None, typer.Option(file_okay=False)] = None,
+    nzcvm_registry: Annotated[
+        Path | None,
+        typer.Option(
+            exists=False,
+            dir_okay=False,
+            help="Path to nzcvm_registry.yaml (default: nzcvm_data/nzcvm_registry.yaml)",
+        ),
+    ] = None,
+    model_version: Annotated[str | None, typer.Option()] = None,
+    output_format: Annotated[str, typer.Option()] = WriteFormat.EMOD3D.name,
+    nzcvm_data_root: Annotated[
+        Path | None,
+        typer.Option(
+            file_okay=False,
+            exists=False,  # will validate later
+            help="Override the default nzcvm_data directory",
+        ),
+    ] = None,
+    smoothing: Annotated[
+        bool, typer.Option()
+    ] = False,  # placeholder for smoothing, not implemented yet
+    np_workers: Annotated[int | None, typer.Option("--np")] = None,
+    blas_threads: Annotated[int | None, typer.Option()] = None,
+    log_level: Annotated[str, typer.Option()] = "INFO",
 ) -> None:
     """
     Generate 3D seismic velocity model from configuration file.
@@ -1000,18 +1101,39 @@ def generate_3d_model(
     regional tomographic data, and local basin models according to the parameters
     specified in the configuration file.
 
-    Examples:
-        # Basic usage
+    Parameters
+    ----------
+    nzcvm_cfg_path : Path
+        Path to the NZCVM configuration file.
+    out_dir : Path, optional
+        Output directory (overrides config file setting).
+    nzcvm_registry : Path, optional
+        Path to nzcvm_registry.yaml file.
+    model_version : str, optional
+        Model version to use (overrides config file setting).
+    output_format : str
+        Output format (EMOD3D, HDF5, CSV).
+    nzcvm_data_root : Path, optional
+        Override the default nzcvm_data directory.
+    smoothing : bool
+        Enable smoothing (placeholder, not implemented).
+    np_workers : int, optional
+        Number of parallel workers.
+    blas_threads : int, optional
+        BLAS threads per worker.
+    log_level : str
+        Logging level.
+
+    Examples
+    --------
+    Basic usage:
         nzcvm generate-3d-model config.cfg
 
-        # Parallel processing with custom output
+    Parallel processing with custom output:
         nzcvm generate-3d-model config.cfg --np 8 --out-dir ./output
 
-        # HDF5 output with specific model version and BLAS threading
+    HDF5 output with specific model version and BLAS threading:
         nzcvm generate-3d-model config.cfg --output-format HDF5 --model-version 2.07 --blas-threads 2
-
-        # Disable block processing for debugging
-        nzcvm generate-3d-model config.cfg --np 4 --no-use-blocks
     """
     try:
         _generate_velocity_model_impl(
@@ -1027,19 +1149,19 @@ def generate_3d_model(
             log_level=log_level,
         )
     except KeyboardInterrupt:
-        logger.log(logging.INFO,"Operation cancelled by user")
+        logger.log(logging.INFO, "Operation cancelled by user")
         raise typer.Exit(1)
     except (ValueError, KeyError) as e:
-        logger.log(logging.ERROR,f"Configuration error: {e}")
+        logger.log(logging.ERROR, f"Configuration error: {e}")
         raise typer.Exit(1)
     except FileNotFoundError as e:
-        logger.log(logging.ERROR,f"File not found: {e}")
+        logger.log(logging.ERROR, f"File not found: {e}")
         raise typer.Exit(1)
     except (OSError, IOError) as e:
-        logger.log(logging.ERROR,f"File system error: {e}")
+        logger.log(logging.ERROR, f"File system error: {e}")
         raise typer.Exit(1)
     except RuntimeError as e:
-        logger.log(logging.ERROR,f"Processing failed: {e}")
+        logger.log(logging.ERROR, f"Processing failed: {e}")
         raise typer.Exit(1)
 
 

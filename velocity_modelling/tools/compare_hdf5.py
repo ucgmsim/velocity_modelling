@@ -27,17 +27,43 @@ For more detailed comparison, consider using h5diff:
     # Compare specific datasets
     h5diff -d 1e-6 vm3_24Sep/velocity_model.h5 vm3_25Sep/velocity_model.h5 /properties/vp /properties/vp
 """
-from pathlib import Path
-import argparse, h5py, numpy as np
+
+import argparse
 import time
+from pathlib import Path
+from typing import Any, Optional
 
-DATASETS = ["/properties/vp", "/properties/vs", "/properties/rho", "/properties/inbasin"]
+import h5py
+import numpy as np
+
+DATASETS = [
+    "/properties/vp",
+    "/properties/vs",
+    "/properties/rho",
+    "/properties/inbasin",
+]
 
 
-def get_axis_mapping(cfg, shape):
-    """Determine how to transpose data to (ny, nx, nz) format"""
-    nx = int(cfg.attrs["nx"]);
-    ny = int(cfg.attrs["ny"]);
+def get_axis_mapping(
+    cfg: h5py.Group, shape: tuple[int, ...]
+) -> Optional[tuple[int, ...]]:
+    """
+    Determine how to transpose data to (ny, nx, nz) format.
+
+    Parameters
+    ----------
+    cfg : h5py.Group
+        HDF5 config group containing nx, ny, nz attributes.
+    shape : tuple[int, ...]
+        Current shape of the dataset.
+
+    Returns
+    -------
+    tuple[int, ...] or None
+        Transpose indices to convert to (ny, nx, nz), or None if no transpose needed.
+    """
+    nx = int(cfg.attrs["nx"])
+    ny = int(cfg.attrs["ny"])
     nz = int(cfg.attrs["nz"])
 
     if shape == (ny, nx, nz):
@@ -62,8 +88,22 @@ def get_axis_mapping(cfg, shape):
         raise ValueError(f"Unrecognized shape: {shape} with nx,ny,nz={nx, ny, nz}")
 
 
-def stats(a, b):
-    """Calculate statistics for differences between arrays"""
+def stats(a: np.ndarray, b: np.ndarray) -> tuple[float, float, float]:
+    """
+    Calculate statistics for differences between arrays.
+
+    Parameters
+    ----------
+    a : np.ndarray
+        First array.
+    b : np.ndarray
+        Second array.
+
+    Returns
+    -------
+    tuple[float, float, float]
+        Tuple of (MAE, max absolute difference, RMSE).
+    """
     d = a - b
     mae = float(np.mean(np.abs(d)))
     mx = float(np.max(np.abs(d)))
@@ -71,50 +111,82 @@ def stats(a, b):
     return mae, mx, rmse
 
 
-def sample_comparison(ds_a, ds_b, transpose_a, transpose_b, target_shape,
-                      n_samples=1000, atol=1e-6, rtol=1e-6, seed=42):
-    """Compare datasets using statistical sampling"""
+def sample_comparison(
+    ds_a: h5py.Dataset,
+    ds_b: h5py.Dataset,
+    transpose_a: Optional[tuple[int, ...]],
+    transpose_b: Optional[tuple[int, ...]],
+    target_shape: tuple[int, int, int],
+    n_samples: int = 1000,
+    atol: float = 1e-6,
+    rtol: float = 1e-6,
+    seed: int = 42,
+) -> tuple[bool, str]:
+    """
+    Compare datasets using statistical sampling.
 
+    Parameters
+    ----------
+    ds_a : h5py.Dataset
+        First dataset to compare.
+    ds_b : h5py.Dataset
+        Second dataset to compare.
+    transpose_a : tuple[int, ...] or None
+        Transpose indices for first dataset.
+    transpose_b : tuple[int, ...] or None
+        Transpose indices for second dataset.
+    target_shape : tuple[int, int, int]
+        Target shape (ny, nx, nz).
+    n_samples : int
+        Number of random samples to compare.
+    atol : float
+        Absolute tolerance for comparison.
+    rtol : float
+        Relative tolerance for comparison.
+    seed : int
+        Random seed for reproducibility.
+
+    Returns
+    -------
+    tuple[bool, str]
+        Tuple of (matches, info_string).
+    """
     if ds_a.dtype != ds_b.dtype:
         return False, f"dtype mismatch: {ds_a.dtype} vs {ds_b.dtype}"
+
+    # Use original shapes for index generation
+    orig_shape_a = ds_a.shape
+    orig_shape_b = ds_b.shape
 
     ny, nx, nz = target_shape
     np.random.seed(seed)
 
     print(f"  Sampling {n_samples} random points from {ny}×{nx}×{nz} array...")
+    print(f"  Original shapes: A={orig_shape_a}, B={orig_shape_b}")
 
-    # Generate random indices
-    y_indices = np.random.randint(0, ny, n_samples)
-    x_indices = np.random.randint(0, nx, n_samples)
-    z_indices = np.random.randint(0, nz, n_samples)
+    # Generate random indices for ORIGINAL shapes
+    indices_a = []
+    indices_b = []
+
+    for _ in range(n_samples):
+        # Generate random indices for original array dimensions
+        idx_a = tuple(np.random.randint(0, dim) for dim in orig_shape_a)
+        idx_b = tuple(np.random.randint(0, dim) for dim in orig_shape_b)
+        indices_a.append(idx_a)
+        indices_b.append(idx_b)
 
     # Sample from both datasets
     sample_a = []
     sample_b = []
 
-    for i, (y, x, z) in enumerate(zip(y_indices, x_indices, z_indices)):
-        # Convert to original indices based on transpose
-        if transpose_a == (2, 1, 0):  # (nz, nx, ny) -> (ny, nx, nz)
-            orig_a = (z, x, y)
-        elif transpose_a == (0, 2, 1):  # (ny, nz, nx) -> (ny, nx, nz)
-            orig_a = (y, z, x)
-        else:  # None
-            orig_a = (y, x, z)
-
-        if transpose_b == (2, 1, 0):
-            orig_b = (z, x, y)
-        elif transpose_b == (0, 2, 1):
-            orig_b = (y, z, x)
-        else:
-            orig_b = (y, x, z)
-
-        val_a = ds_a[orig_a]
-        val_b = ds_b[orig_b]
+    for i, (idx_a, idx_b) in enumerate(zip(indices_a, indices_b)):
+        val_a = ds_a[idx_a]
+        val_b = ds_b[idx_b]
 
         sample_a.append(val_a)
         sample_b.append(val_b)
 
-        if (i + 1) % 100 == 0:
+        if (i + 1) % 1000 == 0:
             print(f"    Sampled {i + 1}/{n_samples} points...")
 
     sample_a = np.array(sample_a)
@@ -124,13 +196,49 @@ def sample_comparison(ds_a, ds_b, transpose_a, transpose_b, target_shape,
     matches = np.allclose(sample_a, sample_b, atol=atol, rtol=rtol, equal_nan=True)
     sample_stats = stats(sample_a, sample_b)
 
-    return matches, f"sample_stats: MAE={sample_stats[0]:.2e}, Max={sample_stats[1]:.2e}, RMSE={sample_stats[2]:.2e}"
+    return (
+        matches,
+        f"sample_stats: MAE={sample_stats[0]:.2e}, Max={sample_stats[1]:.2e}, RMSE={sample_stats[2]:.2e}",
+    )
 
 
-def systematic_slice_check(ds_a, ds_b, transpose_a, transpose_b, target_shape,
-                           n_slices=20, atol=1e-6, rtol=1e-6):
-    """Check a systematic sample of complete slices"""
+def systematic_slice_check(
+    ds_a: h5py.Dataset,
+    ds_b: h5py.Dataset,
+    transpose_a: tuple[int, ...] | None,
+    transpose_b: tuple[int, ...] | None,
+    target_shape: tuple[int, int, int],
+    n_slices: int = 20,
+    atol: float = 1e-6,
+    rtol: float = 1e-6,
+) -> tuple[bool, str]:
+    """
+    Check a systematic sample of complete slices.
 
+    Parameters
+    ----------
+    ds_a : h5py.Dataset
+        First dataset to compare.
+    ds_b : h5py.Dataset
+        Second dataset to compare.
+    transpose_a : tuple[int, ...] or None
+        Transpose indices for first dataset.
+    transpose_b : tuple[int, ...] or None
+        Transpose indices for second dataset.
+    target_shape : tuple[int, int, int]
+        Target shape (ny, nx, nz).
+    n_slices : int
+        Number of slices to check.
+    atol : float
+        Absolute tolerance for comparison.
+    rtol : float
+        Relative tolerance for comparison.
+
+    Returns
+    -------
+    tuple[bool, str]
+        Tuple of (matches, info_string).
+    """
     ny, nx, nz = target_shape
     slice_indices = np.linspace(0, ny - 1, n_slices, dtype=int)
 
@@ -167,13 +275,45 @@ def systematic_slice_check(ds_a, ds_b, transpose_a, transpose_b, target_shape,
 
     if differences:
         max_diff = max(diff[1][1] for diff in differences)  # max of max diffs
-        return False, f"{len(differences)}/{n_slices} slices differ, max_diff={max_diff:.2e}"
+        return (
+            False,
+            f"{len(differences)}/{n_slices} slices differ, max_diff={max_diff:.2e}",
+        )
     else:
         return True, f"all {n_slices} slices match"
 
 
-def hash_comparison(ds_a, ds_b, transpose_a, transpose_b, target_shape, chunk_slices=100):
-    """Compare using hash/checksum of chunks"""
+def hash_comparison(
+    ds_a: h5py.Dataset,
+    ds_b: h5py.Dataset,
+    transpose_a: tuple[int, ...] | None,
+    transpose_b: tuple[int, ...] | None,
+    target_shape: tuple[int, int, int],
+    chunk_slices: int = 100,
+) -> tuple[bool, str]:
+    """
+    Compare using hash/checksum of chunks.
+
+    Parameters
+    ----------
+    ds_a : h5py.Dataset
+        First dataset to compare.
+    ds_b : h5py.Dataset
+        Second dataset to compare.
+    transpose_a : tuple[int, ...] or None
+        Transpose indices for first dataset.
+    transpose_b : tuple[int, ...] or None
+        Transpose indices for second dataset.
+    target_shape : tuple[int, int, int]
+        Target shape (ny, nx, nz).
+    chunk_slices : int
+        Number of slices per chunk for hashing.
+
+    Returns
+    -------
+    tuple[bool, str]
+        Tuple of (matches, info_string).
+    """
     import hashlib
 
     ny, nx, nz = target_shape
@@ -191,14 +331,16 @@ def hash_comparison(ds_a, ds_b, transpose_a, transpose_b, target_shape, chunk_sl
             chunk_a = np.transpose(chunk_a, (2, 1, 0))  # -> (chunk_size, nx, nz)
         else:
             chunk_a = ds_a[start:end]
-            if transpose_a: chunk_a = np.transpose(chunk_a, transpose_a)
+            if transpose_a:
+                chunk_a = np.transpose(chunk_a, transpose_a)
 
         if transpose_b == (2, 1, 0):
             chunk_b = ds_b[:, :, start:end]
             chunk_b = np.transpose(chunk_b, (2, 1, 0))
         else:
             chunk_b = ds_b[start:end]
-            if transpose_b: chunk_b = np.transpose(chunk_b, transpose_b)
+            if transpose_b:
+                chunk_b = np.transpose(chunk_b, transpose_b)
 
         # Compute hashes
         hash_a = hashlib.md5(chunk_a.tobytes()).hexdigest()
@@ -207,7 +349,9 @@ def hash_comparison(ds_a, ds_b, transpose_a, transpose_b, target_shape, chunk_sl
         if hash_a != hash_b:
             hash_diffs.append((start, end))
 
-        print(f"    Chunk {start:4d}-{end - 1:4d}: {'SAME' if hash_a == hash_b else 'DIFF'}")
+        print(
+            f"    Chunk {start:4d}-{end - 1:4d}: {'SAME' if hash_a == hash_b else 'DIFF'}"
+        )
 
     if hash_diffs:
         return False, f"{len(hash_diffs)} chunks have different hashes: {hash_diffs}"
@@ -215,14 +359,44 @@ def hash_comparison(ds_a, ds_b, transpose_a, transpose_b, target_shape, chunk_sl
         return True, "all chunk hashes match"
 
 
-def compare_fast(a_path: Path, b_path: Path, atol=1e-6, rtol=1e-6,
-                 method="sample", n_samples=1000, n_slices=20):
-    """Fast comparison using various methods"""
+def compare_fast(
+    a_path: Path,
+    b_path: Path,
+    atol: float = 1e-6,
+    rtol: float = 1e-6,
+    method: str = "sample",
+    n_samples: int = 1000,
+    n_slices: int = 20,
+) -> list[tuple[str, str, Any]]:
+    """
+    Fast comparison using various methods.
 
+    Parameters
+    ----------
+    a_path : Path
+        Path to first HDF5 file.
+    b_path : Path
+        Path to second HDF5 file.
+    atol : float
+        Absolute tolerance for comparison.
+    rtol : float
+        Relative tolerance for comparison.
+    method : str
+        Comparison method: 'sample', 'slices', or 'hash'.
+    n_samples : int
+        Number of samples for sample method.
+    n_slices : int
+        Number of slices for slice method.
+
+    Returns
+    -------
+    list[tuple[str, str, Any]]
+        List of (dataset_name, status, info) tuples.
+    """
     methods = {
         "sample": sample_comparison,
         "slices": systematic_slice_check,
-        "hash": hash_comparison
+        "hash": hash_comparison,
     }
 
     if method not in methods:
@@ -230,20 +404,20 @@ def compare_fast(a_path: Path, b_path: Path, atol=1e-6, rtol=1e-6,
 
     out = []
 
-    with h5py.File(a_path, "r") as A, h5py.File(b_path, "r") as B:
+    with h5py.File(a_path, "r") as file_a, h5py.File(b_path, "r") as file_b:
         for ds_name in DATASETS:
             print(f"\nComparing {ds_name} using {method} method...")
             start_time = time.time()
 
-            if ds_name not in A or ds_name not in B:
+            if ds_name not in file_a or ds_name not in file_b:
                 out.append((ds_name, "missing", None))
                 continue
 
-            ds_a = A[ds_name]
-            ds_b = B[ds_name]
+            ds_a = file_a[ds_name]
+            ds_b = file_b[ds_name]
 
-            cfg_a = A.get("config")
-            cfg_b = B.get("config")
+            cfg_a = file_a.get("config")
+            cfg_b = file_b.get("config")
 
             if cfg_a is None or cfg_b is None:
                 out.append((ds_name, "missing config", None))
@@ -254,8 +428,8 @@ def compare_fast(a_path: Path, b_path: Path, atol=1e-6, rtol=1e-6,
                 transpose_b = get_axis_mapping(cfg_b, ds_b.shape)
 
                 # Determine target shape after transpose
-                nx = int(cfg_a.attrs["nx"]);
-                ny = int(cfg_a.attrs["ny"]);
+                nx = int(cfg_a.attrs["nx"])
+                ny = int(cfg_a.attrs["ny"])
                 nz = int(cfg_a.attrs["nz"])
                 target_shape = (ny, nx, nz)
 
@@ -264,29 +438,47 @@ def compare_fast(a_path: Path, b_path: Path, atol=1e-6, rtol=1e-6,
 
                 # Apply chosen method
                 if method == "sample":
-                    is_match, info = sample_comparison(ds_a, ds_b, transpose_a, transpose_b,
-                                                       target_shape, n_samples, atol, rtol)
+                    is_match, info = sample_comparison(
+                        ds_a,
+                        ds_b,
+                        transpose_a,
+                        transpose_b,
+                        target_shape,
+                        n_samples,
+                        atol,
+                        rtol,
+                    )
                 elif method == "slices":
-                    is_match, info = systematic_slice_check(ds_a, ds_b, transpose_a, transpose_b,
-                                                            target_shape, n_slices, atol, rtol)
+                    is_match, info = systematic_slice_check(
+                        ds_a,
+                        ds_b,
+                        transpose_a,
+                        transpose_b,
+                        target_shape,
+                        n_slices,
+                        atol,
+                        rtol,
+                    )
                 elif method == "hash":
-                    is_match, info = hash_comparison(ds_a, ds_b, transpose_a, transpose_b, target_shape)
+                    is_match, info = hash_comparison(
+                        ds_a, ds_b, transpose_a, transpose_b, target_shape
+                    )
 
                 elapsed = time.time() - start_time
                 status = "ok" if is_match else "differs"
                 out.append((ds_name, status, f"{info} ({elapsed:.1f}s)"))
 
-            except Exception as e:
+            except (KeyError, ValueError, OSError) as e:
                 out.append((ds_name, "error", str(e)))
 
         # Config comparison (fast)
-        CA, CB = A.get("config"), B.get("config")
-        if CA and CB:
-            keysA, keysB = set(CA.attrs), set(CB.attrs)
-            common = sorted(keysA & keysB)
+        config_a, config_b = file_a.get("config"), file_b.get("config")
+        if config_a and config_b:
+            keys_a, keys_b = set(config_a.attrs), set(config_b.attrs)
+            common = sorted(keys_a & keys_b)
             skews = []
             for k in common:
-                va, vb = CA.attrs[k], CB.attrs[k]
+                va, vb = config_a.attrs[k], config_b.attrs[k]
                 if isinstance(va, (int, float)) and isinstance(vb, (int, float)):
                     if not np.isclose(va, vb, atol=atol, rtol=rtol):
                         skews.append((k, va, vb))
@@ -299,15 +491,31 @@ def compare_fast(a_path: Path, b_path: Path, atol=1e-6, rtol=1e-6,
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(description="Fast HDF5 comparison using sampling/hashing")
+    ap = argparse.ArgumentParser(
+        description="Fast HDF5 comparison using sampling/hashing"
+    )
     ap.add_argument("a", type=Path, help="First HDF5 file")
     ap.add_argument("b", type=Path, help="Second HDF5 file")
-    ap.add_argument("--method", choices=["sample", "slices", "hash"], default="sample",
-                    help="Comparison method: sample (random points), slices (systematic slices), hash (chunk hashes)")
+    ap.add_argument(
+        "--method",
+        choices=["sample", "slices", "hash"],
+        default="sample",
+        help="Comparison method: sample (random points), slices (systematic slices), hash (chunk hashes)",
+    )
     ap.add_argument("--atol", type=float, default=1e-6, help="Absolute tolerance")
     ap.add_argument("--rtol", type=float, default=1e-6, help="Relative tolerance")
-    ap.add_argument("--n-samples", type=int, default=10000, help="Number of random samples (for sample method)")
-    ap.add_argument("--n-slices", type=int, default=50, help="Number of slices to check (for slices method)")
+    ap.add_argument(
+        "--n-samples",
+        type=int,
+        default=10000,
+        help="Number of random samples (for sample method)",
+    )
+    ap.add_argument(
+        "--n-slices",
+        type=int,
+        default=50,
+        help="Number of slices to check (for slices method)",
+    )
     args = ap.parse_args()
 
     print(f"Fast comparing {args.a} vs {args.b}")
@@ -315,7 +523,9 @@ if __name__ == "__main__":
     print(f"Tolerances: atol={args.atol}, rtol={args.rtol}")
 
     start_total = time.time()
-    res = compare_fast(args.a, args.b, args.atol, args.rtol, args.method, args.n_samples, args.n_slices)
+    res = compare_fast(
+        args.a, args.b, args.atol, args.rtol, args.method, args.n_samples, args.n_slices
+    )
     total_time = time.time() - start_total
 
     print(f"\n{'=' * 60}")

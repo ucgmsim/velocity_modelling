@@ -23,9 +23,7 @@ from tqdm import tqdm
 
 
 def convert_hdf5_to_emod3d(
-    src_h5: Path,
-    out_dir: Path,
-    min_vs: Optional[float] = None
+    src_h5: Path, out_dir: Path, min_vs: Optional[float] = None
 ) -> None:
     """
     Convert HDF5 velocity model to EMOD3D binary format.
@@ -66,9 +64,9 @@ def convert_hdf5_to_emod3d(
 
     with h5py.File(src_h5, "r") as f:
         # Read data arrays - HDF5 format is (nz, ny, nx)
-        vp_full = np.array(f["/properties/vp"])     # (nz, ny, nx)
-        vs_full = np.array(f["/properties/vs"])     # (nz, ny, nx)
-        rho_full = np.array(f["/properties/rho"])   # (nz, ny, nx)
+        vp_full = np.array(f["/properties/vp"])  # (nz, ny, nx)
+        vs_full = np.array(f["/properties/vs"])  # (nz, ny, nx)
+        rho_full = np.array(f["/properties/rho"])  # (nz, ny, nx)
         inbasin_full = np.array(f["/properties/inbasin"])  # (nz, ny, nx)
 
         nz, ny, nx = vp_full.shape
@@ -85,29 +83,30 @@ def convert_hdf5_to_emod3d(
         filepath.unlink(missing_ok=True)
 
     # Process each y-slice (latitude) to exactly match emod3d.py write pattern
-    with open(vp3dfile, "wb") as fvp, \
-         open(vs3dfile, "wb") as fvs, \
-         open(rho3dfile, "wb") as frho, \
-         open(in_basin_mask_file, "wb") as fmask:
-
+    with (
+        open(vp3dfile, "wb") as fvp,
+        open(vs3dfile, "wb") as fvs,
+        open(rho3dfile, "wb") as frho,
+        open(in_basin_mask_file, "wb") as fmask,
+    ):
         for j in tqdm(range(ny), desc="Processing y-slices", unit="slice"):
             # Extract slice for this y-index from HDF5: (nz, ny, nx) -> (nz, nx)
             # The hdf5.py already stored the data transposed, so this gives us
             # exactly what emod3d.py produces with .T.flatten()
-            vp_slice = vp_full[:, j, :]      # Shape: (nz, nx)
-            vs_slice = vs_full[:, j, :]      # Shape: (nz, nx)
-            rho_slice = rho_full[:, j, :]    # Shape: (nz, nx)
-            inb_slice = inbasin_full[:, j, :] # Shape: (nz, nx)
+            vp_slice = vp_full[:, j, :]  # Shape: (nz, nx)
+            vs_slice = vs_full[:, j, :]  # Shape: (nz, nx)
+            rho_slice = rho_full[:, j, :]  # Shape: (nz, nx)
+            inb_slice = inbasin_full[:, j, :]  # Shape: (nz, nx)
 
             # Apply minimum Vs constraint (match emod3d.py exactly)
             vs_slice = np.maximum(vs_slice, min_vs)
 
             # The HDF5 slice already has the correct layout from hdf5.py
             # Just flatten directly - no need for additional transposing
-            vp_flat = vp_slice.flatten()   # (nz, nx) -> flat
-            vs_flat = vs_slice.flatten()   # (nz, nx) -> flat
-            rho_flat = rho_slice.flatten() # (nz, nx) -> flat
-            inb_flat = inb_slice.flatten() # (nz, nx) -> flat
+            vp_flat = vp_slice.flatten()  # (nz, nx) -> flat
+            vs_flat = vs_slice.flatten()  # (nz, nx) -> flat
+            rho_flat = rho_slice.flatten()  # (nz, nx) -> flat
+            inb_flat = inb_slice.flatten()  # (nz, nx) -> flat
 
             # Convert inbasin to the same dtype as used in emod3d.py
             # emod3d.py: inbasin.astype(vp.dtype) where vp.dtype is float32
@@ -115,7 +114,7 @@ def convert_hdf5_to_emod3d(
 
             # Debug: print first few values for the first slice
             if j == 0:
-                print(f"\nFirst slice debug - first 10 values:")
+                print("\nFirst slice debug - first 10 values:")
                 print(f"  vp:  {vp_flat[:10]}")
                 print(f"  vs:  {vs_flat[:10]}")
                 print(f"  rho: {rho_flat[:10]}")
@@ -135,7 +134,7 @@ def convert_hdf5_to_emod3d(
     end_time = time.time()
     processing_time = end_time - start_time
 
-    print(f"✅ Conversion complete!")
+    print("✅ Conversion complete!")
     print(f"   Created: {vp3dfile}")
     print(f"   Created: {vs3dfile}")
     print(f"   Created: {rho3dfile}")
@@ -148,34 +147,25 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Convert HDF5 velocity model to EMOD3D binary format"
     )
-    parser.add_argument(
-        "src_h5",
-        type=Path,
-        help="Path to input HDF5 file"
-    )
-    parser.add_argument(
-        "out_dir",
-        type=Path,
-        help="Output directory for binary files"
-    )
+    parser.add_argument("src_h5", type=Path, help="Path to input HDF5 file")
+    parser.add_argument("out_dir", type=Path, help="Output directory for binary files")
     parser.add_argument(
         "--min-vs",
         type=float,
-        help="Minimum Vs value to enforce (km/s). If not specified, uses value from HDF5 metadata."
+        help="Minimum Vs value to enforce (km/s). If not specified, uses value from HDF5 metadata.",
     )
 
     args = parser.parse_args()
 
     if not args.src_h5.exists():
-        print(f"❌ Error: Input file {args.src_h5} does not exist")
-        sys.exit(1)
+        raise FileNotFoundError(f"Input file {args.src_h5} does not exist")
 
-    try:
-        convert_hdf5_to_emod3d(args.src_h5, args.out_dir, args.min_vs)
-    except Exception as e:
-        print(f"❌ Error during conversion: {e}")
-        sys.exit(1)
+    convert_hdf5_to_emod3d(args.src_h5, args.out_dir, args.min_vs)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except (FileNotFoundError, OSError, ValueError, KeyError, RuntimeError) as e:
+        print(f"❌ Error: {e}")
+        sys.exit(1)

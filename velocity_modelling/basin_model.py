@@ -133,19 +133,45 @@ def determine_basin_contains_lat_lon(
 
     return False
 
+
 _WORK_INB = None
 _WORK_PGM_LIST = None
 
-def _init_inbasin_worker(in_basin_mesh, partial_global_mesh_list):
+
+def _init_inbasin_worker(
+    in_basin_mesh: "InBasinGlobalMesh",
+    partial_global_mesh_list: list["PartialGlobalMesh"],
+) -> None:
+    """
+    Initialize worker process with shared data for parallel basin membership computation.
+
+    Parameters
+    ----------
+    in_basin_mesh : InBasinGlobalMesh
+        The basin mesh object containing basin data and boundaries.
+    partial_global_mesh_list : list[PartialGlobalMesh]
+        List of partial global mesh objects for each row.
+    """
     # Called once in each worker
     global _WORK_INB, _WORK_PGM_LIST
     _WORK_INB = in_basin_mesh
     _WORK_PGM_LIST = partial_global_mesh_list
 
-def _compute_membership_row(j: int):
+
+def _compute_membership_row(j: int) -> tuple[int, list[list[int]]]:
     """
     Compute basin membership for one row j.
-    Returns (j, row_list), where row_list is a list of lists of basin indices with length nx.
+
+    Parameters
+    ----------
+    j : int
+        Row index to compute basin membership for.
+
+    Returns
+    -------
+    tuple[int, list[list[int]]]
+        Tuple containing (j, row_list), where row_list is a list of lists
+        of basin indices with length nx.
     """
     in_basin_mesh = _WORK_INB
     pgm = _WORK_PGM_LIST[j]
@@ -157,6 +183,7 @@ def _compute_membership_row(j: int):
         lon = pgm.lon[k]
         row[k] = in_basin_mesh.find_all_containing_basins(lat, lon)
     return j, row
+
 
 class InBasinGlobalMesh:
     """
@@ -265,7 +292,9 @@ class InBasinGlobalMesh:
 
         # Use object dtype to store lists of basin indices
         # Initialize basin_membership as an (ny, nx) array of empty lists
-        in_basin_mesh.basin_membership = [ [[] for _ in range(in_basin_mesh.nx)] for _ in range(in_basin_mesh.ny) ]
+        in_basin_mesh.basin_membership = [
+            [[] for _ in range(in_basin_mesh.nx)] for _ in range(in_basin_mesh.ny)
+        ]
 
         boundary_arrays = [
             np.vstack(basin.boundaries)  # Merge all boundary arrays for each basin
@@ -311,9 +340,11 @@ class InBasinGlobalMesh:
         use_workers = (np_workers or 1) > 1 and ny > 1
 
         if use_workers:
-            import os, multiprocessing as mp
+            import multiprocessing as mp
+            import os
             from concurrent.futures import ProcessPoolExecutor, as_completed
-            W = min(np_workers or (os.cpu_count() or 1), ny)
+
+            n_workers = min(np_workers or (os.cpu_count() or 1), ny)
 
             # Prefer 'fork' on Linux to inherit big, read-only objects without pickling
             try:
@@ -325,10 +356,13 @@ class InBasinGlobalMesh:
                 start_method = "spawn"
 
             if logger:
-                logger.log(logging.INFO, f"Parallelizing basin membership over rows: workers={W} ({start_method}).")
+                logger.log(
+                    logging.INFO,
+                    f"Parallelizing basin membership over rows: workers={n_workers} ({start_method}).",
+                )
 
             with ProcessPoolExecutor(
-                max_workers=W,
+                max_workers=n_workers,
                 mp_context=ctx,
                 initializer=_init_inbasin_worker,
                 initargs=(in_basin_mesh, partial_global_mesh_list),

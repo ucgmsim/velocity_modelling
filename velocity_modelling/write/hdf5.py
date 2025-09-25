@@ -8,6 +8,7 @@ scientific datasets with metadata.
 The module supports both serial and parallel writing modes, with a dedicated writer process
 for parallel processing to ensure thread-safe HDF5 operations.
 """
+
 import datetime
 import logging
 import multiprocessing as mp
@@ -22,10 +23,10 @@ import numpy as np
 from velocity_modelling.geometry import PartialGlobalMesh
 from velocity_modelling.velocity3d import PartialGlobalQualities
 
-
 # ============================================================================
 # XDMF File Creation
 # ============================================================================
+
 
 def create_xdmf_file(hdf5_file: Path, vm_params: dict, logger: logging.Logger) -> None:
     """
@@ -54,7 +55,7 @@ def create_xdmf_file(hdf5_file: Path, vm_params: dict, logger: logging.Logger) -
 
     if not all([nx, ny, nz]):
         error_msg = "Missing 'nx' 'ny' or 'nz' key in vm_params. Ensure the velocity model parameters are correctly set."
-        logger.log(logging.ERROR,error_msg)
+        logger.log(logging.ERROR, error_msg)
         raise KeyError("Missing nx, ny, or nz in vm_params")
 
     hdf5_relative = hdf5_file.name
@@ -103,11 +104,11 @@ def create_xdmf_file(hdf5_file: Path, vm_params: dict, logger: logging.Logger) -
     try:
         with open(xdmf_file, "w") as f:
             f.write(xdmf_content)
-        logger.log(logging.INFO,f"Created ParaView-compatible XDMF file: {xdmf_file}")
+        logger.log(logging.INFO, f"Created ParaView-compatible XDMF file: {xdmf_file}")
     except Exception as e:
         if isinstance(e, (SystemExit, KeyboardInterrupt)):
             raise
-        logger.log(logging.ERROR,f"Error creating XDMF file: {e}")
+        logger.log(logging.ERROR, f"Error creating XDMF file: {e}")
         raise RuntimeError(f"Failed to create XDMF file: {e}")
 
 
@@ -120,11 +121,13 @@ _FILE_CACHE = {}  # key: resolved out_dir -> (h5py.File, dict_dsets)
 
 # HDF5 chunk cache configuration for optimal performance
 _RDCC_NBYTES = 128 * 1024 * 1024  # 128MB file-level raw chunk cache
-_RDCC_NSLOTS = 1_000_003          # large prime, reduces hash collisions
-_RDCC_W0 = 0.75                   # preemption policy
+_RDCC_NSLOTS = 1_000_003  # large prime, reduces hash collisions
+_RDCC_W0 = 0.75  # preemption policy
 
 
-def _open_file_with_retry(hdf5_file: Path, rdcc_kwargs: dict, max_retries: int = 10) -> h5py.File:
+def _open_file_with_retry(
+    hdf5_file: Path, rdcc_kwargs: dict, max_retries: int = 10
+) -> h5py.File:
     """
     Open HDF5 file with retry logic for HPC metadata latency.
 
@@ -161,11 +164,7 @@ def _open_file_with_retry(hdf5_file: Path, rdcc_kwargs: dict, max_retries: int =
 
 
 def _create_hdf5_structure(
-        f: h5py.File,
-        vm_params: dict,
-        nx: int,
-        ny: int,
-        nz: int
+    f: h5py.File, vm_params: dict, nx: int, ny: int, nz: int
 ) -> dict:
     """
     Create the HDF5 file structure with groups and datasets.
@@ -192,18 +191,25 @@ def _create_hdf5_structure(
         Dictionary of created datasets for easy access
     """
     # Check if structure already exists and has correct dimensions
-    if ("config" in f and "mesh" in f and "properties" in f and
-            "vp" in f["properties"] and f["properties"]["vp"].shape == (nz, ny, nx)):
+    if (
+        "config" in f
+        and "mesh" in f
+        and "properties" in f
+        and "vp" in f["properties"]
+        and f["properties"]["vp"].shape == (nz, ny, nx)
+    ):
         # File structure already exists with correct dimensions, reuse it
         mesh_group = f["mesh"]
         props = f["properties"]
 
         # Update file-level attributes in case they changed
-        f.attrs.update({
-            "total_y_slices": ny,
-            "format_version": "1.0",
-            "creation_date": datetime.datetime.now().isoformat(),
-        })
+        f.attrs.update(
+            {
+                "total_y_slices": ny,
+                "format_version": "1.0",
+                "creation_date": datetime.datetime.now().isoformat(),
+            }
+        )
 
         return {
             "vp": props["vp"],
@@ -211,7 +217,7 @@ def _create_hdf5_structure(
             "rho": props["rho"],
             "inbasin": props["inbasin"],
             "lat": mesh_group["lat"],
-            "lon": mesh_group["lon"]
+            "lon": mesh_group["lon"],
         }
 
     # File doesn't exist or has wrong dimensions - recreate structure
@@ -221,19 +227,28 @@ def _create_hdf5_structure(
             del f[group_name]
 
     # Set file-level attributes
-    f.attrs.update({
-        "total_y_slices": ny,
-        "format_version": "1.0",
-        "creation_date": datetime.datetime.now().isoformat(),
-    })
+    f.attrs.update(
+        {
+            "total_y_slices": ny,
+            "format_version": "1.0",
+            "creation_date": datetime.datetime.now().isoformat(),
+        }
+    )
 
     # Create configuration group with stringified parameter values
     config_group = f.create_group("config")
-    config_group.attrs.update({
-        k: (v.name if hasattr(v, "name") else
-            v.value if hasattr(v, "value") else str(v))
-        for k, v in vm_params.items()
-    })
+    config_group.attrs.update(
+        {
+            k: (
+                v.name
+                if hasattr(v, "name")
+                else v.value
+                if hasattr(v, "value")
+                else str(v)
+            )
+            for k, v in vm_params.items()
+        }
+    )
     config_group.attrs["config_string"] = "\n".join(
         f"{k.upper()}={v}" for k, v in vm_params.items()
     )
@@ -261,10 +276,9 @@ def _create_hdf5_structure(
 
     # Add dataset attributes
     d_vp.attrs["units"] = "km/s"
-    d_vs.attrs.update({
-        "units": "km/s",
-        "min_value_enforced": vm_params.get("min_vs", 0.0)
-    })
+    d_vs.attrs.update(
+        {"units": "km/s", "min_value_enforced": vm_params.get("min_vs", 0.0)}
+    )
     d_rho.attrs["units"] = "g/cm^3"
 
     return {
@@ -273,17 +287,17 @@ def _create_hdf5_structure(
         "rho": d_rho,
         "inbasin": d_inb,
         "lat": d_lat,
-        "lon": d_lon
+        "lon": d_lon,
     }
 
 
 def _ensure_hdf5_file_open(
-        out_dir: Path,
-        vm_params: dict,
-        nx: int,
-        ny: int,
-        nz: int,
-        logger: Logger | None = None
+    out_dir: Path,
+    vm_params: dict,
+    nx: int,
+    ny: int,
+    nz: int,
+    logger: Logger | None = None,
 ) -> tuple:
     """
     Ensure HDF5 file is open and return file handle and datasets.
@@ -325,7 +339,7 @@ def _ensure_hdf5_file_open(
     rdcc_kwargs = {
         "rdcc_nbytes": _RDCC_NBYTES,
         "rdcc_nslots": _RDCC_NSLOTS,
-        "rdcc_w0": _RDCC_W0
+        "rdcc_w0": _RDCC_W0,
     }
 
     # Open file with retry logic for HPC environments
@@ -339,24 +353,34 @@ def _ensure_hdf5_file_open(
 
     # Register cleanup function to close file on process exit
     import atexit
-    def _cleanup_file(cache_key=key):
-        """Clean up cached file handle on process exit."""
+
+    def _cleanup_file(cache_key: str = key):
+        """
+        Clean up cached file handle on process exit.
+
+        Parameters
+        ----------
+        cache_key : str
+            Cache key for the file to close
+        """
         cached_data = _FILE_CACHE.pop(cache_key, None)
         if cached_data:
             try:
                 cached_data[0].close()
-            except Exception:
+            except (OSError, ValueError):
                 pass  # Ignore errors during cleanup
 
+    # Register the cleanup function only once
     atexit.register(_cleanup_file)
 
     if logger:
         # Define shape and chunks for logging
         shape = (nz, ny, nx)
         chunks = (nz, 1, nx)
-        logger.log(logging.DEBUG,
+        logger.log(
+            logging.DEBUG,
             f"[hdf5] Opened {hdf5_file} with shape={shape} chunks={chunks} "
-            f"cache={_RDCC_NBYTES // (1024 * 1024)}MB"
+            f"cache={_RDCC_NBYTES // (1024 * 1024)}MB",
         )
 
     return _FILE_CACHE[key]
@@ -385,7 +409,7 @@ def close_hdf5_cache(out_dir: Path | None = None) -> None:
         if cached_data:
             try:
                 cached_data[0].close()
-            except Exception:
+            except (OSError, ValueError):
                 pass  # Ignore errors during cleanup
 
 
@@ -393,13 +417,14 @@ def close_hdf5_cache(out_dir: Path | None = None) -> None:
 # Core Writing Functions
 # ============================================================================
 
+
 def write_global_qualities(
     out_dir: Path,
     partial_global_mesh: PartialGlobalMesh,
     partial_global_qualities: PartialGlobalQualities,
     lat_ind: int,
     vm_params: dict,
-    logger:  Logger | None = None,
+    logger: Logger | None = None,
 ) -> None:
     """
     Write a latitude slice of velocity data to the consolidated HDF5 file.
@@ -445,7 +470,7 @@ def write_global_qualities(
     try:
         ny = int(vm_params["ny"])
     except KeyError:
-        logger.log(logging.ERROR,"Missing 'ny' parameter in vm_params")
+        logger.log(logging.ERROR, "Missing 'ny' parameter in vm_params")
         raise KeyError("Missing 'ny' key in vm_params")
 
     # Get or create HDF5 file handle and datasets
@@ -465,8 +490,10 @@ def write_global_qualities(
     # Validate data shape
     expected_shape = (nz, nx)
     if vp_transposed.shape != expected_shape:
-        error_msg = f"Shape mismatch: got {vp_transposed.shape}, expected {expected_shape}"
-        logger.log(logging.ERROR,error_msg)
+        error_msg = (
+            f"Shape mismatch: got {vp_transposed.shape}, expected {expected_shape}"
+        )
+        logger.log(logging.ERROR, error_msg)
         raise ValueError(error_msg)
 
     # Write property data for this y-slice using optimized slice notation
@@ -478,18 +505,19 @@ def write_global_qualities(
     # Update progress tracking attribute
     f.attrs["last_slice_written"] = lat_ind
 
-    logger.log(logging.DEBUG,f"Successfully wrote slice {lat_ind} to HDF5 file")
+    logger.log(logging.DEBUG, f"Successfully wrote slice {lat_ind} to HDF5 file")
 
 
 # ============================================================================
 # Parallel Processing Support
 # ============================================================================
 
+
 def _hdf5_writer_process(
-        queue: mp.Queue,
-        out_dir_str: str,
-        vm_params: dict,
-        logger: logging.Logger,
+    queue: mp.Queue,
+    out_dir_str: str,
+    vm_params: dict,
+    logger: logging.Logger,
 ) -> None:
     """
     Dedicated writer process for parallel HDF5 operations.
@@ -515,14 +543,13 @@ def _hdf5_writer_process(
     to ensure clean HDF5 library initialization. It processes incoming
     slice data until it receives a sentinel None value.
     """
-    import importlib
     import logging
     from pathlib import Path
 
     # Configure HDF5 for multiprocessing safety
     os.environ.setdefault("HDF5_USE_FILE_LOCKING", "FALSE")
 
-    logger.log(logging.DEBUG,"HDF5 writer process started, waiting for slice data...")
+    logger.log(logging.DEBUG, "HDF5 writer process started, waiting for slice data...")
 
     out_dir = Path(out_dir_str)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -535,11 +562,14 @@ def _hdf5_writer_process(
         while True:
             item = queue.get()
             if item is None:  # Sentinel value to stop processing
-                logger.log(logging.DEBUG,f"Writer process received sentinel, processed {received_slices} slices")
+                logger.log(
+                    logging.DEBUG,
+                    f"Writer process received sentinel, processed {received_slices} slices",
+                )
                 break
 
             if received_slices == 0:
-                logger.log(logging.DEBUG,"Received first slice data")
+                logger.log(logging.DEBUG, "Received first slice data")
 
             # Unpack slice data and write to HDF5
             j, partial_mesh, partial_qualities = item
@@ -555,23 +585,25 @@ def _hdf5_writer_process(
             try:
                 hdf5_file = out_dir / "velocity_model.h5"
                 create_xdmf_file(hdf5_file, vm_params, logger)
-                logger.log(logging.INFO,"HDF5 model completed with ParaView compatibility")
+                logger.log(
+                    logging.INFO, "HDF5 model completed with ParaView compatibility"
+                )
                 xdmf_created = True
-            except Exception as e:
-                logger.log(logging.WARNING,f"Failed to create XDMF file: {e}")
+            except (OSError, KeyError, RuntimeError) as e:
+                logger.log(logging.WARNING, f"Failed to create XDMF file: {e}")
                 xdmf_created = False  # Reset flag if creation failed
 
     except Exception as e:
-        logger.log(logging.ERROR,f"HDF5 writer process error: {e}")
+        logger.log(logging.ERROR, f"HDF5 writer process error: {e}")
         raise
     finally:
         # Clean up cached file handles
         try:
             close_hdf5_cache(out_dir)
-        except Exception as e:
-            logger.log(logging.WARNING,f"Failed to close HDF5 cache: {e}")
+        except (OSError, ValueError) as e:
+            logger.log(logging.WARNING, f"Failed to close HDF5 cache: {e}")
 
-    logger.log(logging.DEBUG,"HDF5 writer process finished")
+    logger.log(logging.DEBUG, "HDF5 writer process finished")
 
 
 def start_hdf5_writer_process(
@@ -604,7 +636,7 @@ def start_hdf5_writer_process(
     writer_process = mp_context.Process(
         target=_hdf5_writer_process,
         args=(queue, out_dir_str, vm_params, logger),
-        name="HDF5Writer"
+        name="HDF5Writer",
     )
     writer_process.start()
     return writer_process
