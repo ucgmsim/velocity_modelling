@@ -2,8 +2,7 @@
 Paleogene Layer Velocity Submodel v2
 
 This module provides velocity values for the Paleogene geological layer.
-It implements depth-dependent velocity values based on empirical relationships
-for sedimentary rocks of Paleogene age in the Canterbury basin.
+It implements constant velocity values for sedimentary rocks of Paleogene age in the Canterbury basin.
 """
 
 import logging
