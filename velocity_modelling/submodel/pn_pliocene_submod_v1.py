@@ -1,5 +1,5 @@
 """
-Pliocene Layer Velocity Submodel v2
+Pliocene Layer Velocity Submodel v1
 
 This module provides velocity values for the Pliocene geological layer.
 It implements depth-dependent velocity values based on empirical relationships
