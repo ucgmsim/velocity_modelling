@@ -25,6 +25,7 @@ from typing import Annotated, Any
 import h5py
 import numpy as np
 import typer
+
 from qcore import cli
 
 app = typer.Typer(pretty_exceptions_enable=False)
@@ -61,12 +62,12 @@ def stats(a: np.ndarray, b: np.ndarray) -> tuple[float, float, float]:
 
 
 def sample_comparison(
-        ds_a: h5py.Dataset,
-        ds_b: h5py.Dataset,
-        n_samples: int = 10000,
-        atol: float = 1e-6,
-        rtol: float = 1e-6,
-        seed: int = 42,
+    ds_a: h5py.Dataset,
+    ds_b: h5py.Dataset,
+    n_samples: int = 10000,
+    atol: float = 1e-6,
+    rtol: float = 1e-6,
+    seed: int = 42,
 ) -> tuple[bool, str]:
     """
     Compare datasets using statistical sampling of random points.
@@ -144,11 +145,11 @@ def sample_comparison(
 
 
 def systematic_slice_check(
-        ds_a: h5py.Dataset,
-        ds_b: h5py.Dataset,
-        n_slices: int = 50,
-        atol: float = 1e-6,
-        rtol: float = 1e-6,
+    ds_a: h5py.Dataset,
+    ds_b: h5py.Dataset,
+    n_slices: int = 50,
+    atol: float = 1e-6,
+    rtol: float = 1e-6,
 ) -> tuple[bool, str]:
     """
     Check a systematic sample of complete slices along the first dimension.
@@ -206,7 +207,7 @@ def systematic_slice_check(
             slice_stats = stats(slice_a, slice_b)
             differences.append((slice_idx, slice_stats))
 
-        status = 'OK' if len(differences) == i else 'DIFF'
+        status = "OK" if len(differences) == i else "DIFF"
         print(f"    Slice {slice_idx:4d}: {status}")
 
     if differences:
@@ -220,9 +221,9 @@ def systematic_slice_check(
 
 
 def hash_comparison(
-        ds_a: h5py.Dataset,
-        ds_b: h5py.Dataset,
-        chunk_slices: int = 100,
+    ds_a: h5py.Dataset,
+    ds_b: h5py.Dataset,
+    chunk_slices: int = 100,
 ) -> tuple[bool, str]:
     """
     Compare using MD5 hash of chunks along the first dimension.
@@ -279,7 +280,7 @@ def hash_comparison(
         if hash_a != hash_b:
             hash_diffs.append((start, end))
 
-        status = 'SAME' if hash_a == hash_b else 'DIFF'
+        status = "SAME" if hash_a == hash_b else "DIFF"
         print(f"    Chunk {start:4d}-{end - 1:4d}: {status}")
 
     if hash_diffs:
@@ -289,14 +290,14 @@ def hash_comparison(
 
 
 def compare_datasets(
-        a_path: Path,
-        b_path: Path,
-        method: str = "sample",
-        atol: float = 1e-6,
-        rtol: float = 1e-6,
-        n_samples: int = 10000,
-        n_slices: int = 50,
-        chunk_slices: int = 100,
+    a_path: Path,
+    b_path: Path,
+    method: str = "sample",
+    atol: float = 1e-6,
+    rtol: float = 1e-6,
+    n_samples: int = 10000,
+    n_slices: int = 50,
+    chunk_slices: int = 100,
 ) -> list[tuple[str, str, Any]]:
     """
     Compare HDF5 datasets using specified method.
@@ -412,26 +413,32 @@ def compare_datasets(
                         else:
                             config_diffs.append(f"{key}: {val_a} vs {val_b}")
 
-
-
             status = "identical" if not config_diffs else "differs"
-            results.append(("config", status, config_diffs if config_diffs else "all attributes match"))
+            results.append(
+                (
+                    "config",
+                    status,
+                    config_diffs if config_diffs else "all attributes match",
+                )
+            )
         else:
-            results.append(("config", "missing", "config group not found in one or both files"))
+            results.append(
+                ("config", "missing", "config group not found in one or both files")
+            )
 
     return results
 
 
 @cli.from_docstring(app)
 def compare_hdf5_regression(
-        a: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
-        b: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
-        method: str = "sample",
-        atol: float  = 1e-6,
-        rtol: float = 1e-6,
-        n_samples: int = 10000,
-        n_slices: int = 50,
-        chunk_slices: int = 100,
+    a: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
+    b: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
+    method: str = "sample",
+    atol: float = 1e-6,
+    rtol: float = 1e-6,
+    n_samples: int = 10000,
+    n_slices: int = 50,
+    chunk_slices: int = 100,
 ) -> None:
     """
     Efficient regression test comparison of large HDF5 velocity model files.

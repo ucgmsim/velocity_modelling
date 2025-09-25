@@ -6,6 +6,8 @@ determination in the velocity model. It handles basin boundaries, surfaces, and 
 with proper logging throughout the processing workflow.
 """
 
+from __future__ import annotations
+
 import logging
 from logging import Logger
 from pathlib import Path
@@ -139,8 +141,8 @@ _WORK_PGM_LIST = None
 
 
 def _init_inbasin_worker(
-    in_basin_mesh: "InBasinGlobalMesh",
-    partial_global_mesh_list: list["PartialGlobalMesh"],
+    in_basin_mesh: InBasinGlobalMesh,
+    partial_global_mesh_list: list[PartialGlobalMesh],
 ) -> None:
     """
     Initialize worker process with shared data for parallel basin membership computation.

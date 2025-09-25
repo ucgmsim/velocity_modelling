@@ -19,16 +19,15 @@ from typing import Annotated
 import h5py
 import numpy as np
 import typer
-from qcore import cli
 from tqdm import tqdm
+
+from qcore import cli
 
 app = typer.Typer(pretty_exceptions_enable=False)
 
 
 def convert_hdf5_to_emod3d(
-        src_h5: Path,
-        out_dir: Path,
-        min_vs: float | None = None
+    src_h5: Path, out_dir: Path, min_vs: float | None = None
 ) -> None:
     """
     Convert HDF5 velocity model to EMOD3D binary format.
@@ -166,15 +165,21 @@ def convert_hdf5_to_emod3d(
 
 @cli.from_docstring(app)
 def convert_hdf5_to_emod3d_main(
-        src_h5: Annotated[Path, typer.Argument(
+    src_h5: Annotated[
+        Path,
+        typer.Argument(
             exists=True,
             dir_okay=False,
-        )],
-        out_dir: Annotated[Path, typer.Argument(
+        ),
+    ],
+    out_dir: Annotated[
+        Path,
+        typer.Argument(
             file_okay=False,
             writable=True,
-        )],
-        min_vs: float | None = None,
+        ),
+    ],
+    min_vs: float | None = None,
 ) -> None:
     """
     Convert HDF5 velocity model to EMOD3D binary format.
