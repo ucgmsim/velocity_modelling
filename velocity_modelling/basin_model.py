@@ -133,6 +133,30 @@ def determine_basin_contains_lat_lon(
 
     return False
 
+_WORK_INB = None
+_WORK_PGM_LIST = None
+
+def _init_inbasin_worker(in_basin_mesh, partial_global_mesh_list):
+    # Called once in each worker
+    global _WORK_INB, _WORK_PGM_LIST
+    _WORK_INB = in_basin_mesh
+    _WORK_PGM_LIST = partial_global_mesh_list
+
+def _compute_membership_row(j: int):
+    """
+    Compute basin membership for one row j.
+    Returns (j, row_list), where row_list is a list of lists of basin indices with length nx.
+    """
+    in_basin_mesh = _WORK_INB
+    pgm = _WORK_PGM_LIST[j]
+    nx = in_basin_mesh.nx
+    row = [[] for _ in range(nx)]
+    # identical to your serial inner loop
+    for k in range(nx):
+        lat = pgm.lat[k]
+        lon = pgm.lon[k]
+        row[k] = in_basin_mesh.find_all_containing_basins(lat, lon)
+    return j, row
 
 class InBasinGlobalMesh:
     """
@@ -210,6 +234,7 @@ class InBasinGlobalMesh:
         basin_data_list: list[BasinData],
         logger: Optional[Logger] = None,
         smooth_bound: Optional[SmoothingBoundary] = None,
+        np_workers: int | None = None,
     ) -> tuple[Self, list[PartialGlobalMesh]]:
         """
         Preprocess basin membership for a given global mesh to speed up the velocity model generation
@@ -225,6 +250,8 @@ class InBasinGlobalMesh:
             Logger for status reporting.
         smooth_bound : SmoothingBoundary, optional
             Optional boundary for smoothing.
+        np_workers : int, optional
+            Number of workers for parallel processing (default is None).
 
         Returns
         -------
@@ -238,9 +265,7 @@ class InBasinGlobalMesh:
 
         # Use object dtype to store lists of basin indices
         # Initialize basin_membership as an (ny, nx) array of empty lists
-        in_basin_mesh.basin_membership = [
-            [[] for _ in range(in_basin_mesh.nx)] for _ in range(in_basin_mesh.ny)
-        ]
+        in_basin_mesh.basin_membership = [ [[] for _ in range(in_basin_mesh.nx)] for _ in range(in_basin_mesh.ny) ]
 
         boundary_arrays = [
             np.vstack(basin.boundaries)  # Merge all boundary arrays for each basin
@@ -283,14 +308,45 @@ class InBasinGlobalMesh:
             PartialGlobalMesh(global_mesh, j) for j in range(ny)
         ]
 
-        for j in range(ny):
-            partial_global_mesh = partial_global_mesh_list[j]
-            for k in range(nx):
-                lat = partial_global_mesh.lat[k]
-                lon = partial_global_mesh.lon[k]
-                in_basin_mesh.basin_membership[j][k] = (
-                    in_basin_mesh.find_all_containing_basins(lat, lon)
-                )
+        use_workers = (np_workers or 1) > 1 and ny > 1
+
+        if use_workers:
+            import os, multiprocessing as mp
+            from concurrent.futures import ProcessPoolExecutor, as_completed
+            W = min(np_workers or (os.cpu_count() or 1), ny)
+
+            # Prefer 'fork' on Linux to inherit big, read-only objects without pickling
+            try:
+                ctx = mp.get_context("fork")
+                start_method = "fork"
+            except ValueError:
+                # Fallback: spawn (safe everywhere, but will pickle more)
+                ctx = mp.get_context("spawn")
+                start_method = "spawn"
+
+            if logger:
+                logger.log(logging.INFO, f"Parallelizing basin membership over rows: workers={W} ({start_method}).")
+
+            with ProcessPoolExecutor(
+                max_workers=W,
+                mp_context=ctx,
+                initializer=_init_inbasin_worker,
+                initargs=(in_basin_mesh, partial_global_mesh_list),
+            ) as ex:
+                futures = [ex.submit(_compute_membership_row, j) for j in range(ny)]
+                for fut in as_completed(futures):
+                    j, row = fut.result()
+                    in_basin_mesh.basin_membership[j] = row
+        else:
+            # --- Serial fallback (default) ---
+            for j in range(ny):
+                pgm = partial_global_mesh_list[j]
+                for k in range(nx):
+                    lat = pgm.lat[k]
+                    lon = pgm.lon[k]
+                    in_basin_mesh.basin_membership[j][k] = (
+                        in_basin_mesh.find_all_containing_basins(lat, lon)
+                    )
 
         logger.log(
             logging.INFO,
