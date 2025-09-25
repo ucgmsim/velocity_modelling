@@ -163,7 +163,7 @@ def parse_nzcvm_config(config_path: Path, logger: Logger | None = None) -> dict:
                     try:
                         vm_params[dest_key] = TopoTypes[value]
                     except KeyError:
-                        logger.error(f"Invalid topo type {value}")
+                        logger.log(logging.ERROR,f"Invalid topo type {value}")
                         raise KeyError(f"Invalid topo type {value}")
                 elif key in numeric_keys:
                     if float_value is None:
@@ -188,15 +188,15 @@ def parse_nzcvm_config(config_path: Path, logger: Logger | None = None) -> dict:
             + 0.5
         )
     except FileNotFoundError:
-        logger.error(f"Config file {config_path} not found")
+        logger.log(logging.ERROR,f"Config file {config_path} not found")
         raise FileNotFoundError(f"Config file {config_path} not found")
     except (ValueError, KeyError) as e:
-        logger.error(f"Error parsing config file {config_path}: {e}")
+        logger.log(logging.ERROR,f"Error parsing config file {config_path}: {e}")
         raise
     except KeyboardInterrupt:
         raise
     except Exception as e:
-        logger.error(f"Error parsing config file {config_path}: {e}")
+        logger.log(logging.ERROR,f"Error parsing config file {config_path}: {e}")
         raise ValueError(f"Error parsing config file {config_path}: {str(e)}")
 
     return vm_params
@@ -399,7 +399,7 @@ def _process_single_slice(
     for k in range(len(partial_mesh.x)):
         # Apply smoothing if requested (placeholder for future implementation)
         if smoothing:
-            logger.debug("Smoothing option selected but not implemented")
+            logger.log(logging.DEBUG,"Smoothing option selected but not implemented")
 
         try:
             # Compute velocity model properties for this point
@@ -416,15 +416,15 @@ def _process_single_slice(
             partial_qualities.inbasin[k] = inbasin
 
         except AttributeError as e:
-            logger.error(f"Error accessing qualities vector attributes at j={j}, k={k}: {e}")
+            logger.log(logging.ERROR,f"Error accessing qualities vector attributes at j={j}, k={k}: {e}")
             raise RuntimeError(f"Error processing point at j={j}, k={k}: {str(e)}")
         except (ValueError, RuntimeError) as e:
-            logger.error(f"Error processing point at j={j}, k={k}: {e}")
+            logger.log(logging.ERROR,f"Error processing point at j={j}, k={k}: {e}")
             raise RuntimeError(f"Error processing point at j={j}, k={k}: {str(e)}")
         except KeyboardInterrupt:
             raise
         except Exception as e:
-            logger.error(f"Unexpected error processing point at j={j}, k={k}: {e}")
+            logger.log(logging.ERROR,f"Unexpected error processing point at j={j}, k={k}: {e}")
             raise RuntimeError(f"Unexpected error processing point at j={j}, k={k}: {str(e)}")
 
     return partial_qualities
@@ -486,7 +486,7 @@ def _run_serial_processing(
         Logger for progress reporting
     """
     total_slices = len(global_mesh.y)
-    logger.info(f"Starting serial processing of {total_slices} slices")
+    logger.log(logging.INFO,f"Starting serial processing of {total_slices} slices")
 
     for j in tqdm(range(total_slices), desc="Generating velocity model", unit="slice"):
         partial_mesh = partial_global_mesh_list[j]
@@ -507,13 +507,13 @@ def _run_serial_processing(
         except KeyboardInterrupt:
             raise
         except (OSError, IOError) as e:
-            logger.error(f"File system error writing slice {j}: {e}")
+            logger.log(logging.ERROR,f"File system error writing slice {j}: {e}")
             raise OSError(f"Failed to write slice {j}: {str(e)}")
         except Exception as e:
-            logger.error(f"Error writing slice {j} to disk: {e}")
+            logger.log(logging.ERROR,f"Error writing slice {j} to disk: {e}")
             raise RuntimeError(f"Error writing slice {j}: {str(e)}")
 
-    logger.info("Serial processing completed successfully")
+    logger.log(logging.INFO,"Serial processing completed successfully")
 
 
 # ============================================================================
@@ -745,13 +745,13 @@ def _run_parallel_processing(
 
     if use_blocks:
         slice_blocks = _create_slice_blocks(total_slices, np_workers, use_blocks)
-        logger.info(f"Processing {total_slices} slices in {len(slice_blocks)} blocks using {np_workers} workers")
+        logger.log(logging.INFO,f"Processing {total_slices} slices in {len(slice_blocks)} blocks using {np_workers} workers")
         if len(slice_blocks) > 0:
             avg_block_size = sum(len(block) for block in slice_blocks) / len(slice_blocks)
-            logger.info(f"Average block size: {avg_block_size:.1f} slices per block")
+            logger.log(logging.INFO,f"Average block size: {avg_block_size:.1f} slices per block")
     else:
         slice_blocks = _create_slice_blocks(total_slices, np_workers, use_blocks)
-        logger.info(f"Processing {total_slices} slices individually using {np_workers} workers")
+        logger.log(logging.INFO,f"Processing {total_slices} slices individually using {np_workers} workers")
 
     # Start timing parallel setup
     parallel_setup_start_time = time.time()
@@ -803,19 +803,19 @@ def _run_parallel_processing(
                         # Log parallel setup time after first block completes
                         if not first_block_completed:
                             parallel_setup_elapsed_time = time.time() - parallel_setup_start_time
-                            logger.info(
+                            logger.log(logging.INFO,
                                 f"Getting ready for parallel computation in {parallel_setup_elapsed_time:.2f} seconds"
                             )
                             first_block_completed = True
 
                     except (RuntimeError, ValueError) as e:
-                        logger.error(f"Worker process failed: {e}")
+                        logger.log(logging.ERROR,f"Worker process failed: {e}")
                         # Cancel remaining futures
                         for f in futures:
                             f.cancel()
                         raise RuntimeError(f"Parallel processing failed: {e}")
                     except (OSError, IOError) as e:
-                        logger.error(f"File system error in worker: {e}")
+                        logger.log(logging.ERROR,f"File system error in worker: {e}")
                         # Cancel remaining futures
                         for f in futures:
                             f.cancel()
@@ -830,7 +830,7 @@ def _run_parallel_processing(
             writer_process.terminate()
             writer_process.join()
 
-    logger.info("Parallel processing completed successfully")
+    logger.log(logging.INFO,"Parallel processing completed successfully")
 
 
 # ============================================================================
@@ -892,11 +892,11 @@ def _generate_velocity_model_impl(
         valid_formats = [fmt.name for fmt in WriteFormat]
         raise ValueError(f"Invalid output format '{output_format_str}'. Valid options: {valid_formats}")
 
-    logger.info(f"Starting velocity model generation with {output_format.value} output format")
+    logger.log(logging.INFO,f"Starting velocity model generation with {output_format.value} output format")
 
     # Determine processing mode and configure worker/thread allocation
     if np_workers is None or np_workers <= 1:
-        logger.info("Using serial processing")
+        logger.log(logging.INFO,"Using serial processing")
         use_parallel = False
         actual_workers = 1
         actual_blas_threads = blas_threads or (os.cpu_count() or 2)
@@ -906,13 +906,13 @@ def _generate_velocity_model_impl(
         actual_workers = min(np_workers, cores)
         actual_blas_threads = blas_threads or max(1, cores // actual_workers)
 
-        logger.info(f"Using parallel processing with {actual_workers} workers")
-        logger.info(f"BLAS threads per worker: {actual_blas_threads}")
+        logger.log(logging.INFO,f"Using parallel processing with {actual_workers} workers")
+        logger.log(logging.INFO,f"BLAS threads per worker: {actual_blas_threads}")
         use_parallel = True
 
     try:
         # Load configuration and setup data paths
-        logger.info("Loading configuration parameters")
+        logger.log(logging.INFO,"Loading configuration parameters")
         vm_params = _load_vm_params_from_cfg(nzcvm_cfg_path, out_dir, nzcvm_data_root, model_version)
 
         # Set up data root and registry
@@ -923,9 +923,9 @@ def _generate_velocity_model_impl(
         else:
             registry_path = nzcvm_registry
 
-        logger.info(f"Using model version: {vm_params['model_version']}")
-        logger.info(f"Using data root: {data_root}")
-        logger.info(f"Using registry: {registry_path}")
+        logger.log(logging.INFO,f"Using model version: {vm_params['model_version']}")
+        logger.log(logging.INFO,f"Using data root: {data_root}")
+        logger.log(logging.INFO,f"Using registry: {registry_path}")
 
         # Initialize CVM registry
         cvm_registry = CVMRegistry(
@@ -936,14 +936,14 @@ def _generate_velocity_model_impl(
         )
 
         # Setup mesh and model data
-        logger.info("Generating global mesh")
+        logger.log(logging.INFO,"Generating global mesh")
         global_mesh = gen_full_model_grid_great_circle(vm_params, logger)
 
-        logger.info("Loading model data")
+        logger.log(logging.INFO,"Loading model data")
         vm1d_data, nz_tomography_data, global_surfaces, basin_data_list = cvm_registry.load_all_global_data()
 
         # Preprocess basin membership for efficiency
-        logger.info("Preprocessing basin membership")
+        logger.log(logging.INFO,"Preprocessing basin membership")
         in_basin_mesh, partial_global_mesh_list = InBasinGlobalMesh.preprocess_basin_membership(
             global_mesh, basin_data_list, logger, nz_tomography_data.smooth_boundary, actual_workers
         )
@@ -951,18 +951,18 @@ def _generate_velocity_model_impl(
         # Set final output directory
         final_out_dir = out_dir or vm_params['output_dir']
         final_out_dir.mkdir(parents=True, exist_ok=True)
-        logger.info(f"Output directory: {final_out_dir}")
+        logger.log(logging.INFO,f"Output directory: {final_out_dir}")
 
         # Determine output writer function based on format
         if output_format == WriteFormat.HDF5:
             from velocity_modelling.write.hdf5 import write_global_qualities
-            logger.info("Using HDF5 output format")
+            logger.log(logging.INFO,"Using HDF5 output format")
         elif output_format == WriteFormat.EMOD3D:
             from velocity_modelling.write.emod3d import write_global_qualities
-            logger.info("Using EMOD3D output format")
+            logger.log(logging.INFO,"Using EMOD3D output format")
         elif output_format == WriteFormat.CSV:
             from velocity_modelling.write.csv import write_global_qualities
-            logger.info("Using CSV output format")
+            logger.log(logging.INFO,"Using CSV output format")
         else:
             raise ValueError(f"Unsupported output format: {output_format}")
 
@@ -983,7 +983,7 @@ def _generate_velocity_model_impl(
                 output_format = WriteFormat.HDF5
                 # Re-import the correct writer function
                 from velocity_modelling.write.hdf5 import write_global_qualities
-                logger.info("Using HDF5 output format (enforced for parallel processing)")
+                logger.log(logging.INFO,"Using HDF5 output format (enforced for parallel processing)")
 
             _run_parallel_processing(
                 global_mesh, in_basin_mesh, partial_global_mesh_list,
@@ -996,21 +996,21 @@ def _generate_velocity_model_impl(
         logger.warning("Processing interrupted by user")
         raise
     except (ValueError, KeyError) as e:
-        logger.error(f"Configuration or data error: {e}")
+        logger.log(logging.ERROR,f"Configuration or data error: {e}")
         raise
     except FileNotFoundError as e:
-        logger.error(f"Required file not found: {e}")
+        logger.log(logging.ERROR,f"Required file not found: {e}")
         raise
     except (OSError, IOError) as e:
-        logger.error(f"File system error: {e}")
+        logger.log(logging.ERROR,f"File system error: {e}")
         raise
     except RuntimeError as e:
-        logger.error(f"Processing error: {e}")
+        logger.log(logging.ERROR,f"Processing error: {e}")
         raise
 
     # Report completion
     elapsed_time = time.time() - start_time
-    logger.info(f"Velocity model generation completed successfully in {elapsed_time:.1f} seconds")
+    logger.log(logging.INFO,f"Velocity model generation completed successfully in {elapsed_time:.1f} seconds")
 
 
 # ============================================================================
@@ -1086,19 +1086,19 @@ def generate_3d_model(
             log_level=log_level,
         )
     except KeyboardInterrupt:
-        logger.info("Operation cancelled by user")
+        logger.log(logging.INFO,"Operation cancelled by user")
         raise typer.Exit(1)
     except (ValueError, KeyError) as e:
-        logger.error(f"Configuration error: {e}")
+        logger.log(logging.ERROR,f"Configuration error: {e}")
         raise typer.Exit(1)
     except FileNotFoundError as e:
-        logger.error(f"File not found: {e}")
+        logger.log(logging.ERROR,f"File not found: {e}")
         raise typer.Exit(1)
     except (OSError, IOError) as e:
-        logger.error(f"File system error: {e}")
+        logger.log(logging.ERROR,f"File system error: {e}")
         raise typer.Exit(1)
     except RuntimeError as e:
-        logger.error(f"Processing failed: {e}")
+        logger.log(logging.ERROR,f"Processing failed: {e}")
         raise typer.Exit(1)
 
 
