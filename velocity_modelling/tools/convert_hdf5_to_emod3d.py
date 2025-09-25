@@ -10,20 +10,23 @@ format expected by EMOD3D, producing the same output files as emod3d.py:
 - in_basin_mask.b (basin membership mask)
 """
 
-import argparse
 import struct
 import sys
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Annotated, Optional
 
 import h5py
 import numpy as np
+import typer
+from qcore import cli
 from tqdm import tqdm
+
+app = typer.Typer(pretty_exceptions_enable=False)
 
 
 def convert_hdf5_to_emod3d(
-    src_h5: Path, out_dir: Path, min_vs: Optional[float] = None
+        src_h5: Path, out_dir: Path, min_vs: Optional[float] = None
 ) -> None:
     """
     Convert HDF5 velocity model to EMOD3D binary format.
@@ -142,30 +145,29 @@ def convert_hdf5_to_emod3d(
     print(f"   Processing time: {processing_time:.2f} seconds")
 
 
-def main() -> None:
-    """Main entry point for the script."""
-    parser = argparse.ArgumentParser(
-        description="Convert HDF5 velocity model to EMOD3D binary format"
-    )
-    parser.add_argument("src_h5", type=Path, help="Path to input HDF5 file")
-    parser.add_argument("out_dir", type=Path, help="Output directory for binary files")
-    parser.add_argument(
-        "--min-vs",
-        type=float,
-        help="Minimum Vs value to enforce (km/s). If not specified, uses value from HDF5 metadata.",
-    )
+@cli.from_docstring(app)
+def convert_hdf5_to_emod3d_main(
+        src_h5: Annotated[Path, typer.Argument(exists=True, dir_okay=False, help="Path to input HDF5 file")],
+        out_dir: Annotated[Path, typer.Argument(help="Output directory for binary files")],
+        min_vs: Annotated[Optional[float], typer.Option(
+            help="Minimum Vs value to enforce (km/s). If not specified, uses value from HDF5 metadata.")] = None,
+) -> None:
+    """
+    Convert HDF5 velocity model to EMOD3D binary format.
 
-    args = parser.parse_args()
-
-    if not args.src_h5.exists():
-        raise FileNotFoundError(f"Input file {args.src_h5} does not exist")
-
-    convert_hdf5_to_emod3d(args.src_h5, args.out_dir, args.min_vs)
+    Converts HDF5 velocity model files (produced by hdf5.py) to the binary
+    format expected by EMOD3D, producing the same output files as emod3d.py:
+    - vp3dfile.p (P-wave velocities)
+    - vs3dfile.s (S-wave velocities)
+    - rho3dfile.d (densities)
+    - in_basin_mask.b (basin membership mask)
+    """
+    try:
+        convert_hdf5_to_emod3d(src_h5, out_dir, min_vs)
+    except (FileNotFoundError, OSError, ValueError, KeyError, RuntimeError) as e:
+        print(f"❌ Error: {e}")
+        raise typer.Exit(1)
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except (FileNotFoundError, OSError, ValueError, KeyError, RuntimeError) as e:
-        print(f"❌ Error: {e}")
-        sys.exit(1)
+    app()

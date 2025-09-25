@@ -28,13 +28,16 @@ For more detailed comparison, consider using h5diff:
     h5diff -d 1e-6 vm3_24Sep/velocity_model.h5 vm3_25Sep/velocity_model.h5 /properties/vp /properties/vp
 """
 
-import argparse
 import time
 from pathlib import Path
-from typing import Any, Optional
+from typing import Annotated, Any, Optional
 
 import h5py
 import numpy as np
+import typer
+from qcore import cli
+
+app = typer.Typer(pretty_exceptions_enable=False)
 
 DATASETS = [
     "/properties/vp",
@@ -45,7 +48,7 @@ DATASETS = [
 
 
 def get_axis_mapping(
-    cfg: h5py.Group, shape: tuple[int, ...]
+        cfg: h5py.Group, shape: tuple[int, ...]
 ) -> Optional[tuple[int, ...]]:
     """
     Determine how to transpose data to (ny, nx, nz) format.
@@ -112,15 +115,15 @@ def stats(a: np.ndarray, b: np.ndarray) -> tuple[float, float, float]:
 
 
 def sample_comparison(
-    ds_a: h5py.Dataset,
-    ds_b: h5py.Dataset,
-    transpose_a: Optional[tuple[int, ...]],
-    transpose_b: Optional[tuple[int, ...]],
-    target_shape: tuple[int, int, int],
-    n_samples: int = 1000,
-    atol: float = 1e-6,
-    rtol: float = 1e-6,
-    seed: int = 42,
+        ds_a: h5py.Dataset,
+        ds_b: h5py.Dataset,
+        transpose_a: Optional[tuple[int, ...]],
+        transpose_b: Optional[tuple[int, ...]],
+        target_shape: tuple[int, int, int],
+        n_samples: int = 1000,
+        atol: float = 1e-6,
+        rtol: float = 1e-6,
+        seed: int = 42,
 ) -> tuple[bool, str]:
     """
     Compare datasets using statistical sampling.
@@ -203,14 +206,14 @@ def sample_comparison(
 
 
 def systematic_slice_check(
-    ds_a: h5py.Dataset,
-    ds_b: h5py.Dataset,
-    transpose_a: tuple[int, ...] | None,
-    transpose_b: tuple[int, ...] | None,
-    target_shape: tuple[int, int, int],
-    n_slices: int = 20,
-    atol: float = 1e-6,
-    rtol: float = 1e-6,
+        ds_a: h5py.Dataset,
+        ds_b: h5py.Dataset,
+        transpose_a: tuple[int, ...] | None,
+        transpose_b: tuple[int, ...] | None,
+        target_shape: tuple[int, int, int],
+        n_slices: int = 20,
+        atol: float = 1e-6,
+        rtol: float = 1e-6,
 ) -> tuple[bool, str]:
     """
     Check a systematic sample of complete slices.
@@ -284,12 +287,12 @@ def systematic_slice_check(
 
 
 def hash_comparison(
-    ds_a: h5py.Dataset,
-    ds_b: h5py.Dataset,
-    transpose_a: tuple[int, ...] | None,
-    transpose_b: tuple[int, ...] | None,
-    target_shape: tuple[int, int, int],
-    chunk_slices: int = 100,
+        ds_a: h5py.Dataset,
+        ds_b: h5py.Dataset,
+        transpose_a: tuple[int, ...] | None,
+        transpose_b: tuple[int, ...] | None,
+        target_shape: tuple[int, int, int],
+        chunk_slices: int = 100,
 ) -> tuple[bool, str]:
     """
     Compare using hash/checksum of chunks.
@@ -360,13 +363,13 @@ def hash_comparison(
 
 
 def compare_fast(
-    a_path: Path,
-    b_path: Path,
-    atol: float = 1e-6,
-    rtol: float = 1e-6,
-    method: str = "sample",
-    n_samples: int = 1000,
-    n_slices: int = 20,
+        a_path: Path,
+        b_path: Path,
+        atol: float = 1e-6,
+        rtol: float = 1e-6,
+        method: str = "sample",
+        n_samples: int = 1000,
+        n_slices: int = 20,
 ) -> list[tuple[str, str, Any]]:
     """
     Fast comparison using various methods.
@@ -490,42 +493,35 @@ def compare_fast(
     return out
 
 
-if __name__ == "__main__":
-    ap = argparse.ArgumentParser(
-        description="Fast HDF5 comparison using sampling/hashing"
-    )
-    ap.add_argument("a", type=Path, help="First HDF5 file")
-    ap.add_argument("b", type=Path, help="Second HDF5 file")
-    ap.add_argument(
-        "--method",
-        choices=["sample", "slices", "hash"],
-        default="sample",
-        help="Comparison method: sample (random points), slices (systematic slices), hash (chunk hashes)",
-    )
-    ap.add_argument("--atol", type=float, default=1e-6, help="Absolute tolerance")
-    ap.add_argument("--rtol", type=float, default=1e-6, help="Relative tolerance")
-    ap.add_argument(
-        "--n-samples",
-        type=int,
-        default=10000,
-        help="Number of random samples (for sample method)",
-    )
-    ap.add_argument(
-        "--n-slices",
-        type=int,
-        default=50,
-        help="Number of slices to check (for slices method)",
-    )
-    args = ap.parse_args()
+@cli.from_docstring(app)
+def compare_hdf5_sampling(
+        a: Annotated[Path, typer.Argument(exists=True, dir_okay=False, help="First HDF5 file")],
+        b: Annotated[Path, typer.Argument(exists=True, dir_okay=False, help="Second HDF5 file")],
+        method: Annotated[str, typer.Option(help="Comparison method")] = "sample",
+        atol: Annotated[float, typer.Option(help="Absolute tolerance")] = 1e-6,
+        rtol: Annotated[float, typer.Option(help="Relative tolerance")] = 1e-6,
+        n_samples: Annotated[int, typer.Option(help="Number of random samples (for sample method)")] = 10000,
+        n_slices: Annotated[int, typer.Option(help="Number of slices to check (for slices method)")] = 50,
+) -> None:
+    """
+    Fast comparison of HDF5 velocity model files.
 
-    print(f"Fast comparing {args.a} vs {args.b}")
-    print(f"Method: {args.method}")
-    print(f"Tolerances: atol={args.atol}, rtol={args.rtol}")
+    Provides several methods for comparing large HDF5 files containing seismic velocity models:
+      - Statistical sampling (recommended): samples random points for efficient comparison
+      - Systematic slice checking: compares complete slices for thoroughness
+      - Hash comparison: compares MD5 hashes of chunks for very fast integrity checks
+    """
+    # Validate method
+    valid_methods = ["sample", "slices", "hash"]
+    if method not in valid_methods:
+        raise typer.BadParameter(f"Method must be one of: {valid_methods}")
+
+    print(f"Fast comparing {a} vs {b}")
+    print(f"Method: {method}")
+    print(f"Tolerances: atol={atol}, rtol={rtol}")
 
     start_total = time.time()
-    res = compare_fast(
-        args.a, args.b, args.atol, args.rtol, args.method, args.n_samples, args.n_slices
-    )
+    res = compare_fast(a, b, atol, rtol, method, n_samples, n_slices)
     total_time = time.time() - start_total
 
     print(f"\n{'=' * 60}")
@@ -538,3 +534,7 @@ if __name__ == "__main__":
             print(f"{'':>25s}   {info}")
         elif info:
             print(f"{'':>25s}   {info}")
+
+
+if __name__ == "__main__":
+    app()
