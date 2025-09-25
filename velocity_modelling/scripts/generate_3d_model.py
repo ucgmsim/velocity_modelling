@@ -497,6 +497,7 @@ def generate_3d_model(
                 basin_data_list,
                 logger,
                 smooth_bound=nz_tomography_data.smooth_boundary,
+                np_workers=np_workers,
             )
         )
     except Exception as e:
