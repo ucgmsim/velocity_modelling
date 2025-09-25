@@ -680,6 +680,7 @@ class QualitiesVector:
         elif submodel_name == "miocene_submod_v1":
             from velocity_modelling.submodel import miocene_submod_v1
 
+            miocene_submod_v1.main_vectorized(z_indices, self)
         elif submodel_name == "paleogene_submod_v2":
             from velocity_modelling.submodel import paleogene_submod_v2
 

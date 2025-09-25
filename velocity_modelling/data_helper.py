@@ -207,7 +207,10 @@ def ensure(
     # If full dataset requested, require git-lfs *before* doing any clone/pull work.
 
     if full:
-        _require_bin("git-lfs","git-lfs is required for full dataset. Install git-lfs (See https://git-lfs.com) and try again.")
+        _require_bin(
+            "git-lfs",
+            "git-lfs is required for full dataset. Install git-lfs (See https://git-lfs.com) and try again.",
+        )
 
     if not quiet:
         typer.echo(f"[{APP_NAME}] target: {path}")
