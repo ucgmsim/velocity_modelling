@@ -1,9 +1,8 @@
 """
 Pliocene Layer Velocity Submodel v1
 
-This module provides velocity values for the Pliocene geological layer.
-It implements depth-dependent velocity values based on empirical relationships
-for sedimentary rocks of Pliocene age in the Palmerston North region.
+This module provides constant velocity values for the Pliocene geological layer.
+It assigns constant values for sedimentary rocks of Pliocene age in the Palmerston North region.
 """
 
 import logging
