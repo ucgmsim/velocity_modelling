@@ -1,9 +1,9 @@
 """
-Pliocene Layer Velocity Submodel v1
+Pliocene Layer Velocity Submodel v2
 
 This module provides velocity values for the Pliocene geological layer.
 It implements depth-dependent velocity values based on empirical relationships
-for sedimentary rocks of Pliocene age in the Canterbury basin.
+for sedimentary rocks of Pliocene age in the Palmerston North region.
 """
 
 import logging

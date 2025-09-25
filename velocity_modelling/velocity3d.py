@@ -693,10 +693,10 @@ class QualitiesVector:
             from velocity_modelling.submodel import miocene_submod_v2
 
             miocene_submod_v2.main_vectorized(z_indices, self)
-        elif submodel_name == "palmerstonnorth_pliocene_submod_v1":
-            from velocity_modelling.submodel import palmerstonnorth_pliocene_submod_v1
+        elif submodel_name == "pn_pliocene_submod_v1":
+            from velocity_modelling.submodel import pn_pliocene_submod_v1
 
-            palmerstonnorth_pliocene_submod_v1.main_vectorized(z_indices, self)
+            pn_pliocene_submod_v1.main_vectorized(z_indices, self)
         elif submodel_name == "bpv_submod_v1":
             from velocity_modelling.submodel import bpv_submod_v1
 

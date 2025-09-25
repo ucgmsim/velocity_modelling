@@ -1,5 +1,5 @@
 """
-Miocene Layer Velocity Submodel v1
+Miocene Layer Velocity Submodel v2
 
 This module provides velocity values for the Miocene geological layer.
 It implements depth-dependent velocity values based on empirical relationships
