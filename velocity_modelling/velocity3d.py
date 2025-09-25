@@ -662,6 +662,9 @@ class QualitiesVector:
             "canterbury1d_v1",
             "canterbury1d_v2",
             "canterbury1d_v2_pliocene_enforced",
+            "canterbury1d_v3_pliocene_enforced",
+            "nelson_v1",
+            "palmerstonnorth_v1",
         ]:
             from velocity_modelling.submodel import canterbury1d_submod
 
@@ -677,7 +680,22 @@ class QualitiesVector:
         elif submodel_name == "miocene_submod_v1":
             from velocity_modelling.submodel import miocene_submod_v1
 
-            miocene_submod_v1.main_vectorized(z_indices, self)
+        elif submodel_name == "paleogene_submod_v2":
+            from velocity_modelling.submodel import paleogene_submod_v2
+
+            paleogene_submod_v2.main_vectorized(z_indices, self)
+        elif submodel_name == "pliocene_submod_v2":
+            from velocity_modelling.submodel import pliocene_submod_v2
+
+            pliocene_submod_v2.main_vectorized(z_indices, self)
+        elif submodel_name == "miocene_submod_v2":
+            from velocity_modelling.submodel import miocene_submod_v2
+
+            miocene_submod_v2.main_vectorized(z_indices, self)
+        elif submodel_name == "palmerstonnorth_pliocene_submod_v1":
+            from velocity_modelling.submodel import palmerstonnorth_pliocene_submod_v1
+
+            palmerstonnorth_pliocene_submod_v1.main_vectorized(z_indices, self)
         elif submodel_name == "bpv_submod_v1":
             from velocity_modelling.submodel import bpv_submod_v1
 
