@@ -882,14 +882,13 @@ def _generate_velocity_model_impl(
         Logging level
     """
 
-    print(f"=== IMPL ENTRY DEBUG ===")
+    print("=== IMPL ENTRY DEBUG ===")
     print(f"IMPL nzcvm_data_root = {nzcvm_data_root}")
     print(f"IMPL nzcvm_data_root type = {type(nzcvm_data_root)}")
     print(f"IMPL nzcvm_data_root is None = {nzcvm_data_root is None}")
     if nzcvm_data_root is not None:
         print(f"IMPL nzcvm_data_root exists = {nzcvm_data_root.exists()}")
     print("========================")
-
 
     # Configure logging
     logger.setLevel(getattr(logging, log_level.upper()))
@@ -918,7 +917,9 @@ def _generate_velocity_model_impl(
     else:
         # Process + BLAS budgeting with core limit enforcement
         cores = os.cpu_count() or 2
-        actual_workers = min(np_workers, cores)  # This limits np_workers to available cores
+        actual_workers = min(
+            np_workers, cores
+        )  # This limits np_workers to available cores
         actual_blas_threads = blas_threads or max(1, cores // actual_workers)
 
         # Warn user if they requested more workers than available cores
@@ -950,6 +951,7 @@ def _generate_velocity_model_impl(
 
         if nzcvm_registry is None:
             from velocity_modelling.constants import get_registry_path
+
             registry_path = get_registry_path(data_root=data_root)
         else:
             registry_path = nzcvm_registry
@@ -967,7 +969,9 @@ def _generate_velocity_model_impl(
         )
 
         # Add this right after the CVMRegistry initialization:
-        logger.log(logging.INFO, f"After CVMRegistry init, data_root still = {data_root}")
+        logger.log(
+            logging.INFO, f"After CVMRegistry init, data_root still = {data_root}"
+        )
 
         # Setup mesh and model data
         logger.log(logging.INFO, "Generating global mesh")
@@ -1111,7 +1115,9 @@ def generate_3d_model(
         ),
     ] = None,
     smoothing: bool = False,  # placeholder for smoothing, not implemented yet
-    np_workers: Annotated[int, typer.Option("--np", help="Number of parallel workers")] = 1,
+    np_workers: Annotated[
+        int, typer.Option("--np", help="Number of parallel workers")
+    ] = 1,
     blas_threads: int | None = None,
     log_level: str = "INFO",
 ) -> None:
@@ -1158,7 +1164,7 @@ def generate_3d_model(
         nzcvm generate-3d-model config.cfg --output-format HDF5 --model-version 2.07 --blas-threads 2
     """
 
-    print(f"=== CLI ENTRY DEBUG ===")
+    print("=== CLI ENTRY DEBUG ===")
     print(f"CLI nzcvm_data_root = {nzcvm_data_root}")
     print(f"CLI nzcvm_data_root type = {type(nzcvm_data_root)}")
     print(f"CLI nzcvm_data_root is None = {nzcvm_data_root is None}")
