@@ -56,23 +56,12 @@ def get_data_root(cli_override: str | None = None) -> Path:
     return _DATA_ROOT
 
 
-def get_registry_path(cli_override: str | None = None) -> Path:
-    """
-    Get the path to the nzcvm_registry.yaml file.
+def get_registry_path(data_root: Path | None = None) -> Path:
+    """Get registry path, using provided data_root if given."""
+    if data_root is None:
+        data_root = get_data_root()  # Fall back to default resolution
 
-    Parameters
-    ----------
-    cli_override : str | None
-        If provided, this path takes highest precedence.
-
-    Returns
-    -------
-    Path
-        Path to the nzcvm_registry.yaml file.
-
-
-    """
-    return get_data_root(cli_override=cli_override) / "nzcvm_registry.yaml"
+    return data_root / "nzcvm_registry.yaml"
 
 
 class VelocityTypes(Enum):

@@ -950,8 +950,7 @@ def _generate_velocity_model_impl(
 
         if nzcvm_registry is None:
             from velocity_modelling.constants import get_registry_path
-
-            registry_path = get_registry_path()
+            registry_path = get_registry_path(data_root=data_root)
         else:
             registry_path = nzcvm_registry
 
@@ -966,6 +965,9 @@ def _generate_velocity_model_impl(
             registry_path=registry_path,
             logger=logger,
         )
+
+        # Add this right after the CVMRegistry initialization:
+        logger.log(logging.INFO, f"After CVMRegistry init, data_root still = {data_root}")
 
         # Setup mesh and model data
         logger.log(logging.INFO, "Generating global mesh")
