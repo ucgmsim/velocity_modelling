@@ -88,10 +88,11 @@ pipeline {
                         }
                     }
                     post {
-                        failure {
+                        always {
                             script {
                                 def test_output_dir = "${env.WORKSPACE}/test_output-${env.BUILD_ID}"
                                 archiveArtifacts artifacts: "${test_output_dir}/**", allowEmptyArchive: true
+                                sh "rm -rf ${test_output_dir}"
                             }
                         }
                         success {
