@@ -339,9 +339,9 @@ class InBasinGlobalMesh:
             PartialGlobalMesh(global_mesh, j) for j in range(ny)
         ]
 
-        use_workers = (np_workers or 1) > 1 and ny > 1
+        is_parallel = (np_workers or 1) > 1 and ny > 1
 
-        if use_workers:
+        if is_parallel:
             import multiprocessing as mp
             import os
             from concurrent.futures import ProcessPoolExecutor, as_completed

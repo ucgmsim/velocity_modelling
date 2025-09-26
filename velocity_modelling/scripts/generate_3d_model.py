@@ -848,7 +848,7 @@ def _generate_velocity_model_impl(
     output_format_str: str = WriteFormat.EMOD3D.name,
     nzcvm_data_root: Path | None = None,
     smoothing: bool = False,
-    np_workers: int | None = None,
+    np_workers: int = 1,
     blas_threads: int | None = None,
     log_level: str = "INFO",
 ) -> None:
@@ -874,8 +874,8 @@ def _generate_velocity_model_impl(
         Data root directory (overrides config file setting)
     smoothing : bool
         Whether to apply smoothing (not yet implemented)
-    np_workers : int, optional
-        Number of worker processes (None for serial processing)
+    np_workers : int
+        Number of worker processes. Default is 1 (serial processing).
     blas_threads : int, optional
         Number of BLAS threads per worker process
     log_level : str
@@ -900,16 +900,23 @@ def _generate_velocity_model_impl(
     )
 
     # Determine processing mode and configure worker/thread allocation
-    if np_workers is None or np_workers <= 1:
+    if np_workers <= 1:
         logger.log(logging.INFO, "Using serial processing")
         use_parallel = False
         actual_workers = 1
         actual_blas_threads = blas_threads or (os.cpu_count() or 2)
     else:
-        # Process + BLAS budgeting
+        # Process + BLAS budgeting with core limit enforcement
         cores = os.cpu_count() or 2
-        actual_workers = min(np_workers, cores)
+        actual_workers = min(np_workers, cores)  # This limits np_workers to available cores
         actual_blas_threads = blas_threads or max(1, cores // actual_workers)
+
+        # Warn user if they requested more workers than available cores
+        if np_workers > cores:
+            logger.warning(
+                f"Requested {np_workers} workers but only {cores} CPU cores available. "
+                f"Using {actual_workers} workers instead."
+            )
 
         logger.log(
             logging.INFO, f"Using parallel processing with {actual_workers} workers"
@@ -1077,22 +1084,19 @@ def generate_3d_model(
             help="Path to nzcvm_registry.yaml (default: nzcvm_data/nzcvm_registry.yaml)",
         ),
     ] = None,
-    model_version: Annotated[str | None, typer.Option()] = None,
-    output_format: Annotated[str, typer.Option()] = WriteFormat.EMOD3D.name,
+    model_version: str | None = None,
+    output_format: str = WriteFormat.EMOD3D.name,
     nzcvm_data_root: Annotated[
         Path | None,
         typer.Option(
             file_okay=False,
             exists=False,  # will validate later
-            help="Override the default nzcvm_data directory",
         ),
     ] = None,
-    smoothing: Annotated[
-        bool, typer.Option()
-    ] = False,  # placeholder for smoothing, not implemented yet
-    np_workers: Annotated[int | None, typer.Option("--np")] = None,
-    blas_threads: Annotated[int | None, typer.Option()] = None,
-    log_level: Annotated[str, typer.Option()] = "INFO",
+    smoothing: bool = False,  # placeholder for smoothing, not implemented yet
+    np_workers: Annotated[int, typer.Option("--np", help="Number of parallel workers")] = 1,
+    blas_threads: int | None = None,
+    log_level: str = "INFO",
 ) -> None:
     """
     Generate 3D seismic velocity model from configuration file.
@@ -1117,10 +1121,11 @@ def generate_3d_model(
         Override the default nzcvm_data directory.
     smoothing : bool
         Enable smoothing (placeholder, not implemented).
-    np_workers : int, optional
-        Number of parallel workers.
+    np_workers : int
+        Number of parallel workers. Default is 1 (serial processing).
     blas_threads : int, optional
-        BLAS threads per worker.
+        BLAS threads per worker. If None, np_workers==1 (serial) uses all cores, else
+        cores//np_workers (minimum 1).
     log_level : str
         Logging level.
 
