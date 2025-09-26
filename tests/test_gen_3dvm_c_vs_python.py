@@ -114,7 +114,7 @@ def test_gen_3dvm_c_vs_python(
     print(f"data_root fixture value: {data_root}")
     print(f"data_root type: {type(data_root)}")
     print(f"data_root exists: {data_root.exists()}")
-    print(f"Full subprocess command: ['python',{str(SCRIPT_DIR)} / 'generate_3d_model.py', {str(config_file)}, '--out-dir',{str(python_output_dir)}, '--nzcvm-data-root', {str(data_root)}]")
+    print(f"Full subprocess command: ['python',{str(SCRIPT_DIR)} / 'generate_3d_model.py', '{str(config_file)}', '--out-dir','{str(python_output_dir)}', '--nzcvm-data-root', '{str(data_root)}']")
     print("==================")
 
     # Run Python script, overriding output directory
@@ -131,6 +131,13 @@ def test_gen_3dvm_c_vs_python(
         capture_output=True,
         text=True,
     )
+
+    # ADD THIS TO SEE THE ACTUAL OUTPUT:
+    print(f"=== SUBPROCESS OUTPUT ===")
+    print(f"Return code: {python_result.returncode}")
+    print(f"STDOUT: {python_result.stdout}")
+    print(f"STDERR: {python_result.stderr}")
+    print("========================")
 
     assert python_result.returncode == 0, (
         f"Python script failed: {python_result.stderr}"
