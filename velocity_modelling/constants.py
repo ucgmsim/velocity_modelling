@@ -57,7 +57,20 @@ def get_data_root(cli_override: str | None = None) -> Path:
 
 
 def get_registry_path(data_root: Path | None = None) -> Path:
-    """Get registry path, using provided data_root if given."""
+    """
+    Get registry path, using provided data_root if given.
+
+    Parameters
+    ----------
+    data_root : Path | None
+        If provided, use this as the data root.
+
+    Returns
+    -------
+    Path
+        Path to nzcvm_registry.yaml.
+
+    """
     if data_root is None:
         data_root = get_data_root()  # Fall back to default resolution
 
