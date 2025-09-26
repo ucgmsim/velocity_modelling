@@ -139,17 +139,32 @@ def test_gen_3dvm_c_vs_python(
         c_velocity_model_dir, python_output_dir, nx, ny, nz, threshold=1e-5
     )
 
-    # Check critical files (vp, vs, rho) are allclose
-    for key in ["vp", "vs", "rho"]:
-        assert key in comparison_results, f"Missing {key} in comparison results"
-        assert comparison_results[key]["size_check"], f"Size check failed for {key}"
-        assert comparison_results[key]["allclose"], (
-            f"{key} data not close enough between C and Python:\n"
-            f"Max diff: {comparison_results[key]['max_diff']}\n"
-            f"Mean diff: {comparison_results[key]['mean_diff']}\n"
-            f"Std diff: {comparison_results[key]['std_diff']}"
-        )
+    # Check all critical files and collect detailed failure info
+    all_keys = ["vp", "vs", "rho"]
+    failed_keys = []
+    for key in all_keys:
+        if key not in comparison_results:
+            failed_keys.append(f"{key} (missing in comparison results)")
+        elif not comparison_results[key]["size_check"]:
+            failed_keys.append(f"{key} (size check failed)")
+        elif not comparison_results[key]["allclose"]:
+            failed_keys.append(
+                f"{key} (max diff: {comparison_results[key]['max_diff']}, mean diff: {comparison_results[key]['mean_diff']})")
 
+    # Dump debugging info once if any failures occurred
+    if failed_keys:
+        print(f"\n=== DEBUGGING INFO FOR FAILED COMPARISON ===")
+        print(f"Config file path: {config_file}")
+        try:
+            with open(config_file, 'r') as f:
+                config_content = f.read()
+            print(f"Config file contents:\n{config_content}")
+        except Exception as e:
+            print(f"Could not read config file: {e}")
+        print("=" * 50)
+
+    # Single assertion based on collected failures
+    assert not failed_keys, f"Comparison failed for: {', '.join(failed_keys)}"
 
 if __name__ == "__main__":
     pytest.main(["-v"])
