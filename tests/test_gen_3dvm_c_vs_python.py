@@ -2,8 +2,8 @@ import os
 import random
 import shutil
 import subprocess
-from pathlib import Path
 import uuid  # add
+from pathlib import Path
 
 import pytest
 
@@ -167,7 +167,9 @@ def test_gen_3dvm_c_vs_python(
         print("=" * 50)
 
     # Single assertion based on collected failures
-    assert not failed_keys, f"Test {unique_id}  Comparison failed for: {', '.join(failed_keys)}"
+    assert not failed_keys, (
+        f"Test {unique_id}  Comparison failed for: {', '.join(failed_keys)}"
+    )
 
 
 if __name__ == "__main__":
