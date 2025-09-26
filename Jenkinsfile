@@ -145,13 +145,13 @@ pipeline {
                                 archiveArtifacts artifacts: "${test_output_dir}/**", allowEmptyArchive: true
                             }
                         }
-//                         success {
-//                             script {
-//                                 // Only cleanup on success
-//                                 def test_output_dir = "${env.WORKSPACE}/test_output-${env.BUILD_ID}"
-//                                 sh "rm -rf ${test_output_dir}"
-//                             }
-//                         }
+                        success {
+                            script {
+                                // Only cleanup on success
+                                def test_output_dir = "${env.WORKSPACE}/test_output-${env.BUILD_ID}"
+                                sh "rm -rf ${test_output_dir}"
+                            }
+                        }
                     }
                 }
             }
