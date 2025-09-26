@@ -931,8 +931,13 @@ def _generate_velocity_model_impl(
             nzcvm_cfg_path, out_dir, nzcvm_data_root, model_version
         )
 
-        # Set up data root and registry
-        data_root = nzcvm_data_root or get_data_root()
+        if nzcvm_data_root is not None:
+            data_root = nzcvm_data_root
+            logger.log(logging.INFO, f"Using CLI-specified data root: {data_root}")
+        else:
+            data_root = get_data_root()
+            logger.log(logging.INFO, f"Using default data root: {data_root}")
+
         if nzcvm_registry is None:
             from velocity_modelling.constants import get_registry_path
 
