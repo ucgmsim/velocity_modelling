@@ -881,6 +881,16 @@ def _generate_velocity_model_impl(
     log_level : str
         Logging level
     """
+
+    print(f"=== IMPL ENTRY DEBUG ===")
+    print(f"IMPL nzcvm_data_root = {nzcvm_data_root}")
+    print(f"IMPL nzcvm_data_root type = {type(nzcvm_data_root)}")
+    print(f"IMPL nzcvm_data_root is None = {nzcvm_data_root is None}")
+    if nzcvm_data_root is not None:
+        print(f"IMPL nzcvm_data_root exists = {nzcvm_data_root.exists()}")
+    print("========================")
+
+
     # Configure logging
     logger.setLevel(getattr(logging, log_level.upper()))
     start_time = time.time()
@@ -1145,6 +1155,15 @@ def generate_3d_model(
     HDF5 output with specific model version and BLAS threading:
         nzcvm generate-3d-model config.cfg --output-format HDF5 --model-version 2.07 --blas-threads 2
     """
+
+    print(f"=== CLI ENTRY DEBUG ===")
+    print(f"CLI nzcvm_data_root = {nzcvm_data_root}")
+    print(f"CLI nzcvm_data_root type = {type(nzcvm_data_root)}")
+    print(f"CLI nzcvm_data_root is None = {nzcvm_data_root is None}")
+    if nzcvm_data_root is not None:
+        print(f"CLI nzcvm_data_root exists = {nzcvm_data_root.exists()}")
+    print("======================")
+
     try:
         _generate_velocity_model_impl(
             nzcvm_cfg_path=nzcvm_cfg_path,
