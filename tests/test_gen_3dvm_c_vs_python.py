@@ -157,10 +157,10 @@ def test_gen_3dvm_c_vs_python(
         print("\n=== DEBUGGING INFO FOR FAILED COMPARISON ===")
         print(f"Config file path: {config_file}")
         try:
-            with open(config_file, "r") as f:
+            with open(config_file, "r", encoding="utf-8") as f:
                 config_content = f.read()
             print(f"Config file contents:\n{config_content}")
-        except Exception as e:
+        except (OSError, UnicodeDecodeError) as e:
             print(f"Could not read config file: {e}")
         print("=" * 50)
 
