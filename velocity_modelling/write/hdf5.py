@@ -23,6 +23,8 @@ import numpy as np
 from velocity_modelling.geometry import PartialGlobalMesh
 from velocity_modelling.velocity3d import PartialGlobalQualities
 
+vm_file_name = "velocity_model.h5"
+
 # ============================================================================
 # XDMF File Creation
 # ============================================================================
@@ -333,7 +335,7 @@ def _ensure_hdf5_file_open(
 
     # Create output directory if it doesn't exist
     out_dir.mkdir(parents=True, exist_ok=True)
-    hdf5_file = out_dir / "velocity_model.h5"
+    hdf5_file = out_dir / vm_file_name
 
     # Configure chunk cache for optimal performance
     rdcc_kwargs = {
@@ -583,7 +585,7 @@ def _hdf5_writer_process(
         if not xdmf_created:
             xdmf_created = True  # Set flag immediately to prevent duplicate execution
             try:
-                hdf5_file = out_dir / "velocity_model.h5"
+                hdf5_file = out_dir / vm_file_name
                 create_xdmf_file(hdf5_file, vm_params, logger)
                 logger.log(
                     logging.INFO, "HDF5 model completed with ParaView compatibility"
@@ -620,7 +622,7 @@ def start_hdf5_writer_process(
     queue : multiprocessing.Queue
         Queue for sending slice data to the writer process
     out_dir_str : str
-        Output directory path as string
+        Output directory path as string (for multiprocessing compatibility)
     vm_params : dict
         Velocity model parameters
     logger : logging.Logger
