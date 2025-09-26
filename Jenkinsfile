@@ -14,6 +14,7 @@ pipeline {
             steps {
                 sh """
                     cd /mnt/mantle_data/jenkins/nzvm/nzcvm_data
+                    git config pull.rebase false
                     git pull origin main
                     git lfs pull
                 """
