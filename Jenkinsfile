@@ -29,7 +29,7 @@ pipeline {
 
                             # Verify critical files exist and aren't LFS pointers
                             echo "Verifying LFS files..."
-                            if find . -name "*.dat" -exec file {} \\; | grep -q "ASCII text"; then
+                            if find . -name "*.h5" -exec file {} \\; | grep -q "ASCII text"; then
                                 echo "ERROR: Found LFS pointer files instead of actual data"
                                 exit 1
                             fi
