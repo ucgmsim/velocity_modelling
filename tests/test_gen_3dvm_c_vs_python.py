@@ -114,15 +114,7 @@ def test_gen_3dvm_c_vs_python(
     print(f"data_root fixture value: {data_root}")
     print(f"data_root type: {type(data_root)}")
     print(f"data_root exists: {data_root.exists()}")
-    print(f"Full subprocess command: {[
-        'python',
-        str(SCRIPT_DIR / 'generate_3d_model.py'),
-        str(config_file),
-        '--out-dir',
-        str(python_output_dir),
-        '--nzcvm-data-root',
-        str(data_root),
-    ]}")
+    print(f"Full subprocess command: ['python',{str(SCRIPT_DIR)} / 'generate_3d_model.py', {str(config_file)}, '--out-dir',{str(python_output_dir)}, '--nzcvm-data-root', {str(data_root)}]")
     print("==================")
 
     # Run Python script, overriding output directory
