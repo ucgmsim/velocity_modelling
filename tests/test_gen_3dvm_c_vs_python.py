@@ -3,6 +3,7 @@ import random
 import shutil
 import subprocess
 from pathlib import Path
+import uuid  # add
 
 import pytest
 
@@ -63,8 +64,6 @@ OUTPUT_DIR={c_output_dir}
     # Debug: Verify file exists and print content
     assert config_file.exists(), f"Config file {config_file} was not created"
     assert os.access(config_file, os.R_OK), f"Config file {config_file} is not readable"
-    with open(config_file, "r") as f:
-        print(f"Generated config file content:\n{f.read()}")
 
     return config_file
 
@@ -76,8 +75,11 @@ def test_gen_3dvm_c_vs_python(
     data_root: Path,  # provided by conftest.py
 ):
     """Test C binary vs Python script with random config"""
-    # Define output directories but don't create them yet
-    tmp_dir = env_path("JENKINS_OUTPUT_DIR") or tmp_path
+    # Define output directories with a unique per-run hash
+    base_tmp_dir = env_path("JENKINS_OUTPUT_DIR") or tmp_path
+    unique_id = uuid.uuid4().hex[:8]
+    tmp_dir = base_tmp_dir / unique_id
+    tmp_dir.mkdir(parents=True, exist_ok=True)
 
     c_output_dir = tmp_dir / "C"
     python_output_dir = tmp_dir / "Python"
@@ -165,7 +167,7 @@ def test_gen_3dvm_c_vs_python(
         print("=" * 50)
 
     # Single assertion based on collected failures
-    assert not failed_keys, f"Comparison failed for: {', '.join(failed_keys)}"
+    assert not failed_keys, f"Test {unique_id}  Comparison failed for: {', '.join(failed_keys)}"
 
 
 if __name__ == "__main__":
