@@ -149,14 +149,15 @@ def test_gen_3dvm_c_vs_python(
             failed_keys.append(f"{key} (size check failed)")
         elif not comparison_results[key]["allclose"]:
             failed_keys.append(
-                f"{key} (max diff: {comparison_results[key]['max_diff']}, mean diff: {comparison_results[key]['mean_diff']})")
+                f"{key} (max diff: {comparison_results[key]['max_diff']}, mean diff: {comparison_results[key]['mean_diff']})"
+            )
 
     # Dump debugging info once if any failures occurred
     if failed_keys:
-        print(f"\n=== DEBUGGING INFO FOR FAILED COMPARISON ===")
+        print("\n=== DEBUGGING INFO FOR FAILED COMPARISON ===")
         print(f"Config file path: {config_file}")
         try:
-            with open(config_file, 'r') as f:
+            with open(config_file, "r") as f:
                 config_content = f.read()
             print(f"Config file contents:\n{config_content}")
         except Exception as e:
@@ -165,6 +166,7 @@ def test_gen_3dvm_c_vs_python(
 
     # Single assertion based on collected failures
     assert not failed_keys, f"Comparison failed for: {', '.join(failed_keys)}"
+
 
 if __name__ == "__main__":
     pytest.main(["-v"])
