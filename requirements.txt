@@ -21,6 +21,7 @@ numba
 pyyaml
 tqdm
 typer
+threadpoolctl
 
 # Tool dependencies
 cartopy

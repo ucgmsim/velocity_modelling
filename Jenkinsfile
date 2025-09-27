@@ -8,15 +8,46 @@ pipeline {
                 sh 'docker pull earthquakesuc/nzvm'
             }
         }
-
         stage('Update nzcvm_data Repository') {
             agent any
+            options {
+                timeout(time: 30, unit: 'MINUTES')
+            }
             steps {
-                sh """
-                    cd /mnt/mantle_data/jenkins/nzvm/nzcvm_data
-                    git pull origin main
-                    git lfs pull
-                """
+                script {
+                    retry(3) {
+                        sh """
+                            cd /mnt/mantle_data/jenkins/nzvm/nzcvm_data
+
+                            # Fix the dubious ownership issue
+                            git config --global --add safe.directory /mnt/mantle_data/jenkins/nzvm/nzcvm_data
+
+                            git config pull.rebase false
+                            git pull origin main
+
+                            # Clear any partial LFS downloads
+                            git lfs prune
+
+                            # Pull with explicit timeout
+                            timeout 20m git lfs pull
+
+                            # Verify critical files exist and aren't LFS pointers
+                            echo "Verifying LFS files..."
+                            if find . -name "*.h5" -exec file {} \\; | grep -q "ASCII text"; then
+                                echo "ERROR: Found LFS pointer files instead of actual data"
+                                exit 1
+                            fi
+
+                            # Ensure we have actual data files
+                            data_size=\$(du -sm . | cut -f1)
+                            echo "Data directory size: \${data_size}MB"
+                            if [ "\$data_size" -lt 100 ]; then  # Adjust threshold as needed
+                                echo "ERROR: Data directory too small (\${data_size}MB), likely incomplete"
+                                exit 1
+                            fi
+                        """
+                    }
+                }
             }
         }
 
@@ -77,9 +108,29 @@ pipeline {
                                 sh """
                                     cd ${env.WORKSPACE}
                                     source .venv/bin/activate
+                                    # Verify mount exists before creating symlink
+                                    if [ ! -d "/nzvm/nzcvm_data" ]; then
+                                        echo "ERROR: Mount /nzvm/nzcvm_data does not exist"
+                                        exit 1
+                                    fi
+                                    # Check mount is not empty
+                                    if [ ! "\$(ls -A /nzvm/nzcvm_data 2>/dev/null)" ]; then
+                                        echo "ERROR: Mount /nzvm/nzcvm_data is empty"
+                                        ls -la /nzvm/ || echo "Could not list /nzvm/"
+                                        exit 1
+                                    fi
+
                                     rm -f ${env.WORKSPACE}/velocity_modelling/nzcvm_data
                                     ln -s /nzvm/nzcvm_data ${env.WORKSPACE}/velocity_modelling/nzcvm_data
 
+                                    # Verify symlink works
+                                    if [ ! -r "${env.WORKSPACE}/velocity_modelling/nzcvm_data" ]; then
+                                        echo "ERROR: Symlink is not readable"
+                                        ls -la ${env.WORKSPACE}/velocity_modelling/
+                                        exit 1
+                                    fi
+
+                                    echo "Data verification passed, starting tests..."
                                     # Create the unique test output directory
                                     mkdir -p ${test_output_dir}
                                     pytest -s tests/ --benchmark-dir /nzvm/benchmarks --nzvm-binary-path /nzvm/NZVM --data-root ${env.WORKSPACE}/velocity_modelling/nzcvm_data
@@ -91,7 +142,7 @@ pipeline {
                         failure {
                             script {
                                 def test_output_dir = "${env.WORKSPACE}/test_output-${env.BUILD_ID}"
-                                archiveArtifacts artifacts: "${test_output_dir}/**", allowEmptyArchive: true
+                                archiveArtifacts artifacts: "test_output-${env.BUILD_ID}/**", allowEmptyArchive: true
                             }
                         }
                         success {
