@@ -1,14 +1,13 @@
-surfaces:
-  - path: surface/NZ_DEM_HD.h5
-    submodel: ep_tomography_submod_v2010
-
-tomography:
-  - name: EP2010
+# Version: 2.03
+global:
+  surface: surface/NZ_DEM_HD.h5
+  submodel: tomography
+  parameters:
+    tomography_name: EP2010
     vs30: nz_with_offshore
-    special_offshore_tapering: true
-    GTL: true
+    gtl: true
+    offshore_tapering: true
 
-basin_edge_smoothing: true
 basins:
   - Canterbury_v19p1
   - NorthCanterbury_v19p1
@@ -20,3 +19,5 @@ basins:
   - Nelson_v19p1
   - Wellington_v19p6
   - WaikatoHauraki_v19p7
+
+basin_edge_smoothing: true

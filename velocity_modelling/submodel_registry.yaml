@@ -1,0 +1,22 @@
+# velocity_modelling/submodel_registry.yaml
+submodels:
+  # Generic submodel types
+  tomography:
+    module: velocity_modelling.submodel.tomography
+    class: TomographySubmodel
+
+  vm1d:
+    module: velocity_modelling.submodel.vm1d
+    class: VM1DSubmodel
+
+  constant:
+    module: velocity_modelling.submodel.constant
+    class: ConstantSubmodel
+
+  depth_dependent:
+    module: velocity_modelling.submodel.depth_dependent
+    class: DepthDependentSubmodel
+
+  nan:
+    module: velocity_modelling.submodel.nan
+    class: NaNSubmodel

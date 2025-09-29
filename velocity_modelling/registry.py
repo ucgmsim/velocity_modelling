@@ -306,28 +306,53 @@ class CVMRegistry:
                 f"Failed to load 1D velocity model from {vm1d_path}: {str(e)}"
             )
 
-    def load_basin_data(self, basin_names: list[str]):
-        """
-        Load all basin data into the basin_data structure.
 
-        Parameters
-        ----------
-        basin_names : list[str]
-            List of basin names to load.
+    def load_basin_data(self, basin_names):
+        """Load basin definitions."""
+        basins = []
+        for name in basin_names:
+            basin_def = self.get_info('basins', name)
 
-        Returns
-        -------
-        list[BasinData]
-            List of loaded basin data.
-        """
-        from velocity_modelling.basin_model import BasinData
+            # Convert layers to simple structure
+            layers = []
+            for layer in basin_def.get('layers', []):
+                layer_data = {
+                    'surface': self.load_surface(layer['surface']),
+                    'submodel': layer.get('submodel'),
+                    'parameters': layer.get('parameters', {}),
+                }
+                if 'data' in layer:
+                    layer_data['data'] = self.load_vm1d_data(layer['data'])
+                layers.append(layer_data)
 
-        all_basin_data = []
-        for basin_name in basin_names:
-            self.logger.log(logging.INFO, f"Loading basin data for {basin_name}")
-            basin_data = BasinData(self, basin_name, self.logger)
-            all_basin_data.append(basin_data)
-        return all_basin_data
+            basins.append({
+                'name': name,
+                'boundaries': [self.load_boundary(b) for b in basin_def['boundaries']],
+                'layers': layers
+            })
+        return basins
+    # def load_basin_data(self, basin_names: list[str]):
+    #     """
+    #     Load all basin data into the basin_data structure.
+    #
+    #     Parameters
+    #     ----------
+    #     basin_names : list[str]
+    #         List of basin names to load.
+    #
+    #     Returns
+    #     -------
+    #     list[BasinData]
+    #         List of loaded basin data.
+    #     """
+    #     from velocity_modelling.basin_model import BasinData
+    #
+    #     all_basin_data = []
+    #     for basin_name in basin_names:
+    #         self.logger.log(logging.INFO, f"Loading basin data for {basin_name}")
+    #         basin_data = BasinData(self, basin_name, self.logger)
+    #         all_basin_data.append(basin_data)
+    #     return all_basin_data
 
     def load_basin_boundary(self, basin_boundary_path: Path | str) -> np.ndarray:
         """
