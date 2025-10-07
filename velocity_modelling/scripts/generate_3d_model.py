@@ -129,7 +129,7 @@ def parse_nzcvm_config(config_path: Path, logger: Logger | None = None) -> dict:
     FileNotFoundError
         If the config file cannot be found.
     ValueError
-        If a numeric value is expected but not provided, or if parsing fails.
+        If a numeric value is expected but not provided, if parsing fails.
     KeyError
         If an invalid TOPO_TYPE is specified.
     """
@@ -197,6 +197,7 @@ def parse_nzcvm_config(config_path: Path, logger: Logger | None = None) -> dict:
             (vm_params["extent_zmax"] - vm_params["extent_zmin"]) / vm_params["h_depth"]
             + 0.5
         )
+
     except FileNotFoundError:
         logger.log(logging.ERROR, f"Config file {config_path} not found")
         raise FileNotFoundError(f"Config file {config_path} not found")
@@ -1107,9 +1108,7 @@ def generate_3d_model(
         ),
     ] = None,
     smoothing: bool = False,  # placeholder for smoothing, not implemented yet
-    np_workers: Annotated[
-        int, typer.Option("--np", help="Number of parallel workers")
-    ] = 1,
+    np_workers: Annotated[int, typer.Option("--np")] = 1,
     blas_threads: int | None = None,
     log_level: str = "INFO",
 ) -> None:

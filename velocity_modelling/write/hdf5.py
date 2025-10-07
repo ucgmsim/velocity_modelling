@@ -9,6 +9,7 @@ The module supports both serial and parallel writing modes, with a dedicated wri
 for parallel processing to ensure thread-safe HDF5 operations.
 """
 
+import atexit
 import datetime
 import logging
 import multiprocessing as mp
@@ -354,8 +355,6 @@ def _ensure_hdf5_file_open(
     _FILE_CACHE[key] = (f, dsets)
 
     # Register cleanup function to close file on process exit
-    import atexit
-
     def _cleanup_file(cache_key: str = key):
         """
         Clean up cached file handle on process exit.
@@ -455,16 +454,38 @@ def write_global_qualities(
     KeyError
         If 'ny' parameter is missing from vm_params
     ValueError
-        If data shapes don't match expected dimensions
+        If data shapes don't match expected dimensions,
+        or if any velocity/density values are negative
     OSError
         If HDF5 file operations fail
     """
     if logger is None:
         logger = logging.getLogger("hdf5")
 
-    # Apply minimum Vs constraint before writing
     vs_data = np.copy(partial_global_qualities.vs)
+
+    # Apply minimum Vs constraint before writing
     min_vs = vm_params.get("min_vs", 0.0)
+
+    # Validate that all velocity/density values are non-negative
+    vp_data = partial_global_qualities.vp
+    rho_data = partial_global_qualities.rho
+
+    if np.any(vp_data < 0):
+        error_msg = f"Negative values found in Vp data at slice {lat_ind}. Min value: {np.min(vp_data)}"
+        logger.log(logging.ERROR, error_msg)
+        raise ValueError(error_msg)
+
+    if np.any(vs_data < 0):
+        error_msg = f"Negative values found in Vs data at slice {lat_ind}. Min value: {np.min(vs_data)}"
+        logger.log(logging.ERROR, error_msg)
+        raise ValueError(error_msg)
+
+    if np.any(rho_data < 0):
+        error_msg = f"Negative values found in density data at slice {lat_ind}. Min value: {np.min(rho_data)}"
+        logger.log(logging.ERROR, error_msg)
+        raise ValueError(error_msg)
+
     vs_data[vs_data < min_vs] = min_vs
 
     # Extract dimensions

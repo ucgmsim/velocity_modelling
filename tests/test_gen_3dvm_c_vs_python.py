@@ -2,7 +2,7 @@ import os
 import random
 import shutil
 import subprocess
-import uuid  # add
+import uuid
 from pathlib import Path
 
 import pytest
