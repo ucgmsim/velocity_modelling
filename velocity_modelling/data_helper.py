@@ -279,7 +279,7 @@ def ensure(
         _run(["git", "-C", str(path), "lfs", "install"])
         if not quiet:
             typer.echo(f"[{APP_NAME}] fetching LFS objects...")
-        _run(["git", "-C", str(path), "lfs", "pull"])  # Remove the return value check
+        _run(["git", "-C", str(path), "lfs", "pull"])
 
     # Verify a key file exists
     if not (path / "nzcvm_registry.yaml").exists():

@@ -44,11 +44,38 @@ def write_global_qualities(
         Dictionary containing velocity model parameters from nzcvm.cfg.
     logger : Logger, optional
         Logger instance for logging messages.
+
+    Raises
+    ------
+    ValueError
+        If any velocity/density values are negative.
+    OSError
+        If file operations fail.
     """
     if logger is None:
         logger = Logger("csv.wrote_global_qualities")
 
     min_vs = vm_params.get("min_vs", 0.0)
+
+    # Validate that all velocity/density values are non-negative
+    vp_data = partial_global_qualities.vp
+    vs_data = partial_global_qualities.vs
+    rho_data = partial_global_qualities.rho
+
+    if np.any(vp_data < 0):
+        error_msg = f"Negative values found in Vp data at slice {lat_ind}. Min value: {np.min(vp_data)}"
+        logger.log(logging.ERROR, error_msg)
+        raise ValueError(error_msg)
+
+    if np.any(vs_data < 0):
+        error_msg = f"Negative values found in Vs data at slice {lat_ind}. Min value: {np.min(vs_data)}"
+        logger.log(logging.ERROR, error_msg)
+        raise ValueError(error_msg)
+
+    if np.any(rho_data < 0):
+        error_msg = f"Negative values found in density data at slice {lat_ind}. Min value: {np.min(rho_data)}"
+        logger.log(logging.ERROR, error_msg)
+        raise ValueError(error_msg)
 
     output_dir.mkdir(parents=True, exist_ok=True)
     output_file = output_dir / "velocity_model.csv"
@@ -77,27 +104,15 @@ def write_global_qualities(
             ),  # negative to convert elevation to depth
         }
 
-        # Process quality values
-        vp_flat = np.array(
-            [partial_global_qualities.vp[k][i] for k in range(nx) for i in range(nz)]
-        )
-        vs_flat = np.array(
-            [
-                max(partial_global_qualities.vs[k][i], min_vs)
-                for k in range(nx)
-                for i in range(nz)
-            ]
-        )
-        rho_flat = np.array(
-            [partial_global_qualities.rho[k][i] for k in range(nx) for i in range(nz)]
-        )
-        inbasin_flat = np.array(
-            [
-                partial_global_qualities.inbasin[k][i]
-                for k in range(nx)
-                for i in range(nz)
-            ]
-        )
+        # Process quality values using efficient numpy operations
+        # Apply min_vs constraint to vs_data before flattening
+        vs_constrained = np.maximum(vs_data, min_vs)
+
+        # Flatten arrays using transpose and flatten for consistent ordering
+        vp_flat = vp_data.T.flatten()
+        vs_flat = vs_constrained.T.flatten()
+        rho_flat = rho_data.T.flatten()
+        inbasin_flat = partial_global_qualities.inbasin.T.flatten()
 
         data.update(
             {"vp": vp_flat, "vs": vs_flat, "rho": rho_flat, "inbasin": inbasin_flat}
