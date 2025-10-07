@@ -279,9 +279,7 @@ def ensure(
         _run(["git", "-C", str(path), "lfs", "install"])
         if not quiet:
             typer.echo(f"[{APP_NAME}] fetching LFS objects...")
-        if _run(["git", "-C", str(path), "lfs", "pull"]) != 0:
-            typer.echo(f"[{APP_NAME}] git lfs pull failed", err=True)
-            raise typer.Exit(code=1)
+        _run(["git", "-C", str(path), "lfs", "pull"])
 
     # Verify a key file exists
     if not (path / "nzcvm_registry.yaml").exists():

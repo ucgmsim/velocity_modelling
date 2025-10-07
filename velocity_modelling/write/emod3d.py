@@ -46,6 +46,12 @@ def write_global_qualities(
     logger : Logger, optional
         Logger instance for logging messages.
 
+    Raises
+    ------
+    ValueError
+        If any velocity/density values are negative.
+    OSError
+        If file operations fail.
     """
     if logger is None:
         logger = Logger("emod3d.wrote_global_qualities")
@@ -53,6 +59,27 @@ def write_global_qualities(
     min_vs = vm_params.get(
         "min_vs", 0.0
     )  # Get the minimum Vs value from the parameters
+
+    # Validate that all velocity/density values are non-negative
+    vp_data = partial_global_qualities.vp
+    vs_data = partial_global_qualities.vs
+    rho_data = partial_global_qualities.rho
+    inbasin_data = partial_global_qualities.inbasin
+
+    if np.any(vp_data < 0):
+        error_msg = f"Negative values found in Vp data at slice {lat_ind}. Min value: {np.min(vp_data)}"
+        logger.log(logging.ERROR, error_msg)
+        raise ValueError(error_msg)
+
+    if np.any(vs_data < 0):
+        error_msg = f"Negative values found in Vs data at slice {lat_ind}. Min value: {np.min(vs_data)}"
+        logger.log(logging.ERROR, error_msg)
+        raise ValueError(error_msg)
+
+    if np.any(rho_data < 0):
+        error_msg = f"Negative values found in density data at slice {lat_ind}. Min value: {np.min(rho_data)}"
+        logger.log(logging.ERROR, error_msg)
+        raise ValueError(error_msg)
 
     # perform endian check
     endianness = sys.byteorder
@@ -78,10 +105,10 @@ def write_global_qualities(
             logger.log(logging.DEBUG, f"Creating new VM files for emod3d: {output_dir}")
 
         # Flatten the arrays along the x and z dimensions. Write along x-axis first
-        vp = partial_global_qualities.vp.T.flatten()
-        vs = partial_global_qualities.vs.T.flatten()
-        rho = partial_global_qualities.rho.T.flatten()
-        inbasin = partial_global_qualities.inbasin.T.flatten()
+        vp = vp_data.T.flatten()
+        vs = vs_data.T.flatten()
+        rho = rho_data.T.flatten()
+        inbasin = inbasin_data.T.flatten()
 
         # Apply the minimum vs constraint
         vs = np.maximum(vs, min_vs)

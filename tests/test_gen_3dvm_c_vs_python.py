@@ -2,6 +2,7 @@ import os
 import random
 import shutil
 import subprocess
+import uuid
 from pathlib import Path
 
 import pytest
@@ -63,8 +64,6 @@ OUTPUT_DIR={c_output_dir}
     # Debug: Verify file exists and print content
     assert config_file.exists(), f"Config file {config_file} was not created"
     assert os.access(config_file, os.R_OK), f"Config file {config_file} is not readable"
-    with open(config_file, "r") as f:
-        print(f"Generated config file content:\n{f.read()}")
 
     return config_file
 
@@ -76,8 +75,11 @@ def test_gen_3dvm_c_vs_python(
     data_root: Path,  # provided by conftest.py
 ):
     """Test C binary vs Python script with random config"""
-    # Define output directories but don't create them yet
-    tmp_dir = env_path("JENKINS_OUTPUT_DIR") or tmp_path
+    # Define output directories with a unique per-run hash
+    base_tmp_dir = env_path("JENKINS_OUTPUT_DIR") or tmp_path
+    unique_id = uuid.uuid4().hex[:8]
+    tmp_dir = base_tmp_dir / unique_id
+    tmp_dir.mkdir(parents=True, exist_ok=True)
 
     c_output_dir = tmp_dir / "C"
     python_output_dir = tmp_dir / "Python"
@@ -108,7 +110,6 @@ def test_gen_3dvm_c_vs_python(
     assert c_velocity_model_dir.exists() and any(c_velocity_model_dir.iterdir()), (
         f"No output found in {c_velocity_model_dir}"
     )
-    print(f"C binary wrote to expected directory: {c_velocity_model_dir}")
 
     # Run Python script, overriding output directory
     python_result = subprocess.run(
@@ -124,6 +125,7 @@ def test_gen_3dvm_c_vs_python(
         capture_output=True,
         text=True,
     )
+
     assert python_result.returncode == 0, (
         f"Python script failed: {python_result.stderr}"
     )
@@ -139,16 +141,35 @@ def test_gen_3dvm_c_vs_python(
         c_velocity_model_dir, python_output_dir, nx, ny, nz, threshold=1e-5
     )
 
-    # Check critical files (vp, vs, rho) are allclose
-    for key in ["vp", "vs", "rho"]:
-        assert key in comparison_results, f"Missing {key} in comparison results"
-        assert comparison_results[key]["size_check"], f"Size check failed for {key}"
-        assert comparison_results[key]["allclose"], (
-            f"{key} data not close enough between C and Python:\n"
-            f"Max diff: {comparison_results[key]['max_diff']}\n"
-            f"Mean diff: {comparison_results[key]['mean_diff']}\n"
-            f"Std diff: {comparison_results[key]['std_diff']}"
-        )
+    # Check all critical files and collect detailed failure info
+    all_keys = ["vp", "vs", "rho"]
+    failed_keys = []
+    for key in all_keys:
+        if key not in comparison_results:
+            failed_keys.append(f"{key} (missing in comparison results)")
+        elif not comparison_results[key]["size_check"]:
+            failed_keys.append(f"{key} (size check failed)")
+        elif not comparison_results[key]["allclose"]:
+            failed_keys.append(
+                f"{key} (max diff: {comparison_results[key]['max_diff']}, mean diff: {comparison_results[key]['mean_diff']})"
+            )
+
+    # Dump debugging info once if any failures occurred
+    if failed_keys:
+        print("\n=== DEBUGGING INFO FOR FAILED COMPARISON ===")
+        print(f"Config file path: {config_file}")
+        try:
+            with open(config_file, "r", encoding="utf-8") as f:
+                config_content = f.read()
+            print(f"Config file contents:\n{config_content}")
+        except (OSError, UnicodeDecodeError) as e:
+            print(f"Could not read config file: {e}")
+        print("=" * 50)
+
+    # Single assertion based on collected failures
+    assert not failed_keys, (
+        f"Test {unique_id}  Comparison failed for: {', '.join(failed_keys)}"
+    )
 
 
 if __name__ == "__main__":
