@@ -393,10 +393,10 @@ def generate_1d_profiles(
     ----------
     out_dir : Path
         Path to the output directory where profile files will be written.
-    model_version : str
-        Version of the model to use.
     location_csv : Path
         Path to the CSV file containing profile parameters (id, lon, lat, zmin, zmax, spacing).
+    model_version : str, optional
+        Version of the model to use. Default is "2.09".
     min_vs : float, optional
         Minimum shear wave velocity (default: 0.0).
     topo_type : str, optional
