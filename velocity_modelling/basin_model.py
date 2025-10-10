@@ -4,6 +4,17 @@ Basin Model Module
 This module manages basin data representation, surface interpolation, and basin membership
 determination in the velocity model. It handles basin boundaries, surfaces, and submodels
 with proper logging throughout the processing workflow.
+
+It provides two membership paths:
+- StationBasinMembership: efficient membership checks for scattered stations.
+- MeshBasinMembership (formerly InBasinGlobalMesh): precomputes membership on dense model meshes.
+
+Notes
+-----
+- For isolated-station workflows (e.g., 1D profiles, threshold computations), downstream
+  functions may accept mesh_basin_membership=None as long as in_basin_list is pre-populated
+  with correct in_basin_lat_lon flags for each basin. This avoids unnecessary mesh-wide
+  preprocessing when only a few locations are needed.
 """
 
 from __future__ import annotations
@@ -11,7 +22,7 @@ from __future__ import annotations
 import logging
 from logging import Logger
 from pathlib import Path
-from typing import Optional, Self
+from typing import Self
 
 import numpy as np
 from numba import njit
@@ -63,7 +74,7 @@ class BasinData:
         self,
         cvm_registry: CVMRegistry,
         basin_name: str,
-        logger: Optional[Logger] = None,
+        logger: Logger | None = None,
     ):
         """
         Initialize the BasinData object.
@@ -136,12 +147,271 @@ def determine_basin_contains_lat_lon(
     return False
 
 
+# ============================================================================
+# StationBasinMembership - For scattered point queries without mesh creation
+# ============================================================================
+
+
+class StationBasinMembership:
+    """
+    Efficient basin membership checker for scattered station points.
+
+    This class provides fast basin membership checks for arbitrary (lat, lon) points
+    without requiring mesh generation. It pre-computes bounding boxes for efficient
+    filtering and uses direct point-in-polygon checks only on candidate basins.
+
+    Use this class when:
+    - Processing scattered station points (not dense grids)
+    - Query count << total potential grid points
+    - Smoothing boundary processing is not needed
+
+    Parameters
+    ----------
+    basin_data_list : list[BasinData]
+        List of BasinData objects containing basin boundaries.
+    logger : Logger, optional
+        Logger instance for status reporting.
+
+    Attributes
+    ----------
+    basin_data_list : list[BasinData]
+        List of basin data objects.
+    n_basins : int
+        Number of basins.
+    min_basin_boundary_lons : np.ndarray
+        Minimum longitude for each basin boundary.
+    max_basin_boundary_lons : np.ndarray
+        Maximum longitude for each basin boundary.
+    min_basin_boundary_lats : np.ndarray
+        Minimum latitude for each basin boundary.
+    max_basin_boundary_lats : np.ndarray
+        Maximum latitude for each basin boundary.
+    logger : Logger
+        Logger instance.
+
+    Examples
+    --------
+    >>> checker = StationBasinMembership(basin_data_list, logger)
+    >>> basin_indices = checker.check_point_in_basin(lat=-41.5, lon=174.5)
+    >>> print(f"Point is in basins: {basin_indices}")
+    """
+
+    def __init__(
+        self,
+        basin_data_list: list[BasinData],
+        logger: Logger | None = None,
+    ):
+        """Initialize the StationBasinMembership checker."""
+        if logger is None:
+            self.logger = logging.getLogger("velocity_model.station_basin_membership")
+        else:
+            self.logger = logger
+
+        self.basin_data_list = basin_data_list
+        self.n_basins = len(basin_data_list)
+
+        # Pre-compute bounding boxes for all basins
+        self._precompute_bounding_boxes()
+
+        self.logger.log(
+            logging.INFO,
+            f"Initialized station basin membership checker for {self.n_basins} basins",
+        )
+
+    def _precompute_bounding_boxes(self):
+        """Pre-compute bounding boxes for efficient filtering."""
+        boundary_arrays = [
+            np.vstack(basin.boundaries)  # Merge all boundary arrays for each basin
+            for basin in self.basin_data_list
+        ]
+
+        # Compute min/max lat/lon per basin
+        self.min_basin_boundary_lons = np.array(
+            [np.min(boundary[:, 0]) for boundary in boundary_arrays]
+        )
+        self.max_basin_boundary_lons = np.array(
+            [np.max(boundary[:, 0]) for boundary in boundary_arrays]
+        )
+        self.min_basin_boundary_lats = np.array(
+            [np.min(boundary[:, 1]) for boundary in boundary_arrays]
+        )
+        self.max_basin_boundary_lats = np.array(
+            [np.max(boundary[:, 1]) for boundary in boundary_arrays]
+        )
+
+    def check_point_in_basin(self, lat: float, lon: float) -> list[int]:
+        """
+        Check which basins contain a given (lat, lon) point.
+
+        This method first filters basins using bounding boxes, then performs
+        detailed polygon containment checks only on candidate basins.
+
+        Parameters
+        ----------
+        lat : float
+            Latitude of the point.
+        lon : float
+            Longitude of the point.
+
+        Returns
+        -------
+        list[int]
+            List of basin indices that contain the point.
+        """
+        # Step 1: Vectorized bounding box check
+        inside_bbox = (
+            (self.min_basin_boundary_lons <= lon)
+            & (lon <= self.max_basin_boundary_lons)
+            & (self.min_basin_boundary_lats <= lat)
+            & (lat <= self.max_basin_boundary_lats)
+        )
+
+        # Get candidate basin indices
+        candidate_indices = np.where(inside_bbox)[0]
+
+        # Step 2: Detailed polygon check (only for candidates)
+        return [
+            idx
+            for idx in candidate_indices
+            if determine_basin_contains_lat_lon(
+                self.basin_data_list[idx].boundaries, lat, lon
+            )
+        ]
+
+    def check_stations_in_basin(
+        self, lats: np.ndarray, lons: np.ndarray
+    ) -> list[list[int]]:
+        """
+        Check basin membership for multiple stations efficiently.
+
+        Parameters
+        ----------
+        lats : np.ndarray
+            Array of station latitudes.
+        lons : np.ndarray
+            Array of station longitudes.
+
+        Returns
+        -------
+        list[list[int]]
+            List of basin indices for each station. Each element is a list
+            of basin indices that contain that station.
+        """
+        n_stations = len(lats)
+        station_basin_membership = []
+
+        for i in range(n_stations):
+            basin_indices = self.check_point_in_basin(lats[i], lons[i])
+            station_basin_membership.append(basin_indices)
+
+        return station_basin_membership
+
+    def is_point_in_any_basin(self, lat: float, lon: float) -> bool:
+        """
+        Check if a point is in ANY basin (faster than getting all basins).
+
+        Parameters
+        ----------
+        lat : float
+            Latitude of the point.
+        lon : float
+            Longitude of the point.
+
+        Returns
+        -------
+        bool
+            True if point is in at least one basin, False otherwise.
+        """
+        basin_indices = self.check_point_in_basin(lat, lon)
+        return len(basin_indices) > 0
+
+
+def compute_sigma_for_stations(
+    station_basin_membership: list[list[int]],
+    in_basin_sigma: float = 0.3,
+    out_basin_sigma: float = 0.5,
+) -> np.ndarray:
+    """
+    Compute sigma values for stations based on basin membership.
+
+    This function assigns uncertainty (sigma) values to stations based on whether
+    they are inside or outside basin boundaries. Stations within basins typically
+    have lower uncertainty due to better constrained velocity models.
+
+    The sigma values represent the standard deviation of the depth-to-velocity
+    threshold (e.g., Z1.0, Z2.5) and are used in ground motion modeling to
+    quantify uncertainty in basin depth estimates.
+
+    Parameters
+    ----------
+    station_basin_membership : list[list[int]]
+        List of basin indices for each station. Each element is a list of
+        basin indices that contain that station. Empty list means station
+        is outside all basins.
+    in_basin_sigma : float, optional
+        Sigma value for stations inside basins (default: 0.3).
+        Lower value reflects higher confidence in basin depth estimates.
+    out_basin_sigma : float, optional
+        Sigma value for stations outside basins (default: 0.5).
+        Higher value reflects greater uncertainty outside basins.
+
+    Returns
+    -------
+    np.ndarray
+        Array of sigma values (float64) for each station.
+
+    Examples
+    --------
+    >>> # 3 stations: first in basins 0 and 1, second outside all basins, third in basin 2
+    >>> membership = [[0, 1], [], [2]]
+    >>> sigmas = compute_sigma_for_stations(membership)
+    >>> print(sigmas)
+    [0.3 0.5 0.3]
+
+    >>> # Custom sigma values
+    >>> sigmas = compute_sigma_for_stations(membership, 0.2, 0.6)
+    >>> print(sigmas)
+    [0.2 0.6 0.2]
+
+    >>> # All stations in basins
+    >>> membership = [[0], [1], [0, 1]]
+    >>> sigmas = compute_sigma_for_stations(membership)
+    >>> print(sigmas)
+    [0.3 0.3 0.3]
+
+    Notes
+    -----
+    The default sigma values (0.3 for in-basin, 0.5 for out-of-basin) are based
+    on empirical observations and match the values used in the original C
+    implementation (get_z.py).
+
+    A station is considered "in basin" if it's inside at least one basin boundary.
+    Stations can be in multiple basins simultaneously.
+    """
+    n_stations = len(station_basin_membership)
+    sigma_values = np.zeros(n_stations, dtype=np.float64)
+
+    for i in range(n_stations):
+        # If station is in at least one basin
+        if len(station_basin_membership[i]) > 0:
+            sigma_values[i] = in_basin_sigma
+        else:
+            sigma_values[i] = out_basin_sigma
+
+    return sigma_values
+
+
+# ============================================================================
+# MeshBasinMembership - For dense grid queries with preprocessing
+# ============================================================================
+
+
 _WORK_INB = None
 _WORK_PGM_LIST = None
 
 
 def _init_inbasin_worker(
-    in_basin_mesh: InBasinGlobalMesh,
+    in_basin_mesh: MeshBasinMembership,
     partial_global_mesh_list: list[PartialGlobalMesh],
 ) -> None:
     """
@@ -149,7 +419,7 @@ def _init_inbasin_worker(
 
     Parameters
     ----------
-    in_basin_mesh : InBasinGlobalMesh
+    in_basin_mesh : MeshBasinMembership
         The basin mesh object containing basin data and boundaries.
     partial_global_mesh_list : list[PartialGlobalMesh]
         List of partial global mesh objects for each row.
@@ -187,11 +457,17 @@ def _compute_membership_row(j: int) -> tuple[int, list[list[int]]]:
     return j, row
 
 
-class InBasinGlobalMesh:
+class MeshBasinMembership:
     """
-    Tracks basin membership for each (lat,lon) point of the global mesh, optionally
-    including a smoothing boundary.
-    Instances should be created using the preprocess_basin_membership() class method.
+    Precomputed basin membership for every (x, y) point in a dense global mesh.
+
+    This class is optimized for dense grid workflows (e.g., 3D velocity model generation).
+    It preprocesses membership across all grid points to enable O(1) lookups during model
+    generation. For scattered points, use StationBasinMembership instead.
+
+    For isolated-station processing (1D profiles, threshold points), callers may pass
+    mesh_basin_membership=None to downstream functions (e.g., assign_qualities) provided that
+    in_basin_list has been pre-populated with correct in_basin_lat_lon flags.
 
     Parameters
     ----------
@@ -199,7 +475,7 @@ class InBasinGlobalMesh:
         The global mesh containing lat/lon values.
     basin_data_list : list[BasinData]
         List of BasinData objects for basin membership.
-    logger : Logger, Optional
+    logger : Logger, optional
         Logger instance.
 
     Attributes
@@ -210,14 +486,13 @@ class InBasinGlobalMesh:
         Number of y-coordinates in the global mesh.
     nz : int
         Number of z-coordinates in the global mesh.
-    logger : Logger
-        Logger instance.
     basin_data_list : list[BasinData]
         List of BasinData objects for basin membership.
-    smooth_basin_membership : list[list[int]]
-        List of basin indices for each point in the smoothing boundary.
     basin_membership : list[list[list[int]]]
-        List of basin indices for each point in the global mesh.
+        Basin indices for each (y, x) point in the mesh. Access with [y][x].
+    smoothing_boundary_basin_indices : list[list[int]] | None
+        For each smoothing-boundary point (in order), the list of basin indices
+        that contain that boundary point. None if no smoothing boundary provided.
     min_basin_boundary_lons : np.ndarray
         Minimum longitude for each basin.
     max_basin_boundary_lons : np.ndarray
@@ -225,22 +500,22 @@ class InBasinGlobalMesh:
     min_basin_boundary_lats : np.ndarray
         Minimum latitude for each basin.
     max_basin_boundary_lats : np.ndarray
-        Maximum latitude for each basin
-
+        Maximum latitude for each basin.
+    logger : Logger
+        Logger instance.
     """
 
     def __init__(
         self,
         global_mesh: GlobalMesh,
         basin_data_list: list[BasinData],
-        logger: Optional[Logger] = None,
+        logger: Logger | None = None,
     ):
         """
         Private constructor. Use preprocess_basin_membership() instead to create instances.
-
         """
         if logger is None:
-            self.logger = Logger(name="velocity_model.in_basin_global_mesh")
+            self.logger = Logger(name="velocity_model.mesh_basin_membership")
         else:
             self.logger = logger
 
@@ -248,10 +523,10 @@ class InBasinGlobalMesh:
         self.nz = len(global_mesh.z)
 
         self.basin_data_list = basin_data_list
-        self.smooth_basin_membership = None
+        self.smoothing_boundary_basin_indices = None
         self.basin_membership = None  # Will be set by preprocess_basin_membership
 
-        # Convert all basin boundaries into NumPy arrays
+        # Bounding boxes per basin (filled in preprocess_basin_membership)
         self.min_basin_boundary_lons = self.max_basin_boundary_lons = (
             self.min_basin_boundary_lats
         ) = self.max_basin_boundary_lats = None
@@ -261,13 +536,13 @@ class InBasinGlobalMesh:
         cls,
         global_mesh: GlobalMesh,
         basin_data_list: list[BasinData],
-        logger: Optional[Logger] = None,
-        smooth_bound: Optional[SmoothingBoundary] = None,
+        logger: Logger | None = None,
+        smooth_bound: SmoothingBoundary | None = None,
         np_workers: int | None = None,
     ) -> tuple[Self, list[PartialGlobalMesh]]:
         """
         Preprocess basin membership for a given global mesh to speed up the velocity model generation
-        This method is the recommended way to create an InBasinGlobalMesh object.
+        This method is the recommended way to create an MeshBasinMembership object.
 
         Parameters
         ----------
@@ -284,11 +559,11 @@ class InBasinGlobalMesh:
 
         Returns
         -------
-        tuple of (InBasinGlobalMesh, list of PartialGlobalMesh)
+        tuple of (MeshBasinMembership, list of PartialGlobalMesh)
             Mesh membership object and list of partial slices.
         """
         if logger is None:
-            logger = Logger(name="velocity_model.in_basin_global_mesh")
+            logger = Logger(name="velocity_model.mesh_basin_membership")
 
         in_basin_mesh = cls(global_mesh, basin_data_list, logger)
 
@@ -329,7 +604,8 @@ class InBasinGlobalMesh:
             )
             logger.log(
                 logging.DEBUG,
-                f"in_basin_mesh.smooth_basin_membership after preprocess: {in_basin_mesh.smooth_basin_membership}",
+                f"mesh_basin_membership.smoothing_boundary_basin_indices after preprocess: "
+                f"{in_basin_mesh.smoothing_boundary_basin_indices}",
             )
         else:
             logger.log(logging.DEBUG, "smooth_bound is None")
@@ -405,15 +681,20 @@ class InBasinGlobalMesh:
         -------
         list[int]
             Indices of basins containing the point.
+
+        Raises
+        ------
+        ValueError
+            If basin membership has not been preprocessed.
         """
-        if self.smooth_basin_membership is None:
-            raise ValueError("Smooth basin membership not pre-processed.")
+        # Correct guard: ensure membership was computed
+        if self.basin_membership is None:
+            raise ValueError("Basin membership not pre-processed.")
         return self.basin_membership[y][x]
 
     def find_all_containing_basins(self, lat: float, lon: float) -> list[int]:
         """
-        Determine all basins that contain a given (lat, lon).
-        Use this if basin_membership is not available.
+        Determine all basins that contain a given (lat, lon) without using precomputed membership.
 
         Parameters
         ----------
@@ -439,7 +720,6 @@ class InBasinGlobalMesh:
         candidate_indices = np.where(inside_bbox)[0]
 
         # Step 2: Polygon Check (Only for Candidates)
-        # TODO: could be further optimized boundary_arrays (in preprocess_basin_membership()) is used
         return [
             idx
             for idx in candidate_indices
@@ -463,16 +743,19 @@ class InBasinGlobalMesh:
         )
 
         n_points = smooth_bound.n_points
-        self.smooth_basin_membership = [[] for _ in range(n_points)]
+        self.smoothing_boundary_basin_indices = [[] for _ in range(n_points)]
 
         for i in range(n_points):
             lat = smooth_bound.lats[i]
             lon = smooth_bound.lons[i]
-            self.smooth_basin_membership[i] = self.find_all_containing_basins(lat, lon)
+            self.smoothing_boundary_basin_indices[i] = self.find_all_containing_basins(
+                lat, lon
+            )
 
         self.logger.log(
             logging.DEBUG,
-            f"smooth_basin_membership initialized with length {len(self.smooth_basin_membership)}",
+            "smoothing_boundary_basin_indices initialized with length "
+            f"{len(self.smoothing_boundary_basin_indices)}",
         )
 
 
