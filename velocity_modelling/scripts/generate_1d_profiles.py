@@ -344,27 +344,23 @@ def write_profile_surface_depths(
 @cli.from_docstring(app)
 def generate_1d_profiles(
     out_dir: Annotated[
-        Path, typer.Option(file_okay=False, help="Output directory for profile files")
+        Path, typer.Option(file_okay=False)
     ],
-    model_version: Annotated[str, typer.Option(help="Version of the model to use")],
     location_csv: Annotated[
         Path,
         typer.Option(
             exists=True,
             dir_okay=False,
-            help="CSV file with profile parameters (id, lon, lat, zmin, zmax, spacing)",
         ),
     ],
-    min_vs: Annotated[float, typer.Option(help="Minimum shear wave velocity")] = 0.0,
-    topo_type: Annotated[
-        str, typer.Option(help="Topography type")
-    ] = TopoTypes.TRUE.name,
+    model_version: str = "2.09",
+    min_vs: float = 0.0,
+    topo_type: str = TopoTypes.TRUE.name,
     custom_depth: Annotated[
         Path | None,
         typer.Option(
             exists=True,
             dir_okay=False,
-            help="Text file with custom depth points (overrides zmin, zmax, spacing in location_csv)",
         ),
     ] = None,
     nzcvm_registry: Annotated[
@@ -372,7 +368,6 @@ def generate_1d_profiles(
         typer.Option(
             exists=False,
             dir_okay=False,
-            help="Path to nzcvm_registry.yaml (default: nzcvm_data/nzcvm_registry.yaml",
         ),
     ] = None,
     nzcvm_data_root: Annotated[
@@ -380,10 +375,9 @@ def generate_1d_profiles(
         typer.Option(
             file_okay=False,
             exists=False,  # will validate later
-            help="Override the default DATA_ROOT directory",
         ),
     ] = None,
-    log_level: Annotated[str, typer.Option(help="Logging level")] = "INFO",
+    log_level: str = "INFO",
 ) -> None:
     """
     Generate multiple 1D velocity profiles based on input coordinates and depth parameters.

@@ -128,45 +128,24 @@ def generate_threshold_points(
     station_file: Annotated[
         Path,
         typer.Option(
-            "--station-file",
-            "-ll",
             exists=True,
             dir_okay=False,
-            help="Station file with format: lon lat station_name",
         ),
     ],
-    model_version: Annotated[
-        str, typer.Option("--model-version", "-v", help="Version of the model to use")
-    ] = "2.07",
-    vs_type: Annotated[
-        list[VSType] | None,
-        typer.Option(
-            "--vs-type",
-            help="Threshold type(s) to compute (default: Z1.0 and Z2.5)",
-        ),
-    ] = None,
+    model_version: str = "2.07",
+    vs_type: list[VSType] | None  = None,
     out_dir: Annotated[
         Path | None,
         typer.Option(
-            "--out-dir",
-            "-o",
             file_okay=False,
-            help="Output directory (default: current directory)",
         ),
     ] = None,
-    no_header: Annotated[
-        bool,
-        typer.Option(
-            "--no-header",
-            help="Save output with no header",
-        ),
-    ] = False,
+    no_header: bool = False,
     nzcvm_registry: Annotated[
         Path | None,
         typer.Option(
             exists=False,
             dir_okay=False,
-            help="Path to nzcvm_registry.yaml (default: nzcvm_data/nzcvm_registry.yaml)",
         ),
     ] = None,
     nzcvm_data_root: Annotated[
@@ -174,10 +153,9 @@ def generate_threshold_points(
         typer.Option(
             file_okay=False,
             exists=False,
-            help="Override the default DATA_ROOT directory",
         ),
     ] = None,
-    log_level: Annotated[str, typer.Option(help="Logging level")] = "INFO",
+    log_level: str  = "INFO",
 ) -> None:
     """
     Generate threshold values (Vs30, Vs500, Z1.0, Z2.5) for station locations.
