@@ -1,62 +1,16 @@
 """
 generate_threshold_points.py
 
-This script generates threshold velocity values (VS30, VS500, Z1.0, Z2.5) for station locations.
-It replaces the functionality of get_z.py, computing threshold values using the Python velocity model.
+This script computes threshold velocity/depth values (e.g., Vs30, Vs500, Z1.0, Z2.5)
+for station locations using the NZCVM Python implementation. It reads station
+coordinates, determines basin membership, computes requested thresholds, and writes
+results to CSV.
 
-Default behavior (mimicking get_z.py): Computes Z1.0 and Z2.5 values with sigma.
-
-This script is part of the velocity_modelling package and is designed to be run from the command line.
-
-Usage:
-    # Default: compute Z1.0 and Z2.5 (like get_z.py)
-    python generate_threshold_points.py --station-file stations.ll --model-version 2.07
-
-    # Compute specific threshold types
-    python generate_threshold_points.py --station-file stations.ll --model-version 2.07 --vs-type VS30
-
-    # Compute multiple threshold types
-    python generate_threshold_points.py --station-file stations.ll --model-version 2.07 --vs-type Z1.0 --vs-type Z2.5 --vs-type VS30
-
-Examples:
-    # Default behavior (Z1.0, Z2.5, sigma) - output: stations.z
-    python generate_threshold_points.py --station-file stations.ll --model-version 2.07
-
-    # Custom output directory
-    python generate_threshold_points.py --station-file stations.ll --model-version 2.07 --out-dir ./results
-
-    # No header in output
-    python generate_threshold_points.py --station-file stations.ll --model-version 2.07 --no-header
-
-    # Compute VS30 only
-    python generate_threshold_points.py --station-file stations.ll --model-version 2.07 --vs-type VS30
-
-VS_TYPE options:
-    - VS30: Time-averaged shear-wave velocity in the top 30 meters
-    - VS500: Time-averaged shear-wave velocity in the top 500 meters
-    - Z1.0: Depth (km) to Vs = 1.0 km/s
-    - Z2.5: Depth (km) to Vs = 2.5 km/s
-
-Input format:
-    Station file with format: longitude latitude station_name
-
-    Example stations.ll:
-    ```
-    171.747604 -43.902401 ADCS
-    172.636    -43.531    CHCH
-    174.768    -41.285    WTMC
-    ```
-
-Output:
-    Single CSV file with computed threshold values (default: {station_file}.z)
-
-    Example output (default: Z1.0 and Z2.5 with sigma):
-    ```
-    Station_Name,Z_1.0(km),Z_2.5(km),sigma
-    ADCS,0.152,0.856,0.3
-    CHCH,0.168,0.923,0.3
-    WTMC,0.203,1.124,0.5
-    ```
+Notes
+-----
+- Output CSV includes Station_Name as index and computed threshold columns (and sigma if applicable).
+  Longitude and latitude columns are not included in the output.
+- Default behavior computes Z1.0 and Z2.5 (like get_z.py).
 """
 
 import logging
@@ -74,10 +28,11 @@ from qcore import cli
 from qcore.shared import get_stations
 from velocity_modelling.basin_model import (
     InBasin,
-    InBasinGlobalMesh,
     PartialBasinSurfaceDepths,
+    StationBasinMembership,
+    compute_sigma_for_stations,
 )
-from velocity_modelling.constants import get_data_root
+from velocity_modelling.constants import TopoTypes, get_data_root
 from velocity_modelling.geometry import (
     MeshVector,
     PartialGlobalMesh,
@@ -109,70 +64,63 @@ IN_BASIN_SIGMA = 0.3
 OUT_BASIN_SIGMA = 0.5
 
 
-def read_station_file(
-    station_file: Path,
-    logger: logging.Logger,
-) -> pd.DataFrame:
+def read_station_file(station_file: Path, logger: logging.Logger) -> pd.DataFrame:
     """
-    Read station file using qcore's get_stations function.
+    Read a station file and return station coordinates.
 
     Parameters
     ----------
     station_file : Path
-        Path to the station file.
+        Path to the station file (format: lon lat station_name).
     logger : logging.Logger
-        Logger instance for logging messages.
+        Logger instance for reporting errors.
 
     Returns
     -------
     pd.DataFrame
-        DataFrame with columns: station (index), lon, lat.
+        DataFrame indexed by Station_Name with columns:
+        - lon: float, station longitude
+        - lat: float, station latitude
 
     Raises
     ------
     FileNotFoundError
         If the station file does not exist.
     ValueError
-        If the file format is invalid.
+        If the station file cannot be parsed.
     """
     if not station_file.exists():
         raise FileNotFoundError(f"Station file not found: {station_file}")
 
     try:
-        # get_stations with locations=True returns (stations, lats, lons)
         stations, lats, lons = get_stations(str(station_file), locations=True)
-    except Exception as e:
+    except (OSError, ValueError) as e:
         raise ValueError(f"Failed to read station file {station_file}: {str(e)}")
 
-    # Create DataFrame with station names as index (like get_z.py)
     df = pd.DataFrame({"lon": lons, "lat": lats}, index=stations)
     df.index.name = "Station_Name"
-
-    logger.log(logging.INFO, f"Read {len(df)} stations from {station_file}")
     return df
 
 
 def get_output_column_name(vs_type: VSType) -> str:
     """
-    Get the output column name for a given threshold type.
+    Map a VSType to its output column name.
 
     Parameters
     ----------
     vs_type : VSType
-        Threshold type.
+        The threshold type to compute.
 
     Returns
     -------
     str
-        Column name for the output DataFrame.
+        Output column header corresponding to the threshold type.
     """
-    column_names = {
-        VSType.VS30: "Vs_30(km/s)",
-        VSType.VS500: "Vs_500(km/s)",
-        VSType.Z1_0: "Z_1.0(km)",
-        VSType.Z2_5: "Z_2.5(km)",
-    }
-    return column_names[vs_type]
+    if vs_type in [VSType.VS30, VSType.VS500]:
+        depth_meters = "30" if vs_type == VSType.VS30 else "500"
+        return f"Vs_{depth_meters}(km/s)"
+    else:
+        return f"Z_{vs_type.value}(km)"
 
 
 @cli.from_docstring(app)
@@ -232,48 +180,45 @@ def generate_threshold_points(
     log_level: Annotated[str, typer.Option(help="Logging level")] = "INFO",
 ) -> None:
     """
-    Generate threshold velocity values for station locations.
+    Generate threshold values (Vs30, Vs500, Z1.0, Z2.5) for station locations.
 
-    Default behavior (like get_z.py): Computes Z1.0 and Z2.5 with sigma values.
-    Output is saved as {station_file}.z in the specified output directory.
-
-    This function orchestrates the computation of threshold velocity metrics:
-    1. Reads station coordinates from a station file
-    2. Determines which thresholds to compute (default: Z1.0, Z2.5)
-    3. Loads all required velocity model data
-    4. For each station location, computes velocity profile and threshold values
-    5. For Z-type thresholds, calculates sigma based on basin membership
-    6. Writes all results to a single CSV file
+    This computes requested thresholds for each station, using precomputed basin
+    membership for sigma assignment when Z-thresholds are requested.
 
     Parameters
     ----------
     station_file : Path
-        Path to station file (format: lon lat station_name).
-    model_version : str, optional
-        Version of the velocity model to use (default: "2.07").
-    vs_type : list[VSType], optional
-        Threshold type(s) to calculate. If None, defaults to [Z1.0, Z2.5].
-    out_dir : Path, optional
-        Output directory (default: current directory).
-    no_header : bool, optional
-        If True, save output without header (default: False).
-    nzcvm_registry : Path, optional
-        Path to the model registry file (default: nzcvm_data/nzcvm_registry.yaml).
-    nzcvm_data_root : Path, optional
-        Override the default nzcvm_data directory.
-    log_level : str, optional
-        Logging level for the script (default: "INFO").
+        Station file path (format: lon lat station_name).
+    model_version : str
+        NZCVM model version to use (default: "2.07").
+    vs_type : list[VSType] | None
+        Threshold types to compute. If None, computes [Z1.0, Z2.5].
+    out_dir : Path | None
+        Output directory (default: current working directory).
+    no_header : bool
+        If True, write CSV without header row.
+    nzcvm_registry : Path | None
+        Optional path to nzcvm_registry.yaml; defaults to registry under data root.
+    nzcvm_data_root : Path | None
+        Override for data root directory; if None, use configured default.
+    log_level : str
+        Logging level, e.g., "INFO", "DEBUG".
+
+    Returns
+    -------
+    None
+        Writes results to CSV named {station_file}.csv in the output directory.
 
     Raises
     ------
     FileNotFoundError
-        If the station file or registry file is not found.
+        If registry or station file cannot be found.
     ValueError
-        If input parameters are invalid or threshold is outside depth limits.
-    OSError
-        If there are issues creating directories or writing files.
+        For invalid inputs or configuration issues.
     RuntimeError
-        If an error occurs during data loading or processing.
+        If model data loading or per-station processing fails.
+    OSError
+        If output directory cannot be created or output file cannot be written.
     """
     # Set up logging
     numeric_level = getattr(logging, log_level.upper(), None)
@@ -317,13 +262,14 @@ def generate_threshold_points(
         logger.log(logging.ERROR, f"Failed to read station file: {e}")
         raise
 
+    logger.log(logging.INFO, f"Read {len(stations_df)} stations from {station_file}")
+
     # Set output directory and file
     if out_dir is None:
         out_dir = Path.cwd()
     out_dir = out_dir.resolve()
 
-    # Output filename: {station_file}.z
-    output_file = out_dir / station_file.with_suffix(".z").name
+    output_file = out_dir / station_file.with_suffix(".csv").name
     logger.log(logging.INFO, f"Output will be saved as {output_file}")
 
     # Create output directory
@@ -336,9 +282,6 @@ def generate_threshold_points(
     # Initialize results DataFrame
     results_df = stations_df.copy()
 
-    # Track basin membership for sigma calculation
-    station_in_basin = {}
-
     # Initialize registry (only once for all threshold types)
     logger.log(logging.INFO, "Initializing velocity model registry")
     cvm_registry = CVMRegistry(model_version, data_root, nzcvm_registry, logger)
@@ -349,9 +292,40 @@ def generate_threshold_points(
         vm1d_data, nz_tomography_data, global_surfaces, basin_data_list = (
             cvm_registry.load_all_global_data()
         )
-    except Exception as e:
+    except (OSError, ValueError, RuntimeError, KeyError) as e:
         logger.log(logging.ERROR, f"Failed to load model data: {e}")
         raise RuntimeError(f"Failed to load model data: {str(e)}")
+
+    # Basin membership pre-processing
+    logger.log(logging.INFO, "Pre-computing basin membership for all stations")
+
+    # Initialize station basin membership checker (no mesh needed!)
+    station_basin_checker = StationBasinMembership(basin_data_list, logger)
+
+    # Check basin membership for ALL stations at once
+    station_lats = stations_df["lat"].values
+    station_lons = stations_df["lon"].values
+    station_basin_membership = station_basin_checker.check_stations_in_basin(
+        station_lats, station_lons
+    )
+
+    logger.log(
+        logging.INFO, f"Basin membership computed for {len(stations_df)} stations"
+    )
+
+    # Compute sigma values once (for Z-type thresholds)
+    sigma_values = None
+    if any(vt in [VSType.Z1_0, VSType.Z2_5] for vt in vs_types):
+        sigma_values = compute_sigma_for_stations(
+            station_basin_membership, IN_BASIN_SIGMA, OUT_BASIN_SIGMA
+        )
+        n_in_basin = np.sum(sigma_values == IN_BASIN_SIGMA)
+        n_out_basin = np.sum(sigma_values == OUT_BASIN_SIGMA)
+        logger.log(
+            logging.INFO,
+            f"Sigma values computed: {n_in_basin} stations in basin (σ={IN_BASIN_SIGMA}), "
+            f"{n_out_basin} stations outside basin (σ={OUT_BASIN_SIGMA})",
+        )
 
     # Process each threshold type
     for vs_type_current in vs_types:
@@ -370,17 +344,27 @@ def generate_threshold_points(
             "extent_zmin": zmin,
             "h_depth": h_depth,
             "h_lat_lon": 1,
-            "topo_type": "SQUASHED",
+            "topo_type": TopoTypes.SQUASHED,
         }
+
+        nx = 1
+        ny = 1
+        nz = int((zmax - zmin) / h_depth + 0.5)
+
+        vm_params_template["nx"] = nx
+        vm_params_template["ny"] = ny
+        vm_params_template["nz"] = nz
 
         # Storage for threshold values for this type
         threshold_values = []
 
-        # Process each station
-        for station_name, row in tqdm(
-            stations_df.iterrows(),
-            total=len(stations_df),
-            desc=f"Computing {vs_type_current.value}",
+        # Process each station (INNER LOOP)
+        for idx, (station_name, row) in enumerate(
+            tqdm(
+                stations_df.iterrows(),
+                total=len(stations_df),
+                desc=f"Computing {vs_type_current.value}",
+            )
         ):
             lat = row["lat"]
             lon = row["lon"]
@@ -394,32 +378,23 @@ def generate_threshold_points(
                 # Generate simple mesh for this single point
                 global_mesh = gen_full_model_grid_great_circle(vm_params, None)
 
-                # Preprocess basin membership
-                in_basin_mesh = InBasinGlobalMesh(global_mesh, basin_data_list)
+                # Use pre-computed basin membership
+                basin_indices = station_basin_membership[idx]
 
-                # Extract mesh for the single point
-                partial_global_mesh = PartialGlobalMesh(global_mesh, 0)
-                mesh_vector = MeshVector(partial_global_mesh, 0)
-
-                # Initialize data structures
-                in_basin_list = [InBasin() for _ in basin_data_list]
-
-                # Get basin indices
-                basin_indices = [
-                    in_basin_mesh.basin_idx[0][0][basin_idx]
-                    for basin_idx, _ in enumerate(basin_data_list)
+                # Create simple InBasin objects without mesh preprocessing
+                in_basin_list = [
+                    InBasin(basin_data, len(global_mesh.z))
+                    for basin_data in basin_data_list
                 ]
 
-                # Mark basin membership
-                in_any_basin = False
-                for basin_idx in basin_indices:
-                    if basin_idx >= 0:
-                        in_basin_list[basin_idx].in_basin_lat_lon = True
-                        in_any_basin = True
+                # Mark basin membership using pre-computed results
+                for basin_id in basin_indices:
+                    if basin_id >= 0:
+                        in_basin_list[basin_id].in_basin_lat_lon = True
 
-                # Track basin membership for sigma calculation (only once per station)
-                if station_name not in station_in_basin:
-                    station_in_basin[station_name] = in_any_basin
+                # Create a minimal PartialGlobalMesh for this point
+                partial_global_mesh = PartialGlobalMesh(global_mesh, 0)
+                mesh_vector = MeshVector(partial_global_mesh, 0)
 
                 # Initialize surface depths
                 partial_global_surface_depths = PartialGlobalSurfaceDepths(
@@ -444,7 +419,7 @@ def generate_threshold_points(
                     partial_global_surface_depths,
                     partial_basin_surface_depths,
                     in_basin_list,
-                    in_basin_mesh,
+                    None,  # No MeshBasinMembership for isolated station processing
                     vm_params["topo_type"],
                 )
 
@@ -461,7 +436,7 @@ def generate_threshold_points(
 
                 threshold_values.append(threshold_value)
 
-            except Exception as e:
+            except (ValueError, KeyError, RuntimeError, OSError) as e:
                 logger.log(
                     logging.ERROR,
                     f"Error processing station {station_name} at ({lat}, {lon}): {e}",
@@ -470,43 +445,42 @@ def generate_threshold_points(
                     f"Failed to process station {station_name} at ({lat}, {lon}): {str(e)}"
                 )
 
+        print("")  # Newline after tqdm progress bar
+
         # Add threshold values to results DataFrame
         column_name = get_output_column_name(vs_type_current)
         results_df[column_name] = threshold_values
 
-    # Calculate sigma if any Z-type thresholds were computed
-    if any(vt in [VSType.Z1_0, VSType.Z2_5] for vt in vs_types):
-        logger.log(logging.INFO, "Calculating sigma values based on basin membership")
-        # Set sigma based on whether station is in any basin
-        # IN_BASIN_SIGMA (0.3) if in basin, OUT_BASIN_SIGMA (0.5) if not
-        sigma_values = []
-        n_in_basin = 0
-        n_out_basin = 0
-        for station_name in results_df.index:
-            if station_in_basin.get(station_name, False):
-                sigma_values.append(IN_BASIN_SIGMA)
-                n_in_basin += 1
-            else:
-                sigma_values.append(OUT_BASIN_SIGMA)
-                n_out_basin += 1
-        results_df["sigma"] = sigma_values
         logger.log(
             logging.INFO,
-            f"Sigma calculation complete: {n_in_basin} stations in basin (σ={IN_BASIN_SIGMA}), "
-            f"{n_out_basin} stations outside basin (σ={OUT_BASIN_SIGMA})",
+            f"Completed {vs_type_current.value} calculation for {len(stations_df)} stations",
         )
+
+    # Add pre-computed sigma values if computed
+    if sigma_values is not None:
+        results_df["sigma"] = sigma_values
+        logger.log(logging.INFO, "Added pre-computed sigma values to results")
+
+    # Reorder columns: only threshold values (and sigma), no lon/lat in output
+    output_columns = [get_output_column_name(vt) for vt in vs_types]
+    if sigma_values is not None:
+        output_columns.append("sigma")
+    results_df = results_df[output_columns]
 
     # Write results to file
     logger.log(logging.INFO, f"Writing results to {output_file}")
     try:
-        results_df.to_csv(output_file, header=not no_header)
+        results_df.to_csv(
+            output_file,
+            index=True,
+            index_label="Station_Name",
+            header=not no_header,
+            float_format="%.4f",
+        )
         logger.log(logging.INFO, f"Results successfully written to {output_file}")
-    except Exception as e:
+    except (OSError, ValueError) as e:
         logger.log(logging.ERROR, f"Failed to write results: {e}")
         raise OSError(f"Failed to write results to {output_file}: {str(e)}")
-
-    # Print preview (like get_z.py)
-    print(results_df)
 
     logger.log(logging.INFO, "Threshold calculation 100% complete")
     elapsed_time = time.time() - start_time

@@ -14,8 +14,6 @@ This module provides:
 from enum import Enum
 from pathlib import Path
 
-import numpy as np
-
 from velocity_modelling.geometry import PartialGlobalMesh
 from velocity_modelling.velocity3d import QualitiesVector
 
@@ -189,7 +187,7 @@ def compute_z_threshold(
         raise ValueError(
             f"Z_Threshold {z_threshold:.1f} km/s not reached within depth range. "
             f"Maximum Vs found: {max_vs:.3f} km/s. "
-            f"Basin may be deeper than model extent ({abs(partial_global_mesh.z[-1])/1000:.2f} km)."
+            f"Basin may be deeper than model extent ({abs(partial_global_mesh.z[-1]) / 1000:.2f} km)."
         )
 
     # Convert depth to kilometers (z_write is negative in meters)

@@ -20,7 +20,7 @@ import numpy as np
 from velocity_modelling.basin_model import (
     BasinData,
     InBasin,
-    InBasinGlobalMesh,
+    MeshBasinMembership,
     PartialBasinSurfaceDepths,
 )
 from velocity_modelling.constants import MAX_DIST_SMOOTH, TopoTypes, VelocityTypes
@@ -125,10 +125,12 @@ class QualitiesVector:
         partial_basin_surface_depths_list: list[PartialBasinSurfaceDepths],
         in_basin_list: list[InBasin],
         topo_type: TopoTypes,
-        on_boundary: bool,
+        on_boundary: bool = False,
     ):
         """
         Calculate velocities and densities for all depths at a given lat-lon point.
+        This is where the actual velocity/density assignment happens based on
+        basin membership, global surfaces, and 1D models.
 
         Parameters
         ----------
@@ -150,8 +152,8 @@ class QualitiesVector:
             Basin membership indicators.
         topo_type : TopoTypes
             Topography handling method ("TRUE", "BULLDOZED", "SQUASHED", "SQUASHED_TAPERED").
-        on_boundary : bool
-            Whether this point is on a model boundary.
+        on_boundary : bool, optional
+            True if this point is on a basin (including smoothing) boundary. Default is False.
         """
 
         partial_global_surface_depths.interpolate_global_surface_depths(
@@ -329,13 +331,15 @@ class QualitiesVector:
         partial_global_surface_depths: PartialGlobalSurfaceDepths,
         partial_basin_surface_depths_list: list[PartialBasinSurfaceDepths],
         in_basin_list: list[InBasin],
-        in_basin_mesh: InBasinGlobalMesh,
+        mesh_basin_membership: MeshBasinMembership | None,
         topo_type: TopoTypes,
     ):
         """
         Determine if lat-lon point lies within the smoothing zone and prescribe velocities accordingly.
 
-        This method handles smoothing between velocity models at boundaries.
+        This method handles smoothing between velocity models at boundaries. Smoothing is applied
+        only when the point is within the smoothing zone and in_basin_mesh is provided. If
+        in_basin_mesh is None (e.g., isolated stations, thresholds, 1D profiles), smoothing is skipped.
 
         Parameters
         ----------
@@ -344,24 +348,26 @@ class QualitiesVector:
         vm1d_data : VelocityModel1D
             1D velocity model data.
         nz_tomography_data : TomographyData
-            Tomography data for velocity adjustments.
+            Tomography data providing the background velocity values, including optional smoothing boundary.
         global_surfaces : list[GlobalSurfaceRead]
             List of GlobalSurfaceRead objects.
         basin_data_list : list[BasinData]
-            list of basin data objects.
+            List of basin data objects.
         mesh_vector : MeshVector
-            Lat-lon point with multiple depths.
+            Mesh vector containing lat, lon, and depth values.
         partial_global_surface_depths : PartialGlobalSurfaceDepths
             Global surface depth data at this location.
         partial_basin_surface_depths_list : list[PartialBasinSurfaceDepths]
             Basin surface depth data at this location.
         in_basin_list : list[InBasin]
-            Basin membership indicators.
-        in_basin_mesh : InBasinGlobalMesh
-            Pre-processed basin membership for smoothing optimization.
+            Basin membership flags (pre-populated for isolated station workflows).
+        mesh_basin_membership : MeshBasinMembership or None
+            Basin mesh with preprocessed membership. Can be None for isolated station processing
+            (1D profiles, thresholds) to skip smoothing.
         topo_type : TopoTypes
             Topography handling method.
         """
+
         smooth_bound = nz_tomography_data.smooth_boundary
 
         closest_ind = None
@@ -370,6 +376,7 @@ class QualitiesVector:
             distance = (
                 1e6  # if there are no points in the smoothing boundary, then skip
             )
+
         else:
             closest_ind, distance = (
                 smooth_bound.determine_if_lat_lon_within_smoothing_region(mesh_vector)
@@ -386,13 +393,24 @@ class QualitiesVector:
 
         in_any_basin = any(in_basin.in_basin_lat_lon for in_basin in in_basin_list)
 
-        # point lies within smoothing zone, is offshore, and is not in any basin (i.e., outside any boundaries)
-        if (
+        in_smoothing_zone = (
             distance <= MAX_DIST_SMOOTH
             and not in_any_basin
             and nz_tomography_data.gtl  # Ely et al. 2010: Geotechnical Layer. If True, then apply the offshore basin depth
-            and mesh_vector.vs30 < 100
-        ):
+            and mesh_vector.vs30 < 100  # offshore if vs30 < 100 m/s
+        )
+
+        # Apply smoothing only if mesh_basin_membership is provided; otherwise skip smoothing gracefully.
+        if in_smoothing_zone and mesh_basin_membership is not None:
+            if mesh_basin_membership is None:
+                self.logger.log(
+                    logging.ERROR,
+                    "Cannot apply smoothing: mesh_basin_membership is None but point is in smoothing zone",
+                )
+                raise ValueError(
+                    "mesh_basin_membership required for smoothing boundary processing. "
+                    "Either provide mesh_basin_membership or set skip_smoothing=True."
+                )
             # point lies within smoothing zone and is not in any basin (i.e., outside any boundaries)
             qualities_vector_a = QualitiesVector(mesh_vector.nz)
             qualities_vector_b = QualitiesVector(mesh_vector.nz)
@@ -416,20 +434,19 @@ class QualitiesVector:
             mesh_vector.lat = smooth_bound.lats[closest_ind]
             mesh_vector.lon = smooth_bound.lons[closest_ind]
 
-            # determine if the point is in any basin
-            # Use preprocessed smooth_basin_membership from in_basin_mesh
-            # Check and handle if smooth_basin_membership is None
-            if in_basin_mesh.smooth_basin_membership is None:
+            # determine if the point is in any basin using precomputed boundary membership
+            if mesh_basin_membership.smoothing_boundary_basin_indices is None:
                 self.logger.log(
                     logging.ERROR,
-                    "smooth_basin_membership is None, falling back to manual calculation",
+                    "smoothing_boundary_basin_indices is None, falling back to manual calculation",
                 )
-                smooth_indices = in_basin_mesh.find_all_containing_basins(
+                smooth_indices = mesh_basin_membership.find_all_containing_basins(
                     mesh_vector.lat, mesh_vector.lon
                 )
-
             else:
-                smooth_indices = in_basin_mesh.smooth_basin_membership[closest_ind]
+                smooth_indices = mesh_basin_membership.smoothing_boundary_basin_indices[
+                    closest_ind
+                ]
 
             for i, in_basin in enumerate(in_basin_b_list):
                 in_basin.in_basin_lat_lon = i in smooth_indices

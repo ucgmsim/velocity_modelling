@@ -83,12 +83,13 @@ from qcore import cli
 from velocity_modelling.basin_model import (
     BasinData,
     InBasin,
-    InBasinGlobalMesh,
     PartialBasinSurfaceDepths,
+    StationBasinMembership,
 )
 from velocity_modelling.constants import TopoTypes, get_data_root
 from velocity_modelling.geometry import (
     MeshVector,
+    PartialGlobalMesh,
     gen_full_model_grid_great_circle,
 )
 from velocity_modelling.global_model import (
@@ -521,13 +522,30 @@ def generate_1d_profiles(
             raise ValueError(
                 f"Profile {row['id']}: spacing ({row['spacing']}) must be positive"
             )
+
+    # Read custom depth points if provided
     depth_values = None
     if custom_depth:
         depth_values = read_depth_points_text_file(custom_depth, logger)
+
     logger.log(logging.INFO, "Loading model data")
     vm1d_data, nz_tomography_data, global_surfaces, basin_data_list = (
         cvm_registry.load_all_global_data()
     )
+
+    # PRE-COMPUTE BASIN MEMBERSHIP FOR ALL PROFILES
+    logger.log(logging.INFO, "Pre-computing basin membership for all profiles")
+
+    # StationBasinMembership is more efficient than MeshBasinMembership for this purpose, which is more suited to full 3D meshes
+    profile_basin_checker = StationBasinMembership(basin_data_list, logger)
+    profile_lats = df["lat"].values
+    profile_lons = df["lon"].values
+    profile_basin_membership = profile_basin_checker.check_stations_in_basin(
+        profile_lats, profile_lons
+    )
+
+    logger.log(logging.INFO, f"Basin membership computed for {len(df)} profiles")
+
     for i in tqdm(range(len(df)), desc="Generating profiles", unit="profile"):
         logger.log(logging.INFO, f"Generating profile {i + 1} of {len(df)}")
 
@@ -567,37 +585,33 @@ def generate_1d_profiles(
             / model_extent["h_depth"]
             + 0.5
         )
+
+        # Generate mesh (only for depth calculation, not basin membership)
         global_mesh = gen_full_model_grid_great_circle(model_extent, logger)
-        logger.log(logging.INFO, "Pre-processing basin membership")
-        in_basin_mesh, partial_global_mesh_list = (
-            InBasinGlobalMesh.preprocess_basin_membership(
-                global_mesh,
-                basin_data_list,
-                logger,
-                smooth_bound=nz_tomography_data.smooth_boundary,
-            )
-        )
         if depth_values:
             global_mesh.nz = len(depth_values)
             logger.log(
                 logging.DEBUG,
                 f"Number of model points - nx: {global_mesh.nx}, ny: {global_mesh.ny}, nz: {global_mesh.nz}",
             )
-            global_mesh.z = np.array([-1000 * dep for dep in depth_values])  # in meters
+            global_mesh.z = np.array([-1000 * dep for dep in depth_values])
 
-        partial_global_mesh = partial_global_mesh_list[
-            0
-        ]  # Use the first mesh for the profile
-        basin_indices = in_basin_mesh.get_basin_membership(
-            0, 0
-        )  # Get basin indices for the profile location
+        basin_indices = profile_basin_membership[i]
+
+        # Create InBasin objects
         in_basin_list = [
             InBasin(basin_data, len(global_mesh.z)) for basin_data in basin_data_list
         ]
+
+        # Mark basin membership using pre-computed results
         for basin_idx in basin_indices:
             if basin_idx >= 0:
                 in_basin_list[basin_idx].in_basin_lat_lon = True
+
+        # Create mesh vector and initialize surface depths
+        partial_global_mesh = PartialGlobalMesh(global_mesh, 0)
         mesh_vector = MeshVector(partial_global_mesh, 0)
+
         partial_global_surface_depths = PartialGlobalSurfaceDepths(len(global_surfaces))
         partial_basin_surface_depths = [
             PartialBasinSurfaceDepths(basin_data) for basin_data in basin_data_list
@@ -613,7 +627,7 @@ def generate_1d_profiles(
             partial_global_surface_depths,
             partial_basin_surface_depths,
             in_basin_list,
-            in_basin_mesh,
+            None,  # No MeshBasinMembership for isolated profile processing
             vm_params["topo_type"],
         )
         write_profiles(

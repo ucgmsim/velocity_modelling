@@ -71,7 +71,7 @@ from qcore import cli
 from velocity_modelling.basin_model import (
     BasinData,
     InBasin,
-    InBasinGlobalMesh,
+    MeshBasinMembership,
     PartialBasinSurfaceDepths,
 )
 from velocity_modelling.constants import (
@@ -267,7 +267,7 @@ def _compute_point_qualities(
     j: int,
     partial_mesh: PartialGlobalMesh,
     global_mesh: GlobalMesh,
-    in_basin_mesh: InBasinGlobalMesh,
+    in_basin_mesh: MeshBasinMembership,
     cvm_registry: CVMRegistry,
     vm1d_data: VelocityModel1D,
     nz_tomography_data: TomographyData,
@@ -291,7 +291,7 @@ def _compute_point_qualities(
         Mesh data for the current latitude slice
     global_mesh : GlobalMesh
         The complete model mesh grid
-    in_basin_mesh : InBasinGlobalMesh
+    in_basin_mesh : MeshBasinMembership
         Precomputed basin membership data
     cvm_registry : CVMRegistry
         Registry containing model data and configurations
@@ -355,7 +355,7 @@ def _process_single_slice(
     j: int,
     partial_mesh: PartialGlobalMesh,
     global_mesh: GlobalMesh,
-    in_basin_mesh: InBasinGlobalMesh,
+    in_basin_mesh: MeshBasinMembership,
     cvm_registry: CVMRegistry,
     vm1d_data: VelocityModel1D,
     nz_tomography_data: TomographyData,
@@ -380,7 +380,7 @@ def _process_single_slice(
         Mesh data for this slice
     global_mesh : GlobalMesh
         The complete model mesh grid
-    in_basin_mesh : InBasinGlobalMesh
+    in_basin_mesh : MeshBasinMembership
         Precomputed basin membership data
     cvm_registry : CVMRegistry
         Registry containing model data and configurations
@@ -466,7 +466,7 @@ def _process_single_slice(
 
 def _run_serial_processing(
     global_mesh: GlobalMesh,
-    in_basin_mesh: InBasinGlobalMesh,
+    in_basin_mesh: MeshBasinMembership,
     partial_global_mesh_list: list[PartialGlobalMesh],
     cvm_registry: CVMRegistry,
     vm1d_data: VelocityModel1D,
@@ -490,7 +490,7 @@ def _run_serial_processing(
     ----------
     global_mesh : GlobalMesh
         The complete model mesh grid
-    in_basin_mesh : InBasinGlobalMesh
+    in_basin_mesh : MeshBasinMembership
         Precomputed basin membership data
     partial_global_mesh_list : list[PartialGlobalMesh]
         List of partial meshes for each y-slice
@@ -561,7 +561,7 @@ def _run_serial_processing(
 # Worker-visible globals, set once in the parent process for fork context
 _CVM_REGISTRY = None
 _MODEL_DATA = None  # (vm1d_data, nz_tomo, global_surfaces, basin_data_list)
-_MESH_DATA = None  # (global_mesh, in_basin_mesh, partial_global_mesh_list)
+_MESH_DATA = None  # (global_mesh, mesh_basin_membership, partial_global_mesh_list)
 _VM_PARAMS = None
 _OUTPUT_QUEUE = None
 
@@ -653,7 +653,7 @@ def _setup_parallel_globals(
     global_surfaces: list[GlobalSurfaceRead],
     basin_data_list: list[BasinData],
     global_mesh: GlobalMesh,
-    in_basin_mesh: InBasinGlobalMesh,
+    in_basin_mesh: MeshBasinMembership,
     partial_global_mesh_list: list[PartialGlobalMesh],
     vm_params: dict,
 ) -> None:
@@ -677,7 +677,7 @@ def _setup_parallel_globals(
         List of basin model data
     global_mesh : GlobalMesh
         The complete model mesh grid
-    in_basin_mesh : InBasinGlobalMesh
+    in_basin_mesh : MeshBasinMembership
         Precomputed basin membership data
     partial_global_mesh_list : list[PartialGlobalMesh]
         List of partial meshes for each y-slice
@@ -694,7 +694,7 @@ def _setup_parallel_globals(
 
 def _run_parallel_processing(
     global_mesh: GlobalMesh,
-    in_basin_mesh: InBasinGlobalMesh,
+    in_basin_mesh: MeshBasinMembership,
     partial_global_mesh_list: list[PartialGlobalMesh],
     cvm_registry: CVMRegistry,
     vm1d_data: VelocityModel1D,
@@ -717,7 +717,7 @@ def _run_parallel_processing(
     ----------
     global_mesh : GlobalMesh
         The complete model mesh grid
-    in_basin_mesh : InBasinGlobalMesh
+    in_basin_mesh : MeshBasinMembership
         Precomputed basin membership data
     partial_global_mesh_list : list[PartialGlobalMesh]
         List of partial meshes for each y-slice
@@ -978,7 +978,7 @@ def _generate_velocity_model_impl(
         # Preprocess basin membership for efficiency
         logger.log(logging.INFO, "Preprocessing basin membership")
         in_basin_mesh, partial_global_mesh_list = (
-            InBasinGlobalMesh.preprocess_basin_membership(
+            MeshBasinMembership.preprocess_basin_membership(
                 global_mesh,
                 basin_data_list,
                 logger,
