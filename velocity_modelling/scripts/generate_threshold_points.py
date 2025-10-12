@@ -133,7 +133,7 @@ def generate_threshold_points(
         ),
     ],
     model_version: str = "2.07",
-    vs_type: list[VSType] | None  = None,
+    vs_type: list[VSType] | None = None,
     out_dir: Annotated[
         Path | None,
         typer.Option(
@@ -155,7 +155,7 @@ def generate_threshold_points(
             exists=False,
         ),
     ] = None,
-    log_level: str  = "INFO",
+    log_level: str = "INFO",
 ) -> None:
     """
     Generate threshold values (Vs30, Vs500, Z1.0, Z2.5) for station locations.

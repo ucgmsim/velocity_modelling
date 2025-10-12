@@ -411,7 +411,7 @@ _WORK_PGM_LIST = None
 
 
 def _init_inbasin_worker(
-    in_basin_mesh: MeshBasinMembership,
+    mesh_basin_membership: MeshBasinMembership,
     partial_global_mesh_list: list[PartialGlobalMesh],
 ) -> None:
     """
@@ -419,14 +419,14 @@ def _init_inbasin_worker(
 
     Parameters
     ----------
-    in_basin_mesh : MeshBasinMembership
+    mesh_basin_membership : MeshBasinMembership
         The basin mesh object containing basin data and boundaries.
     partial_global_mesh_list : list[PartialGlobalMesh]
         List of partial global mesh objects for each row.
     """
     # Called once in each worker
     global _WORK_INB, _WORK_PGM_LIST
-    _WORK_INB = in_basin_mesh
+    _WORK_INB = mesh_basin_membership
     _WORK_PGM_LIST = partial_global_mesh_list
 
 
@@ -445,15 +445,15 @@ def _compute_membership_row(j: int) -> tuple[int, list[list[int]]]:
         Tuple containing (j, row_list), where row_list is a list of lists
         of basin indices with length nx.
     """
-    in_basin_mesh = _WORK_INB
+    mesh_basin_membership = _WORK_INB
     pgm = _WORK_PGM_LIST[j]
-    nx = in_basin_mesh.nx
+    nx = mesh_basin_membership.nx
     row = [[] for _ in range(nx)]
     # identical to your serial inner loop
     for k in range(nx):
         lat = pgm.lat[k]
         lon = pgm.lon[k]
-        row[k] = in_basin_mesh.find_all_containing_basins(lat, lon)
+        row[k] = mesh_basin_membership.find_all_containing_basins(lat, lon)
     return j, row
 
 
@@ -565,12 +565,13 @@ class MeshBasinMembership:
         if logger is None:
             logger = Logger(name="velocity_model.mesh_basin_membership")
 
-        in_basin_mesh = cls(global_mesh, basin_data_list, logger)
+        mesh_basin_membership = cls(global_mesh, basin_data_list, logger)
 
         # Use object dtype to store lists of basin indices
         # Initialize basin_membership as an (ny, nx) array of empty lists
-        in_basin_mesh.basin_membership = [
-            [[] for _ in range(in_basin_mesh.nx)] for _ in range(in_basin_mesh.ny)
+        mesh_basin_membership.basin_membership = [
+            [[] for _ in range(mesh_basin_membership.nx)]
+            for _ in range(mesh_basin_membership.ny)
         ]
 
         boundary_arrays = [
@@ -579,16 +580,16 @@ class MeshBasinMembership:
         ]
 
         # Compute min/max lat/lon per basin
-        in_basin_mesh.min_basin_boundary_lons = np.array(
+        mesh_basin_membership.min_basin_boundary_lons = np.array(
             [np.min(boundary[:, 0]) for boundary in boundary_arrays]
         )
-        in_basin_mesh.max_basin_boundary_lons = np.array(
+        mesh_basin_membership.max_basin_boundary_lons = np.array(
             [np.max(boundary[:, 0]) for boundary in boundary_arrays]
         )
-        in_basin_mesh.min_basin_boundary_lats = np.array(
+        mesh_basin_membership.min_basin_boundary_lats = np.array(
             [np.min(boundary[:, 1]) for boundary in boundary_arrays]
         )
-        in_basin_mesh.max_basin_boundary_lats = np.array(
+        mesh_basin_membership.max_basin_boundary_lats = np.array(
             [np.max(boundary[:, 1]) for boundary in boundary_arrays]
         )
 
@@ -597,7 +598,7 @@ class MeshBasinMembership:
                 logging.DEBUG,
                 f"Initializing smooth boundary with {smooth_bound.n_points} points",
             )
-            in_basin_mesh.preprocess_smooth_bound(smooth_bound)
+            mesh_basin_membership.preprocess_smooth_bound(smooth_bound)
             logger.log(
                 logging.DEBUG,
                 f"Pre-processed smooth boundary membership for {smooth_bound.n_points} points.",
@@ -605,12 +606,12 @@ class MeshBasinMembership:
             logger.log(
                 logging.DEBUG,
                 f"mesh_basin_membership.smoothing_boundary_basin_indices after preprocess: "
-                f"{in_basin_mesh.smoothing_boundary_basin_indices}",
+                f"{mesh_basin_membership.smoothing_boundary_basin_indices}",
             )
         else:
             logger.log(logging.DEBUG, "smooth_bound is None")
 
-        nx, ny = in_basin_mesh.nx, in_basin_mesh.ny
+        nx, ny = mesh_basin_membership.nx, mesh_basin_membership.ny
         partial_global_mesh_list = [
             PartialGlobalMesh(global_mesh, j) for j in range(ny)
         ]
@@ -643,12 +644,12 @@ class MeshBasinMembership:
                 max_workers=n_workers,
                 mp_context=ctx,
                 initializer=_init_inbasin_worker,
-                initargs=(in_basin_mesh, partial_global_mesh_list),
+                initargs=(mesh_basin_membership, partial_global_mesh_list),
             ) as ex:
                 futures = [ex.submit(_compute_membership_row, j) for j in range(ny)]
                 for fut in as_completed(futures):
                     j, row = fut.result()
-                    in_basin_mesh.basin_membership[j] = row
+                    mesh_basin_membership.basin_membership[j] = row
         else:
             # --- Serial fallback (default) ---
             for j in range(ny):
@@ -656,15 +657,15 @@ class MeshBasinMembership:
                 for k in range(nx):
                     lat = pgm.lat[k]
                     lon = pgm.lon[k]
-                    in_basin_mesh.basin_membership[j][k] = (
-                        in_basin_mesh.find_all_containing_basins(lat, lon)
+                    mesh_basin_membership.basin_membership[j][k] = (
+                        mesh_basin_membership.find_all_containing_basins(lat, lon)
                     )
 
         logger.log(
             logging.INFO,
             f"Pre-processed basin membership for {len(basin_data_list)} basins.",
         )
-        return (in_basin_mesh, partial_global_mesh_list)
+        return (mesh_basin_membership, partial_global_mesh_list)
 
     def get_basin_membership(self, x: int, y: int) -> list[int]:
         """

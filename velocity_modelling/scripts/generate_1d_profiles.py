@@ -343,9 +343,7 @@ def write_profile_surface_depths(
 
 @cli.from_docstring(app)
 def generate_1d_profiles(
-    out_dir: Annotated[
-        Path, typer.Option(file_okay=False)
-    ],
+    out_dir: Annotated[Path, typer.Option(file_okay=False)],
     location_csv: Annotated[
         Path,
         typer.Option(

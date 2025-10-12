@@ -338,8 +338,8 @@ class QualitiesVector:
         Determine if lat-lon point lies within the smoothing zone and prescribe velocities accordingly.
 
         This method handles smoothing between velocity models at boundaries. Smoothing is applied
-        only when the point is within the smoothing zone and in_basin_mesh is provided. If
-        in_basin_mesh is None (e.g., isolated stations, thresholds, 1D profiles), smoothing is skipped.
+        only when the point is within the smoothing zone and mesh_basin_membership is provided. If
+        mesh_basin_membership is None (e.g., isolated stations, thresholds, 1D profiles), smoothing is skipped.
 
         Parameters
         ----------
