@@ -214,7 +214,6 @@ def test_gen_threshold_points(threshold_scenario: ThresholdScenarioDict):
         [
             "python",
             str(SCRIPT_DIR / "generate_threshold_points.py"),
-            "--station-file",
             str(threshold_scenario["station_file"]),
             "--model-version",
             threshold_scenario["model_version"],
