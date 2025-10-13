@@ -276,36 +276,3 @@ def write_threshold_value(
         if is_first:
             f.write(header)
         f.write(f"{lon:.6f}\t{lat:.6f}\t{threshold_value:.6f}\n")
-
-
-def get_z_threshold_value(vs_type: VSType) -> float:
-    """
-    Get the velocity threshold value for Z-type calculations.
-
-    Parameters
-    ----------
-    vs_type : VSType
-        Type of velocity threshold.
-
-    Returns
-    -------
-    float
-        Threshold velocity in km/s (1.0 or 2.5).
-
-    Raises
-    ------
-    ValueError
-        If VS_TYPE is not a Z-type (not Z1.0 or Z2.5).
-
-    Examples
-    --------
-    >>> thresh = get_z_threshold_value(VSType.Z1_0)
-    >>> print(thresh)
-    1.0
-    """
-    if vs_type == VSType.Z1_0:
-        return 1.0
-    elif vs_type == VSType.Z2_5:
-        return 2.5
-    else:
-        raise ValueError(f"VS_TYPE {vs_type} is not a Z-type threshold")

@@ -14,6 +14,7 @@ This codebase provides tools to:
 - Generate 3D velocity models from various geophysical datasets
 - Extract 1D velocity profiles at specific locations
 - Create cross-sections from 3D velocity models
+- Compute threshold values (Vs30, Vs500, Z1.0, Z2.5) for station locations
 - Process and integrate multiple data sources (tomography, basin models, surface geology)
 
 The NZCVM integrates datasets from numerous geophysical and geological studies, specifying compression wave velocity (Vp), shear wave velocity (Vs), and density (Rho) at specified locations in a 3D grid. By embedding discrete regional models into lower-resolution tomography data, the NZCVM provides a unified velocity model suitable for broadband physics-based ground motion simulations.
@@ -82,7 +83,7 @@ For detailed installation and data setup instructions, see the [Installation Gui
 
 ## Command-Line Tools
 
-The NZCVM provides 3 main command-line tools:
+The NZCVM provides 4 main command-line tools:
 
 ### 1. Generate 3D Models: `generate_3d_model`
 Creates 3D velocity models from configuration files.
@@ -123,6 +124,22 @@ extract_cross_section /path/to/velocity_model.h5 --start-lat -41.0 --start-lon 1
 
 For detailed instructions, see [Extracting Cross-Sections](wiki/Extracting-Cross-Sections.md).
 
+### 4. Generate Threshold Points: `generate_threshold_points`
+Computes velocity and depth threshold values (Vs30, Vs500, Z1.0, Z2.5) for station locations.
+
+```bash
+generate_threshold_points --station-file stations.txt --model-version 2.07 --vs-type Z1.0 --vs-type Z2.5 --out-dir /path/to/output
+```
+
+Key features:
+- Uses same **model versions** as 3D generation and 1D profiles
+- Computes Vs30, Vs500 (velocity thresholds) and Z1.0, Z2.5 (depth thresholds)
+- Automatic basin membership determination for Z-thresholds
+- Batch processing from station coordinate files
+- Output CSV uses input filename with .csv extension
+
+For detailed instructions, see [Generating Threshold Points](wiki/Generating-Threshold-Points.md).
+
 
 ## Model Version System
 
@@ -141,7 +158,7 @@ MODEL_VERSION=2.03
 
 This automatically loads `model_versions/2p03.yaml` which defines the complete model configuration.
 
-All tools (`generate_3d_model`, `generate_1d_profiles`, `extract_cross_section`) use this same model version system, ensuring consistency across different analysis workflows.
+All tools (`generate_3d_model`, `generate_1d_profiles`, `generate_threshold_points`, `extract_cross_section`) use this same model version system, ensuring consistency across different analysis workflows.
 
 For complete details, see [Model Versions](wiki/Model-Versions.md).
 
@@ -200,6 +217,16 @@ nzcvm-data-helper ensure
    
    # Generate profiles  
    generate_1d_profiles --model-version 2.03 --location-csv sites.csv --out-dir /tmp/profiles
+```
+
+4. **Compute threshold values**:
+```bash
+   # Create station file
+   echo "172.5 -43.5 STATION_A" > stations.txt
+   echo "172.6 -43.6 STATION_B" >> stations.txt
+   
+   # Generate thresholds
+   generate_threshold_points --station-file stations.txt --model-version 2.07 --vs-type Z1.0 --vs-type Z2.5 --out-dir /tmp/thresholds
 ```
 
 ## Changelogs and Development Plans

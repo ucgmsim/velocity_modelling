@@ -45,7 +45,6 @@ from velocity_modelling.threshold import (
     compute_vs_average,
     compute_z_threshold,
     get_depth_parameters,
-    get_z_threshold_value,
 )
 from velocity_modelling.velocity3d import QualitiesVector
 
@@ -407,7 +406,15 @@ def generate_threshold_points(
                         partial_global_mesh, qualities_vector
                     )
                 else:  # Z1.0 or Z2.5
-                    z_thresh = get_z_threshold_value(vs_type_current)
+                    if vs_type_current == VSType.Z1_0:
+                        z_thresh = 1.0
+                    elif vs_type_current == VSType.Z2_5:
+                        z_thresh = 2.5
+                    else:
+                        raise ValueError(
+                            f"VS_TYPE {vs_type_current} is not a Z-type threshold"
+                        )
+
                     threshold_value = compute_z_threshold(
                         partial_global_mesh, qualities_vector, z_thresh
                     )
