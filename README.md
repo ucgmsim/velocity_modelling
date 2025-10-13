@@ -212,8 +212,8 @@ nzcvm-data-helper ensure
 3. **Extract 1D profiles**:
 ```bash
    # Create location file
-   echo "lat,lon,name" > sites.csv
-   echo "-43.5,172.5,site1" >> sites.csv
+  echo "id,lon,lat,zmin,zmax,spacing" > sites.csv
+  echo "site1,172.5,-43.5,0,3,0.05" >> sites.csv
    
    # Generate profiles  
    generate_1d_profiles --model-version 2.03 --location-csv sites.csv --out-dir /tmp/profiles
