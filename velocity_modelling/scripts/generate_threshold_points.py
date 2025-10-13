@@ -117,7 +117,7 @@ def get_output_column_name(vs_type: VSType) -> str:
     """
     if vs_type in [VSType.VS30, VSType.VS500]:
         depth_meters = "30" if vs_type == VSType.VS30 else "500"
-        return f"Vs_{depth_meters}(km/s)"
+        return f"Vs_{depth_meters}(m/s)"
     else:
         return f"Z_{vs_type.value}(km)"
 
@@ -126,7 +126,7 @@ def get_output_column_name(vs_type: VSType) -> str:
 def generate_threshold_points(
     station_file: Annotated[
         Path,
-        typer.Option(
+        typer.Argument(
             exists=True,
             dir_okay=False,
         ),
@@ -206,7 +206,7 @@ def generate_threshold_points(
     start_time = time.time()
 
     # Default behavior: compute Z1.0 and Z2.5 (like get_z.py)
-    if not vs_type: # if vs_type is None or []
+    if not vs_type:  # if vs_type is None or []
         vs_types = [VSType.Z1_0, VSType.Z2_5]
         logger.log(logging.INFO, "No VS_TYPE specified, defaulting to Z1.0 and Z2.5")
     else:

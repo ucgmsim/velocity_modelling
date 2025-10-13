@@ -122,8 +122,8 @@ def compute_vs_average(
     # Total depth in meters (z values are negative, so we negate)
     total_depth = -partial_global_mesh.z[partial_global_mesh.nz - 1]
 
-    # Vs_avg = total_depth / sum(dz/Vs), converted to km/s
-    vs_avg = total_depth / vs_sum / 1000.0
+    # Vs_avg = total_depth / sum(dz/Vs), converted to m/s
+    vs_avg = total_depth / vs_sum * 1000.0
 
     return vs_avg
 

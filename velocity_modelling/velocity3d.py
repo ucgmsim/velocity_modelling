@@ -402,7 +402,6 @@ class QualitiesVector:
 
         # Apply smoothing only if mesh_basin_membership is provided; otherwise skip smoothing gracefully.
         if in_smoothing_zone and mesh_basin_membership is not None:
-
             # point lies within smoothing zone and is not in any basin (i.e., outside any boundaries)
             qualities_vector_a = QualitiesVector(mesh_vector.nz)
             qualities_vector_b = QualitiesVector(mesh_vector.nz)

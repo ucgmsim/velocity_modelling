@@ -18,7 +18,7 @@ The script will compute the requested threshold values using the specified NZCVM
 
 ```bash
 python velocity_modelling/scripts/generate_threshold_points.py \
-  --station-file /path/to/stations.txt \
+  station_file \
   --model-version 2.07 \
   --vs-type Z1.0 \
   --vs-type Z2.5 \
@@ -29,7 +29,7 @@ python velocity_modelling/scripts/generate_threshold_points.py \
 
 ## Required Arguments
 
-- **--station-file**: Path to the station file containing station locations
+- **station_file**: Path to the station file containing station locations (positional argument)
 
 ---
 
@@ -83,16 +83,21 @@ The output file uses the same name as the input station file, with the extension
 ### Example Output
 
 ```csv
-station_name,lon,lat,Z1.0,Z2.5
-STATION_A,172.7244163,-43.51491883,0.245,1.832
-STATION_B,174.7765285,-41.28908245,0.198,1.456
-STATION_C,168.6626837,-44.99783415,0.312,2.145
+Station_Name,Vs_30(m/s),Vs_500(m/s),Z_Z1.0(km),Z_Z2.5(km),sigma
+HNPS,250.5,450.2,0.195,5.625,0.300
+TRMS,180.3,380.1,0.055,0.625,0.500
+NSPS,220.8,420.5,0.105,6.625,0.300
+MWZ,300.2,520.4,0.045,0.275,0.500
 ```
 
 The CSV includes:
-- **station_name**: Station identifier from input file
-- **lon, lat**: Station coordinates
-- **Threshold columns**: One column for each requested threshold type (units: km for Z-thresholds, m/s for Vs-thresholds)
+- **Station_Name**: Station identifier from input file
+- **Threshold columns**: One column for each requested threshold type, formatted as `<type>_<threshold>(<units>)`
+  - For Vs-thresholds: `Vs_30(m/s)`, `Vs_500(m/s)` 
+  - For Z-thresholds: `Z_Z1.0(km)`, `Z_Z2.5(km)`
+- **sigma**: Uncertainty parameter based on basin membership (only included when Z-thresholds are requested)
+  - `0.300`: Station is inside a sedimentary basin
+  - `0.500`: Station is outside any basin
 
 ---
 
@@ -103,7 +108,14 @@ The CSV includes:
 - **Z1.0**: Depth (in km) to the 1.0 km/s shear-wave velocity isosurface. Important for basin amplification modeling.
 - **Z2.5**: Depth (in km) to the 2.5 km/s shear-wave velocity isosurface. Characterizes sedimentary basin depth.
 
-For Z-thresholds (Z1.0, Z2.5), the script automatically determines basin membership for each station to assign appropriate sigma values for uncertainty characterization.
+### Sigma Values (Basin Membership)
+
+When Z-thresholds (Z1.0, Z2.5) are computed, the script automatically determines basin membership for each station and assigns a sigma value:
+
+- **sigma = 0.300**: Station is located inside a sedimentary basin. Lower uncertainty due to better-constrained basin geometry.
+- **sigma = 0.500**: Station is located outside any basin. Higher uncertainty due to less constrained subsurface structure.
+
+These sigma values represent the uncertainty in the depth predictions and are used in ground motion simulation workflows for uncertainty quantification.
 
 ---
 
@@ -114,6 +126,7 @@ For Z-thresholds (Z1.0, Z2.5), the script automatically determines basin members
 - If no `--vs-type` is specified, the script defaults to computing Z1.0 and Z2.5.
 - The model version string (e.g., `2.07`) must correspond to a valid NZCVM model version.
 - Station coordinates should be in WGS84 decimal degrees.
+- The **sigma column is only included in the output when Z-thresholds (Z1.0, Z2.5) are requested**. Vs-threshold computations (Vs30, Vs500) do not include sigma values.
 - The script handles basin membership automatically when computing Z-thresholds.
 - The output CSV filename is derived from the input station filename (same name, .csv extension).
 
