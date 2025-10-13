@@ -453,7 +453,7 @@ def generate_threshold_points(
             index=True,
             index_label="Station_Name",
             header=not no_header,
-            float_format="%.4f",
+            float_format="%.3f",
         )
         logger.log(logging.INFO, f"Results successfully written to {output_file}")
     except (OSError, ValueError) as e:
