@@ -688,7 +688,6 @@ class MeshBasinMembership:
         ValueError
             If basin membership has not been preprocessed.
         """
-        # Correct guard: ensure membership was computed
         if self.basin_membership is None:
             raise ValueError("Basin membership not pre-processed.")
         return self.basin_membership[y][x]

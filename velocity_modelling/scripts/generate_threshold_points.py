@@ -206,7 +206,7 @@ def generate_threshold_points(
     start_time = time.time()
 
     # Default behavior: compute Z1.0 and Z2.5 (like get_z.py)
-    if vs_type is None or len(vs_type) == 0:
+    if not vs_type: # if vs_type is None or []
         vs_types = [VSType.Z1_0, VSType.Z2_5]
         logger.log(logging.INFO, "No VS_TYPE specified, defaulting to Z1.0 and Z2.5")
     else:
