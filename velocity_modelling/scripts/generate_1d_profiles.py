@@ -8,12 +8,10 @@ Intended for use with the NZCVM velocity modelling framework.
 
 This script is part of the velocity_modelling package and is designed to be run from the command line.
 Usage:
-    python generate_1d_profiles.py --out-dir <output_directory> --model-version <version> --location-csv <csv_file>
-    --min-vs <min_vs> --topo-type <topo_type> [--custom-depth <depth_file>] [--nzcvm-registry <registry_file>]
-    [--data-root <data_root>] [--log-level <log_level>]
+    python generate_1d_profiles.py <location_csv> [options]
 
 Example:
-    python generate_1d_profiles.py --out-dir ./profiles --model-version 2.07 --location-csv locations.csv --min-vs 0.2 --topo-type TRUE
+    python generate_1d_profiles.py locations.csv --model-version 2.07 --min-vs 0.2 --topo-type TRUE
 
     where, locations.csv is a CSV file with columns: id, lon, lat, zmin, zmax, spacing. zmin, zmax and spacing are in kilometers.
 
@@ -21,6 +19,9 @@ Example:
         id, lon, lat, zmin, zmax, spacing
         ADCS, 171.747604, -43.902401,0.0, 3.0, 0.1
         ...
+
+By default, output files are written to the same directory as the location CSV file. Use --out-dir to override.
+
 If the --custom-depth option is provided, it should point to a text file with depth points in kilometers, one per line, such as:
         0.0
         0.1
@@ -343,14 +344,19 @@ def write_profile_surface_depths(
 
 @cli.from_docstring(app)
 def generate_1d_profiles(
-    out_dir: Annotated[Path, typer.Option(file_okay=False)],
     location_csv: Annotated[
         Path,
-        typer.Option(
+        typer.Argument(
             exists=True,
             dir_okay=False,
         ),
     ],
+    out_dir: Annotated[
+        Path | None,
+        typer.Option(
+            file_okay=False,
+        )
+    ] = None,
     model_version: str = "2.09",
     min_vs: float = 0.0,
     topo_type: str = TopoTypes.TRUE.name,
@@ -389,21 +395,22 @@ def generate_1d_profiles(
 
     Parameters
     ----------
-    out_dir : Path
-        Path to the output directory where profile files will be written.
     location_csv : Path
         Path to the CSV file containing profile parameters (id, lon, lat, zmin, zmax, spacing).
+    out_dir : Path | None, optional
+        Path to the output directory where profile files will be written.
+        If None, uses the parent directory of the location CSV file.
     model_version : str, optional
         Version of the model to use. Default is "2.09".
     min_vs : float, optional
         Minimum shear wave velocity (default: 0.0).
     topo_type : str, optional
         Topography type (default: TRUE).
-    custom_depth : Path, optional
+    custom_depth : Path | None, optional
         Path to the text file containing custom depth points (overrides zmin, zmax, spacing in CSV).
-    nzcvm_registry : Path, optional
+    nzcvm_registry : Path | None, optional
         Path to the model registry file (default: nzcvm_data/nzcvm_registry.yaml).
-    nzcvm_data_root : Path, optional
+    nzcvm_data_root : Path | None, optional
         Override the default nzcvm_data directory.
     log_level : str, optional
         Logging level for the script (default: "INFO").
@@ -424,6 +431,13 @@ def generate_1d_profiles(
     logger.setLevel(numeric_level)
     logger.log(logging.DEBUG, f"Logger initialized with level {log_level}")
     logger.log(logging.INFO, "Beginning multiple profiles generation")
+
+    # Set default output directory to parent of location CSV if not specified
+    if out_dir is None:
+        out_dir = location_csv.parent
+        logger.log(logging.INFO, f"Using default output directory: {out_dir}")
+    else:
+        logger.log(logging.INFO, f"Using specified output directory: {out_dir}")
 
     # Resolve data root path, giving precedence to the CLI argument
     try:

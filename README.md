@@ -104,7 +104,7 @@ For detailed instructions, see [Generating 3D Models](wiki/Generating-3D-Model.m
 Extracts 1D velocity profiles at specific locations.
 
 ```bash
-generate_1d_profiles --model-version 2.03 --location-csv sites.csv --out-dir /path/to/output
+generate_1d_profiles sites.csv --model-version 2.03 --out-dir /path/to/output
 ```
 
 Key features:
@@ -112,6 +112,7 @@ Key features:
 - Supports custom depth sampling
 - Batch processing from CSV coordinates
 - Multiple output formats
+- Defaults to outputting in the same directory as the input CSV
 
 For detailed instructions, see [Generating 1D Profiles](wiki/Generating-1D-Profiles.md).
 
@@ -216,7 +217,7 @@ nzcvm-data-helper ensure
   echo "site1,172.5,-43.5,0,3,0.05" >> sites.csv
    
    # Generate profiles  
-   generate_1d_profiles --model-version 2.03 --location-csv sites.csv --out-dir /tmp/profiles
+   generate_1d_profiles sites.csv --model-version 2.03 --out-dir /tmp/profiles
 ```
 
 4. **Compute threshold values**:

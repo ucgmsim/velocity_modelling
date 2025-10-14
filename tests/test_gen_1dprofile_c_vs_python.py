@@ -292,12 +292,11 @@ def test_gen_1dprofile_c_vs_python(
         [
             "python",
             str(SCRIPT_DIR / "generate_1d_profiles.py"),
+            str(location_csv),  # Now a positional argument
             "--model-version",
             params["model_version"],
             "--out-dir",
             str(profile_rootdir / "output"),
-            "--location-csv",
-            str(location_csv),
             "--topo-type",
             params["topo_type"],
             "--min-vs",

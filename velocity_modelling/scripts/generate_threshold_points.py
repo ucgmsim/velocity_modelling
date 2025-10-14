@@ -323,6 +323,8 @@ def generate_threshold_points(
             "h_lat_lon": 1,
             "topo_type": TopoTypes.SQUASHED,
         }
+        # C code uses SQUASHED for threshold calcs
+        # #https://github.com/ucgmsim/Velocity-Model/blob/cfb6f7685f169e87b37d6ea20796b97c42ba49a9/src/callRoutines.c#L718
 
         nx = 1
         ny = 1
