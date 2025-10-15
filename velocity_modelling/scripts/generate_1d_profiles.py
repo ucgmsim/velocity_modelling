@@ -355,7 +355,7 @@ def generate_1d_profiles(
         Path | None,
         typer.Option(
             file_okay=False,
-        )
+        ),
     ] = None,
     model_version: str = "2.09",
     min_vs: float = 0.0,

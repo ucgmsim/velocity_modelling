@@ -125,11 +125,11 @@ extract_cross_section /path/to/velocity_model.h5 --start-lat -41.0 --start-lon 1
 
 For detailed instructions, see [Extracting Cross-Sections](wiki/Extracting-Cross-Sections.md).
 
-### 4. Generate Threshold Points: `generate_threshold_points`
+### 4. Generate Thresholds: `generate_thresholds`
 Computes velocity and depth threshold values (Vs30, Vs500, Z1.0, Z2.5) for station locations.
 
 ```bash
-generate_threshold_points stations.txt --model-version 2.07 --vs-type Z1.0 --vs-type Z2.5 --out-dir /path/to/output
+generate_thresholds stations.txt --model-version 2.07 --vs-type Z1.0 --vs-type Z2.5 --out-dir /path/to/output
 ```
 
 Key features:
@@ -139,7 +139,7 @@ Key features:
 - Batch processing from station coordinate files
 - Output CSV uses input filename with .csv extension
 
-For detailed instructions, see [Generating Threshold Points](wiki/Generating-Threshold-Points.md).
+For detailed instructions, see [Generating Thresholds](wiki/Generating-Thresholds.md).
 
 
 ## Model Version System
@@ -159,7 +159,7 @@ MODEL_VERSION=2.03
 
 This automatically loads `model_versions/2p03.yaml` which defines the complete model configuration.
 
-All tools (`generate_3d_model`, `generate_1d_profiles`, `generate_threshold_points`, `extract_cross_section`) use this same model version system, ensuring consistency across different analysis workflows.
+All tools (`generate_3d_model`, `generate_1d_profiles`, `generate_thresholds`, `extract_cross_section`) use this same model version system, ensuring consistency across different analysis workflows.
 
 For complete details, see [Model Versions](wiki/Model-Versions.md).
 
@@ -227,7 +227,7 @@ nzcvm-data-helper ensure
    echo "172.6 -43.6 STATION_B" >> stations.txt
    
    # Generate thresholds
-   generate_threshold_points stations.txt --model-version 2.07 --vs-type Z1.0 --vs-type Z2.5 --out-dir /tmp/thresholds
+   generate_thresholds stations.txt --model-version 2.07 --vs-type Z1.0 --vs-type Z2.5 --out-dir /tmp/thresholds
 ```
 
 ## Changelogs and Development Plans

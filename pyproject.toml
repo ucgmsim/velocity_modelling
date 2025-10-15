@@ -23,6 +23,7 @@ dynamic = ["version", "dependencies"]
 generate_3d_model = "velocity_modelling.scripts.generate_3d_model:app"
 generate_1d_profiles = "velocity_modelling.scripts.generate_1d_profiles:app"
 extract_cross_section = "velocity_modelling.scripts.extract_cross_section:app"
+generate_thresholds = "velocity_modelling.scripts.generate_thresholds:app"
 nzcvm-data-helper = "velocity_modelling.data_helper:app"
 # Add more scripts as needed:
 # script_name = "module.path:app"

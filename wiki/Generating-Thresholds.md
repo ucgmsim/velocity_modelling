@@ -1,8 +1,8 @@
-# Generating Threshold Points
+# Generating Thresholds
 
 ## Overview
 
-The `generate_threshold_points.py` script computes velocity and depth threshold values (Vs30, Vs500, Z1.0, Z2.5) for specified station locations. It reads station coordinates from a file, queries the NZCVM velocity model, and outputs the requested threshold parameters. When Z-thresholds (Z1.0, Z2.5) are requested, the script uses precomputed basin membership to assign appropriate sigma values.
+The `generate_thresholds.py` script computes velocity and depth threshold values (Vs30, Vs500, Z1.0, Z2.5) for specified station locations. It reads station coordinates from a file, queries the NZCVM velocity model, and outputs the requested threshold parameters. When Z-thresholds (Z1.0, Z2.5) are requested, the script uses precomputed basin membership to assign appropriate sigma values.
 
 ---
 
@@ -17,7 +17,7 @@ The script will compute the requested threshold values using the specified NZCVM
 ### Example Command
 
 ```bash
-python velocity_modelling/scripts/generate_threshold_points.py \
+python velocity_modelling/scripts/generate_thresholds.py \
   station_file \
   --model-version 2.07 \
   --vs-type Z1.0 \

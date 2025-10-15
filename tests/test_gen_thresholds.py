@@ -1,4 +1,4 @@
-# tests/test_gen_threshold_points.py
+# tests/test_gen_thresholds.py
 import subprocess
 from pathlib import Path
 from typing import TypedDict
@@ -200,7 +200,7 @@ def compare_z_files(
 
 def test_gen_threshold_points(threshold_scenario: ThresholdScenarioDict):
     """
-    Test generate_threshold_points.py with different scenarios
+    Test generate_thresholds.py with different scenarios
     and compare outputs with benchmarks.
     """
     # Create output directory for this scenario
@@ -209,11 +209,11 @@ def test_gen_threshold_points(threshold_scenario: ThresholdScenarioDict):
     # Expected output file name (based on script behavior)
     expected_output_file = threshold_scenario["output_path"] / f"{threshold_scenario['name']}.csv"
 
-    # Run the generate_threshold_points.py script
+    # Run the generate_thresholds.py script
     result = subprocess.run(
         [
             "python",
-            str(SCRIPT_DIR / "generate_threshold_points.py"),
+            str(SCRIPT_DIR / "generate_thresholds.py"),
             str(threshold_scenario["station_file"]),
             "--model-version",
             threshold_scenario["model_version"],
