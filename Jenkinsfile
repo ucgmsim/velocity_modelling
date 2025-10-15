@@ -20,7 +20,7 @@ pipeline {
                             cd /mnt/mantle_data/jenkins/nzvm/nzcvm_data
 
                             # Fix the dubious ownership issue
-                            git config --global --add safe.directory /mnt/mantle_data/jenkins/nzvm/nzcvm_data
+                            git config --local --add safe.directory /mnt/mantle_data/jenkins/nzvm/nzcvm_data
 
                             git config pull.rebase false
                             git pull origin main
