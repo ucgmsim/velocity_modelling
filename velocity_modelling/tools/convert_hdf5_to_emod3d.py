@@ -10,7 +10,6 @@ format expected by EMOD3D, producing the same output files as emod3d.py:
 - in_basin_mask.b (basin membership mask)
 """
 
-import sys
 import time
 from pathlib import Path
 from typing import Annotated
