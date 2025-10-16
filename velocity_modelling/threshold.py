@@ -206,8 +206,8 @@ class VSType(str, Enum):
 
     VS30 = "VS30"
     VS500 = "VS500"
-    Z1_0 = "Z1.0"
-    Z2_5 = "Z2.5"
+    Z1_0 = "1.0"
+    Z2_5 = "2.5"
 
 
 def get_depth_parameters(vs_type: VSType) -> tuple[float, float, float]:
