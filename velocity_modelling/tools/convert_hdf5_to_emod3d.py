@@ -10,7 +10,6 @@ format expected by EMOD3D, producing the same output files as emod3d.py:
 - in_basin_mask.b (basin membership mask)
 """
 
-import struct
 import sys
 import time
 from pathlib import Path
@@ -73,17 +72,11 @@ def convert_hdf5_to_emod3d(
 
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # Determine endianness and format string (match emod3d.py exactly)
-    endianness = sys.byteorder
-    endian_format = "<" if endianness == "little" else ">"
-
-    # Output file paths (match emod3d.py exactly)
     vp3dfile = out_dir / "vp3dfile.p"
     vs3dfile = out_dir / "vs3dfile.s"
     rho3dfile = out_dir / "rho3dfile.d"
     in_basin_mask_file = out_dir / "in_basin_mask.b"
 
-    # Remove any existing files (match emod3d.py behavior)
     for filepath in [vp3dfile, vs3dfile, rho3dfile, in_basin_mask_file]:
         filepath.unlink(missing_ok=True)
 
@@ -105,7 +98,7 @@ def convert_hdf5_to_emod3d(
         dsets = [vp_full, vs_full, rho_full, inbasin_full]
 
         buffer = np.empty((nz, nx), dtype=np.float32)
-        # Process each y-slice (latitude) to exactly match emod3d.py write pattern
+
         files = [fvp, fvs, frho, fmask]
         z_values = slice(nz)
         x_values = slice(nx)
