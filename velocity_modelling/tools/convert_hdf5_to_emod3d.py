@@ -110,7 +110,7 @@ def convert_hdf5_to_emod3d(
                 # slice the dataset directly but to be sure this
                 # avoids any possible intermediate array creation.
                 dset.read_direct(buffer, (z_values, j, x_values))
-                outp.write(buffer.tobytes())
+                outp.write(buffer.astype(np.float32).tobytes())
 
     end_time = time.time()
     processing_time = end_time - start_time
