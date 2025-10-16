@@ -13,7 +13,7 @@ Command line:
     python generate_thresholds.py stations.ll --model-version 2.07 --topo-type SQUASHED_TAPERED
 
 Python code:
-    from threshold import compute_station_thresholds, VSType
+    from velocity_modelling.threshold import compute_station_thresholds, VSType
     results_df = compute_station_thresholds(stations_df, vs_types=[VSType.VS30])
 
 Notes
