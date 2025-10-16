@@ -130,6 +130,14 @@ pipeline {
                                         exit 1
                                     fi
 
+                                    # Remove all .pyc files and __pycache__ directories
+                                    echo "Cleaning up .pyc files and __pycache__ directories..."
+                                    find . -type f -name '*.pyc' -delete
+                                    find . -type d -name '__pycache__' -delete
+
+                                    # Run tests with PYTHONDONTWRITEBYTECODE
+                                    export PYTHONDONTWRITEBYTECODE=1
+
                                     echo "Data verification passed, starting tests..."
                                     # Create the unique test output directory
                                     mkdir -p ${test_output_dir}
