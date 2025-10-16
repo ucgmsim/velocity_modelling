@@ -10,7 +10,7 @@ from threshold.py. For programmatic access, import and use compute_station_thres
 Usage
 -----
 Command line:
-    python generate_thresholds.py stations.ll --model-version 2.07
+    python generate_thresholds.py stations.ll --model-version 2.07 --topo-type SQUASHED_TAPERED
 
 Python code:
     from threshold import compute_station_thresholds, VSType
@@ -20,7 +20,7 @@ Notes
 -----
 - Output CSV includes Station_Name as index and computed threshold columns (and sigma if applicable).
   Longitude and latitude columns are not included in the output.
-- Default behaviour computes Z1.0 and Z2.5.
+- Default behaviour computes Z1.0 and Z2.5 with SQUASHED topography.
 """
 
 import logging
@@ -33,7 +33,7 @@ import pandas as pd
 import typer
 
 from qcore import cli
-from qcore.shared import get_stations
+from velocity_modelling.constants import TopoTypes
 from velocity_modelling.threshold import VSType, compute_station_thresholds
 
 # Configure logging at the module level
@@ -76,13 +76,12 @@ def read_station_file(station_file: Path, logger: logging.Logger) -> pd.DataFram
         raise FileNotFoundError(f"Station file not found: {station_file}")
 
     try:
-        stations, lats, lons = get_stations(str(station_file), locations=True)
-    except (OSError, ValueError) as e:
+        df = pd.read_csv(
+            station_file, header=None, sep=r"\s+", names=["lon", "lat", "Station_Name"]
+        ).set_index("Station_Name")
+        return df
+    except (OSError, ValueError, pd.errors.EmptyDataError, pd.errors.ParserError) as e:
         raise ValueError(f"Failed to read station file {station_file}: {str(e)}")
-
-    df = pd.DataFrame({"lon": lons, "lat": lats}, index=stations)
-    df.index.name = "Station_Name"
-    return df
 
 
 @cli.from_docstring(app)
@@ -102,6 +101,7 @@ def generate_thresholds(
             file_okay=False,
         ),
     ] = None,
+    topo_type: str = TopoTypes.SQUASHED.name,
     no_header: bool = False,
     nzcvm_registry: Annotated[
         Path | None,
@@ -135,6 +135,8 @@ def generate_thresholds(
         Threshold types to compute. If None, computes [Z1.0, Z2.5].
     out_dir : Path | None
         Output directory (default: current working directory).
+    topo_type : str
+        Topography type (default: "SQUASHED"). Options: TRUE, BULLDOZED, SQUASHED, SQUASHED_TAPERED.
     no_header : bool
         If True, write CSV without header row.
     nzcvm_registry : Path | None
@@ -188,12 +190,23 @@ def generate_thresholds(
         logger.log(logging.ERROR, f"Failed to create output directory {out_dir}: {e}")
         raise OSError(f"Failed to create output directory {out_dir}: {str(e)}")
 
+    # Validate and convert topo_type
+    try:
+        topo_type_enum = TopoTypes[topo_type.upper()]
+    except KeyError:
+        valid_types = [t.name for t in TopoTypes]
+        logger.log(logging.ERROR, f"Invalid topo type: {topo_type}")
+        raise ValueError(
+            f"Invalid topo type '{topo_type}'. Valid options: {valid_types}"
+        )
+
     # Call the core computation function
     try:
         results_df = compute_station_thresholds(
             stations_df=stations_df,
             vs_types=vs_type,
             model_version=model_version,
+            topo_type=topo_type_enum,
             data_root=nzcvm_data_root,
             nzcvm_registry=nzcvm_registry,
             logger=logger,

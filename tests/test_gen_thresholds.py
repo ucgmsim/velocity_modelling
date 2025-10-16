@@ -1,5 +1,5 @@
 # tests/test_gen_thresholds.py
-import subprocess
+import csv
 from pathlib import Path
 from typing import TypedDict
 
@@ -7,6 +7,8 @@ import numpy as np
 import pytest
 
 from tests.conftest import env_path
+from velocity_modelling.constants import TopoTypes
+from velocity_modelling.scripts.generate_thresholds import generate_thresholds
 
 # Define the scenarios
 SCENARIOS = [
@@ -78,30 +80,15 @@ def parse_z_file(z_file: Path) -> dict[str, dict[str, float]]:
         Dictionary mapping station names to their Z-values and sigma
         Format: {station_name: {'Z_1.0': float, 'Z_2.5': float, 'sigma': float}}
     """
-    results = {}
-
     with open(z_file, "r") as f:
-        lines = f.readlines()
-
-    # Skip header line
-    for line in lines[1:]:
-        line = line.strip()
-        if not line:
-            continue
-
-        parts = line.split(",")
-        if len(parts) != 4:
-            continue
-
-        station_name = parts[0].strip()
-        z_1_0 = float(parts[1].strip())
-        z_2_5 = float(parts[2].strip())
-        sigma = float(parts[3].strip())
-
-        results[station_name] = {
-            "Z_1.0": z_1_0,
-            "Z_2.5": z_2_5,
-            "sigma": sigma,
+        reader = csv.DictReader(f)
+        results = {
+            row["Station_Name"]: {
+                "Z_1.0": float(row["Z_1.0(km)"]),
+                "Z_2.5": float(row["Z_2.5(km)"]),
+                "sigma": float(row["sigma"]),
+            }
+            for row in reader
         }
 
     return results
@@ -207,30 +194,21 @@ def test_gen_threshold_points(threshold_scenario: ThresholdScenarioDict):
     threshold_scenario["output_path"].mkdir(exist_ok=True, parents=True)
 
     # Expected output file name (based on script behavior)
-    expected_output_file = threshold_scenario["output_path"] / f"{threshold_scenario['name']}.csv"
-
-    # Run the generate_thresholds.py script
-    result = subprocess.run(
-        [
-            "python",
-            str(SCRIPT_DIR / "generate_thresholds.py"),
-            str(threshold_scenario["station_file"]),
-            "--model-version",
-            threshold_scenario["model_version"],
-            "--out-dir",
-            str(threshold_scenario["output_path"]),
-            "--nzcvm-data-root",
-            str(threshold_scenario["data_root"]),
-        ],
-        capture_output=True,
-        text=True,
+    expected_output_file = (
+        threshold_scenario["output_path"] / f"{threshold_scenario['name']}.csv"
     )
 
-    # Check if the script ran successfully
-    assert result.returncode == 0, (
-        f"Script failed for {threshold_scenario['name']}:\n"
-        f"STDERR: {result.stderr}\n"
-        f"STDOUT: {result.stdout}"
+    # Call the function directly instead of subprocess
+    generate_thresholds(
+        station_file=threshold_scenario["station_file"],
+        model_version=threshold_scenario["model_version"],
+        vs_type=None,  # Will default to [Z1.0, Z2.5]
+        out_dir=threshold_scenario["output_path"],
+        topo_type=TopoTypes.SQUASHED.name,
+        no_header=False,
+        nzcvm_registry=None,
+        nzcvm_data_root=threshold_scenario["data_root"],
+        log_level="INFO",
     )
 
     # Check that the output file was created

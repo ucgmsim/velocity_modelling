@@ -108,13 +108,14 @@ Example 4: Read from station file and compute
 >>> results.to_csv("threshold_results.csv")
 
 
-Example 5: Custom configuration with logging
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Example 5: Custom configuration with topography and logging
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 >>> import pandas as pd
 >>> import logging
 >>> from pathlib import Path
 >>> from velocity_modelling.threshold import compute_station_thresholds, VSType
+>>> from velocity_modelling.constants import TopoTypes
 >>>
 >>> # Create custom logger
 >>> logger = logging.getLogger("my_analysis")
@@ -127,11 +128,12 @@ Example 5: Custom configuration with logging
 ...     'lat': [-41.2865, -41.2148]
 ... }, index=['WGTN', 'WELC'])
 >>>
->>> # Compute with custom settings
+>>> # Compute with custom settings including topography
 >>> results = compute_station_thresholds(
 ...     stations_df=stations,
 ...     vs_types=[VSType.Z1_0, VSType.Z2_5],
 ...     model_version="2.07",
+...     topo_type=TopoTypes.SQUASHED_TAPERED,
 ...     data_root=Path("/custom/path/to/nzcvm/data"),
 ...     nzcvm_registry=Path("/custom/path/to/registry.yaml"),
 ...     logger=logger,
@@ -408,6 +410,7 @@ def compute_station_thresholds(
     stations_df: pd.DataFrame,
     vs_types: list[VSType] | None = None,
     model_version: str = "2.07",
+    topo_type: TopoTypes = TopoTypes.SQUASHED,
     data_root: Path | None = None,
     nzcvm_registry: Path | None = None,
     logger: logging.Logger | None = None,
@@ -432,6 +435,9 @@ def compute_station_thresholds(
         Options: [VSType.VS30, VSType.VS500, VSType.Z1_0, VSType.Z2_5]
     model_version : str
         NZCVM model version to use (default: "2.07").
+    topo_type : TopoTypes
+        Topography handling method (default: TopoTypes.SQUASHED).
+        Options: TRUE, BULLDOZED, SQUASHED, SQUASHED_TAPERED.
     data_root : Path | None
         Path to NZCVM data root directory. If None, uses configured default.
     nzcvm_registry : Path | None
@@ -461,44 +467,13 @@ def compute_station_thresholds(
     RuntimeError
         If model data loading or per-station processing fails.
 
-    Examples
-    --------
-    Basic usage with station coordinates:
-
-    >>> import pandas as pd
-    >>> from pathlib import Path
-    >>> from threshold import compute_station_thresholds, VSType
-    >>>
-    >>> # Create station DataFrame
-    >>> stations = pd.DataFrame({
-    ...     'lon': [174.7762, 174.8851],
-    ...     'lat': [-41.2865, -41.2148]
-    ... }, index=['WGTN', 'WELC'])
-    >>>
-    >>> # Compute Z1.0 and Z2.5 (default)
-    >>> results = compute_station_thresholds(stations)
-    >>> print(results)
-                Z_1.0(km)  Z_2.5(km)  sigma
-    WGTN        0.152      0.845      0.3
-    WELC        0.089      0.512      0.3
-    >>>
-    >>> # Compute VS30 and VS500
-    >>> results = compute_station_thresholds(
-    ...     stations,
-    ...     vs_types=[VSType.VS30, VSType.VS500],
-    ...     include_sigma=False
-    ... )
-    >>> print(results)
-                Vs_30(m/s)  Vs_500(m/s)
-    WGTN        425.3       512.8
-    WELC        380.1       478.9
-
     Notes
     -----
     - Computation time scales linearly with number of stations and threshold types
     - Each station requires loading a 1D velocity profile
     - Basin membership is pre-computed for all stations for efficiency
     - Sigma values are only meaningful for Z-type thresholds
+    - Topography type affects how surface elevations are handled in the velocity model
     """
     # Set up logger if not provided
     if logger is None:
@@ -613,7 +588,7 @@ def compute_station_thresholds(
             "extent_zmin": zmin,
             "h_depth": h_depth,
             "h_lat_lon": 1,
-            "topo_type": TopoTypes.SQUASHED,
+            "topo_type": topo_type,
         }
 
         nx = 1

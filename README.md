@@ -129,12 +129,13 @@ For detailed instructions, see [Extracting Cross-Sections](wiki/Extracting-Cross
 Computes velocity and depth threshold values (Vs30, Vs500, Z1.0, Z2.5) for station locations.
 
 ```bash
-generate_thresholds stations.txt --model-version 2.07 --vs-type Z1.0 --vs-type Z2.5 --out-dir /path/to/output
+generate_thresholds stations.txt --model-version 2.07 --vs-type Z1.0 --vs-type Z2.5 --topo-type SQUASHED_TAPERED --out-dir /path/to/output
 ```
 
 Key features:
 - Uses same **model versions** as 3D generation and 1D profiles
 - Computes Vs30, Vs500 (velocity thresholds) and Z1.0, Z2.5 (depth thresholds)
+- Configurable topography handling (default: SQUASHED)
 - Automatic basin membership determination for Z-thresholds
 - Batch processing from station coordinate files
 - Output CSV uses input filename with .csv extension
@@ -226,8 +227,8 @@ nzcvm-data-helper ensure
    echo "172.5 -43.5 STATION_A" > stations.txt
    echo "172.6 -43.6 STATION_B" >> stations.txt
    
-   # Generate thresholds
-   generate_thresholds stations.txt --model-version 2.07 --vs-type Z1.0 --vs-type Z2.5 --out-dir /tmp/thresholds
+   # Generate thresholds (with custom topography handling)
+   generate_thresholds stations.txt --model-version 2.07 --vs-type Z1.0 --vs-type Z2.5 --topo-type SQUASHED_TAPERED --out-dir /tmp/thresholds
 ```
 
 ## Changelogs and Development Plans
