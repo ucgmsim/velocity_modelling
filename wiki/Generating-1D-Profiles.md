@@ -8,33 +8,39 @@ The `generate_1d_profiles.py` script generates multiple 1D velocity profiles bas
 
 ## Basic Usage
 
-The script requires three main inputs:
+The script requires one main input and accepts several optional parameters:
 
-1. **Location CSV**: A CSV file listing the profile locations and depth parameters. Each row should contain: `id, lon, lat, zmin, zmax, spacing`.
-2. **Model Version**: The velocity model version to use (e.g., `2.08`).
-3. **Output Directory**: Where the generated profile files will be saved.
+1. **Location CSV** (required): A CSV file listing the profile locations and depth parameters. Each row should contain: `id, lon, lat, zmin, zmax, spacing`.
+2. **Model Version**: The velocity model version to use (default: `2.09`).
+3. **Output Directory**: Where the generated profile files will be saved (default: same directory as the location CSV).
 
 ### Example Command
 
 ```bash
-python velocity_modelling/scripts/generate_1d_profiles.py \
-  --out-dir /path/to/output/ \
+python velocity_modelling/scripts/generate_1d_profiles.py locations.csv \
   --model-version 2.08 \
-  --location-csv /path/to/locations.csv \
+  --out-dir /path/to/output/ \
   --topo-type SQUASHED_TAPERED \
   --min-vs 0.5
+```
+
+### Minimal Usage
+
+```bash
+# Uses defaults: model version 2.09, outputs to same directory as CSV
+python velocity_modelling/scripts/generate_1d_profiles.py locations.csv
 ```
 
 ---
 
 ### Required Arguments
 
-- **--out-dir**: Directory for output files (required)
-- **--model-version**: Model version to use (required)
-- **--location-csv**: CSV file with profile parameters (required)
+- **location_csv**: CSV file with profile parameters (positional argument, required)
 
 ### Optional Arguments
 
+- **--out-dir**: Directory for output files (default: parent directory of location CSV)
+- **--model-version**: Model version to use (default: 2.09)
 - **--min-vs**: Minimum shear wave velocity (default: 0.0)
 - **--topo-type**: Topography type (`TRUE`, `BULLDOZED`, `SQUASHED`, `SQUASHED_TAPERED`; default: `TRUE`)
 - **--custom-depth**: Text file with custom depth points (overrides zmin, zmax, spacing in CSV)
@@ -81,6 +87,8 @@ For each profile location, two files are generated in the output directory:
 1. **Profile_(id).txt**: The velocity profile at the specified location.
 2. **ProfileSurfaceDepths_(id).txt**: The elevations of global and basin surfaces at the location.
 
+By default, these files are created in the same directory as the input CSV file. Use `--out-dir` to specify a different location.
+
 ### Example: Profile_158.txt
 
 ```
@@ -121,15 +129,14 @@ Canterbury_v19p1
 - The script supports all topography types used in the NZCVM: `TRUE`, `BULLDOZED`, `SQUASHED`, `SQUASHED_TAPERED`.
 - The model version string (e.g., `2.08`) must correspond to a YAML file in the model_version directory (e.g., `2p08.yaml`).
 - The output files are named after the profile `id` in the CSV.
+- By default, output files are saved in the same directory as the input CSV file.
 
 ---
 
 ## Troubleshooting
 
-- Ensure all required arguments are provided.
+- Ensure the location CSV file exists and has the correct format.
 - Check that the model version YAML exists and is correctly named.
+- If specifying a custom output directory, ensure you have write permissions.
 
 ---
-
-
-

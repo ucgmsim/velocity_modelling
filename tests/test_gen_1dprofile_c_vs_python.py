@@ -291,13 +291,13 @@ def test_gen_1dprofile_c_vs_python(
     py_result = subprocess.run(
         [
             "python",
+            "-B",  # Don't write .pyc files to avoid bytecode compilation race condition
             str(SCRIPT_DIR / "generate_1d_profiles.py"),
+            str(location_csv),
             "--model-version",
             params["model_version"],
             "--out-dir",
             str(profile_rootdir / "output"),
-            "--location-csv",
-            str(location_csv),
             "--topo-type",
             params["topo_type"],
             "--min-vs",

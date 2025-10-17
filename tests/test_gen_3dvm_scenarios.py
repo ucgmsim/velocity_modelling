@@ -81,6 +81,7 @@ def test_gen_3dvm_scenarios(scenario: ScenarioDict):
     result = subprocess.run(
         [
             "python",
+            "-B",  # Don't write .pyc files to avoid bytecode compilation race condition
             str(SCRIPT_DIR / "generate_3d_model.py"),
             str(scenario["config_file"]),
             "--out-dir",
