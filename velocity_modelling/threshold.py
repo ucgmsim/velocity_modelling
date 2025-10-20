@@ -39,7 +39,7 @@ Example 2: Compute VS30 and VS500
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 >>> import pandas as pd
->>> from velocity_modelling.threshold import compute_station_thresholds, VSType
+>>> from velocity_modelling.threshold import compute_station_thresholds, ThresholdTypes
 >>>
 >>> stations = pd.DataFrame({
 ...     'lon': [174.7762, 174.8851],
@@ -49,7 +49,7 @@ Example 2: Compute VS30 and VS500
 >>> # Compute VS30 and VS500 only
 >>> results = compute_station_thresholds(
 ...     stations,
-...     vs_types=[VSType.VS30, VSType.VS500],
+...     vs_types=[ThresholdTypes.VS30, ThresholdTypes.VS500],
 ...     include_sigma=False
 ... )
 >>> print(results)
@@ -62,7 +62,7 @@ Example 3: Compute all threshold types
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 >>> import pandas as pd
->>> from velocity_modelling.threshold import compute_station_thresholds, VSType
+>>> from velocity_modelling.threshold import compute_station_thresholds, ThresholdTypes
 >>>
 >>> stations = pd.DataFrame({
 ...     'lon': [174.7762],
@@ -72,7 +72,7 @@ Example 3: Compute all threshold types
 >>> # Compute all threshold types
 >>> results = compute_station_thresholds(
 ...     stations,
-...     vs_types=[VSType.VS30, VSType.VS500, VSType.Z1_0, VSType.Z2_5]
+...     vs_types=[ThresholdTypes.VS30, ThresholdTypes.VS500, ThresholdTypes.Z1_0, ThresholdTypes.Z2_5]
 ... )
 >>> print(results)
       Vs_30(m/s)  Vs_500(m/s)  Z_1.0(km)  Z_2.5(km)  sigma
@@ -84,7 +84,7 @@ Example 4: Read from station file and compute
 
 >>> import pandas as pd
 >>> from pathlib import Path
->>> from velocity_modelling.threshold import compute_station_thresholds, VSType
+>>> from velocity_modelling.threshold import compute_station_thresholds, ThresholdTypes
 >>> from qcore.shared import get_stations
 >>>
 >>> # Read station file (format: lon lat station_name)
@@ -100,7 +100,7 @@ Example 4: Read from station file and compute
 >>> # Compute thresholds
 >>> results = compute_station_thresholds(
 ...     stations_df,
-...     vs_types=[VSType.Z1_0, VSType.Z2_5],
+...     vs_types=[ThresholdTypes.Z1_0, ThresholdTypes.Z2_5],
 ...     model_version="2.07"
 ... )
 >>>
@@ -114,7 +114,7 @@ Example 5: Custom configuration with topography and logging
 >>> import pandas as pd
 >>> import logging
 >>> from pathlib import Path
->>> from velocity_modelling.threshold import compute_station_thresholds, VSType
+>>> from velocity_modelling.threshold import compute_station_thresholds, ThresholdTypes
 >>> from velocity_modelling.constants import TopoTypes
 >>>
 >>> # Create custom logger
@@ -131,7 +131,7 @@ Example 5: Custom configuration with topography and logging
 >>> # Compute with custom settings including topography
 >>> results = compute_station_thresholds(
 ...     stations_df=stations,
-...     vs_types=[VSType.Z1_0, VSType.Z2_5],
+...     vs_types=[ThresholdTypes.Z1_0, ThresholdTypes.Z2_5],
 ...     model_version="2.07",
 ...     topo_type=TopoTypes.SQUASHED_TAPERED,
 ...     data_root=Path("/custom/path/to/nzcvm/data"),
@@ -147,7 +147,7 @@ Example 6: Integration with existing workflow
 
 >>> import pandas as pd
 >>> import numpy as np
->>> from velocity_modelling.threshold import compute_station_thresholds, VSType
+>>> from velocity_modelling.threshold import compute_station_thresholds, ThresholdTypes
 >>>
 >>> # Load stations from your existing data source
 >>> stations = pd.DataFrame({
@@ -160,7 +160,7 @@ Example 6: Integration with existing workflow
 >>> # Compute thresholds (only needs lon/lat columns)
 >>> thresholds = compute_station_thresholds(
 ...     stations[['lon', 'lat']],
-...     vs_types=[VSType.VS30, VSType.Z1_0]
+...     threshold_types=[ThresholdTypes.VS30, ThresholdTypes.Z1_0]
 ... )
 >>>
 >>> # Merge with original station data
@@ -201,25 +201,25 @@ IN_BASIN_SIGMA = 0.3
 OUT_BASIN_SIGMA = 0.5
 
 
-class VSType(str, Enum):
+class ThresholdTypes(str, Enum):
     """Enumeration of supported threshold velocity types."""
 
-    VS30 = "VS30"
-    VS500 = "VS500"
+    VS30 = "30"
+    VS500 = "500"
     Z1_0 = "1.0"
     Z2_5 = "2.5"
 
 
-def get_depth_parameters(vs_type: VSType) -> tuple[float, float, float]:
+def get_depth_parameters(threshold_type: ThresholdTypes) -> tuple[float, float, float]:
     """
-    Get depth parameters (zmax, zmin, h_depth) for a given VS_TYPE.
+    Get depth parameters (zmax, zmin, h_depth) for a given ThresholdType.
 
     These parameters define the depth range and spacing for computing the
     velocity profile needed to calculate the threshold metric.
 
     Parameters
     ----------
-    vs_type : VSType
+    threshold_type : ThresholdTypes
         Type of velocity threshold to calculate.
 
     Returns
@@ -233,34 +233,34 @@ def get_depth_parameters(vs_type: VSType) -> tuple[float, float, float]:
     Raises
     ------
     ValueError
-        If the VS_TYPE is not recognized.
+        If threshold_type is not recognized.
 
     Examples
     --------
-    >>> zmax, zmin, h_depth = get_depth_parameters(VSType.VS30)
+    >>> zmax, zmin, h_depth = get_depth_parameters(ThresholdTypes.VS30)
     >>> print(f"VS30: {zmin} to {zmax} km, spacing {h_depth} km")
     VS30: -0.0005 to 0.0305 km, spacing 0.001 km
     """
     depth_params = {
-        VSType.VS500: (0.505, -0.005, 0.01),
-        VSType.VS30: (0.0305, -0.0005, 0.001),
-        VSType.Z1_0: (2.0, 0.0, 0.01),
-        VSType.Z2_5: (20.0, 0.0, 0.05),
+        ThresholdTypes.VS500: (0.505, -0.005, 0.01),
+        ThresholdTypes.VS30: (0.0305, -0.0005, 0.001),
+        ThresholdTypes.Z1_0: (2.0, 0.0, 0.01),
+        ThresholdTypes.Z2_5: (20.0, 0.0, 0.05),
     }
 
-    if vs_type not in depth_params:
-        raise ValueError(f"VS type '{vs_type}' not recognized")
+    if threshold_type not in depth_params:
+        raise ValueError(f"Threshold type '{threshold_type}' not recognized")
 
-    return depth_params[vs_type]
+    return depth_params[threshold_type]
 
 
-def get_output_column_name(vs_type: VSType) -> str:
+def get_output_column_name(threshold_type: ThresholdTypes) -> str:
     """
-    Map a VSType to its output column name.
+    Map a threshold type to its output column name.
 
     Parameters
     ----------
-    vs_type : VSType
+    threshold_type : ThresholdTypes
         The threshold type to compute.
 
     Returns
@@ -270,16 +270,15 @@ def get_output_column_name(vs_type: VSType) -> str:
 
     Examples
     --------
-    >>> get_output_column_name(VSType.VS30)
-    'Vs_30(m/s)'
-    >>> get_output_column_name(VSType.Z1_0)
-    'Z_1.0(km)'
+    >>> get_output_column_name(ThresholdTypes.VS30)
+    'Vs30(m/s)'
+    >>> get_output_column_name(ThresholdTypes.Z1_0)
+    'Z1.0(km)'
     """
-    if vs_type in [VSType.VS30, VSType.VS500]:
-        depth_meters = "30" if vs_type == VSType.VS30 else "500"
-        return f"Vs_{depth_meters}(m/s)"
+    if threshold_type in [ThresholdTypes.VS30, ThresholdTypes.VS500]:
+        return f"Vs{threshold_type.value}(m/s)"
     else:
-        return f"Z_{vs_type.value}(km)"
+        return f"Z{threshold_type.value}(km)"
 
 
 def compute_vs_average(
@@ -408,7 +407,7 @@ def compute_z_threshold(
 
 def compute_station_thresholds(
     stations_df: pd.DataFrame,
-    vs_types: list[VSType] | None = None,
+    threshold_types: list[ThresholdTypes] | None = None,
     model_version: str = "2.07",
     topo_type: TopoTypes = TopoTypes.SQUASHED,
     data_root: Path | None = None,
@@ -430,7 +429,7 @@ def compute_station_thresholds(
         DataFrame with station coordinates. Must have:
         - Index: Station names (or any identifier)
         - Columns: 'lon' (longitude) and 'lat' (latitude)
-    vs_types : list[VSType] | None
+    threshold_types : list[ThresholdTypes] | None
         List of threshold types to compute. If None, computes [Z1.0, Z2.5].
         Options: [VSType.VS30, VSType.VS500, VSType.Z1_0, VSType.Z2_5]
     model_version : str
@@ -497,15 +496,17 @@ def compute_station_thresholds(
         raise ValueError("stations_df is empty")
 
     # Default to Z1.0 and Z2.5 if no types specified
-    if vs_types is None or len(vs_types) == 0:
-        vs_types = [VSType.Z1_0, VSType.Z2_5]
-        logger.log(logging.INFO, "No VS_TYPE specified, defaulting to Z1.0 and Z2.5")
+    if threshold_types is None or len(threshold_types) == 0:
+        threshold_types = [ThresholdTypes.Z1_0, ThresholdTypes.Z2_5]
+        logger.log(
+            logging.INFO, "No threshold_types specified, defaulting to Z1.0 and Z2.5"
+        )
     else:
-        vs_types = list(vs_types)
+        threshold_types = list(threshold_types)
 
     logger.log(
         logging.INFO,
-        f"Starting threshold calculation for: {', '.join([t.value for t in vs_types])}",
+        f"Starting threshold calculation for: {', '.join([t.value for t in threshold_types])}",
     )
     logger.log(logging.INFO, f"Model version: {model_version}")
     logger.log(logging.INFO, f"Number of stations: {len(stations_df)}")
@@ -556,7 +557,9 @@ def compute_station_thresholds(
 
     # Compute sigma values once (for Z-type thresholds)
     sigma_values = None
-    if include_sigma and any(vt in [VSType.Z1_0, VSType.Z2_5] for vt in vs_types):
+    if include_sigma and any(
+        vt in [ThresholdTypes.Z1_0, ThresholdTypes.Z2_5] for vt in threshold_types
+    ):
         sigma_values = compute_sigma_for_stations(
             station_basin_membership, IN_BASIN_SIGMA, OUT_BASIN_SIGMA
         )
@@ -572,11 +575,11 @@ def compute_station_thresholds(
     results_df = pd.DataFrame(index=stations_df.index)
 
     # Process each threshold type
-    for vs_type_current in vs_types:
-        logger.log(logging.INFO, f"Processing {vs_type_current.value}")
+    for threshold_type_current in threshold_types:
+        logger.log(logging.INFO, f"Processing {threshold_type_current.value}")
 
         # Get depth parameters for this threshold type
-        zmax, zmin, h_depth = get_depth_parameters(vs_type_current)
+        zmax, zmin, h_depth = get_depth_parameters(threshold_type_current)
 
         # Set up model parameters template
         vm_params_template = {
@@ -608,7 +611,7 @@ def compute_station_thresholds(
             iterator = tqdm(
                 iterator,
                 total=len(stations_df),
-                desc=f"Computing {vs_type_current.value}",
+                desc=f"Computing {threshold_type_current.value}",
             )
 
         # Process each station
@@ -671,18 +674,21 @@ def compute_station_thresholds(
                 )
 
                 # Calculate threshold value
-                if vs_type_current in [VSType.VS30, VSType.VS500]:
+                if threshold_type_current in [
+                    ThresholdTypes.VS30,
+                    ThresholdTypes.VS500,
+                ]:
                     threshold_value = compute_vs_average(
                         partial_global_mesh, qualities_vector
                     )
                 else:  # Z1.0 or Z2.5
-                    if vs_type_current == VSType.Z1_0:
+                    if threshold_type_current == ThresholdTypes.Z1_0:
                         z_thresh = 1.0
-                    elif vs_type_current == VSType.Z2_5:
+                    elif threshold_type_current == ThresholdTypes.Z2_5:
                         z_thresh = 2.5
                     else:
                         raise ValueError(
-                            f"VS_TYPE {vs_type_current} is not a Z-type threshold"
+                            f"THRESHOLD_TYPE {threshold_type_current} is not a Z-type threshold"
                         )
 
                     threshold_value = compute_z_threshold(
@@ -701,12 +707,12 @@ def compute_station_thresholds(
                 )
 
         # Add threshold values to results DataFrame
-        column_name = get_output_column_name(vs_type_current)
+        column_name = get_output_column_name(threshold_type_current)
         results_df[column_name] = threshold_values
 
         logger.log(
             logging.INFO,
-            f"Completed {vs_type_current.value} calculation for {len(stations_df)} stations",
+            f"Completed {threshold_type_current.value} calculation for {len(stations_df)} stations",
         )
 
     # Add sigma column if computed
@@ -718,13 +724,13 @@ def compute_station_thresholds(
     return results_df
 
 
-def get_output_paths(vs_type: VSType) -> tuple[str, str, str]:
+def get_output_paths(threshold_type: ThresholdTypes) -> tuple[str, str, str]:
     """
-    Get output directory, filename, and header for a given VS_TYPE.
+    Get output directory, filename, and header for a given THRESHOLD_TYPE.
 
     Parameters
     ----------
-    vs_type : VSType
+    threshold_type : ThresholdTypes
         Type of velocity threshold.
 
     Returns
@@ -737,65 +743,17 @@ def get_output_paths(vs_type: VSType) -> tuple[str, str, str]:
 
     Examples
     --------
-    >>> subdir, filename, header = get_output_paths(VSType.VS30)
+    >>> subdir, filename, header = get_output_paths(ThresholdTypes.VS30)
     >>> print(subdir, filename)
     Vs Vs_30.txt
     """
-    if vs_type == VSType.VS30:
+    if threshold_type == ThresholdTypes.VS30:
         return "Vs", "Vs_30.txt", "Lon\tLat\tVs_30(km/s)\n"
-    elif vs_type == VSType.VS500:
+    elif threshold_type == ThresholdTypes.VS500:
         return "Vs", "Vs_500.txt", "Lon\tLat\tVs_500(km/s)\n"
-    elif vs_type == VSType.Z1_0:
+    elif threshold_type == ThresholdTypes.Z1_0:
         return "Z", "Z_1.0.txt", "Lon\tLat\tZ_1.0(km)\n"
-    elif vs_type == VSType.Z2_5:
+    elif threshold_type == ThresholdTypes.Z2_5:
         return "Z", "Z_2.5.txt", "Lon\tLat\tZ_2.5(km)\n"
     else:
-        raise ValueError(f"Unknown VS_TYPE: {vs_type}")
-
-
-def write_threshold_value(
-    output_dir: Path,
-    lon: float,
-    lat: float,
-    threshold_value: float,
-    vs_type: VSType,
-    is_first: bool,
-) -> None:
-    """
-    Write a single threshold value to the appropriate output file.
-
-    Creates the output file on first write, appends on subsequent writes.
-
-    Parameters
-    ----------
-    output_dir : Path
-        Output directory.
-    lon : float
-        Longitude of the point.
-    lat : float
-        Latitude of the point.
-    threshold_value : float
-        Computed threshold value.
-    vs_type : VSType
-        Type of threshold.
-    is_first : bool
-        If True, create new file with header. If False, append to existing file.
-
-    Raises
-    ------
-    OSError
-        If there are issues creating or writing to the output file.
-    """
-    subdir, filename, header = get_output_paths(vs_type)
-
-    # Create subdirectory
-    output_subdir = output_dir / subdir
-    output_subdir.mkdir(exist_ok=True, parents=True)
-    output_file = output_subdir / filename
-
-    mode = "w" if is_first else "a"
-
-    with output_file.open(mode) as f:
-        if is_first:
-            f.write(header)
-        f.write(f"{lon:.6f}\t{lat:.6f}\t{threshold_value:.6f}\n")
+        raise ValueError(f"Unknown threshold type: {threshold_type}")

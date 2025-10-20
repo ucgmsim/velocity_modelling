@@ -17,11 +17,28 @@ SCENARIOS = [
 
 
 class ThresholdScenarioDict(TypedDict):
-    """TypedDict for a threshold scenario dictionary"""
+    """
+    TypedDict for a threshold scenario dictionary
+
+    Attributes
+    ----------
+    name : str
+        Name of the scenario
+    station_file : Path
+        Path to the input station file
+    benchmark_file : Path
+        Path to the benchmark file
+    output_path : Path
+        Path to the output directory for generated files
+    data_root : Path
+        Path to the root directory for model data
+    model_version : str
+        Version of the velocity model to use
+    """
 
     name: str
     station_file: Path
-    benchmark_z: Path
+    benchmark_file: Path
     output_path: Path
     data_root: Path
     model_version: str
@@ -44,15 +61,32 @@ def test_paths(benchmark_dir: Path, data_root: Path) -> tuple[Path, Path]:
 def threshold_scenario(
     tmp_path: Path, test_paths: tuple[Path, Path], request: pytest.FixtureRequest
 ) -> ThresholdScenarioDict:
-    """Fixture to provide scenario data for each test"""
+    """
+    Fixture to provide scenario data for each test
+
+    Parameters
+    ----------
+    tmp_path : Path
+        Temporary path for output
+    test_paths : tuple[Path, Path]
+        Tuple containing benchmark directory and data root
+    request : pytest.FixtureRequest
+        Pytest fixture request to get the current parameter
+
+    Returns
+    -------
+    ThresholdScenarioDict
+        Dictionary containing scenario details
+
+    """
     scenario_name = request.param
     scenario_path = SCENARIO_DIR / scenario_name
 
-    # The .ll file is the input station file
+    # The .ll file is the input station file (legacy format: lon lat name)
     station_file = scenario_path / f"{scenario_name}.ll"
 
     # Benchmark output file
-    benchmark_z = test_paths[0] / scenario_name / f"{scenario_name}.z"
+    benchmark_file = test_paths[0] / scenario_name / f"{scenario_name}.z"
 
     # Output directory
     tmp_dir = env_path("JENKINS_OUTPUT_DIR") or tmp_path
@@ -62,30 +96,34 @@ def threshold_scenario(
     return ThresholdScenarioDict(
         name=scenario_name,
         station_file=station_file,
-        benchmark_z=benchmark_z,
+        benchmark_file=benchmark_file,
         output_path=output_path,
         data_root=data_root,
         model_version="2.07",  # Default model version
     )
 
 
-def parse_z_file(z_file: Path) -> dict[str, dict[str, float]]:
+def parse_thresholds_file(threshold_file: Path) -> dict[str, dict[str, float]]:
     """
-    Parse the Z-values output file (CSV format).
+    Parse a thresholds file (CSV format).
 
-    Args:
-        z_file: Path to the .z file
+    Parameters
+    ----------
+    threshold_file : Path
+        Path to the thresholds file
 
-    Returns:
+    Returns
+    -------
+    dict[str, dict[str, float]]
         Dictionary mapping station names to their Z-values and sigma
-        Format: {station_name: {'Z_1.0': float, 'Z_2.5': float, 'sigma': float}}
+        Format: {station_name: {'Z1.0': float, 'Z2.5': float, 'sigma': float}}
     """
-    with open(z_file, "r") as f:
+    with open(threshold_file, "r") as f:
         reader = csv.DictReader(f)
         results = {
             row["Station_Name"]: {
-                "Z_1.0": float(row["Z_1.0(km)"]),
-                "Z_2.5": float(row["Z_2.5(km)"]),
+                "Z1.0": float(row["Z1.0(km)"]),
+                "Z2.5": float(row["Z2.5(km)"]),
                 "sigma": float(row["sigma"]),
             }
             for row in reader
@@ -94,22 +132,29 @@ def parse_z_file(z_file: Path) -> dict[str, dict[str, float]]:
     return results
 
 
-def compare_z_files(
+def compare_thresholds_files(
     benchmark_file: Path, output_file: Path, threshold: float = 1e-5
 ) -> dict:
     """
-    Compare Z-values output files.
+    Compare threshold values from output file with the benchmark file.
 
-    Args:
-        benchmark_file: Path to benchmark .z file
-        output_file: Path to generated .z file
-        threshold: Threshold for allclose comparison
+    Parameters
+    ----------
+    benchmark_file : Path
+        Path to the benchmark thresholds file
+    output_file : Path
+        Path to the output thresholds file to compare
+    threshold : float, optional
+        Threshold for comparison, by default 1e-5
 
-    Returns:
-        Dictionary with comparison results including allclose status and statistics
+    Returns
+    -------
+    dict
+        Dictionary containing comparison results
+
     """
-    benchmark_data = parse_z_file(benchmark_file)
-    output_data = parse_z_file(output_file)
+    benchmark_data = parse_thresholds_file(benchmark_file)
+    output_data = parse_thresholds_file(output_file)
 
     # Check that both files have the same stations
     benchmark_stations = set(benchmark_data.keys())
@@ -134,12 +179,12 @@ def compare_z_files(
     output_sigma = []
 
     for station in sorted(benchmark_stations):
-        benchmark_z1.append(benchmark_data[station]["Z_1.0"])
-        benchmark_z2_5.append(benchmark_data[station]["Z_2.5"])
+        benchmark_z1.append(benchmark_data[station]["Z1.0"])
+        benchmark_z2_5.append(benchmark_data[station]["Z2.5"])
         benchmark_sigma.append(benchmark_data[station]["sigma"])
 
-        output_z1.append(output_data[station]["Z_1.0"])
-        output_z2_5.append(output_data[station]["Z_2.5"])
+        output_z1.append(output_data[station]["Z1.0"])
+        output_z2_5.append(output_data[station]["Z2.5"])
         output_sigma.append(output_data[station]["sigma"])
 
     # Convert to numpy arrays
@@ -163,13 +208,13 @@ def compare_z_files(
     return {
         "size_check": True,
         "num_stations": len(benchmark_stations),
-        "Z_1.0": {
+        "Z1.0": {
             "allclose": z1_close,
             "max_diff": float(np.max(z1_diff)),
             "mean_diff": float(np.mean(z1_diff)),
             "std_diff": float(np.std(z1_diff)),
         },
-        "Z_2.5": {
+        "Z2.5": {
             "allclose": z2_5_close,
             "max_diff": float(np.max(z2_5_diff)),
             "mean_diff": float(np.mean(z2_5_diff)),
@@ -189,23 +234,40 @@ def test_gen_threshold_points(threshold_scenario: ThresholdScenarioDict):
     """
     Test generate_thresholds.py with different scenarios
     and compare outputs with benchmarks.
+
+    Parameters
+    ----------
+    threshold_scenario : ThresholdScenarioDict
+        Dictionary containing scenario details
+
+    Returns
+    -------
+    None
+
     """
     # Create output directory for this scenario
     threshold_scenario["output_path"].mkdir(exist_ok=True, parents=True)
 
-    # Expected output file name (based on script behavior)
+    # Expected output file name (based on script behavior with _thresholds suffix)
     expected_output_file = (
-        threshold_scenario["output_path"] / f"{threshold_scenario['name']}.csv"
+        threshold_scenario["output_path"]
+        / f"{threshold_scenario['name']}_thresholds.csv"
     )
 
     # Call the function directly instead of subprocess
+    # Use legacy station file format options for backward compatibility
     generate_thresholds(
-        station_file=threshold_scenario["station_file"],
+        locations_csv=threshold_scenario["station_file"],
+        lon_index=0,
+        lat_index=1,
+        name_index=2,  # For legacy station file format: lon lat name
+        sep=" ",  # For legacy format: space-separated
+        skip_rows=0,
         model_version=threshold_scenario["model_version"],
-        vs_type=None,  # Will default to [Z1.0, Z2.5]
+        threshold_type=None,  # Will default to [Z1.0, Z2.5]
         out_dir=threshold_scenario["output_path"],
         topo_type=TopoTypes.SQUASHED.name,
-        no_header=False,
+        write_no_header=False,
         nzcvm_registry=None,
         nzcvm_data_root=threshold_scenario["data_root"],
         log_level="INFO",
@@ -218,8 +280,8 @@ def test_gen_threshold_points(threshold_scenario: ThresholdScenarioDict):
     )
 
     # Compare output file with benchmark
-    comparison_results = compare_z_files(
-        threshold_scenario["benchmark_z"],
+    comparison_results = compare_thresholds_files(
+        threshold_scenario["benchmark_file"],
         expected_output_file,
         threshold=1e-5,
     )
@@ -232,7 +294,7 @@ def test_gen_threshold_points(threshold_scenario: ThresholdScenarioDict):
     )
 
     # Check each field
-    for key in ["Z_1.0", "Z_2.5", "sigma"]:
+    for key in ["Z1.0", "Z2.5", "sigma"]:
         assert key in comparison_results, (
             f"Missing {key} in comparison results for {threshold_scenario['name']}"
         )
