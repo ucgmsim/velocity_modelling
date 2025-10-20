@@ -5,7 +5,7 @@ Shared utility functions for threshold velocity calculations (VS30, VS500, Z1.0,
 Used by generate_thresholds.py (CLI script) and can be imported directly for programmatic use.
 
 This module provides:
-- Depth parameter lookup for different VS_TYPE values
+- Depth parameter lookup for different threshold type values
 - Time-averaged velocity computation (VS30/VS500)
 - Depth-to-threshold computation (Z1.0/Z2.5)
 - Core computation function for batch threshold calculation
@@ -49,7 +49,7 @@ Example 2: Compute VS30 and VS500
 >>> # Compute VS30 and VS500 only
 >>> results = compute_station_thresholds(
 ...     stations,
-...     vs_types=[ThresholdTypes.VS30, ThresholdTypes.VS500],
+...     threshold_types=[ThresholdTypes.VS30, ThresholdTypes.VS500],
 ...     include_sigma=False
 ... )
 >>> print(results)
@@ -72,10 +72,10 @@ Example 3: Compute all threshold types
 >>> # Compute all threshold types
 >>> results = compute_station_thresholds(
 ...     stations,
-...     vs_types=[ThresholdTypes.VS30, ThresholdTypes.VS500, ThresholdTypes.Z1_0, ThresholdTypes.Z2_5]
+...     threshold_types=[ThresholdTypes.VS30, ThresholdTypes.VS500, ThresholdTypes.Z1_0, ThresholdTypes.Z2_5]
 ... )
 >>> print(results)
-      Vs_30(m/s)  Vs_500(m/s)  Z_1.0(km)  Z_2.5(km)  sigma
+      Vs30(m/s)  Vs500(m/s)  Z1.0(km)  Z2.5(km)  sigma
 WGTN       425.3        512.8      0.152      0.845    0.3
 
 
@@ -100,7 +100,7 @@ Example 4: Read from station file and compute
 >>> # Compute thresholds
 >>> results = compute_station_thresholds(
 ...     stations_df,
-...     vs_types=[ThresholdTypes.Z1_0, ThresholdTypes.Z2_5],
+...     threshold_types=[ThresholdTypes.Z1_0, ThresholdTypes.Z2_5],
 ...     model_version="2.07"
 ... )
 >>>
@@ -131,7 +131,7 @@ Example 5: Custom configuration with topography and logging
 >>> # Compute with custom settings including topography
 >>> results = compute_station_thresholds(
 ...     stations_df=stations,
-...     vs_types=[ThresholdTypes.Z1_0, ThresholdTypes.Z2_5],
+...     threshold_types=[ThresholdTypes.Z1_0, ThresholdTypes.Z2_5],
 ...     model_version="2.07",
 ...     topo_type=TopoTypes.SQUASHED_TAPERED,
 ...     data_root=Path("/custom/path/to/nzcvm/data"),
@@ -168,7 +168,7 @@ Example 6: Integration with existing workflow
 >>> print(combined)
 >>>
 >>> # Further analysis...
->>> vs30_mean = combined['Vs_30(m/s)'].mean()
+>>> vs30_mean = combined['Vs30(m/s)'].mean()
 >>> print(f"Mean VS30: {vs30_mean:.1f} m/s")
 """
 
@@ -408,7 +408,7 @@ def compute_z_threshold(
 def compute_station_thresholds(
     stations_df: pd.DataFrame,
     threshold_types: list[ThresholdTypes] | None = None,
-    model_version: str = "2.07",
+    model_version: str = "2.09",
     topo_type: TopoTypes = TopoTypes.SQUASHED,
     data_root: Path | None = None,
     nzcvm_registry: Path | None = None,
@@ -433,7 +433,7 @@ def compute_station_thresholds(
         List of threshold types to compute. If None, computes [Z1.0, Z2.5].
         Options: [VSType.VS30, VSType.VS500, VSType.Z1_0, VSType.Z2_5]
     model_version : str
-        NZCVM model version to use (default: "2.07").
+        NZCVM model version to use (default: "2.09").
     topo_type : TopoTypes
         Topography handling method (default: TopoTypes.SQUASHED).
         Options: TRUE, BULLDOZED, SQUASHED, SQUASHED_TAPERED.
@@ -454,7 +454,7 @@ def compute_station_thresholds(
     pd.DataFrame
         DataFrame with computed threshold values:
         - Index: Same as input stations_df
-        - Columns: Threshold values (e.g., 'Vs_30(m/s)', 'Z_1.0(km)')
+        - Columns: Threshold values (e.g., 'Vs30(m/s)', 'Z1.0(km)')
                   and optionally 'sigma' column
 
     Raises
@@ -722,38 +722,3 @@ def compute_station_thresholds(
 
     logger.log(logging.INFO, "Threshold calculation complete")
     return results_df
-
-
-def get_output_paths(threshold_type: ThresholdTypes) -> tuple[str, str, str]:
-    """
-    Get output directory, filename, and header for a given THRESHOLD_TYPE.
-
-    Parameters
-    ----------
-    threshold_type : ThresholdTypes
-        Type of velocity threshold.
-
-    Returns
-    -------
-    tuple[str, str, str]
-        (subdirectory, filename, header_line):
-        - subdirectory: 'Vs' or 'Z'
-        - filename: Name of the output file
-        - header_line: Header line for the output file
-
-    Examples
-    --------
-    >>> subdir, filename, header = get_output_paths(ThresholdTypes.VS30)
-    >>> print(subdir, filename)
-    Vs Vs_30.txt
-    """
-    if threshold_type == ThresholdTypes.VS30:
-        return "Vs", "Vs_30.txt", "Lon\tLat\tVs_30(km/s)\n"
-    elif threshold_type == ThresholdTypes.VS500:
-        return "Vs", "Vs_500.txt", "Lon\tLat\tVs_500(km/s)\n"
-    elif threshold_type == ThresholdTypes.Z1_0:
-        return "Z", "Z_1.0.txt", "Lon\tLat\tZ_1.0(km)\n"
-    elif threshold_type == ThresholdTypes.Z2_5:
-        return "Z", "Z_2.5.txt", "Lon\tLat\tZ_2.5(km)\n"
-    else:
-        raise ValueError(f"Unknown threshold type: {threshold_type}")
