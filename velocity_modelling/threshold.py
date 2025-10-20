@@ -29,7 +29,7 @@ Example 1: Basic usage with default parameters (Z1.0 and Z2.5)
 >>> # Compute thresholds (defaults to Z1.0 and Z2.5)
 >>> results = compute_station_thresholds(stations)
 >>> print(results)
-          Z_1.0(km)  Z_2.5(km)  sigma
+          Z1.0(km)  Z2.5(km)  sigma
 WGTN          0.152      0.845    0.3
 WELC          0.089      0.512    0.3
 SUNS          0.201      1.102    0.3
@@ -53,7 +53,7 @@ Example 2: Compute VS30 and VS500
 ...     include_sigma=False
 ... )
 >>> print(results)
-          Vs_30(m/s)  Vs_500(m/s)
+          Vs30(m/s)  Vs500(m/s)
 WGTN           425.3        512.8
 WELC           380.1        478.9
 

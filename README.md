@@ -217,8 +217,8 @@ nzcvm-data-helper ensure
 ```bash
    # Create location file
   echo "id,lon,lat,zmin,zmax,spacing" > sites.csv
-  echo "site1,172.5,-43.5,0,3,0.05" >> sites.csv
-   
+  echo "STATION_A,172.5,-43.5,0,3,0.05" >> sites.csv
+  echo "STATION_B,172.6,-43.6,0,5,0.1" >> sites.csv
    # Generate profiles  
    generate_1d_profiles sites.csv --model-version 2.03 --out-dir /tmp/profiles
 ```
