@@ -590,7 +590,7 @@ class BasinMembership:
                 pgm = partial_global_mesh_list[j]
                 # Vectorize the entire row at once
                 row_membership = membership.check_stations(
-                    pgm.lat.values, pgm.lon.values
+                    pgm.lat, pgm.lon
                 )
                 membership.grid_basin_membership[j] = row_membership
 
