@@ -188,14 +188,14 @@ def generate_thresholds(
     This computes requested thresholds for each station, using precomputed basin
     membership for sigma assignment when Z-thresholds are requested.
 
-    The default input format expects a CSV file with columns: [id, lon, lat].
+    The default input format expects a CSV file with columns: [name, lon, lat].
     For legacy station files (format: lon lat name), use:
     --lon-index 0 --lat-index 1 --name-index 2 --sep " "
 
     Parameters
     ----------
     locations_csv : Path
-        CSV file with station locations. Default format: [id, lon, lat].
+        CSV file with station locations. Default format: [name, lon, lat].
     name_index : int
         Column index for station names/IDs (0-based, default: 0).
     lon_index : int

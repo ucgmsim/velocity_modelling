@@ -431,7 +431,7 @@ def compute_station_thresholds(
         - Columns: 'lon' (longitude) and 'lat' (latitude)
     threshold_types : list[ThresholdTypes] | None
         List of threshold types to compute. If None, computes [Z1.0, Z2.5].
-        Options: [VSType.VS30, VSType.VS500, VSType.Z1_0, VSType.Z2_5]
+        Options: [ThresholdTypes.VS30, ThresholdTypes.VS500, ThresholdTypes.Z1_0, ThresholdTypes.Z2_5]
     model_version : str
         NZCVM model version to use (default: "2.09").
     topo_type : TopoTypes

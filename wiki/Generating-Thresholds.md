@@ -231,7 +231,7 @@ generate_thresholds data.tsv \
 - Multiple `--threshold-type` options can be specified to compute multiple thresholds in a single run.
 - If no `--threshold-type` is specified, the script defaults to computing Z1.0 and Z2.5.
 - The default topography type is `SQUASHED`, which provides a good balance between preserving topographic effects and maintaining model stability.
-- The model version string (e.g., `2.07`) must correspond to a valid NZCVM model version.
+- The model version string (e.g., `2.07`) must correspond to a valid NZCVM model version. See [Model Versions](Model-Versions.md) for details
 - Station coordinates should be in WGS84 decimal degrees.
 - The **sigma column is only included in the output when Z-thresholds (Z1.0, Z2.5) are requested**. Vs-threshold computations (Vs30, Vs500) do not include sigma values.
 - The script handles basin membership automatically when computing Z-thresholds.

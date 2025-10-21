@@ -589,9 +589,7 @@ class BasinMembership:
             for j in range(ny):
                 pgm = partial_global_mesh_list[j]
                 # Vectorize the entire row at once
-                row_membership = membership.check_stations(
-                    pgm.lat, pgm.lon
-                )
+                row_membership = membership.check_stations(pgm.lat, pgm.lon)
                 membership.grid_basin_membership[j] = row_membership
 
         # Now preprocess smoothing boundary if provided
