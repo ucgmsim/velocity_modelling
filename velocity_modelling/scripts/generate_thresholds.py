@@ -139,8 +139,7 @@ def read_locations_file(
         raise ValueError(
             f"Failed to read locations file: The data is possibly not correctly formatted. "
             f"name_index={name_index}, lat_index={lat_index}, lon_index={lon_index}, sep='{sep}', skip_rows={skip_rows}. "
-            f"Original error: {str(e)}"
-        )
+        ) from e
 
 
 @cli.from_docstring(app)
@@ -165,7 +164,7 @@ def generate_thresholds(
             file_okay=False,
         ),
     ] = None,
-    write_no_header: bool = False,
+    write_header: bool = True,
     topo_type: str = TopoTypes.SQUASHED.name,
     nzcvm_registry: Annotated[
         Path | None,
@@ -213,8 +212,8 @@ def generate_thresholds(
         Threshold types to compute. If None, computes [Z1.0, Z2.5].
     out_dir : Path | None
         Output directory (default: current working directory).
-    write_no_header : bool
-        If True, write CSV without header row.
+    write_header : bool
+        Write CSV output with header row (default: True). Use --no-write-header to disable.
     topo_type : str
         Topography type (default: "SQUASHED"). Options: TRUE, BULLDOZED, SQUASHED, SQUASHED_TAPERED.
     nzcvm_registry : Path | None
@@ -253,6 +252,9 @@ def generate_thresholds(
 
     CSV with header row to skip:
         generate_thresholds locations.csv --skip-rows 1
+
+    Write output without header row:
+        generate_thresholds locations.csv --no-write-header
     """
     # Set up logging
     numeric_level = getattr(logging, log_level.upper(), None)
@@ -319,7 +321,7 @@ def generate_thresholds(
             output_file,
             index=True,
             index_label="Station_Name",
-            header=not write_no_header,
+            header=write_header,
             float_format="%.3f",
         )
         logger.log(logging.INFO, f"Results successfully written to {output_file}")

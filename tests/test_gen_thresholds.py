@@ -267,7 +267,7 @@ def test_gen_threshold_points(threshold_scenario: ThresholdScenarioDict):
         threshold_type=None,  # Will default to [Z1.0, Z2.5]
         out_dir=threshold_scenario["output_path"],
         topo_type=TopoTypes.SQUASHED.name,
-        write_no_header=False,
+        write_header=True,  # Write header (default behavior)
         nzcvm_registry=None,
         nzcvm_data_root=threshold_scenario["data_root"],
         log_level="INFO",

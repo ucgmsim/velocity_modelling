@@ -140,6 +140,7 @@ Key features:
 - Batch processing from CSV files (default: name, lon, lat format)
 - Supports legacy station file formats with custom column indices
 - Can skip header rows with `--skip-rows` option
+- Output CSV includes header row by default (use `--no-write-header` to disable)
 - Output CSV uses input filename with .csv extension
 
 For detailed instructions, see [Generating Thresholds](wiki/Generating-Thresholds.md).

@@ -65,7 +65,7 @@ python velocity_modelling/scripts/generate_thresholds.py \
 - **--sep**: Column separator/delimiter (default: ",")
 - **--skip-rows**: Number of header rows to skip at the beginning of the file (default: 0)
 - **--out-dir**: Output directory for results (default: current working directory)
-- **--write-no-header**: If specified, write CSV output without a header row
+- **--write-header / --no-write-header**: Write CSV output with header row (default: enabled). Use `--no-write-header` to disable.
 - **--nzcvm-registry**: Optional path to custom nzcvm_registry.yaml file (default: registry under data root)
 - **--nzcvm-data-root**: Override for data root directory (default: use configured default)
 - **--log-level**: Logging level, e.g., "INFO", "DEBUG" (default: INFO)
