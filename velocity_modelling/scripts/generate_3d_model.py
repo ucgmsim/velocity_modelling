@@ -70,8 +70,8 @@ from tqdm import tqdm
 from qcore import cli
 from velocity_modelling.basin_model import (
     BasinData,
+    BasinMembership,
     InBasin,
-    MeshBasinMembership,
     PartialBasinSurfaceDepths,
 )
 from velocity_modelling.constants import (
@@ -267,7 +267,7 @@ def _compute_point_qualities(
     j: int,
     partial_mesh: PartialGlobalMesh,
     global_mesh: GlobalMesh,
-    mesh_basin_membership: MeshBasinMembership,
+    basin_membership: BasinMembership,
     cvm_registry: CVMRegistry,
     vm1d_data: VelocityModel1D,
     nz_tomography_data: TomographyData,
@@ -291,7 +291,7 @@ def _compute_point_qualities(
         Mesh data for the current latitude slice
     global_mesh : GlobalMesh
         The complete model mesh grid
-    mesh_basin_membership : MeshBasinMembership
+    basin_membership : BasinMembership
         Precomputed basin membership data
     cvm_registry : CVMRegistry
         Registry containing model data and configurations
@@ -319,7 +319,7 @@ def _compute_point_qualities(
     qualities_vector = QualitiesVector(partial_mesh.nz)
 
     # Determine basin membership for this point
-    basin_indices = mesh_basin_membership.get_basin_membership(k, j)
+    basin_indices = basin_membership.get_basin_membership(k, j)
     in_basin_list = [
         InBasin(basin_data, len(global_mesh.z)) for basin_data in basin_data_list
     ]
@@ -339,7 +339,7 @@ def _compute_point_qualities(
         partial_global_surface_depths,
         partial_basin_surface_depths_list,
         in_basin_list,
-        mesh_basin_membership,
+        basin_membership,
         vm_params["topo_type"],
     )
 
@@ -355,7 +355,7 @@ def _process_single_slice(
     j: int,
     partial_mesh: PartialGlobalMesh,
     global_mesh: GlobalMesh,
-    mesh_basin_membership: MeshBasinMembership,
+    basin_membership: BasinMembership,
     cvm_registry: CVMRegistry,
     vm1d_data: VelocityModel1D,
     nz_tomography_data: TomographyData,
@@ -380,7 +380,7 @@ def _process_single_slice(
         Mesh data for this slice
     global_mesh : GlobalMesh
         The complete model mesh grid
-    mesh_basin_membership : MeshBasinMembership
+    basin_membership : BasinMembership
         Precomputed basin membership data
     cvm_registry : CVMRegistry
         Registry containing model data and configurations
@@ -422,7 +422,7 @@ def _process_single_slice(
                 j,
                 partial_mesh,
                 global_mesh,
-                mesh_basin_membership,
+                basin_membership,
                 cvm_registry,
                 vm1d_data,
                 nz_tomography_data,
@@ -466,7 +466,7 @@ def _process_single_slice(
 
 def _run_serial_processing(
     global_mesh: GlobalMesh,
-    mesh_basin_membership: MeshBasinMembership,
+    basin_membership: BasinMembership,
     partial_global_mesh_list: list[PartialGlobalMesh],
     cvm_registry: CVMRegistry,
     vm1d_data: VelocityModel1D,
@@ -490,7 +490,7 @@ def _run_serial_processing(
     ----------
     global_mesh : GlobalMesh
         The complete model mesh grid
-    mesh_basin_membership : MeshBasinMembership
+    basin_membership : BasinMembership
         Precomputed basin membership data
     partial_global_mesh_list : list[PartialGlobalMesh]
         List of partial meshes for each y-slice
@@ -526,7 +526,7 @@ def _run_serial_processing(
             j,
             partial_mesh,
             global_mesh,
-            mesh_basin_membership,
+            basin_membership,
             cvm_registry,
             vm1d_data,
             nz_tomography_data,
@@ -561,7 +561,7 @@ def _run_serial_processing(
 # Worker-visible globals, set once in the parent process for fork context
 _CVM_REGISTRY = None
 _MODEL_DATA = None  # (vm1d_data, nz_tomo, global_surfaces, basin_data_list)
-_MESH_DATA = None  # (global_mesh, mesh_basin_membership, partial_global_mesh_list)
+_MESH_DATA = None  # (global_mesh, basin_membership, partial_global_mesh_list)
 _VM_PARAMS = None
 _OUTPUT_QUEUE = None
 
@@ -623,7 +623,7 @@ def _compute_slice(slice_index: int) -> int:
     # Unpack global data once for efficiency
     cvm_registry = _CVM_REGISTRY
     vm1d_data, nz_tomography_data, global_surfaces, basin_data_list = _MODEL_DATA
-    global_mesh, mesh_basin_membership, partial_global_mesh_list = _MESH_DATA
+    global_mesh, basin_membership, partial_global_mesh_list = _MESH_DATA
 
     # Process this slice using the common function
     partial_mesh = partial_global_mesh_list[slice_index]
@@ -631,7 +631,7 @@ def _compute_slice(slice_index: int) -> int:
         slice_index,
         partial_mesh,
         global_mesh,
-        mesh_basin_membership,
+        basin_membership,
         cvm_registry,
         vm1d_data,
         nz_tomography_data,
@@ -653,7 +653,7 @@ def _setup_parallel_globals(
     global_surfaces: list[GlobalSurfaceRead],
     basin_data_list: list[BasinData],
     global_mesh: GlobalMesh,
-    mesh_basin_membership: MeshBasinMembership,
+    basin_membership: BasinMembership,
     partial_global_mesh_list: list[PartialGlobalMesh],
     vm_params: dict,
 ) -> None:
@@ -677,7 +677,7 @@ def _setup_parallel_globals(
         List of basin model data
     global_mesh : GlobalMesh
         The complete model mesh grid
-    mesh_basin_membership : MeshBasinMembership
+    basin_membership : BasinMembership
         Precomputed basin membership data
     partial_global_mesh_list : list[PartialGlobalMesh]
         List of partial meshes for each y-slice
@@ -688,13 +688,13 @@ def _setup_parallel_globals(
 
     _CVM_REGISTRY = cvm_registry
     _MODEL_DATA = (vm1d_data, nz_tomography_data, global_surfaces, basin_data_list)
-    _MESH_DATA = (global_mesh, mesh_basin_membership, partial_global_mesh_list)
+    _MESH_DATA = (global_mesh, basin_membership, partial_global_mesh_list)
     _VM_PARAMS = vm_params
 
 
 def _run_parallel_processing(
     global_mesh: GlobalMesh,
-    mesh_basin_membership: MeshBasinMembership,
+    basin_membership: BasinMembership,
     partial_global_mesh_list: list[PartialGlobalMesh],
     cvm_registry: CVMRegistry,
     vm1d_data: VelocityModel1D,
@@ -717,7 +717,7 @@ def _run_parallel_processing(
     ----------
     global_mesh : GlobalMesh
         The complete model mesh grid
-    mesh_basin_membership : MeshBasinMembership
+    basin_membership : BasinMembership
         Precomputed basin membership data
     partial_global_mesh_list : list[PartialGlobalMesh]
         List of partial meshes for each y-slice
@@ -760,7 +760,7 @@ def _run_parallel_processing(
         global_surfaces,
         basin_data_list,
         global_mesh,
-        mesh_basin_membership,
+        basin_membership,
         partial_global_mesh_list,
         vm_params,
     )
@@ -977,14 +977,13 @@ def _generate_velocity_model_impl(
 
         # Preprocess basin membership for efficiency
         logger.log(logging.INFO, "Preprocessing basin membership")
-        mesh_basin_membership, partial_global_mesh_list = (
-            MeshBasinMembership.preprocess_basin_membership(
-                global_mesh,
-                basin_data_list,
-                logger,
-                nz_tomography_data.smooth_boundary,
-                actual_workers,
-            )
+
+        basin_membership, partial_global_mesh_list = BasinMembership.from_dense_grid(
+            global_mesh,
+            basin_data_list,
+            smooth_boundary=nz_tomography_data.smooth_boundary,
+            np_workers=actual_workers,
+            logger=logger,
         )
 
         # Set final output directory
@@ -1013,7 +1012,7 @@ def _generate_velocity_model_impl(
             # Serial processing
             _run_serial_processing(
                 global_mesh,
-                mesh_basin_membership,
+                basin_membership,
                 partial_global_mesh_list,
                 cvm_registry,
                 vm1d_data,
@@ -1043,7 +1042,7 @@ def _generate_velocity_model_impl(
 
             _run_parallel_processing(
                 global_mesh,
-                mesh_basin_membership,
+                basin_membership,
                 partial_global_mesh_list,
                 cvm_registry,
                 vm1d_data,

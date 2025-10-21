@@ -181,9 +181,9 @@ import pandas as pd
 from tqdm import tqdm
 
 from velocity_modelling.basin_model import (
+    BasinMembership,
     InBasin,
     PartialBasinSurfaceDepths,
-    StationBasinMembership,
     compute_sigma_for_stations,
 )
 from velocity_modelling.constants import TopoTypes, get_data_root
@@ -545,12 +545,17 @@ def compute_station_thresholds(
 
     # Basin membership pre-processing
     logger.log(logging.INFO, "Pre-computing basin membership for all stations")
-    station_basin_checker = StationBasinMembership(basin_data_list, logger)
-    station_lats = stations_df["lat"].values
-    station_lons = stations_df["lon"].values
-    station_basin_membership = station_basin_checker.check_stations_in_basin(
-        station_lats, station_lons
+    basin_membership = BasinMembership(
+        basin_data_list,
+        smooth_boundary=nz_tomography_data.smooth_boundary,
+        logger=logger,
     )
+
+    # Pre-compute basin membership for all stations
+    station_basin_membership = basin_membership.check_stations(
+        stations_df["lat"].values, stations_df["lon"].values
+    )
+
     logger.log(
         logging.INFO, f"Basin membership computed for {len(stations_df)} stations"
     )
@@ -669,7 +674,7 @@ def compute_station_thresholds(
                     partial_global_surface_depths,
                     partial_basin_surface_depths,
                     in_basin_list,
-                    None,  # No MeshBasinMembership for isolated station processing
+                    basin_membership,
                     vm_params["topo_type"],
                 )
 

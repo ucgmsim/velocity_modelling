@@ -83,9 +83,9 @@ from tqdm import tqdm
 from qcore import cli
 from velocity_modelling.basin_model import (
     BasinData,
+    BasinMembership,
     InBasin,
     PartialBasinSurfaceDepths,
-    StationBasinMembership,
 )
 from velocity_modelling.constants import TopoTypes, get_data_root
 from velocity_modelling.geometry import (
@@ -542,12 +542,13 @@ def generate_1d_profiles(
     # PRE-COMPUTE BASIN MEMBERSHIP FOR ALL PROFILES
     logger.log(logging.INFO, "Pre-computing basin membership for all profiles")
 
-    # StationBasinMembership is more efficient than MeshBasinMembership for this purpose, which is more suited to full 3D meshes
-    profile_basin_checker = StationBasinMembership(basin_data_list, logger)
-    profile_lats = df["lat"].values
-    profile_lons = df["lon"].values
-    profile_basin_membership = profile_basin_checker.check_stations_in_basin(
-        profile_lats, profile_lons
+    basin_membership = BasinMembership(
+        basin_data_list,
+        smooth_boundary=nz_tomography_data.smooth_boundary,
+        logger=logger,
+    )
+    profile_basin_membership = basin_membership.check_stations(
+        df["lat"].values, df["lon"].values
     )
 
     logger.log(logging.INFO, f"Basin membership computed for {len(df)} profiles")
@@ -633,7 +634,7 @@ def generate_1d_profiles(
             partial_global_surface_depths,
             partial_basin_surface_depths,
             in_basin_list,
-            None,  # No MeshBasinMembership for isolated profile processing
+            basin_membership,
             vm_params["topo_type"],
         )
         write_profiles(

@@ -19,8 +19,8 @@ import numpy as np
 
 from velocity_modelling.basin_model import (
     BasinData,
+    BasinMembership,
     InBasin,
-    MeshBasinMembership,
     PartialBasinSurfaceDepths,
 )
 from velocity_modelling.constants import MAX_DIST_SMOOTH, TopoTypes, VelocityTypes
@@ -331,7 +331,7 @@ class QualitiesVector:
         partial_global_surface_depths: PartialGlobalSurfaceDepths,
         partial_basin_surface_depths_list: list[PartialBasinSurfaceDepths],
         in_basin_list: list[InBasin],
-        mesh_basin_membership: MeshBasinMembership | None,
+        basin_membership: BasinMembership | None,
         topo_type: TopoTypes,
     ):
         """
@@ -361,9 +361,10 @@ class QualitiesVector:
             Basin surface depth data at this location.
         in_basin_list : list[InBasin]
             Basin membership flags (pre-populated for isolated station workflows).
-        mesh_basin_membership : MeshBasinMembership or None
-            Basin mesh with preprocessed membership. Can be None for isolated station processing
-            (1D profiles, thresholds) to skip smoothing.
+        basin_membership : BasinMembership or None
+            Basin membership handler with optional smoothing boundary preprocessing.
+            Can be None to skip smoothing (though this should be rare - usually you want
+            to provide it even for isolated points to handle offshore smoothing correctly).
         topo_type : TopoTypes
             Topography handling method.
         """
@@ -400,8 +401,8 @@ class QualitiesVector:
             and mesh_vector.vs30 < 100  # offshore if vs30 < 100 m/s
         )
 
-        # Apply smoothing only if mesh_basin_membership is provided; otherwise skip smoothing gracefully.
-        if in_smoothing_zone and mesh_basin_membership is not None:
+        # Apply smoothing only if basin_membership is provided; otherwise skip smoothing gracefully.
+        if in_smoothing_zone and basin_membership is not None:
             # point lies within smoothing zone and is not in any basin (i.e., outside any boundaries)
             qualities_vector_a = QualitiesVector(mesh_vector.nz)
             qualities_vector_b = QualitiesVector(mesh_vector.nz)
@@ -426,16 +427,16 @@ class QualitiesVector:
             mesh_vector.lon = smooth_bound.lons[closest_ind]
 
             # determine if the point is in any basin using precomputed boundary membership
-            if mesh_basin_membership.smoothing_boundary_basin_indices is None:
+            if basin_membership.smoothing_boundary_basin_indices is None:
                 self.logger.log(
                     logging.ERROR,
                     "smoothing_boundary_basin_indices is None, falling back to manual calculation",
                 )
-                smooth_indices = mesh_basin_membership.find_all_containing_basins(
+                smooth_indices = basin_membership.check_one_station(
                     mesh_vector.lat, mesh_vector.lon
                 )
             else:
-                smooth_indices = mesh_basin_membership.smoothing_boundary_basin_indices[
+                smooth_indices = basin_membership.smoothing_boundary_basin_indices[
                     closest_ind
                 ]
 
@@ -499,6 +500,7 @@ class QualitiesVector:
             self.vs[invalid_indices] = np.nan
             self.rho[invalid_indices] = np.nan
         else:
+            # No smoothing needed or no basin_membership provided ; prescribe velocities directly
             on_boundary = False
             self.prescribe_velocities(
                 cvm_registry.global_params,
