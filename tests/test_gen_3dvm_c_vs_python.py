@@ -115,6 +115,7 @@ def test_gen_3dvm_c_vs_python(
     python_result = subprocess.run(
         [
             "python",
+            "-B",  # Don't write .pyc files to avoid bytecode compilation race condition
             str(SCRIPT_DIR / "generate_3d_model.py"),
             str(config_file),
             "--out-dir",
