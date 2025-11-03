@@ -96,7 +96,14 @@ Key features:
 - Uses **model versions** to specify data components
 - Supports multiple output formats (EMOD3D, CSV, HDF5)
 - Configurable grid geometry and topography handling
+- **Parallel processing support** for improved performance on multi-core systems
 - Web interface for configuration generation
+
+**Parallel Processing:**
+```bash
+# Fine-tune with custom BLAS threading
+generate_3d_model config.cfg --np 8 --blas-threads 2
+```
 
 For detailed instructions, see [Generating 3D Models](wiki/Generating-3D-Model.md).
 

@@ -10,6 +10,8 @@ from velocity_modelling.tools.compare_emod3d import (
     compare_output_files,
     parse_nzcvm_config,
 )
+from velocity_modelling.tools.compare_hdf5 import compare_datasets
+from velocity_modelling.tools.convert_hdf5_to_emod3d import convert_hdf5_to_emod3d
 
 # Define the scenarios
 SCENARIOS = [
@@ -70,14 +72,14 @@ def scenario(
 
 def test_gen_3dvm_scenarios(scenario: ScenarioDict):
     """
-    Test generate_3d_model.py with different scenarios
-    and compare outputs with benchmarks
+    Test generate_3d_model.py with parallel processing (--np 8 --blas-threads 2)
+    and compare outputs with HDF5 benchmarks, then convert and compare EMOD3D format
     """
 
     # Create output directory for this scenario
     scenario["output_path"].mkdir(exist_ok=True)
 
-    # Run the generate_3d_model.py script with --out-dir
+    # Run the generate_3d_model.py script with parallel processing and HDF5 output
     result = subprocess.run(
         [
             "python",
@@ -88,6 +90,12 @@ def test_gen_3dvm_scenarios(scenario: ScenarioDict):
             str(scenario["output_path"]),
             "--nzcvm-data-root",
             str(scenario["data_root"]),
+            "--output-format",
+            "HDF5",
+            "--np",
+            "8",
+            "--blas-threads",
+            "2",
         ],
         capture_output=True,
         text=True,
@@ -104,29 +112,59 @@ def test_gen_3dvm_scenarios(scenario: ScenarioDict):
     ny = vm_params["ny"]
     nz = vm_params["nz"]
 
-    # Compare output files with benchmarks
-    comparison_results = compare_output_files(
+    # === HDF5 Comparison (Primary Check) ===
+    output_h5 = scenario["output_path"] / "velocity_model.h5"
+    benchmark_h5 = scenario["benchmark_path"] / "velocity_model.h5"
+
+    assert output_h5.exists(), f"Output HDF5 file not found: {output_h5}"
+    assert benchmark_h5.exists(), (
+        f"Benchmark HDF5 file not found: {benchmark_h5}"
+    )
+
+    # Compare HDF5 files using sample method (efficient for large files)
+    h5_comparison_results = compare_datasets(
+        benchmark_h5,
+        output_h5,
+        method="sample",
+        atol=1e-6,
+        rtol=1e-6,
+        n_samples=10000,
+    )
+
+    # Check that all datasets (except config) are identical
+    for ds_name, status, info in h5_comparison_results:
+        if ds_name != "config":  # We don't fail on config differences
+            assert status == "identical", (
+                f"HDF5 dataset {ds_name} differs for {scenario['name']}:\n{info}"
+            )
+
+    # === Convert to EMOD3D Format ===
+    convert_hdf5_to_emod3d(output_h5, scenario["output_path"])
+
+    # === EMOD3D Comparison (Secondary Check) ===
+    # Compare converted EMOD3D files with existing EMOD3D benchmarks
+    emod3d_comparison_results = compare_output_files(
         scenario["benchmark_path"],
         scenario["output_path"],
         nx,
         ny,
         nz,
-        threshold=1e-5,  # Using the default threshold from compare_emod3d.py
+        threshold=1e-5,
     )
 
     # Check critical files (vp, vs, rho) are allclose
     for key in ["vp", "vs", "rho"]:
-        assert key in comparison_results, (
-            f"Missing {key} in comparison results for {scenario['name']}"
+        assert key in emod3d_comparison_results, (
+            f"Missing {key} in EMOD3D comparison results for {scenario['name']}"
         )
-        assert comparison_results[key]["size_check"], (
-            f"Size check failed for {key} in {scenario['name']}"
+        assert emod3d_comparison_results[key]["size_check"], (
+            f"EMOD3D size check failed for {key} in {scenario['name']}"
         )
-        assert comparison_results[key]["allclose"], (
-            f"{key} data not close enough for {scenario['name']}:\n"
-            f"Max diff: {comparison_results[key]['max_diff']}\n"
-            f"Mean diff: {comparison_results[key]['mean_diff']}\n"
-            f"Std diff: {comparison_results[key]['std_diff']}"
+        assert emod3d_comparison_results[key]["allclose"], (
+            f"EMOD3D {key} data not close enough for {scenario['name']}:\n"
+            f"Max diff: {emod3d_comparison_results[key]['max_diff']}\n"
+            f"Mean diff: {emod3d_comparison_results[key]['mean_diff']}\n"
+            f"Std diff: {emod3d_comparison_results[key]['std_diff']}"
         )
         # Note: We ignore inbasin comparison as the original C code saves incorrect values
 

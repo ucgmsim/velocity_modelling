@@ -934,6 +934,10 @@ class CVMRegistry:
                         for vtype in VelocityTypes:
                             try:
                                 data = elev_group[vtype.name][:]
+                                # NaN values from interpolation are stored as -999.0 in HDF5
+                                # Must convert back to NaN before use
+                                data = np.where(data == -999.0, np.nan, data)
+
                                 surfaces[i][vtype.name] = GlobalSurfaceRead(
                                     hdf5_path, latitudes, longitudes, data.T
                                 )

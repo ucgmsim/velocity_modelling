@@ -29,9 +29,74 @@ python scripts/generate_3d_model.py /path/to/config/nzcvm.cfg
 - **--out-dir**: Output directory (overrides `OUTPUT_DIR` in config)
 - **--model-version**: Override model version from config file
 - **--output-format**: Format (EMOD3D, CSV, HDF5)
+- **--np**: Number of parallel worker processes (default: 1 for serial processing)
+- **--blas-threads**: Number of BLAS threads per worker process (auto-configured if not specified)
 - **--nzcvm-registry**: Custom registry file path
 - **--nzcvm-data-root**: Override default data directory
 - **--log-level**: Logging level (DEBUG, INFO, WARNING, ERROR)
+
+## Parallel Processing
+
+The script supports parallel processing for improved performance on multi-core systems:
+
+### Basic Parallel Usage
+```bash
+# Use 8 worker processes
+generate_3d_model config.cfg --np 8
+
+# Use 8 workers with 2 BLAS threads each
+generate_3d_model config.cfg --np 8 --blas-threads 2
+```
+
+### Performance Considerations
+
+**Worker Count (`--np`)**:
+- Default: 1 (serial processing)
+- Recommended: Number of CPU cores (e.g., 8 for an 8-core system)
+- The script automatically limits workers to available CPU cores
+- If you request more workers than cores, the script warns and reduces to available cores
+
+**BLAS Threading (`--blas-threads`)**:
+- Controls numerical library threading per worker
+- Auto-configured: `cores // workers` (minimum 1) if not specified
+- Manual setting useful for fine-tuning performance
+- Total thread usage ≈ `workers × blas_threads`
+
+**Output Format**:
+- Parallel processing requires HDF5 output format
+- If you specify another format with `--np > 1`, it automatically switches to HDF5
+- Use `convert_hdf5_to_emod3d` to convert to EMOD3D format if needed
+
+### Parallel Processing Examples
+
+```bash
+# Canterbury model with 8 workers (HDF5 output required for parallel)
+generate_3d_model canterbury.cfg --np 8 --output-format HDF5
+
+# Wellington model with custom BLAS threading
+generate_3d_model wellington.cfg --np 4 --blas-threads 4
+
+# Large model with optimal settings for 16-core system
+generate_3d_model large_model.cfg --np 16 --blas-threads 1
+```
+
+### Converting HDF5 to EMOD3D
+
+If you need EMOD3D format after parallel processing:
+
+```bash
+# Generate with parallel processing (creates velocity_model.h5)
+generate_3d_model config.cfg --np 8 --output-format HDF5
+
+# Convert to EMOD3D format
+convert_hdf5_to_emod3d /path/to/output/velocity_model.h5 /path/to/output
+```
+
+This creates the standard EMOD3D files:
+- `vp3dfile.p`
+- `vs3dfile.s`
+- `rho3dfile.d`
+- `in_basin_mask.b`
 
 ## Configuration File (nzcvm.cfg)
 
@@ -90,7 +155,7 @@ Generate configuration files at: [https://quakecoresoft.canterbury.ac.nz/nzcvm_c
 
 ## Example Usage Scenarios
 
-### 1. Basic Canterbury Region Model
+### 1. Basic Canterbury Region Model (Serial)
 ```bash
 # Create config file for Canterbury
 cat > canterbury.cfg << EOF
@@ -114,18 +179,38 @@ EOF
 python scripts/generate_3d_model.py canterbury.cfg
 ```
 
-### 2. Wellington Model with CSV Output
+### 2. Wellington Model with Parallel Processing
 ```bash
-python scripts/generate_3d_model.py wellington.cfg \
-  --output-format CSV \
-  --out-dir /path/to/wellington_output
+# Create config for Wellington
+cat > wellington.cfg << EOF
+CALL_TYPE=GENERATE_VELOCITY_MOD
+MODEL_VERSION=2.07
+ORIGIN_LAT=-41.3
+ORIGIN_LON=174.8
+ORIGIN_ROT=0.0
+EXTENT_X=30
+EXTENT_Y=30
+EXTENT_ZMAX=40.0
+EXTENT_ZMIN=0.0
+EXTENT_Z_SPACING=0.4
+EXTENT_LATLON_SPACING=0.1
+MIN_VS=0.5
+TOPO_TYPE=SQUASHED
+OUTPUT_DIR=/tmp/wellington
+EOF
+
+# Generate with 8 parallel workers
+generate_3d_model wellington.cfg --np 8 --output-format HDF5
 ```
 
-### 3. Custom Model Version
+### 3. Large Model with Optimal Parallel Settings
 ```bash
-python scripts/generate_3d_model.py config.cfg \
-  --model-version custom_1.0 \
-  --log-level DEBUG
+# For a 16-core system processing a large model
+generate_3d_model large_model.cfg \
+  --np 16 \
+  --blas-threads 1 \
+  --output-format HDF5 \
+  --log-level INFO
 ```
 
 ## Output Files
@@ -165,16 +250,28 @@ For details on model versions, see [Model Versions](Model-Versions.md).
 ### Grid Size Impact
 - Smaller spacing = higher resolution but longer computation time
 - Balance resolution needs with available resources
+- Parallel processing significantly reduces wall-clock time for large models
 
 ### Memory Requirements
 - Large grids may require significant RAM
 - Consider chunking for very large models
+- Each worker needs memory for its slice processing
 
 ### Typical Processing Times
+
+**Serial Processing (--np 1)**:
 - Small regional model (10×10×20 km): Minutes
 - Large regional model (100×100×50 km): Hours
 - Full country model: Multiple hours to days
 
+**Parallel Processing (--np 8)**:
+- Small regional model: Seconds to minutes
+- Large regional model: 30 minutes to 2 hours
+- Full country model: Several hours
+
+The actual speedup depends on:
+- Number of CPU cores
+- Grid dimensions (especially ny, the number of y-slices)
 ## Troubleshooting
 
 ### Common Issues
