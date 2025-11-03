@@ -810,3 +810,4 @@ class QualitiesVector:
         self.vp[z_indices] = np.nan
         self.vs[z_indices] = np.nan
         self.rho[z_indices] = np.nan
+
