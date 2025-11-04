@@ -8,5 +8,4 @@ tomography:
     special_offshore_tapering: true
     GTL: true
 
-basin_edge_smoothing: true
 
