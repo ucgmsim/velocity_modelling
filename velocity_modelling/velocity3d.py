@@ -249,7 +249,9 @@ class QualitiesVector:
             basin_mask = np.asarray(
                 [in_basin.in_basin_depth for in_basin in in_basin_list], dtype=bool
             )  # Shape: (n_basins, nz)
-            # Find the first basin index for each depth (reverse axis to match sequential order)
+            # Find the index of the last basin containing each depth point.
+            # The last basin in the list has the highest priority.
+            # np.argmax finds the first 'True' in the reversed array, which corresponds to the last 'True' in the original.
             basin_indices = np.argmax(basin_mask[::-1], axis=0)
             basin_per_k = np.where(
                 np.any(basin_mask, axis=0), n_basins - 1 - basin_indices, -1
