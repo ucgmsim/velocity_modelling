@@ -238,22 +238,27 @@ class QualitiesVector:
         )
         k_indices = np.arange(mesh_vector.nz)
 
-        # Precompute basin membership for all depths
-        in_basin_depths = np.array(
-            [in_basin.in_basin_depth for in_basin in in_basin_list]
-        )  # Shape: (34, 225)
-        basin_mask = in_basin_depths  # Shape: (34, 225)
-        # Find the first basin index for each depth (reverse axis to match sequential order)
-        # basin_indices = np.argmax(basin_mask, axis=0)  # This finds the last True index
-        # To find the first True index, reverse the basin order and use argmax, then adjust
-        basin_indices = np.argmax(basin_mask[::-1], axis=0)
-        basin_per_k = np.where(
-            np.any(basin_mask, axis=0), len(basin_mask) - 1 - basin_indices, -1
-        )
-
-        # Identify depths in basins vs. not in basins
-        in_basin_mask = basin_per_k >= 0
-        out_basin_mask = ~in_basin_mask
+        # Precompute basin membership for all depths (robust to no basins)
+        n_basins = len(in_basin_list)
+        if n_basins == 0:
+            # No basins - all depths are outside basins
+            basin_per_k = np.full(mesh_vector.nz, -1, dtype=int)
+            in_basin_mask = np.zeros(mesh_vector.nz, dtype=bool)
+            out_basin_mask = np.ones(mesh_vector.nz, dtype=bool)
+        else:
+            basin_mask = np.asarray(
+                [in_basin.in_basin_depth for in_basin in in_basin_list], dtype=bool
+            )  # Shape: (n_basins, nz)
+            # Find the index of the last basin containing each depth point.
+            # The last basin in the list has the highest priority.
+            # np.argmax finds the first 'True' in the reversed array, which corresponds to the last 'True' in the original.
+            basin_indices = np.argmax(basin_mask[::-1], axis=0)
+            basin_per_k = np.where(
+                np.any(basin_mask, axis=0), n_basins - 1 - basin_indices, -1
+            )
+            # Identify depths inside basins and outside basins
+            in_basin_mask = basin_per_k >= 0
+            out_basin_mask = ~in_basin_mask
 
         # Process depths in basins
         if np.any(in_basin_mask):
