@@ -33,7 +33,7 @@ vm_file_name = "velocity_model.h5"
 
 def create_xdmf_file(hdf5_file: Path, vm_params: dict, logger: logging.Logger) -> None:
     """
-    Create an XDMF file to make the HDF5 file compatible with ParaView.
+    Create an XDMF file to make the GeoModelGrids HDF5 file compatible with ParaView.
 
     Parameters
     ----------
@@ -69,34 +69,29 @@ def create_xdmf_file(hdf5_file: Path, vm_params: dict, logger: logging.Logger) -
     <Grid Name="Velocity_Model" GridType="Uniform">
       <Topology TopologyType="3DRectMesh" Dimensions="{nx} {ny} {nz}"/>
       <Geometry GeometryType="VXVYVZ">
-        <DataItem Dimensions="{nx}" NumberType="Int" Precision="4" Format="HDF">
-          {hdf5_relative}:/mesh/x
+        <DataItem Dimensions="{nx}" NumberType="Float" Precision="8" Format="HDF">
+          {hdf5_relative}:/blocks/block_0/x_coordinates
         </DataItem>
-        <DataItem Dimensions="{ny}" NumberType="Int" Precision="4" Format="HDF">
-          {hdf5_relative}:/mesh/y
+        <DataItem Dimensions="{ny}" NumberType="Float" Precision="8" Format="HDF">
+          {hdf5_relative}:/blocks/block_0/y_coordinates
         </DataItem>
-        <DataItem Dimensions="{nz}" NumberType="Int" Precision="4" Format="HDF">
-          {hdf5_relative}:/mesh/z
+        <DataItem Dimensions="{nz}" NumberType="Float" Precision="8" Format="HDF">
+          {hdf5_relative}:/blocks/block_0/z_coordinates
         </DataItem>
       </Geometry>
       <Attribute Name="P-wave Velocity" AttributeType="Scalar" Center="Node">
         <DataItem Dimensions="{nz} {ny} {nx}" NumberType="Float" Precision="4" Format="HDF">
-          {hdf5_relative}:/properties/vp
+          {hdf5_relative}:/blocks/block_0/values[0,:,:,:]
         </DataItem>
       </Attribute>
       <Attribute Name="S-wave Velocity" AttributeType="Scalar" Center="Node">
         <DataItem Dimensions="{nz} {ny} {nx}" NumberType="Float" Precision="4" Format="HDF">
-          {hdf5_relative}:/properties/vs
+          {hdf5_relative}:/blocks/block_0/values[1,:,:,:]
         </DataItem>
       </Attribute>
       <Attribute Name="Density" AttributeType="Scalar" Center="Node">
         <DataItem Dimensions="{nz} {ny} {nx}" NumberType="Float" Precision="4" Format="HDF">
-          {hdf5_relative}:/properties/rho
-        </DataItem>
-      </Attribute>
-      <Attribute Name="Basin Membership" AttributeType="Scalar" Center="Node">
-        <DataItem Dimensions="{nz} {ny} {nx}" NumberType="Int" Precision="1" Format="HDF">
-          {hdf5_relative}:/properties/inbasin
+          {hdf5_relative}:/blocks/block_0/values[2,:,:,:]
         </DataItem>
       </Attribute>
     </Grid>
@@ -107,7 +102,7 @@ def create_xdmf_file(hdf5_file: Path, vm_params: dict, logger: logging.Logger) -
     try:
         with open(xdmf_file, "w") as f:
             f.write(xdmf_content)
-        logger.log(logging.INFO, f"Created ParaView-compatible XDMF file: {xdmf_file}")
+        logger.log(logging.INFO, f"Created ParaView-compatible XDMF file for GeoModelGrids: {xdmf_file}")
     except Exception as e:
         if isinstance(e, (SystemExit, KeyboardInterrupt)):
             raise
@@ -170,10 +165,10 @@ def _create_hdf5_structure(
     f: h5py.File, vm_params: dict, nx: int, ny: int, nz: int
 ) -> dict:
     """
-    Create the HDF5 file structure with groups and datasets.
+    Create the HDF5 file structure in GeoModelGrids format.
 
     If the file already exists and has the structure, reuse it.
-    Otherwise create new structure.
+    Otherwise create new GeoModelGrids structure.
 
     Parameters
     ----------
@@ -193,105 +188,141 @@ def _create_hdf5_structure(
     dict
         Dictionary of created datasets for easy access
     """
-    # Check if structure already exists and has correct dimensions
+    # Check if GeoModelGrids structure already exists and has correct dimensions
     if (
-        "config" in f
-        and "mesh" in f
-        and "properties" in f
-        and "vp" in f["properties"]
-        and f["properties"]["vp"].shape == (nz, ny, nx)
+        "blocks" in f
+        and "block_0" in f["blocks"]
+        and "values" in f["blocks"]["block_0"]
+        and f["blocks"]["block_0"]["values"].shape == (3, nz, ny, nx)
     ):
         # File structure already exists with correct dimensions, reuse it
-        mesh_group = f["mesh"]
-        props = f["properties"]
+        block = f["blocks"]["block_0"]
+        surfaces = f["surfaces"]
 
         # Update file-level attributes in case they changed
         f.attrs.update(
             {
                 "total_y_slices": ny,
-                "format_version": "1.0",
+                "format_version": "1.0.0",
                 "creation_date": datetime.datetime.now().isoformat(),
             }
         )
 
         return {
-            "vp": props["vp"],
-            "vs": props["vs"],
-            "rho": props["rho"],
-            "inbasin": props["inbasin"],
-            "lat": mesh_group["lat"],
-            "lon": mesh_group["lon"],
+            "values": block["values"],
+            "x_coordinates": block["x_coordinates"],
+            "y_coordinates": block["y_coordinates"],
+            "z_coordinates": block["z_coordinates"],
+            "top_surface": surfaces["top_surface"],
         }
 
     # File doesn't exist or has wrong dimensions - recreate structure
     # Clear any existing groups first
-    for group_name in ["config", "mesh", "properties"]:
+    for group_name in ["blocks", "surfaces", "coordsys"]:
         if group_name in f:
             del f[group_name]
 
-    # Set file-level attributes
+    # Set GeoModelGrids root-level attributes
+    model_version = vm_params.get("model_version", "2.03")
     f.attrs.update(
         {
+            "title": f"NZ Velocity Model v{model_version}",
+            "id": f"nzcvm_{model_version}",
+            "description": "New Zealand 3D seismic velocity model",
+            "version": "1.0.0",
+            "creator_name": "NZ Velocity Modelling Team",
+            "creator_institution": "GNS Science",
+            "data_dim": int(3),
+            "space_dim": int(3),
             "total_y_slices": ny,
-            "format_version": "1.0",
             "creation_date": datetime.datetime.now().isoformat(),
         }
     )
 
-    # Create configuration group with stringified parameter values
-    config_group = f.create_group("config")
-    config_group.attrs.update(
+    # Create coordinate system group
+    _create_coordsys_group(f, vm_params)
+
+    # Create surfaces group
+    surfaces_group = f.create_group("surfaces")
+    # Create top_surface dataset (2D, shape=(ny, nx))
+    top_surface = surfaces_group.create_dataset(
+        "top_surface", shape=(ny, nx), dtype="f4"
+    )
+    top_surface.attrs["units"] = "m"
+
+    # Create blocks group and block_0
+    blocks_group = f.create_group("blocks")
+    block = blocks_group.create_group("block_0")
+
+    # Set block attributes
+    h_lat_lon = vm_params.get("h_lat_lon", 0.2)  # km
+    h_depth = vm_params.get("h_depth", 0.2)  # km
+    extent_zmin = vm_params.get("extent_zmin", 0.0)  # km
+
+    block.attrs.update(
         {
-            k: (
-                v.name
-                if hasattr(v, "name")
-                else v.value
-                if hasattr(v, "value")
-                else str(v)
-            )
-            for k, v in vm_params.items()
+            "resolution_horiz": h_lat_lon * 1000,  # Convert to meters
+            "resolution_vert": h_depth * 1000,  # Convert to meters
+            "z_top": extent_zmin * 1000,  # Convert to meters
+            "num_x": nx,
+            "num_y": ny,
+            "num_z": nz,
         }
     )
-    config_group.attrs["config_string"] = "\n".join(
-        f"{k.upper()}={v}" for k, v in vm_params.items()
+
+    # Create coordinate datasets
+    x_coords = block.create_dataset("x_coordinates", shape=(nx,), dtype="f8")
+    y_coords = block.create_dataset("y_coordinates", shape=(ny,), dtype="f8")
+    z_coords = block.create_dataset("z_coordinates", shape=(nz,), dtype="f8")
+
+    # Create values dataset (4D: 3 properties, nz, ny, nx)
+    # Chunk by complete y-slices (3, nz, 1, nx) for fast slice writes
+    values_shape = (3, nz, ny, nx)
+    values_chunks = (3, nz, 1, nx)  # One complete y-slice per chunk
+    values = block.create_dataset(
+        "values", shape=values_shape, dtype="f4", chunks=values_chunks
     )
-
-    # Create mesh group with coordinate arrays
-    mesh_group = f.create_group("mesh")
-    mesh_group.create_dataset("x", data=np.arange(nx, dtype=np.int32))
-    mesh_group.create_dataset("y", data=np.arange(ny, dtype=np.int32))
-    mesh_group.create_dataset("z", data=np.arange(nz, dtype=np.int32))
-    d_lat = mesh_group.create_dataset("lat", shape=(nx, ny), dtype="f8")
-    d_lon = mesh_group.create_dataset("lon", shape=(nx, ny), dtype="f8")
-
-    # Create properties group with optimized chunking
-    props = f.create_group("properties")
-
-    # Use (nz, ny, nx) layout for ParaView compatibility
-    # Chunk by complete y-slices (nz, 1, nx) for fast slice writes
-    shape = (nz, ny, nx)
-    chunks = (nz, 1, nx)  # One complete y-slice per chunk
-
-    d_vp = props.create_dataset("vp", shape=shape, dtype="f4", chunks=chunks)
-    d_vs = props.create_dataset("vs", shape=shape, dtype="f4", chunks=chunks)
-    d_rho = props.create_dataset("rho", shape=shape, dtype="f4", chunks=chunks)
-    d_inb = props.create_dataset("inbasin", shape=shape, dtype="i1", chunks=chunks)
 
     # Add dataset attributes
-    d_vp.attrs["units"] = "km/s"
-    d_vs.attrs.update(
-        {"units": "km/s", "min_value_enforced": vm_params.get("min_vs", 0.0)}
-    )
-    d_rho.attrs["units"] = "g/cm^3"
+    values.attrs["value_names"] = "Vp,Vs,rho"
+    values.attrs["value_units"] = "km/s,km/s,g/cm^3"
 
     return {
-        "vp": d_vp,
-        "vs": d_vs,
-        "rho": d_rho,
-        "inbasin": d_inb,
-        "lat": d_lat,
-        "lon": d_lon,
+        "values": values,
+        "x_coordinates": x_coords,
+        "y_coordinates": y_coords,
+        "z_coordinates": z_coords,
+        "top_surface": top_surface,
     }
+
+
+def _create_coordsys_group(f: h5py.File, vm_params: dict) -> None:
+    """
+    Create the coordinate system group with CRS definition.
+
+    Parameters
+    ----------
+    f : h5py.File
+        Open HDF5 file handle
+    vm_params : dict
+        Velocity model parameters containing coordinate system info
+    """
+    coordsys_group = f.create_group("coordsys")
+    
+    # Store great-circle projection parameters
+    origin_lat = vm_params.get("origin_lat", -43.4776)
+    origin_lon = vm_params.get("origin_lon", 172.6870)
+    origin_rot = vm_params.get("origin_rot", 23.0)
+    
+    coordsys_group.attrs.update(
+        {
+            "crs_string": "Great Circle Projection",
+            "origin_latitude": origin_lat,
+            "origin_longitude": origin_lon,
+            "origin_rotation": origin_rot,
+            "projection_type": "great_circle",
+        }
+    )
 
 
 def _ensure_hdf5_file_open(
@@ -428,7 +459,7 @@ def write_global_qualities(
     logger: Logger | None = None,
 ) -> None:
     """
-    Write a latitude slice of velocity data to the consolidated HDF5 file.
+    Write a latitude slice of velocity data to the consolidated HDF5 file in GeoModelGrids format.
 
     This function writes velocity model data for a single y-slice to the HDF5 file.
     It handles both file creation (for the first slice) and subsequent slice updates
@@ -499,16 +530,37 @@ def write_global_qualities(
     # Get or create HDF5 file handle and datasets
     f, dsets = _ensure_hdf5_file_open(out_dir, vm_params, nx, ny, nz, logger)
 
-    # Write mesh coordinates for this y-slice
-    dsets["lat"][:, lat_ind] = partial_global_mesh.lat
-    dsets["lon"][:, lat_ind] = partial_global_mesh.lon
+    # Write coordinate data for this y-slice (only on first slice to avoid overwriting)
+    if lat_ind == 0:
+        # Write x coordinates (longitude positions)
+        dsets["x_coordinates"][:] = partial_global_mesh.lon
+        # Write z coordinates (depth positions in meters)
+        dsets["z_coordinates"][:] = partial_global_mesh.z * 1000  # Convert km to m
+    
+    # Write y coordinates (latitude positions) for this slice
+    dsets["y_coordinates"][lat_ind] = partial_global_mesh.lat[0]  # Use first x position's lat
+
+    # Extract surface elevation (first valid z-slice where data is not NaN)
+    # Find the first z-slice with valid data
+    surface_elevation = np.zeros(nx)
+    for i in range(nx):
+        valid_indices = ~np.isnan(partial_global_qualities.vp[i, :])
+        if np.any(valid_indices):
+            # Use the first valid depth as surface elevation
+            first_valid_idx = np.where(valid_indices)[0][0]
+            surface_elevation[i] = partial_global_mesh.z[first_valid_idx] * 1000  # Convert km to m
+        else:
+            # No valid data, use top of model
+            surface_elevation[i] = partial_global_mesh.z[0] * 1000  # Convert km to m
+
+    # Write surface elevation for this y-slice
+    dsets["top_surface"][lat_ind, :] = surface_elevation
 
     # Transpose data from (nx, nz) to (nz, nx) for HDF5 layout
-    # HDF5 uses (nz, ny, nx) order for ParaView compatibility
+    # GeoModelGrids uses (3, nz, ny, nx) order for values
     vp_transposed = partial_global_qualities.vp.T
     vs_transposed = vs_data.T
     rho_transposed = partial_global_qualities.rho.T
-    inbasin_transposed = partial_global_qualities.inbasin.T
 
     # Validate data shape
     expected_shape = (nz, nx)
@@ -519,16 +571,18 @@ def write_global_qualities(
         logger.log(logging.ERROR, error_msg)
         raise ValueError(error_msg)
 
-    # Write property data for this y-slice using optimized slice notation
-    dsets["vp"][:, lat_ind, :] = vp_transposed
-    dsets["vs"][:, lat_ind, :] = vs_transposed
-    dsets["rho"][:, lat_ind, :] = rho_transposed
-    dsets["inbasin"][:, lat_ind, :] = inbasin_transposed
+    # Write property data for this y-slice to GeoModelGrids format
+    # values[0, :, lat_ind, :] = Vp
+    # values[1, :, lat_ind, :] = Vs  
+    # values[2, :, lat_ind, :] = rho
+    dsets["values"][0, :, lat_ind, :] = vp_transposed
+    dsets["values"][1, :, lat_ind, :] = vs_transposed
+    dsets["values"][2, :, lat_ind, :] = rho_transposed
 
     # Update progress tracking attribute
     f.attrs["last_slice_written"] = lat_ind
 
-    logger.log(logging.DEBUG, f"Successfully wrote slice {lat_ind} to HDF5 file")
+    logger.log(logging.DEBUG, f"Successfully wrote slice {lat_ind} to GeoModelGrids HDF5 file")
 
 
 # ============================================================================
