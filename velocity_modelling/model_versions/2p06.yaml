@@ -1,0 +1,37 @@
+surfaces:
+  - path: surface/NZ_DEM_HD.h5
+    submodel: ep_tomography_submod_v2010
+
+tomography:
+  - name: EP2020
+    vs30: nz_with_offshore
+    special_offshore_tapering: true
+    GTL: true
+
+basin_edge_smoothing: true
+basins:
+  - Canterbury_v19p1
+  - NorthCanterbury_v19p1
+  - BanksPeninsulaVolcanics_v19p1
+  - Kaikoura_v19p1
+  - Cheviot_v19p1
+  - Hanmer_v19p1
+  - Marlborough_v19p1
+  - Nelson_v19p1
+  - Wellington_v19p6
+  - WaikatoHauraki_v19p7
+  - Wanaka_v20p6
+  - Mackenzie_v20p6
+  - Wakatipu_v20p7
+  - Alexandra_v20p7
+  - Ranfurly_v20p7
+  - NE_Otago_v20p7
+  - Mosgiel_v20p7
+  - Balclutha_v20p7
+  - Dunedin_v20p7
+  - Murchison_v20p7
+  - Waitaki_v20p8
+  - Hakataramea_v20p8
+  - Karamea_v20p11
+  - Collingwood_v20p11
+  - SpringsJunction_v20p11
