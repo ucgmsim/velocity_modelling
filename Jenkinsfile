@@ -159,14 +159,6 @@ pipeline {
                                 sh "rm -rf ${test_output_dir}"
                             }
                         }
-                        always {
-                            sh """
-                               cd /mnt/mantle_data/jenkins/nzvm/nzcvm_data
-                               echo "Test complete. returning shared repo to main..."
-                               git checkout main
-                               git pull origin main
-                            """
-                        }
                     }
                 } // stage('Run regression tests')
             } // stages
