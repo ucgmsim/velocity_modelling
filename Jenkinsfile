@@ -23,14 +23,17 @@ pipeline {
                             git config --local --add safe.directory /mnt/mantle_data/jenkins/nzvm/nzcvm_data
 
                             git config pull.rebase false
-#                            git pull origin main
 
-                            # 1. Fetch latest history
-                            git fetch --all
+                            # To test the latest copy of nzcvm_data
+                            git pull origin main
 
-                            # 2. TIME TRAVEL: Force checkout the 'safe' Oct 15 commit
-                            echo "Reverting to safe commit 76be151..."
-                            git checkout 76be151
+                            # To test a specific commit, comment out above, and use below
+
+#                            # 1. Fetch latest history
+#                            git fetch --all
+#
+#                            # 2. TIME TRAVEL: Force checkout a specific commit
+#                            git checkout <commit hash>
 
                             # Clear any partial LFS downloads
                             git lfs prune
