@@ -24,7 +24,7 @@ pipeline {
 
                             git config pull.rebase false
 
-                            # To test the latest copy of nzcvm_data
+                            # To test the latest main branch of nzcvm_data
                             git pull origin main
 
                             # To test a specific commit, comment out above, and use below
