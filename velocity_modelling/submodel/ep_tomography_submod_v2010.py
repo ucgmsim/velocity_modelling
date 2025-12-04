@@ -114,6 +114,9 @@ def _apply_gtl(
     relative_depths: np.ndarray,
     qualities_vector: QualitiesVector,
     mesh_vector: MeshVector,
+    apply_fix: bool = False,
+    vst: float = None,
+    vpt: float = None,
 ):
     """
     Helper function to apply the GTL model to a set of points.
@@ -133,11 +136,20 @@ def _apply_gtl(
     gtl_mask = relative_depths <= 350.0
     if np.any(gtl_mask):
         z_indices_gtl = z_indices[gtl_mask]
-        vs_gtl = qualities_vector.vs[z_indices_gtl]
         relative_depths_gtl = relative_depths[gtl_mask]
-        vs_new, vp_new, rho_new = v30gtl_vectorized(
-            mesh_vector.vs30, vs_gtl, relative_depths_gtl, 350.0
-        )
+
+        if apply_fix:
+            vs_new, vp_new, rho_new = v30gtl_vectorized(
+                mesh_vector.vs30,
+                vst,
+                vpt,
+                relative_depths_gtl,
+                350.0,
+            )
+        else:
+            vs_new, vp_new, rho_new = v30gtl_vectorized(
+                mesh_vector.vs30, qualities_vector.vs[z_indices_gtl], relative_depths_gtl, 350.0
+            )
         qualities_vector.vs[z_indices_gtl] = vs_new
         qualities_vector.vp[z_indices_gtl] = vp_new
         qualities_vector.rho[z_indices_gtl] = rho_new
@@ -188,6 +200,15 @@ def main_vectorized(
             logging.DEBUG, f"Applying EP tomo (2010) model to {len(z_indices)} points"
         )
 
+    # Check flag from data object (defaults to False if not present)
+    apply_fix = getattr(nz_tomography_data, "apply_gtl_fix", False)
+
+    if logger is not None and apply_fix:
+        # Log once at debug level
+        logger.log(
+            logging.DEBUG, "Applying Ely(2010) GTL fix (c=1.5, fixed Vt, independent Vp)"
+        )
+
     # Convert surf_depth to meters (ascending order for searchsorted)
     surf_depth_ascending = (
         np.array(nz_tomography_data.surf_depth)[::-1] * 1000
@@ -235,6 +256,44 @@ def main_vectorized(
 
     # Apply GTL and offshore smoothing
     if nz_tomography_data.gtl:
+        vst = None
+        vpt = None
+        if apply_fix:
+            dem_elev = partial_global_surface_depths.depths[1]
+            trans_elev = dem_elev - 350.0
+            # Find indices for the transition elevation using the existing ascending depth array
+            count = len(surf_depth_ascending) - np.searchsorted(
+                surf_depth_ascending, trans_elev, side="right"
+            )
+            idx_above = max(0, min(count - 1, len(nz_tomography_data.surfaces) - 1))
+            idx_below = max(0, min(count, len(nz_tomography_data.surfaces) - 1))
+
+            dep_above = nz_tomography_data.surf_depth[idx_above] * 1000
+            dep_below = nz_tomography_data.surf_depth[idx_below] * 1000
+
+            # Calculate Vs Transition (Vst)
+            val_above_vs = interpolated_global_surface_values["vs"][idx_above]
+            val_below_vs = interpolated_global_surface_values["vs"][idx_below]
+
+            if dep_above == dep_below:
+                vst = val_above_vs
+            else:
+                vst = val_above_vs + (val_below_vs - val_above_vs) * (
+                        trans_elev - dep_above
+                ) / (dep_below - dep_above)
+
+            # Calculate Vp Transition (Vpt)
+            val_above_vp = interpolated_global_surface_values["vp"][idx_above]
+            val_below_vp = interpolated_global_surface_values["vp"][idx_below]
+
+            if dep_above == dep_below:
+                vpt = val_above_vp
+            else:
+                vpt = val_above_vp + (val_below_vp - val_above_vp) * (
+                        trans_elev - dep_above
+                ) / (dep_below - dep_above)
+
+
         if nz_tomography_data.special_offshore_tapering:
             # Determine if the offshore model should be applied (point-level condition)
             apply_offshore = (
@@ -253,6 +312,6 @@ def main_vectorized(
                     nz_tomography_data,
                 )
             else:
-                _apply_gtl(z_indices, relative_depths, qualities_vector, mesh_vector)
+                _apply_gtl(z_indices, relative_depths, qualities_vector, mesh_vector, vst, vpt)
         else:
-            _apply_gtl(z_indices, relative_depths, qualities_vector, mesh_vector)
+            _apply_gtl(z_indices, relative_depths, qualities_vector, mesh_vector, vst, vpt)
