@@ -210,7 +210,7 @@ class QualitiesVector:
             shifted_mesh_vector = mesh_vector
 
         else:
-            raise ValueError("User specified TOPO_TYPE not recognised, see readme.")
+            raise ValueError("User specified TOPO_TYPE not recognised, Must be see readme.")
 
         if in_any_basin_lat_lon:
             for i, in_basin in enumerate(in_basin_list):
@@ -237,6 +237,20 @@ class QualitiesVector:
             else shifted_mesh_vector.z
         )
         k_indices = np.arange(mesh_vector.nz)
+
+        # Determine effective model surface elevation
+        if topo_type == TopoTypes.BULLDOZED:
+            model_surface_elev = 0.0
+        elif topo_type == TopoTypes.TRUE:
+            model_surface_elev = partial_global_surface_depths.depths[1]  # DEM
+        else:
+            # For SQUASHED and SQUASHED_TAPERED
+            # We reconstruct the effective surface from the calculated z_values.
+            # mesh_vector.z contains relative grid depths (0, -h, -2h...)
+            # z_values contains absolute elevations
+            # Surface = Absolute_Z - Relative_Z (Relative Z is <= 0, so -(-h) = +h)
+            # We use the top point (index 0) for the reference.
+            model_surface_elev = z_values[0] - mesh_vector.z[0]
 
         # Precompute basin membership for all depths (robust to no basins)
         n_basins = len(in_basin_list)
@@ -310,6 +324,7 @@ class QualitiesVector:
                 mesh_vector,
                 in_any_basin_lat_lon,
                 on_boundary,
+                surface_elevation=model_surface_elev,
             )
 
         # Apply NaN masking for depths above the surface
@@ -534,6 +549,7 @@ class QualitiesVector:
         mesh_vector: MeshVector,
         in_any_basin_lat_lon: bool,
         on_boundary: bool,
+        surface_elevation: float = None,
     ):
         """
         Call the appropriate global sub-velocity models for multiple depths.
@@ -562,6 +578,9 @@ class QualitiesVector:
             Whether this lat-lon point is in any basin.
         on_boundary : bool
             Whether this point is on a model boundary.
+        surface_elevation : float, optional
+            Effective elevation of the model surface, used for relative depth calculations (e.g. for GTL).
+            Defaults to None (which implies DEM elevation in submodules if not provided).
         """
         # Sort by z_indices to preserve depth order
         order = np.argsort(z_indices)
@@ -613,6 +632,7 @@ class QualitiesVector:
                     in_any_basin_lat_lon,
                     on_boundary,
                     interpolated_global_surface_values,
+                    surface_elevation=surface_elevation,
                 )
             elif name == "canterbury1d_v2":
                 from velocity_modelling.submodel import canterbury1d_submod

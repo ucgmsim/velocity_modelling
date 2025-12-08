@@ -164,6 +164,7 @@ def main_vectorized(
     in_any_basin_lat_lon: bool,
     on_boundary: bool,
     interpolated_global_surface_values: dict,
+    surface_elevation: float = None,
     transition_depth: float = 350.0,
     logger: Optional[Logger] = None,
 ):
@@ -191,6 +192,9 @@ def main_vectorized(
         Flag indicating if the point is on the boundary.
     interpolated_global_surface_values : dict
         Dictionary containing the interpolated values for vp, vs, and rho.
+    surface_elevation : float, optional
+        The effective elevation of the model surface (for relative depth calculations).
+        If None, defaults to the DEM elevation.
     transition_depth : float, optional
         Depth at which the GTL transition occurs, by default 350.0.
     logger : Logger, optional
@@ -245,11 +249,19 @@ def main_vectorized(
         qualities_vector.vs[z_indices_subset] = values["vs"]
         qualities_vector.rho[z_indices_subset] = values["rho"]
 
+    # Determine reference surface for relative depth calculation
+    if surface_elevation is not None:
+        ref_surface = surface_elevation
+    else:
+        ref_surface = partial_global_surface_depths.depths[1]
+
     # Vectorized relative depth calculation
-    relative_depths = partial_global_surface_depths.depths[1] - depths
+    relative_depths = ref_surface - depths
+    # Vectorized relative depth calculation
 
     # Apply GTL and offshore smoothing
     if nz_tomography_data.gtl:
+
         dem_elev = partial_global_surface_depths.depths[1]
         trans_elev = dem_elev - transition_depth
         # Find indices for the transition elevation using the existing ascending depth array

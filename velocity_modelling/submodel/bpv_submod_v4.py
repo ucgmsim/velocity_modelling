@@ -73,7 +73,6 @@ def main_vectorized(
     vs30_taper_depth = 1000
     vs0 = 0.700
     vs_depth = 1.500
-    vs_ely_depth = 2.2818
 
     # Vectorized condition
     gtl_mask = (z_dem_relative < vs30_taper_depth) & (z_bpv_relative < ely_taper_depth)
@@ -94,7 +93,7 @@ def main_vectorized(
         ) * 1000  # Convert to m/s
 
         vs_new, vp_new, rho_new = v30gtl_vectorized(
-            vs_bpv_top, vs_ely_depth, z_bpv_relative_gtl, ely_taper_depth
+            vs_bpv_top, vs_full, vp_full, z_bpv_relative_gtl, ely_taper_depth
         )
         qualities_vector.vs[z_indices_gtl] = vs_new
         qualities_vector.vp[z_indices_gtl] = vp_new
