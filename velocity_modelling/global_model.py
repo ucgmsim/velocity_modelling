@@ -358,8 +358,6 @@ class TomographyData:
         The offshore distance surfaces data.
     offshore_basin_model_1d : VelocityModel1D
         The offshore 1D model data.
-    apply_gtl_fix : bool, optional
-        Flag to apply GTL fix. Default is False to maintain backward compatibility.
 
     Attributes
     ----------
@@ -398,7 +396,6 @@ class TomographyData:
         surfaces: list[dict[str, GlobalSurfaceRead]],
         offshore_distance_surface: GlobalSurfaceRead,
         offshore_basin_model_1d: VelocityModel1D,
-        apply_gtl_fix: bool = False,
     ):
         """
         Initialize the TomographyData.
@@ -413,7 +410,6 @@ class TomographyData:
         self.vs30 = vs30
         self.offshore_distance_surface = offshore_distance_surface
         self.offshore_basin_model_1d = offshore_basin_model_1d
-        self.apply_gtl_fix = apply_gtl_fix
 
     def calculate_vs30_from_tomo_vs30_surface(self, mesh_vector: MeshVector) -> None:
         """

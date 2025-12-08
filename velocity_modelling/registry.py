@@ -879,20 +879,6 @@ class CVMRegistry:
             )
         offshore_basin_model_1d = self.load_vm1d_submodel(offshore_v1d_info["data"])
 
-        # Determine if GTL fix should be applied (Version >= 3.01)
-        # self.version format is like "2p09" or "3p01"
-        try:
-            parts = self.version.replace("p", ".").split(".")
-            major = int(parts[0])
-            minor = int(parts[1]) if len(parts) > 1 else 0
-            # Fix applies for version 3.01 and above
-            apply_gtl_fix = (major > 3) or (major == 3 and minor >= 1)
-        except (ValueError, IndexError):
-            # Fallback for non-standard version strings
-            apply_gtl_fix = False
-            self.logger.log(logging.WARNING,
-                            f"Could not parse version '{self.version}'. Defaulting apply_gtl_fix to False.")
-
         return TomographyData(
             name=tomo_name,
             surf_depth=surf_depth,
@@ -902,7 +888,6 @@ class CVMRegistry:
             surfaces=surfaces,
             offshore_distance_surface=offshore_distance_surface,
             offshore_basin_model_1d=offshore_basin_model_1d,
-            apply_gtl_fix=apply_gtl_fix
         )
 
     def _load_hdf5_tomo_surface_data(

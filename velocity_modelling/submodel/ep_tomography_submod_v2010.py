@@ -202,14 +202,6 @@ def main_vectorized(
             logging.DEBUG, f"Applying EP tomo (2010) model to {len(z_indices)} points"
         )
 
-    # Check flag from data object (defaults to False if not present)
-    apply_fix = getattr(nz_tomography_data, "apply_gtl_fix", False)
-
-    if logger is not None and apply_fix:
-        # Log once at debug level
-        logger.log(
-            logging.DEBUG, "Applying Ely(2010) GTL fix (c=1.5, fixed Vt, independent Vp)"
-        )
 
     # Convert surf_depth to meters (ascending order for searchsorted)
     surf_depth_ascending = (
