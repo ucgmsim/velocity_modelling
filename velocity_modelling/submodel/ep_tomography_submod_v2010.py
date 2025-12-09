@@ -254,7 +254,6 @@ def main_vectorized(
 
     # Vectorized relative depth calculation
     relative_depths = ref_surface - depths
-    # Vectorized relative depth calculation
 
     # Apply GTL and offshore smoothing
     if nz_tomography_data.gtl:
