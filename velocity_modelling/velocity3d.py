@@ -164,6 +164,9 @@ class QualitiesVector:
             in_basin.in_basin_lat_lon for in_basin in in_basin_list
         )
 
+        # Taper distance for SQUASHED_TAPERED (used in thickness calc)
+        taper_dist = 1.0
+
         if topo_type == TopoTypes.SQUASHED:
             depth_change = -mesh_vector.z
             shifted_mesh_vector = mesh_vector.copy()
@@ -172,7 +175,6 @@ class QualitiesVector:
             )
 
         elif topo_type == TopoTypes.SQUASHED_TAPERED:
-            taper_dist = 1.0
             depth_change = -mesh_vector.z
 
             # Calculate denominator - check if it's a scalar or array
@@ -210,7 +212,9 @@ class QualitiesVector:
             shifted_mesh_vector = mesh_vector
 
         else:
-            raise ValueError("User specified TOPO_TYPE not recognised, Must be see readme.")
+            raise ValueError(
+                "User specified TOPO_TYPE not recognised, Must be see readme."
+            )
 
         if in_any_basin_lat_lon:
             for i, in_basin in enumerate(in_basin_list):
@@ -238,19 +242,41 @@ class QualitiesVector:
         )
         k_indices = np.arange(mesh_vector.nz)
 
-        # Determine effective model surface elevation
+        # ---------------------------------------------------------------------
+        # Determine GTL Parameters based on Topography Type
+        # ---------------------------------------------------------------------
+        dem_elev = partial_global_surface_depths.depths[1]
+
         if topo_type == TopoTypes.BULLDOZED:
+            # Surface is flattened to 0.0
             model_surface_elev = 0.0
+            # Thickness is reduced by the amount of removed terrain
+            # (Effective thickness = 350 - Terrain Height)
+            gtl_thickness = 350.0 - dem_elev
+
+        elif topo_type == TopoTypes.SQUASHED_TAPERED:
+            # Surface is the DEM (mapped by coordinate transform)
+            model_surface_elev = dem_elev
+            # Thickness is compressed due to coordinate tapering
+            # Formula derived from z_abs = DEM - d(1 + 1/k) where k=taper_dist
+            gtl_thickness = 350.0 / (1.0 + 1.0 / taper_dist)
+
+        elif topo_type == TopoTypes.SQUASHED:
+            # Surface is the DEM (rigid vertical shift)
+            model_surface_elev = dem_elev
+            # Thickness is preserved
+            gtl_thickness = 350.0
+
         elif topo_type == TopoTypes.TRUE:
-            model_surface_elev = partial_global_surface_depths.depths[1]  # DEM
+            # Surface is the DEM
+            model_surface_elev = dem_elev
+            # Thickness is preserved
+            gtl_thickness = 350.0
+
         else:
-            # For SQUASHED and SQUASHED_TAPERED
-            # We reconstruct the effective surface from the calculated z_values.
-            # mesh_vector.z contains relative grid depths (0, -h, -2h...)
-            # z_values contains absolute elevations
-            # Surface = Absolute_Z - Relative_Z (Relative Z is <= 0, so -(-h) = +h)
-            # We use the top point (index 0) for the reference.
-            model_surface_elev = z_values[0] - mesh_vector.z[0]
+            # Fallback (should be covered by earlier check)
+            model_surface_elev = dem_elev
+            gtl_thickness = 350.0
 
         # Precompute basin membership for all depths (robust to no basins)
         n_basins = len(in_basin_list)
@@ -297,6 +323,8 @@ class QualitiesVector:
                     z_subset,
                     basin_ind,
                     k_subset,
+                    surface_elevation=model_surface_elev,
+                    gtl_thickness=gtl_thickness,
                 )
 
         # Process depths not in any basin
@@ -325,6 +353,7 @@ class QualitiesVector:
                 in_any_basin_lat_lon,
                 on_boundary,
                 surface_elevation=model_surface_elev,
+                gtl_thickness=gtl_thickness,
             )
 
         # Apply NaN masking for depths above the surface
@@ -550,6 +579,7 @@ class QualitiesVector:
         in_any_basin_lat_lon: bool,
         on_boundary: bool,
         surface_elevation: float = None,
+        gtl_thickness: float = 350.0,
     ):
         """
         Call the appropriate global sub-velocity models for multiple depths.
@@ -581,6 +611,8 @@ class QualitiesVector:
         surface_elevation : float, optional
             Effective elevation of the model surface, used for relative depth calculations (e.g. for GTL).
             Defaults to None (which implies DEM elevation in submodules if not provided).
+        gtl_thickness : float, optional
+            Effective thickness of the Geotechnical Layer. Defaults to 350.0.
         """
         # Sort by z_indices to preserve depth order
         order = np.argsort(z_indices)
@@ -633,6 +665,7 @@ class QualitiesVector:
                     on_boundary,
                     interpolated_global_surface_values,
                     surface_elevation=surface_elevation,
+                    gtl_thickness=gtl_thickness,
                 )
             elif name == "canterbury1d_v2":
                 from velocity_modelling.submodel import canterbury1d_submod
@@ -657,6 +690,8 @@ class QualitiesVector:
         ind_above: int,
         basin_num: int,
         z_indices: np.ndarray,
+        surface_elevation: float = None,
+        gtl_thickness: float = 350.0,
     ):
         """
         Call the appropriate basin sub-velocity models for multiple depths.
@@ -683,6 +718,10 @@ class QualitiesVector:
             Basin identifier.
         z_indices : np.ndarray
             Indices of depths in the mesh.
+        surface_elevation : float, optional
+            Effective elevation of the model surface. Defaults to None.
+        gtl_thickness : float, optional
+            Effective thickness of the Geotechnical Layer. Defaults to 350.0.
         """
 
         basin_data = partial_basin_surface_depths.basin
@@ -755,6 +794,8 @@ class QualitiesVector:
                 self,
                 partial_basin_surface_depths,
                 partial_global_surface_depths,
+                surface_elevation=surface_elevation,
+                ely_taper_depth=gtl_thickness,
             )
         else:
             raise ValueError(f"Error: Submodel {submodel_name} not found in registry.")
@@ -770,6 +811,8 @@ class QualitiesVector:
         depths: np.ndarray,  # Array of depths
         basin_num: int,
         z_indices: np.ndarray,  # Array of z indices
+        surface_elevation: float = None,
+        gtl_thickness: float = 350.0,
     ):
         """
         Assign velocities and densities for points within a basin.
@@ -794,6 +837,10 @@ class QualitiesVector:
             Basin identifier.
         z_indices : np.ndarray
             Indices of depths in the mesh.
+        surface_elevation : float, optional
+            Effective elevation of the model surface. Defaults to None
+        gtl_thickness : float, optional
+            Effective thickness of the Geotechnical Layer. Defaults to 350.0.
         """
 
         # Vectorized determination of surfaces above
@@ -821,6 +868,8 @@ class QualitiesVector:
                 idx,
                 basin_num,
                 z_indices_subset,
+                surface_elevation=surface_elevation,
+                gtl_thickness=gtl_thickness,
             )
 
     def nan_sub_mod_vectorized(self, z_indices: np.ndarray):

@@ -74,7 +74,7 @@ def vs_from_vp_brocher(vp: float | np.ndarray) -> float | np.ndarray:
 
 @numba.jit(nopython=True)
 def v30gtl_vectorized(
-    vs30: float | np.ndarray, vst: float,  vpt: float, z: np.ndarray, zt: float
+    vs30: float | np.ndarray, vst: float, vpt: float, z: np.ndarray, zt: float
 ):
     """
     Vectorized VS30 Geotechnical Layer (GTL) velocity adjustment based on Ely (2010).

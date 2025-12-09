@@ -116,7 +116,7 @@ def _apply_gtl(
     mesh_vector: MeshVector,
     vs_transition: float,
     vp_transition: float,
-    transition_depth: float = 350.0,
+    zt: float = 350.0,
 ):
     """
     Helper function to apply the GTL model to a set of points.
@@ -132,22 +132,21 @@ def _apply_gtl(
     mesh_vector : MeshVector
         Struct containing mesh information such as latitude, longitude, and vs30.
     vs_transition : float
-        Vs at the transition depth.
+        Vs at the transition depth (anchor point).
     vp_transition : float
-        Vp at the transition depth.
-    transition_depth : float, optional
-        Depth at which the GTL transition occurs, by default 350.0.
+        Vp at the transition depth (anchor point).
+    zt : float, optional
+        Effective thickness of the Geotechnical Layer (taper depth), by default 350.0.
 
 
     """
-    gtl_mask = relative_depths <= transition_depth
+    gtl_mask = relative_depths <= zt
     if np.any(gtl_mask):
         z_indices_gtl = z_indices[gtl_mask]
         relative_depths_gtl = relative_depths[gtl_mask]
 
-
         vs_new, vp_new, rho_new = v30gtl_vectorized(
-            mesh_vector.vs30, vs_transition, vp_transition, relative_depths_gtl, transition_depth
+            mesh_vector.vs30, vs_transition, vp_transition, relative_depths_gtl, zt
         )
         qualities_vector.vs[z_indices_gtl] = vs_new
         qualities_vector.vp[z_indices_gtl] = vp_new
@@ -165,7 +164,7 @@ def main_vectorized(
     on_boundary: bool,
     interpolated_global_surface_values: dict,
     surface_elevation: float = None,
-    transition_depth: float = 350.0,
+    gtl_thickness: float = 350.0,
     logger: Optional[Logger] = None,
 ):
     """
@@ -193,10 +192,9 @@ def main_vectorized(
     interpolated_global_surface_values : dict
         Dictionary containing the interpolated values for vp, vs, and rho.
     surface_elevation : float, optional
-        The effective elevation of the model surface (for relative depth calculations).
-        If None, defaults to the DEM elevation.
-    transition_depth : float, optional
-        Depth at which the GTL transition occurs, by default 350.0.
+        Effective elevation of the model surface. Defaults to DEM if None.
+    gtl_thickness : float, optional
+        Effective thickness of the Geotechnical Layer (zt). Defaults to 350.0.
     logger : Logger, optional
         Logger instance for logging messages.
 
@@ -205,7 +203,6 @@ def main_vectorized(
         logger.log(
             logging.DEBUG, f"Applying EP tomo (2010) model to {len(z_indices)} points"
         )
-
 
     # Convert surf_depth to meters (ascending order for searchsorted)
     surf_depth_ascending = (
@@ -261,9 +258,10 @@ def main_vectorized(
 
     # Apply GTL and offshore smoothing
     if nz_tomography_data.gtl:
-
+        # Determine anchor elevation (where we grab the tomography value)
         dem_elev = partial_global_surface_depths.depths[1]
-        trans_elev = dem_elev - transition_depth
+        trans_elev = dem_elev - 350.0
+
         # Find indices for the transition elevation using the existing ascending depth array
         count = len(surf_depth_ascending) - np.searchsorted(
             surf_depth_ascending, trans_elev, side="right"
@@ -275,12 +273,28 @@ def main_vectorized(
         dep_below = nz_tomography_data.surf_depth[idx_below] * 1000
 
         # Helper for linear interpolation of scalars
-        def _interp_scalar(val_above, val_below):
+        def _interp_scalar(val_above: float, val_below: float):
+            """
+            Linear interpolation helper for scalar values.
+
+            Parameters
+            ----------
+            val_above : float
+                Value at dep_above
+
+            val_below : float
+                Value at dep_below
+            Returns
+            -------
+            float
+                Interpolated value
+            """
+
             if dep_above == dep_below:
                 return val_above
-            return val_above + (val_below - val_above) * (
-                    trans_elev - dep_above
-            ) / (dep_below - dep_above)
+            return val_above + (val_below - val_above) * (trans_elev - dep_above) / (
+                dep_below - dep_above
+            )
 
         # 1. Calculate Vs Transition (Vst)
         vs_transition = _interp_scalar(
@@ -294,25 +308,44 @@ def main_vectorized(
             interpolated_global_surface_values["vp"][idx_below],
         )
 
+        # Ensure GTL is only applied if thickness is positive
+        eff_thickness = max(0.0, gtl_thickness)
 
-        if nz_tomography_data.special_offshore_tapering:
-            # Determine if the offshore model should be applied (point-level condition)
-            apply_offshore = (
-                (mesh_vector.vs30 < 100)
-                and (not in_any_basin_lat_lon)
-                and (not on_boundary)
-                and (mesh_vector.distance_from_shoreline > 0)
-            )
-
-            if apply_offshore:
-                offshore_basinmodel_vectorized(
-                    mesh_vector.distance_from_shoreline,
-                    depths,
-                    qualities_vector,
-                    z_indices,
-                    nz_tomography_data,
+        if eff_thickness > 0:
+            if nz_tomography_data.special_offshore_tapering:
+                # Determine if the offshore model should be applied (point-level condition)
+                apply_offshore = (
+                    (mesh_vector.vs30 < 100)
+                    and (not in_any_basin_lat_lon)
+                    and (not on_boundary)
+                    and (mesh_vector.distance_from_shoreline > 0)
                 )
+
+                if apply_offshore:
+                    offshore_basinmodel_vectorized(
+                        mesh_vector.distance_from_shoreline,
+                        depths,
+                        qualities_vector,
+                        z_indices,
+                        nz_tomography_data,
+                    )
+                else:
+                    _apply_gtl(
+                        z_indices,
+                        relative_depths,
+                        qualities_vector,
+                        mesh_vector,
+                        vs_transition,
+                        vp_transition,
+                        zt=eff_thickness,
+                    )
             else:
-                _apply_gtl(z_indices, relative_depths, qualities_vector, mesh_vector, vs_transition, vp_transition, transition_depth)
-        else:
-            _apply_gtl(z_indices, relative_depths, qualities_vector, mesh_vector, vs_transition, vp_transition, transition_depth)
+                _apply_gtl(
+                    z_indices,
+                    relative_depths,
+                    qualities_vector,
+                    mesh_vector,
+                    vs_transition,
+                    vp_transition,
+                    zt=eff_thickness,
+                )
