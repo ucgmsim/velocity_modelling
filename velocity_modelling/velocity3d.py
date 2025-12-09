@@ -213,7 +213,7 @@ class QualitiesVector:
 
         else:
             raise ValueError(
-                "User specified TOPO_TYPE not recognised, Must be see readme."
+                "User specified TOPO_TYPE not recognised. Must be one of 'TRUE', 'BULLDOZED', 'SQUASHED', or 'SQUASHED_TAPERED'. See readme for details."
             )
 
         if in_any_basin_lat_lon:
