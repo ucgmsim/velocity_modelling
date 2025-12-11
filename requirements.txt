@@ -27,4 +27,4 @@ threadpoolctl
 cartopy
 
 # In-house dependencies
-qcore @ git+https://github.com/ucgmsim/qcore.git
+qcore-utils
