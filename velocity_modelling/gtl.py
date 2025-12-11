@@ -94,8 +94,6 @@ def v30gtl_vectorized(
     zt : float
         Taper depth (m).
 
-
-
     Returns
     -------
     tuple
