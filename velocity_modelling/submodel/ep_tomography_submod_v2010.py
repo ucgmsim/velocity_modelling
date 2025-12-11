@@ -246,14 +246,12 @@ def main_vectorized(
         qualities_vector.vs[z_indices_subset] = values["vs"]
         qualities_vector.rho[z_indices_subset] = values["rho"]
 
-
     # Apply GTL and offshore smoothing
     if nz_tomography_data.gtl:
-
         # PART 1: Determine transition velocities at DEM - 350m (anchor point)
         # Determine anchor elevation (where we grab the tomography value)
         dem_elev = partial_global_surface_depths.depths[1]
-        trans_elev = dem_elev - 350.0 # 350 m below the actual terrain surface
+        trans_elev = dem_elev - 350.0  # 350 m below the actual terrain surface
 
         # Find indices for the transition elevation using the existing ascending depth array
         count = len(surf_depth_ascending) - np.searchsorted(
@@ -316,7 +314,7 @@ def main_vectorized(
         # Effective GTL thickness: How thick the layer is in the grid
         eff_thickness = max(0.0, gtl_thickness)
 
-        if eff_thickness > 0: # Only apply GTL if thickness is positive
+        if eff_thickness > 0:  # Only apply GTL if thickness is positive
             if nz_tomography_data.special_offshore_tapering:
                 # Determine if the offshore model should be applied (point-level condition)
                 apply_offshore = (
