@@ -258,8 +258,8 @@ def main_vectorized(
         count = len(surf_depth_ascending) - np.searchsorted(
             surf_depth_ascending, trans_elev, side="right"
         )
-        idx_above = max(0, min(count - 1, len(nz_tomography_data.surfaces) - 1))
-        idx_below = max(0, min(count, len(nz_tomography_data.surfaces) - 1))
+        idx_above = np.clip(count - 1, 0, len(nz_tomography_data.surfaces) - 1)
+        idx_below = np.clip(count, 0, len(nz_tomography_data.surfaces) - 1)
 
         dep_above = nz_tomography_data.surf_depth[idx_above] * 1000
         dep_below = nz_tomography_data.surf_depth[idx_below] * 1000
