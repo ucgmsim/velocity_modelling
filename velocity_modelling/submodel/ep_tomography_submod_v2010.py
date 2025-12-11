@@ -246,20 +246,14 @@ def main_vectorized(
         qualities_vector.vs[z_indices_subset] = values["vs"]
         qualities_vector.rho[z_indices_subset] = values["rho"]
 
-    # Determine reference surface for relative depth calculation
-    if surface_elevation is not None:
-        ref_surface = surface_elevation
-    else:
-        ref_surface = partial_global_surface_depths.depths[1]
-
-    # Vectorized relative depth calculation
-    relative_depths = ref_surface - depths
 
     # Apply GTL and offshore smoothing
     if nz_tomography_data.gtl:
+
+        # PART 1: Determine transition velocities at DEM - 350m (anchor point)
         # Determine anchor elevation (where we grab the tomography value)
         dem_elev = partial_global_surface_depths.depths[1]
-        trans_elev = dem_elev - 350.0
+        trans_elev = dem_elev - 350.0 # 350 m below the actual terrain surface
 
         # Find indices for the transition elevation using the existing ascending depth array
         count = len(surf_depth_ascending) - np.searchsorted(
@@ -295,6 +289,8 @@ def main_vectorized(
                 dep_below - dep_above
             )
 
+        # To find the correct "target" bedrock velocity (vst, vpt)
+        # We must ask the tomography model what the velocity is at DEM - 350m?
         # 1. Calculate Vs Transition (Vst)
         vs_transition = _interp_scalar(
             interpolated_global_surface_values["vs"][idx_above],
@@ -307,10 +303,20 @@ def main_vectorized(
             interpolated_global_surface_values["vp"][idx_below],
         )
 
-        # Ensure GTL is only applied if thickness is positive
+        # PART 2: Apply GTL correction to all points within the GTL-layer
+        # Determine reference surface for relative depth calculation
+        if surface_elevation is not None:
+            ref_surface = surface_elevation
+        else:
+            ref_surface = partial_global_surface_depths.depths[1]
+
+        # Vectorized relative depth calculation: How far from the effective grid surface
+        relative_depths = ref_surface - depths
+
+        # Effective GTL thickness: How thick the layer is in the grid
         eff_thickness = max(0.0, gtl_thickness)
 
-        if eff_thickness > 0:
+        if eff_thickness > 0: # Only apply GTL if thickness is positive
             if nz_tomography_data.special_offshore_tapering:
                 # Determine if the offshore model should be applied (point-level condition)
                 apply_offshore = (
