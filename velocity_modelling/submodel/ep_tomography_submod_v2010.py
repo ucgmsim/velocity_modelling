@@ -291,10 +291,9 @@ def main_vectorized(
         # To find the correct "target" bedrock velocity (vst, vpt)
         # We must ask the tomography model what the velocity is at DEM - 350m (GTL depth)?
         # 1. Calculate Vs Transition (Vst)
-        vs_transition = _interp_scalar(
-            interpolated_global_surface_values["vs"][idx_above],
-            interpolated_global_surface_values["vs"][idx_below],
-        )
+        vs_above = interpolated_global_surface_values["vs"][idx_above]
+        vs_below = interpolated_global_surface_values["vs"][idx_below]
+        vs_transition = np.interp(trans_elev, [dep_above, dep_below], [val_above, val_below]) 
 
         # 2. Calculate Vp Transition (Vpt)
         vp_transition = _interp_scalar(
