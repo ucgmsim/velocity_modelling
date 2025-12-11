@@ -248,10 +248,11 @@ def main_vectorized(
 
     # Apply GTL and offshore smoothing
     if nz_tomography_data.gtl:
-        # PART 1: Determine transition velocities at DEM - 350m (anchor point)
+
+        # PART 1: Determine transition velocities at DEM - zt_param (anchor point)
         # Determine anchor elevation (where we grab the tomography value)
         dem_elev = partial_global_surface_depths.depths[1]
-        trans_elev = dem_elev - 350.0  # 350 m below the actual terrain surface
+        trans_elev = dem_elev - nz_tomography_data.gtl_depth  # in metres.
 
         # Find indices for the transition elevation using the existing ascending depth array
         count = len(surf_depth_ascending) - np.searchsorted(
@@ -272,9 +273,9 @@ def main_vectorized(
             ----------
             val_above : float
                 Value at dep_above
-
             val_below : float
                 Value at dep_below
+
             Returns
             -------
             float
@@ -311,8 +312,8 @@ def main_vectorized(
         # Vectorized relative depth calculation: How far from the effective grid surface
         relative_depths = ref_surface - depths
 
-        # Effective GTL thickness: How thick the layer is in the grid
-        eff_thickness = max(0.0, gtl_thickness)
+        # Effective GTL thickness: prefer tomography object's thickness, fall back to function arg
+        eff_thickness = max(0.0, nz_tomography_data.gtl_depth)
 
         if eff_thickness > 0:  # Only apply GTL if thickness is positive
             if nz_tomography_data.special_offshore_tapering:

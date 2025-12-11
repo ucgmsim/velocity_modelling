@@ -126,7 +126,7 @@ def v30gtl_vectorized(
     # Compute vp from vs using Brocher correlation (vectorized)
     vp = f * vpt + g * vp_from_vs_brocher(vs30_kms)
 
-    # Compute rho from vp using Nafe-Drake correlation (vectorized)
+    # Compute rho from vp using Brocher (Nafe-Drake) correlation (vectorized)
     rho = rho_from_vp_brocher(vp)
 
     return vs, vp, rho
