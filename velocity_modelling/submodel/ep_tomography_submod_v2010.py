@@ -296,10 +296,9 @@ def main_vectorized(
         vs_transition = np.interp(trans_elev, [dep_above, dep_below], [val_above, val_below]) 
 
         # 2. Calculate Vp Transition (Vpt)
-        vp_transition = _interp_scalar(
-            interpolated_global_surface_values["vp"][idx_above],
-            interpolated_global_surface_values["vp"][idx_below],
-        )
+        vp_above = interpolated_global_surface_values["vp"][idx_above]
+        vp_below = interpolated_global_surface_values["vp"][idx_below]
+        vp_transition = np.interp(trans_elev, [dep_above, dep_below], [val_above, val_below])
 
         # PART 2: Apply GTL correction to all points within the GTL-layer
         # Determine reference surface for relative depth calculation
