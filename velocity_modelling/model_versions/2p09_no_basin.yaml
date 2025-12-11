@@ -1,0 +1,11 @@
+surfaces:
+  - path: surface/NZ_DEM_HD.h5
+    submodel: ep_tomography_submod_v2010
+
+tomography:
+  - name: EP2020
+    vs30: nz_with_offshore
+    special_offshore_tapering: true
+    GTL: true
+
+

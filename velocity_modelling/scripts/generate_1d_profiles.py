@@ -8,12 +8,10 @@ Intended for use with the NZCVM velocity modelling framework.
 
 This script is part of the velocity_modelling package and is designed to be run from the command line.
 Usage:
-    python generate_1d_profiles.py --out-dir <output_directory> --model-version <version> --location-csv <csv_file>
-    --min-vs <min_vs> --topo-type <topo_type> [--custom-depth <depth_file>] [--nzcvm-registry <registry_file>]
-    [--data-root <data_root>] [--log-level <log_level>]
+    python generate_1d_profiles.py <location_csv> [options]
 
 Example:
-    python generate_1d_profiles.py --out-dir ./profiles --model-version 2.07 --location-csv locations.csv --min-vs 0.2 --topo-type TRUE
+    python generate_1d_profiles.py locations.csv --model-version 2.07 --min-vs 0.2 --topo-type TRUE
 
     where, locations.csv is a CSV file with columns: id, lon, lat, zmin, zmax, spacing. zmin, zmax and spacing are in kilometers.
 
@@ -21,6 +19,9 @@ Example:
         id, lon, lat, zmin, zmax, spacing
         ADCS, 171.747604, -43.902401,0.0, 3.0, 0.1
         ...
+
+By default, output files are written to the same directory as the location CSV file. Use --out-dir to override.
+
 If the --custom-depth option is provided, it should point to a text file with depth points in kilometers, one per line, such as:
         0.0
         0.1
@@ -82,13 +83,14 @@ from tqdm import tqdm
 from qcore import cli
 from velocity_modelling.basin_model import (
     BasinData,
+    BasinMembership,
     InBasin,
-    InBasinGlobalMesh,
     PartialBasinSurfaceDepths,
 )
 from velocity_modelling.constants import TopoTypes, get_data_root
 from velocity_modelling.geometry import (
     MeshVector,
+    PartialGlobalMesh,
     gen_full_model_grid_great_circle,
 )
 from velocity_modelling.global_model import (
@@ -342,28 +344,27 @@ def write_profile_surface_depths(
 
 @cli.from_docstring(app)
 def generate_1d_profiles(
-    out_dir: Annotated[
-        Path, typer.Option(file_okay=False, help="Output directory for profile files")
-    ],
-    model_version: Annotated[str, typer.Option(help="Version of the model to use")],
     location_csv: Annotated[
         Path,
-        typer.Option(
+        typer.Argument(
             exists=True,
             dir_okay=False,
-            help="CSV file with profile parameters (id, lon, lat, zmin, zmax, spacing)",
         ),
     ],
-    min_vs: Annotated[float, typer.Option(help="Minimum shear wave velocity")] = 0.0,
-    topo_type: Annotated[
-        str, typer.Option(help="Topography type")
-    ] = TopoTypes.TRUE.name,
+    out_dir: Annotated[
+        Path | None,
+        typer.Option(
+            file_okay=False,
+        ),
+    ] = None,
+    model_version: str = "2.09",
+    min_vs: float = 0.0,
+    topo_type: str = TopoTypes.TRUE.name,
     custom_depth: Annotated[
         Path | None,
         typer.Option(
             exists=True,
             dir_okay=False,
-            help="Text file with custom depth points (overrides zmin, zmax, spacing in location_csv)",
         ),
     ] = None,
     nzcvm_registry: Annotated[
@@ -371,7 +372,6 @@ def generate_1d_profiles(
         typer.Option(
             exists=False,
             dir_okay=False,
-            help="Path to nzcvm_registry.yaml (default: nzcvm_data/nzcvm_registry.yaml",
         ),
     ] = None,
     nzcvm_data_root: Annotated[
@@ -379,10 +379,9 @@ def generate_1d_profiles(
         typer.Option(
             file_okay=False,
             exists=False,  # will validate later
-            help="Override the default DATA_ROOT directory",
         ),
     ] = None,
-    log_level: Annotated[str, typer.Option(help="Logging level")] = "INFO",
+    log_level: str = "INFO",
 ) -> None:
     """
     Generate multiple 1D velocity profiles based on input coordinates and depth parameters.
@@ -396,21 +395,22 @@ def generate_1d_profiles(
 
     Parameters
     ----------
-    out_dir : Path
-        Path to the output directory where profile files will be written.
-    model_version : str
-        Version of the model to use.
     location_csv : Path
         Path to the CSV file containing profile parameters (id, lon, lat, zmin, zmax, spacing).
+    out_dir : Path | None, optional
+        Path to the output directory where profile files will be written.
+        If None, uses the parent directory of the location CSV file.
+    model_version : str, optional
+        Version of the model to use. Default is "2.09".
     min_vs : float, optional
         Minimum shear wave velocity (default: 0.0).
     topo_type : str, optional
         Topography type (default: TRUE).
-    custom_depth : Path, optional
+    custom_depth : Path | None, optional
         Path to the text file containing custom depth points (overrides zmin, zmax, spacing in CSV).
-    nzcvm_registry : Path, optional
+    nzcvm_registry : Path | None, optional
         Path to the model registry file (default: nzcvm_data/nzcvm_registry.yaml).
-    nzcvm_data_root : Path, optional
+    nzcvm_data_root : Path | None, optional
         Override the default nzcvm_data directory.
     log_level : str, optional
         Logging level for the script (default: "INFO").
@@ -431,6 +431,13 @@ def generate_1d_profiles(
     logger.setLevel(numeric_level)
     logger.log(logging.DEBUG, f"Logger initialized with level {log_level}")
     logger.log(logging.INFO, "Beginning multiple profiles generation")
+
+    # Set default output directory to parent of location CSV if not specified
+    if out_dir is None:
+        out_dir = location_csv.parent
+        logger.log(logging.INFO, f"Using default output directory: {out_dir}")
+    else:
+        logger.log(logging.INFO, f"Using specified output directory: {out_dir}")
 
     # Resolve data root path, giving precedence to the CLI argument
     try:
@@ -521,13 +528,31 @@ def generate_1d_profiles(
             raise ValueError(
                 f"Profile {row['id']}: spacing ({row['spacing']}) must be positive"
             )
+
+    # Read custom depth points if provided
     depth_values = None
     if custom_depth:
         depth_values = read_depth_points_text_file(custom_depth, logger)
+
     logger.log(logging.INFO, "Loading model data")
     vm1d_data, nz_tomography_data, global_surfaces, basin_data_list = (
         cvm_registry.load_all_global_data()
     )
+
+    # PRE-COMPUTE BASIN MEMBERSHIP FOR ALL PROFILES
+    logger.log(logging.INFO, "Pre-computing basin membership for all profiles")
+
+    basin_membership = BasinMembership(
+        basin_data_list,
+        smooth_boundary=nz_tomography_data.smooth_boundary,
+        logger=logger,
+    )
+    profile_basin_membership = basin_membership.check_stations(
+        df["lat"].values, df["lon"].values
+    )
+
+    logger.log(logging.INFO, f"Basin membership computed for {len(df)} profiles")
+
     for i in tqdm(range(len(df)), desc="Generating profiles", unit="profile"):
         logger.log(logging.INFO, f"Generating profile {i + 1} of {len(df)}")
 
@@ -567,37 +592,33 @@ def generate_1d_profiles(
             / model_extent["h_depth"]
             + 0.5
         )
+
+        # Generate mesh (only for depth calculation, not basin membership)
         global_mesh = gen_full_model_grid_great_circle(model_extent, logger)
-        logger.log(logging.INFO, "Pre-processing basin membership")
-        in_basin_mesh, partial_global_mesh_list = (
-            InBasinGlobalMesh.preprocess_basin_membership(
-                global_mesh,
-                basin_data_list,
-                logger,
-                smooth_bound=nz_tomography_data.smooth_boundary,
-            )
-        )
         if depth_values:
             global_mesh.nz = len(depth_values)
             logger.log(
                 logging.DEBUG,
                 f"Number of model points - nx: {global_mesh.nx}, ny: {global_mesh.ny}, nz: {global_mesh.nz}",
             )
-            global_mesh.z = np.array([-1000 * dep for dep in depth_values])  # in meters
+            global_mesh.z = np.array([-1000 * dep for dep in depth_values])
 
-        partial_global_mesh = partial_global_mesh_list[
-            0
-        ]  # Use the first mesh for the profile
-        basin_indices = in_basin_mesh.get_basin_membership(
-            0, 0
-        )  # Get basin indices for the profile location
+        basin_indices = profile_basin_membership[i]
+
+        # Create InBasin objects
         in_basin_list = [
             InBasin(basin_data, len(global_mesh.z)) for basin_data in basin_data_list
         ]
+
+        # Mark basin membership using pre-computed results
         for basin_idx in basin_indices:
             if basin_idx >= 0:
                 in_basin_list[basin_idx].in_basin_lat_lon = True
+
+        # Create mesh vector and initialize surface depths
+        partial_global_mesh = PartialGlobalMesh(global_mesh, 0)
         mesh_vector = MeshVector(partial_global_mesh, 0)
+
         partial_global_surface_depths = PartialGlobalSurfaceDepths(len(global_surfaces))
         partial_basin_surface_depths = [
             PartialBasinSurfaceDepths(basin_data) for basin_data in basin_data_list
@@ -613,7 +634,7 @@ def generate_1d_profiles(
             partial_global_surface_depths,
             partial_basin_surface_depths,
             in_basin_list,
-            in_basin_mesh,
+            basin_membership,
             vm_params["topo_type"],
         )
         write_profiles(

@@ -12,6 +12,7 @@ This system is used by multiple tools:
 - `generate_3d_model.py` for creating 3D velocity models
 - `generate_1d_profiles.py` for extracting 1D velocity profiles
 - `extract_cross_section.py` for cross-section analysis
+- `generate_thresholds.py` for threshold values generation
 
 ## Model Version Files
 

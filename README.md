@@ -14,6 +14,7 @@ This codebase provides tools to:
 - Generate 3D velocity models from various geophysical datasets
 - Extract 1D velocity profiles at specific locations
 - Create cross-sections from 3D velocity models
+- Compute threshold values (Vs30, Vs500, Z1.0, Z2.5) for station locations
 - Process and integrate multiple data sources (tomography, basin models, surface geology)
 
 The NZCVM integrates datasets from numerous geophysical and geological studies, specifying compression wave velocity (Vp), shear wave velocity (Vs), and density (Rho) at specified locations in a 3D grid. By embedding discrete regional models into lower-resolution tomography data, the NZCVM provides a unified velocity model suitable for broadband physics-based ground motion simulations.
@@ -82,7 +83,7 @@ For detailed installation and data setup instructions, see the [Installation Gui
 
 ## Command-Line Tools
 
-The NZCVM provides 3 main command-line tools:
+The NZCVM provides 4 main command-line tools:
 
 ### 1. Generate 3D Models: `generate_3d_model`
 Creates 3D velocity models from configuration files.
@@ -103,7 +104,7 @@ For detailed instructions, see [Generating 3D Models](wiki/Generating-3D-Model.m
 Extracts 1D velocity profiles at specific locations.
 
 ```bash
-generate_1d_profiles --model-version 2.03 --location-csv sites.csv --out-dir /path/to/output
+generate_1d_profiles sites.csv --model-version 2.03 --out-dir /path/to/output
 ```
 
 Key features:
@@ -111,6 +112,7 @@ Key features:
 - Supports custom depth sampling
 - Batch processing from CSV coordinates
 - Multiple output formats
+- Defaults to outputting in the same directory as the input CSV
 
 For detailed instructions, see [Generating 1D Profiles](wiki/Generating-1D-Profiles.md).
 
@@ -122,6 +124,26 @@ extract_cross_section /path/to/velocity_model.h5 --start-lat -41.0 --start-lon 1
 ```
 
 For detailed instructions, see [Extracting Cross-Sections](wiki/Extracting-Cross-Sections.md).
+
+### 4. Generate Thresholds: `generate_thresholds`
+Computes velocity and depth threshold values (Vs30, Vs500, Z1.0, Z2.5) for station locations.
+
+```bash
+generate_thresholds locations.csv --model-version 2.07 --threshold-type Z1.0 --threshold-type Z2.5 --topo-type SQUASHED_TAPERED --out-dir /path/to/output
+```
+
+Key features:
+- Uses same **model versions** as 3D generation and 1D profiles
+- Computes Vs30, Vs500 (velocity thresholds) and Z1.0, Z2.5 (depth thresholds)
+- Configurable topography handling (default: SQUASHED)
+- Automatic basin membership determination for Z-thresholds
+- Batch processing from CSV files (default: name, lon, lat format)
+- Supports legacy station file formats with custom column indices
+- Can skip header rows with `--skip-rows` option
+- Output CSV includes header row by default (use `--no-write-header` to disable)
+- Output CSV uses input filename with .csv extension
+
+For detailed instructions, see [Generating Thresholds](wiki/Generating-Thresholds.md).
 
 
 ## Model Version System
@@ -141,7 +163,7 @@ MODEL_VERSION=2.03
 
 This automatically loads `model_versions/2p03.yaml` which defines the complete model configuration.
 
-All tools (`generate_3d_model`, `generate_1d_profiles`, `extract_cross_section`) use this same model version system, ensuring consistency across different analysis workflows.
+All tools (`generate_3d_model`, `generate_1d_profiles`, `generate_thresholds`, `extract_cross_section`) use this same model version system, ensuring consistency across different analysis workflows.
 
 For complete details, see [Model Versions](wiki/Model-Versions.md).
 
@@ -195,11 +217,27 @@ nzcvm-data-helper ensure
 3. **Extract 1D profiles**:
 ```bash
    # Create location file
-   echo "lat,lon,name" > sites.csv
-   echo "-43.5,172.5,site1" >> sites.csv
-   
+  echo "id,lon,lat,zmin,zmax,spacing" > sites.csv
+  echo "STATION_A,172.5,-43.5,0,3,0.05" >> sites.csv
+  echo "STATION_B,172.6,-43.6,0,5,0.1" >> sites.csv
    # Generate profiles  
-   generate_1d_profiles --model-version 2.03 --location-csv sites.csv --out-dir /tmp/profiles
+   generate_1d_profiles sites.csv --model-version 2.03 --out-dir /tmp/profiles
+```
+
+4. **Compute threshold values**:
+```bash
+   # Create locations CSV (default format: id, lon, lat)
+   echo "id,lon,lat" > locations.csv
+   echo "STATION_A,172.5,-43.5" >> locations.csv
+   echo "STATION_B,172.6,-43.6" >> locations.csv
+   
+   # Generate thresholds (with custom topography handling)
+   generate_thresholds locations.csv --model-version 2.07 --threshold-type Z1.0 --threshold-type Z2.5 --topo-type SQUASHED_TAPERED --out-dir /tmp/thresholds
+   
+   # Or use legacy station file format (lon lat name)
+   echo "172.5 -43.5 STATION_A" > stations.txt
+   echo "172.6 -43.6 STATION_B" >> stations.txt
+   generate_thresholds stations.txt --lon-index 0 --lat-index 1 --name-index 2 --sep " "
 ```
 
 ## Changelogs and Development Plans

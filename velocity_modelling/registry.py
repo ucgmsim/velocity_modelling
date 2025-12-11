@@ -170,6 +170,9 @@ class CVMRegistry:
         if self.global_params is None:
             raise ValueError(f"Failed to load recipe for version {self.version}")
 
+        # Ensure 'basins' is always a list, defaulting to empty if missing or None
+        self.global_params["basins"] = self.global_params.get("basins") or []
+
         # Validate global_params
         global_surfaces_list = self.global_params.get("surfaces", [])
         if not global_surfaces_list:

@@ -20,10 +20,20 @@ pipeline {
                             cd /mnt/mantle_data/jenkins/nzvm/nzcvm_data
 
                             # Fix the dubious ownership issue
-                            git config --global --add safe.directory /mnt/mantle_data/jenkins/nzvm/nzcvm_data
+                            git config --local --add safe.directory /mnt/mantle_data/jenkins/nzvm/nzcvm_data
 
                             git config pull.rebase false
+
+                            # To test the latest main branch of nzcvm_data
                             git pull origin main
+
+                            # To test a specific commit, comment out above, and use below
+
+#                            # 1. Fetch latest history
+#                            git fetch --all
+#
+#                            # 2. TIME TRAVEL: Force checkout a specific commit
+#                            git checkout <commit hash>
 
                             # Clear any partial LFS downloads
                             git lfs prune
@@ -130,6 +140,14 @@ pipeline {
                                         exit 1
                                     fi
 
+                                    # Remove all .pyc files and __pycache__ directories
+                                    echo "Cleaning up .pyc files and __pycache__ directories..."
+                                    find . -type f -name '*.pyc' -delete
+                                    find . -type d -name '__pycache__' -delete
+
+                                    # Run tests with PYTHONDONTWRITEBYTECODE
+                                    export PYTHONDONTWRITEBYTECODE=1
+
                                     echo "Data verification passed, starting tests..."
                                     # Create the unique test output directory
                                     mkdir -p ${test_output_dir}
@@ -153,8 +171,8 @@ pipeline {
                             }
                         }
                     }
-                }
-            }
+                } // stage('Run regression tests')
+            } // stages
         } // stage('Run Tests in Container')
     } // stages
 } // pipeline
