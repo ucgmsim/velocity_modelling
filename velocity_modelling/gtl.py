@@ -78,11 +78,12 @@ def v30gtl_vectorized(
 ):
     """
     Vectorized VS30 Geotechnical Layer (GTL) velocity adjustment based on Ely (2010).
-
-    This function is optimized for processing multiple depth points simultaneously.
+     This function is optimized for processing multiple depth points simultaneously.
 
     Parameters
-    ----------
+    ------
+
+    ----
     vs30 : float or np.ndarray
         VS30 value (m/s).
     vst : float
@@ -99,6 +100,12 @@ def v30gtl_vectorized(
     tuple
         (vs, vp, rho): Arrays of adjusted S-wave velocities (km/s),
         P-wave velocities (km/s), and densities (g/cm^3).
+
+    References
+    ----------
+    Ely, G. P. (2010). A VS30-derived Near-surface Seismic Velocity Model.
+    https://www.elygeo.net/vs30gtl-ely+4-2016
+
     """
     # Constants
     a = 0.5
