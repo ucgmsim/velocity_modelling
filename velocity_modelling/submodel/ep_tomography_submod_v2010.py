@@ -116,7 +116,7 @@ def _apply_gtl(
     mesh_vector: MeshVector,
     vs_transition: float,
     vp_transition: float,
-    zt: float = 350.0,
+    ely_taper_depth: float = 350.0,
 ):
     """
     Helper function to apply the GTL model to a set of points.
@@ -135,18 +135,18 @@ def _apply_gtl(
         Vs at the transition depth (anchor point).
     vp_transition : float
         Vp at the transition depth (anchor point).
-    zt : float, optional
+    ely_taper_depth : float, optional
         Effective thickness of the Geotechnical Layer (taper depth), by default 350.0.
 
 
     """
-    gtl_mask = relative_depths <= zt
+    gtl_mask = relative_depths <= ely_taper_depth
     if np.any(gtl_mask):
         z_indices_gtl = z_indices[gtl_mask]
         relative_depths_gtl = relative_depths[gtl_mask]
 
         vs_new, vp_new, rho_new = v30gtl_vectorized(
-            mesh_vector.vs30, vs_transition, vp_transition, relative_depths_gtl, zt
+            mesh_vector.vs30, vs_transition, vp_transition, relative_depths_gtl, ely_taper_depth
         )
         qualities_vector.vs[z_indices_gtl] = vs_new
         qualities_vector.vp[z_indices_gtl] = vp_new
@@ -264,30 +264,6 @@ def main_vectorized(
         dep_above = nz_tomography_data.surf_depth[idx_above] * 1000
         dep_below = nz_tomography_data.surf_depth[idx_below] * 1000
 
-        # Helper for linear interpolation of scalars
-        def _interp_scalar(val_above: float, val_below: float):
-            """
-            Linear interpolation helper for scalar values.
-
-            Parameters
-            ----------
-            val_above : float
-                Value at dep_above
-            val_below : float
-                Value at dep_below
-
-            Returns
-            -------
-            float
-                Interpolated value
-            """
-
-            if dep_above == dep_below:
-                return val_above
-            return val_above + (val_below - val_above) * (trans_elev - dep_above) / (
-                dep_below - dep_above
-            )
-
         # To find the correct "target" bedrock velocity (vst, vpt)
         # We must ask the tomography model what the velocity is at DEM - 350m (GTL depth)?
         # 1. Calculate Vs Transition (Vst)
@@ -310,44 +286,30 @@ def main_vectorized(
         # Vectorized relative depth calculation: How far from the effective grid surface
         relative_depths = ref_surface - depths
 
-        # Effective GTL thickness: prefer tomography object's thickness, fall back to function arg
-        eff_thickness = max(0.0, nz_tomography_data.gtl_depth)
 
-        if eff_thickness > 0:  # Only apply GTL if thickness is positive
-            if nz_tomography_data.special_offshore_tapering:
-                # Determine if the offshore model should be applied (point-level condition)
-                apply_offshore = (
-                    (mesh_vector.vs30 < 100)
-                    and (not in_any_basin_lat_lon)
-                    and (not on_boundary)
-                    and (mesh_vector.distance_from_shoreline > 0)
-                )
+        apply_offshore = (
+            nz_tomography_data.special_offshore_tapering
+            and (mesh_vector.vs30 < 100)
+            and (not in_any_basin_lat_lon)
+            and (not on_boundary)
+            and (mesh_vector.distance_from_shoreline > 0)
+        )
 
-                if apply_offshore:
-                    offshore_basinmodel_vectorized(
-                        mesh_vector.distance_from_shoreline,
-                        depths,
-                        qualities_vector,
-                        z_indices,
-                        nz_tomography_data,
-                    )
-                else:
-                    _apply_gtl(
-                        z_indices,
-                        relative_depths,
-                        qualities_vector,
-                        mesh_vector,
-                        vs_transition,
-                        vp_transition,
-                        zt=eff_thickness,
-                    )
-            else:
-                _apply_gtl(
-                    z_indices,
-                    relative_depths,
-                    qualities_vector,
-                    mesh_vector,
-                    vs_transition,
-                    vp_transition,
-                    zt=eff_thickness,
-                )
+        if gtl_thickness > 0 and apply_offshore:
+            offshore_basinmodel_vectorized(
+                mesh_vector.distance_from_shoreline,
+                depths,
+                qualities_vector,
+                z_indices,
+                nz_tomography_data,
+            )
+        elif gtl_thickness > 0:
+            _apply_gtl(
+                z_indices,
+                relative_depths,
+                qualities_vector,
+                mesh_vector,
+                vs_transition,
+                vp_transition,
+                ely_taper_depth=gtl_thickness,
+            )
