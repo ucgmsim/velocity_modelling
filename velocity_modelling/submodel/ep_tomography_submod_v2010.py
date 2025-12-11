@@ -163,7 +163,7 @@ def main_vectorized(
     in_any_basin_lat_lon: bool,
     on_boundary: bool,
     interpolated_global_surface_values: dict,
-    surface_elevation: float = None,
+    surface_elevation: float | None = None,
     gtl_thickness: float = 350.0,
     logger: Optional[Logger] = None,
 ):
