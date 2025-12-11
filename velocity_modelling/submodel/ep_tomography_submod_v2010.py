@@ -249,7 +249,7 @@ def main_vectorized(
     # Apply GTL and offshore smoothing
     if nz_tomography_data.gtl:
 
-        # PART 1: Determine transition velocities at DEM - zt_param (anchor point)
+        # PART 1: Determine transition velocities at DEM - 350m (GTL depth) (anchor point)
         # Determine anchor elevation (where we grab the tomography value)
         dem_elev = partial_global_surface_depths.depths[1]
         trans_elev = dem_elev - nz_tomography_data.gtl_depth  # in metres.
@@ -289,7 +289,7 @@ def main_vectorized(
             )
 
         # To find the correct "target" bedrock velocity (vst, vpt)
-        # We must ask the tomography model what the velocity is at DEM - 350m?
+        # We must ask the tomography model what the velocity is at DEM - 350m (GTL depth)?
         # 1. Calculate Vs Transition (Vst)
         vs_transition = _interp_scalar(
             interpolated_global_surface_values["vs"][idx_above],
