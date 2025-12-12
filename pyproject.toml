@@ -40,6 +40,10 @@ test = [
     "pytest-repeat",
 ]
 
+# Configure Deptry to not report these as unused dependencies
+[tool.deptry.per_rule_ignores]
+DEP002 = ["pytest", "pytest-cov", "pytest-repeat", "hypothesis"]
+
 [tool.setuptools_scm]
 
 [tool.setuptools.packages.find]
@@ -58,13 +62,6 @@ hdf5-to-emod3d = "velocity_modelling.tools.convert_hdf5_to_emod3d:app"
 
 [tool.setuptools.package-dir]
 velocity_modelling = "velocity_modelling"
-
-[tool.deptry]
-# Treat test optional dependencies as development dependencies
-# so deptry ignores them when checking for unused dependencies
-pep_621_dev_dependency_groups = ["test"]
-# Map pytest-cov to pytest module since it's a plugin without its own module
-package_module_name_map = { "pytest-cov" = "pytest" }
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
