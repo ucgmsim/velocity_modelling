@@ -11,11 +11,35 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "velocity_modelling"
-authors = [{ name = "QuakeCoRE" }]
+authors = [{ name = "ucgmsim" }]
 description = "Velocity modelling library"
 readme = "README.md"
 requires-python = ">=3.11"
-dynamic = ["version", "dependencies"]
+dynamic = ["version"]
+dependencies = [
+    "numpy",
+    "h5py",
+    "pandas[parquet]",
+    "matplotlib",
+    "shapely",
+    "geopandas",
+    "hypothesis[numpy]",
+    "pytest",
+    "pytest-cov",
+    "pytest-repeat",
+    "numba",
+    "pyyaml",
+    "tqdm",
+    "typer",
+    "threadpoolctl",
+    "cartopy",
+    "qcore-utils",
+]
+
+[tool.setuptools_scm]
+
+[tool.setuptools.packages.find]
+exclude = ["wiki", "tests"]
 
 [project.scripts]
 generate_3d_model = "velocity_modelling.scripts.generate_3d_model:app"
@@ -30,9 +54,6 @@ hdf5-to-emod3d = "velocity_modelling.tools.convert_hdf5_to_emod3d:app"
 
 [tool.setuptools.package-dir]
 velocity_modelling = "velocity_modelling"
-
-[tool.setuptools.dynamic]
-dependencies = { file = ["requirements.txt"] }
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
@@ -69,7 +90,7 @@ known-first-party = [
   "pygmt_helper",
   "empirical",
   "nshmdb",
-  "IM_calculation",
+  "IM",
   "mera",
 ]
 
