@@ -13,11 +13,9 @@ jobs:
           python-version: "3.11"
       # Install deptry
       - run: pip install deptry
-      # Remove testing related packages
-      - run: sed -e '/hypothesis*/d' -e '/pytest*/d' -e '/diffimg*/d' -i requirements.txt
-      # Install all other packages
-      - run: pip install -r requirements.txt
-      # Remove pyproject.toml so that deptry doesn't get confused
-      - run: rm pyproject.toml
+      # Install the package and its dependencies from pyproject.toml
+      # This installs main dependencies but not optional test dependencies
+      - run: pip install .
       # Run deptry to check that all dependencies are present.
+      # deptry automatically reads from pyproject.toml
       - run: deptry .
