@@ -40,9 +40,8 @@ test = [
     "pytest-repeat",
 ]
 
-# Configure Deptry to not report these as unused dependencies
-[tool.deptry.per_rule_ignores]
-DEP002 = ["pytest", "pytest-cov", "pytest-repeat", "hypothesis"]
+[tool.deptry]
+pep621_dev_dependency_groups = ["test"]
 
 [tool.setuptools_scm]
 
