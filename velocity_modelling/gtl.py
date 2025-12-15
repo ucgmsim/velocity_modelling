@@ -81,9 +81,7 @@ def v30gtl_vectorized(
      This function is optimized for processing multiple depth points simultaneously.
 
     Parameters
-    ------
-
-    ----
+    ----------
     vs30 : float or np.ndarray
         VS30 value (m/s).
     vst : float

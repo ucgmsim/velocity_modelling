@@ -146,7 +146,11 @@ def _apply_gtl(
         relative_depths_gtl = relative_depths[gtl_mask]
 
         vs_new, vp_new, rho_new = v30gtl_vectorized(
-            mesh_vector.vs30, vs_transition, vp_transition, relative_depths_gtl, ely_taper_depth
+            mesh_vector.vs30,
+            vs_transition,
+            vp_transition,
+            relative_depths_gtl,
+            ely_taper_depth,
         )
         qualities_vector.vs[z_indices_gtl] = vs_new
         qualities_vector.vp[z_indices_gtl] = vp_new
@@ -248,7 +252,6 @@ def main_vectorized(
 
     # Apply GTL and offshore smoothing
     if nz_tomography_data.gtl:
-
         # PART 1: Determine transition velocities at DEM - 350m (GTL depth) (anchor point)
         # Determine anchor elevation (where we grab the tomography value)
         dem_elev = partial_global_surface_depths.depths[1]
@@ -267,14 +270,14 @@ def main_vectorized(
         # To find the correct "target" bedrock velocity (vst, vpt)
         # We must ask the tomography model what the velocity is at DEM - 350m (GTL depth)?
         # 1. Calculate Vs Transition (Vst)
-        vs_above = interpolated_global_surface_values["vs"][idx_above]
-        vs_below = interpolated_global_surface_values["vs"][idx_below]
-        vs_transition = np.interp(trans_elev, [dep_above, dep_below], [val_above, val_below]) 
+        vs_transition = np.interp(
+            trans_elev, [dep_above, dep_below], [val_above, val_below]
+        )
 
         # 2. Calculate Vp Transition (Vpt)
-        vp_above = interpolated_global_surface_values["vp"][idx_above]
-        vp_below = interpolated_global_surface_values["vp"][idx_below]
-        vp_transition = np.interp(trans_elev, [dep_above, dep_below], [val_above, val_below])
+        vp_transition = np.interp(
+            trans_elev, [dep_above, dep_below], [val_above, val_below]
+        )
 
         # PART 2: Apply GTL correction to all points within the GTL-layer
         # Determine reference surface for relative depth calculation
@@ -285,7 +288,6 @@ def main_vectorized(
 
         # Vectorized relative depth calculation: How far from the effective grid surface
         relative_depths = ref_surface - depths
-
 
         apply_offshore = (
             nz_tomography_data.special_offshore_tapering

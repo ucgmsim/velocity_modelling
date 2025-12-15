@@ -400,14 +400,16 @@ class TomographyData:
         offshore_basin_model_1d: VelocityModel1D,
         gtl_depth: float = 350.0,
     ):
-
+        """
+        Initialize Tomography Data.
+        """
         self.name = name
         self.surf_depth = surf_depth
         self.surfaces = surfaces
         self.special_offshore_tapering = special_offshore_tapering
         self.gtl = gtl
         # GTL thickness in metres (anchor/taper depth). Default kept for backward compatibility.
-        self.gtl_thickness = gtl_thickness
+        self.gtl_depth = gtl_depth
         self.smooth_boundary = None
         self.vs30 = vs30
         self.offshore_distance_surface = offshore_distance_surface
