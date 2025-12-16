@@ -29,7 +29,7 @@ conda activate velocity_modelling
 Install the NZCVM modeling code, which includes the `nzcvm-data-helper` CLI tool:
 ```bash
 # Install the modelling codes
-pip install git+https://github.com/ucgmsim/velocity_modelling.git
+pip install velocity-modelling
 ```
 
 Then, ensure you have the data repository. If you don't have it yet, the helper will clone it for you. 

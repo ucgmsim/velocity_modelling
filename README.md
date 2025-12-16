@@ -48,7 +48,7 @@ This separation allows independent version control of code and data while mainta
 
 ```bash
 # Install the modelling code
-pip install git+https://github.com/ucgmsim/velocity_modelling.git
+pip install velocity-modelling
 ```
 
 Then, ensure you have the data repository. If you don't have it yet, the helper will clone it for you. 
