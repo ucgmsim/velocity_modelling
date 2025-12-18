@@ -1,63 +1,62 @@
 from pathlib import Path
-import pytest
+
 import pandas as pd
-import numpy as np
+import pytest
 
 from velocity_modelling.scripts.generate_1d_profiles import generate_1d_profiles
-from tests.conftest import env_path
 
-# Define paths relative to the test file if needed, but fixtures are better
+# Define paths
 BASE_DIR = Path(__file__).parent
 SCENARIO_DIR = BASE_DIR / "scenarios" / "1d_profiles"
 BENCHMARK_SUBDIR = "1d_profiles"
+LOCATIONS_CSV = SCENARIO_DIR / "locations.csv"
+
+
+# Read locations at module level for parametrization
+def get_profile_ids():
+    if not LOCATIONS_CSV.exists():
+        return []
+    df = pd.read_csv(LOCATIONS_CSV, skipinitialspace=True)
+    return df["id"].tolist()
+
+
+PROFILE_IDS = get_profile_ids()
 
 
 def compare_profiles(benchmark_file: Path, output_file: Path):
     """
     Compare two profile files.
     """
-    # Read files, skipping the first 5 lines of metadata
-    # The separate is tab, engine='python' might be safer for varying whitespace but \t seems explicit.
-    # We strip whitespace from headers usually.
-
-    # Looking at the file content:
-    # Elevation (km) \t Vp (km/s) \t Vs (km/s) \t Rho (g/cm^3)
-    # The columns might have extra spaces.
+    assert output_file.exists(), f"Output file {output_file.name} not found"
+    assert benchmark_file.exists(), f"Benchmark file {benchmark_file.name} not found"
 
     df_bench = pd.read_csv(benchmark_file, sep=r"\s+", skiprows=4, header=0)
     df_out = pd.read_csv(output_file, sep=r"\s+", skiprows=4, header=0)
 
-    # We use sep=r"\s+" because the file might be visually aligned with spaces/tabs.
-    # The header line is line 5 (0-indexed index 4).
-    # wait, line 1 is "Properties...", line 2 "Model...", line 3 "Topo...", line 4 "Minimum...", line 5 "Elevation..."
-    # So skiprows should be 4 if we want line 5 to be header?
-    # Let's verify:
-    # 0: Prop
-    # 1: Model
-    # 2: Topo
-    # 3: Min
-    # 4: Elevation (Header)
-
-    # However, read_csv skiprows argument: "Line numbers to skip (0-indexed) or number of lines to skip (int) at the start of the file."
-    # If skiprows=4, it skips lines 0,1,2,3. Line 4 is the first line read (header).
-
-    # Also need to check if columns match.
     pd.testing.assert_frame_equal(df_bench, df_out, check_dtype=False)
 
 
-def test_generate_1d_profiles(tmp_path: Path, benchmark_dir: Path, data_root: Path):
+@pytest.fixture(scope="module")
+def generated_profiles_dir(
+    tmp_path_factory: pytest.TempPathFactory, data_root: Path
+) -> Path:
     """
-    Test generate_1d_profiles against benchmarks.
-    """
-    scenario_dir = SCENARIO_DIR
-    locations_csv = scenario_dir / "locations.csv"
+    Run generate_1d_profiles once and return the output directory.
 
-    output_dir = tmp_path / "output"
-    output_dir.mkdir()
+    NOTE: tmp_path_factory is a built-in pytest fixture that is injected automatically.
+    We import it implicitly by naming the argument 'tmp_path_factory'.
+    Since this fixture is module-scoped, we use tmp_path_factory (session-scoped)
+    instead of tmp_path (function-scoped) to create a temp directory that persists
+    for all tests in this module.
+    """
+    if not PROFILE_IDS:
+        pytest.skip("No profiles found in locations.csv")
+
+    output_dir = tmp_path_factory.mktemp("1d_profiles_output")
 
     # Run the generation
     generate_1d_profiles(
-        location_csv=locations_csv,
+        location_csv=LOCATIONS_CSV,
         out_dir=output_dir,
         model_version="2.09",
         topo_type="TRUE",
@@ -65,24 +64,23 @@ def test_generate_1d_profiles(tmp_path: Path, benchmark_dir: Path, data_root: Pa
         min_vs=0.0,
     )
 
-    # Read locations to know what files to expect
-    df_loc = pd.read_csv(locations_csv, skipinitialspace=True)
-    df_loc.columns = df_loc.columns.str.lower()
+    return output_dir
 
-    profiles_dir = output_dir / "Profiles"
-    assert profiles_dir.exists()
 
-    benchmark_profiles_dir = benchmark_dir / BENCHMARK_SUBDIR
+@pytest.mark.parametrize("profile_id", PROFILE_IDS)
+def test_profile_verification(
+    profile_id: str, generated_profiles_dir: Path, benchmark_dir: Path
+) -> None:
+    """
+    Test individual profile against benchmark.
 
-    for _, row in df_loc.iterrows():
-        profile_id = row["id"]
-        filename = f"Profile_{profile_id}.txt"
+    This test function is parametrized by `profile_id`, treating each location
+    in the input CSV as a separate test case. This ensures granular reporting:
+    if one profile fails verification, others can still pass.
+    """
+    filename = f"Profile_{profile_id}.txt"
 
-        output_file = profiles_dir / filename
-        benchmark_file = benchmark_profiles_dir / filename
+    output_file = generated_profiles_dir / "Profiles" / filename
+    benchmark_file = benchmark_dir / BENCHMARK_SUBDIR / filename
 
-        assert output_file.exists(), f"Output file {filename} not found"
-        assert benchmark_file.exists(), f"Benchmark file {filename} not found"
-
-        print(f"Comparing {filename}...")
-        compare_profiles(benchmark_file, output_file)
+    compare_profiles(benchmark_file, output_file)
