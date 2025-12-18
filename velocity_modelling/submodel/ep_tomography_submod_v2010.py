@@ -224,7 +224,7 @@ def main_vectorized(
     ind_above = np.clip(ind_above, 0, len(nz_tomography_data.surfaces) - 1)
     ind_below = np.clip(ind_below, 0, len(nz_tomography_data.surfaces) - 1)
 
-    # Group depths by (ind_above, ind_below) pairs to minimize interpolate calls
+    # Group depths by (ind_above, ind_below) pairs to minimise interpolate calls
     unique_pairs = np.unique(np.stack((ind_above, ind_below), axis=1), axis=0)
     for idx_above, idx_below in unique_pairs:
         pair_mask = (ind_above == idx_above) & (ind_below == idx_below)
@@ -252,41 +252,22 @@ def main_vectorized(
 
     # Apply GTL and offshore smoothing
     if nz_tomography_data.gtl:
-        # PART 1: Determine transition velocities at DEM - 350m (GTL depth) (anchor point)
-        # Determine anchor elevation (where we grab the tomography value)
         dem_elev = partial_global_surface_depths.depths[1]
-        trans_elev = dem_elev - nz_tomography_data.gtl_depth  # in metres.
+        trans_elev = dem_elev - nz_tomography_data.gtl_depth
 
-        # Find indices for the transition elevation using the existing ascending depth array
-        count = len(surf_depth_ascending) - np.searchsorted(
-            surf_depth_ascending, trans_elev, side="right"
-        )
-        idx_above = np.clip(count - 1, 0, len(nz_tomography_data.surfaces) - 1)
-        idx_below = np.clip(count, 0, len(nz_tomography_data.surfaces) - 1)
-
-        dep_above = nz_tomography_data.surf_depth[idx_above] * 1000
-        dep_below = nz_tomography_data.surf_depth[idx_below] * 1000
-
-        # To find the correct "target" bedrock velocity (vst, vpt)
-        # We must ask the tomography model what the velocity is at DEM - 350m (GTL depth)?
-        # 1. Calculate Vs Transition (Vst)
         vs_transition = np.interp(
-            trans_elev, [dep_above, dep_below], [val_above, val_below]
+            trans_elev, mesh_vector.z[::-1], qualities_vector.vs[::-1]
         )
-
-        # 2. Calculate Vp Transition (Vpt)
         vp_transition = np.interp(
-            trans_elev, [dep_above, dep_below], [val_above, val_below]
+            trans_elev, mesh_vector.z[::-1], qualities_vector.vp[::-1]
         )
 
-        # PART 2: Apply GTL correction to all points within the GTL-layer
-        # Determine reference surface for relative depth calculation
         if surface_elevation is not None:
             ref_surface = surface_elevation
         else:
             ref_surface = partial_global_surface_depths.depths[1]
 
-        # Vectorized relative depth calculation: How far from the effective grid surface
+        # Vectorised relative depth calculation: How far from the effective grid surface
         relative_depths = ref_surface - depths
 
         apply_offshore = (
