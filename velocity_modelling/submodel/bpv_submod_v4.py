@@ -36,6 +36,8 @@ def main_vectorized(
     qualities_vector: QualitiesVector,
     partial_basin_surface_depths: PartialBasinSurfaceDepths,
     partial_global_surface_depths: PartialGlobalSurfaceDepths,
+    surface_elevation: float = None,
+    ely_taper_depth: float = 350.0,
     logger: Optional[Logger] = None,
 ):
     """
@@ -53,6 +55,10 @@ def main_vectorized(
         Struct containing the depth of the basin surface.
     partial_global_surface_depths : PartialGlobalSurfaceDepths
         Struct containing the depth of the global surface.
+    surface_elevation : float, optional
+        Surface elevation at the lat-lon point, in metres. Defaults to DEM if None.
+    ely_taper_depth : float, optional
+        Depth of the Ely GTL taper, in metres. Default is 350 m.
     logger : Logger, optional
         Logger for reporting processing status.
 
@@ -63,17 +69,21 @@ def main_vectorized(
             f"Assigning BPV v4 depth-dependent properties to {len(z_indices)} points",
         )
 
-    dem_depth = partial_global_surface_depths.depths[1]  # value of the DEM
+    # Determine reference surface (DEM or Effective Surface)
+    if surface_elevation is not None:
+        dem_depth = surface_elevation
+    else:
+        dem_depth = partial_global_surface_depths.depths[1]
+
     bpv_top = partial_basin_surface_depths.depths[0]  # value of the BPV top
 
     z_dem_relative = dem_depth - depths  # Shape: (n,)
     z_bpv_relative = bpv_top - depths  # Shape: (n,)
 
-    ely_taper_depth = 350  # depth of the taper
+    ely_taper_depth = max(0.0, ely_taper_depth)  # depth of the taper
     vs30_taper_depth = 1000
     vs0 = 0.700
     vs_depth = 1.500
-    vs_ely_depth = 2.2818
 
     # Vectorized condition
     gtl_mask = (z_dem_relative < vs30_taper_depth) & (z_bpv_relative < ely_taper_depth)
@@ -94,7 +104,7 @@ def main_vectorized(
         ) * 1000  # Convert to m/s
 
         vs_new, vp_new, rho_new = v30gtl_vectorized(
-            vs_bpv_top, vs_ely_depth, z_bpv_relative_gtl, ely_taper_depth
+            vs_bpv_top, vs_full, vp_full, z_bpv_relative_gtl, ely_taper_depth
         )
         qualities_vector.vs[z_indices_gtl] = vs_new
         qualities_vector.vp[z_indices_gtl] = vp_new
