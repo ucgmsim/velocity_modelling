@@ -74,19 +74,20 @@ def vs_from_vp_brocher(vp: float | np.ndarray) -> float | np.ndarray:
 
 @numba.jit(nopython=True)
 def v30gtl_vectorized(
-    vs30: float | np.ndarray, vt: np.ndarray, z: np.ndarray, zt: float
+    vs30: float | np.ndarray, vst: float, vpt: float, z: np.ndarray, zt: float
 ):
     """
     Vectorized VS30 Geotechnical Layer (GTL) velocity adjustment based on Ely (2010).
-
-    This function is optimized for processing multiple depth points simultaneously.
+     This function is optimized for processing multiple depth points simultaneously.
 
     Parameters
     ----------
     vs30 : float or np.ndarray
         VS30 value (m/s).
-    vt : np.ndarray
-        Array of target velocity values (km/s).
+    vst : float
+        Target S-wave velocity at depth zt (km/s).
+    vpt : float
+        Target P-wave velocity at depth zt (km/s).
     z : np.ndarray
         Array of depth values (m), must be positive.
     zt : float
@@ -97,11 +98,17 @@ def v30gtl_vectorized(
     tuple
         (vs, vp, rho): Arrays of adjusted S-wave velocities (km/s),
         P-wave velocities (km/s), and densities (g/cm^3).
+
+    References
+    ----------
+    Ely, G. P. (2010). A VS30-derived Near-surface Seismic Velocity Model.
+    https://www.elygeo.net/vs30gtl-ely+4-2016
+
     """
     # Constants
     a = 0.5
     b = 2.0 / 3.0
-    c = 2.0
+    c = 1.5
 
     # Normalize depth
     z_normalized = z / zt  # Shape: (n,)
@@ -115,13 +122,14 @@ def v30gtl_vectorized(
         + 2.0 * c * np.sqrt(z_normalized)
     )
 
+    vs30_kms = vs30 / 1000.0
     # Adjust vs
-    vs = f * vt + g * (vs30 / 1000.0)  # vs30 converted to km/s
+    vs = f * vst + g * vs30_kms
 
     # Compute vp from vs using Brocher correlation (vectorized)
-    vp = vp_from_vs_brocher(vs)
+    vp = f * vpt + g * vp_from_vs_brocher(vs30_kms)
 
-    # Compute rho from vp using Brocher correlation (vectorized)
+    # Compute rho from vp using Brocher (Nafe-Drake) correlation (vectorized)
     rho = rho_from_vp_brocher(vp)
 
     return vs, vp, rho

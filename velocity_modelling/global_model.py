@@ -349,7 +349,7 @@ class TomographyData:
     special_offshore_tapering : bool
         Flag for special offshore tapering.
     gtl : bool
-        Flag indicating if the GTL model is applied.
+        Flag indicating if the Geotechnical Layer (GTL) model is applied.
     vs30 : GlobalSurfaceRead
         The vs30 surfaces data.
     surfaces : list[dict[str, GlobalSurfaceRead]]
@@ -358,6 +358,8 @@ class TomographyData:
         The offshore distance surfaces data.
     offshore_basin_model_1d : VelocityModel1D
         The offshore 1D model data.
+    gtl_depth : float, optional
+        Depth of Geotechnical Layer in metres. Default 350.0
 
     Attributes
     ----------
@@ -396,16 +398,18 @@ class TomographyData:
         surfaces: list[dict[str, GlobalSurfaceRead]],
         offshore_distance_surface: GlobalSurfaceRead,
         offshore_basin_model_1d: VelocityModel1D,
+        gtl_depth: float = 350.0,
     ):
         """
-        Initialize the TomographyData.
-
+        Initialize Tomography Data.
         """
         self.name = name
         self.surf_depth = surf_depth
         self.surfaces = surfaces
         self.special_offshore_tapering = special_offshore_tapering
         self.gtl = gtl
+        # GTL thickness in metres (anchor/taper depth). Default kept for backward compatibility.
+        self.gtl_depth = gtl_depth
         self.smooth_boundary = None
         self.vs30 = vs30
         self.offshore_distance_surface = offshore_distance_surface

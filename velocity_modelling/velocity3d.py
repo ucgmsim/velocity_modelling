@@ -210,7 +210,9 @@ class QualitiesVector:
             shifted_mesh_vector = mesh_vector
 
         else:
-            raise ValueError("User specified TOPO_TYPE not recognised, see readme.")
+            raise ValueError(
+                "User specified TOPO_TYPE not recognised. Must be one of 'TRUE', 'BULLDOZED', 'SQUASHED', or 'SQUASHED_TAPERED'. See readme for details."
+            )
 
         if in_any_basin_lat_lon:
             for i, in_basin in enumerate(in_basin_list):
