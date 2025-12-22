@@ -114,8 +114,6 @@ def _apply_gtl(
     relative_depths: np.ndarray,
     qualities_vector: QualitiesVector,
     mesh_vector: MeshVector,
-    vs_transition: float,
-    vp_transition: float,
     ely_taper_depth: float = 350.0,
 ):
     """
@@ -144,7 +142,9 @@ def _apply_gtl(
     if np.any(gtl_mask):
         z_indices_gtl = z_indices[gtl_mask]
         relative_depths_gtl = relative_depths[gtl_mask]
-
+        i_transition = np.argmin(np.abs(relative_depths_gtl - ely_taper_depth))
+        vs_transition = qualities_vector.vs[z_indices_gtl][i_transition]
+        vp_transition = qualities_vector.vp[z_indices_gtl][i_transition]
         vs_new, vp_new, rho_new = v30gtl_vectorized(
             mesh_vector.vs30,
             vs_transition,
@@ -252,15 +252,6 @@ def main_vectorized(
 
     # Apply GTL and offshore smoothing
     if nz_tomography_data.gtl:
-        dem_elev = partial_global_surface_depths.depths[1]
-        trans_elev = dem_elev - nz_tomography_data.gtl_depth
-
-        vs_transition = np.interp(
-            trans_elev, mesh_vector.z[::-1], qualities_vector.vs[::-1]
-        )
-        vp_transition = np.interp(
-            trans_elev, mesh_vector.z[::-1], qualities_vector.vp[::-1]
-        )
 
         if surface_elevation is not None:
             ref_surface = surface_elevation
@@ -292,7 +283,5 @@ def main_vectorized(
                 relative_depths,
                 qualities_vector,
                 mesh_vector,
-                vs_transition,
-                vp_transition,
                 ely_taper_depth=gtl_thickness,
             )
