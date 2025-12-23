@@ -37,6 +37,7 @@ class ScenarioDict(TypedDict):
 BASE_DIR = Path(__file__).parent.parent  # Project root directory
 SCRIPT_DIR = BASE_DIR / "velocity_modelling/scripts"
 TEST_DIR = BASE_DIR / "tests"
+TOOLS_DIR = BASE_DIR / "velocity_modelling/tools"
 SCENARIO_DIR = TEST_DIR / "scenarios"
 BENCHMARK_DIR = TEST_DIR / "benchmarks"  # Default value, can be overridden
 
@@ -75,7 +76,7 @@ def test_gen_3dvm_scenarios(scenario: ScenarioDict):
     """
 
     # Create output directory for this scenario
-    scenario["output_path"].mkdir(exist_ok=True)
+    scenario["output_path"].mkdir(parents=True, exist_ok=True)
 
     # Run the generate_3d_model.py script with --out-dir
     result = subprocess.run(
@@ -95,7 +96,7 @@ def test_gen_3dvm_scenarios(scenario: ScenarioDict):
 
     # Check if the script ran successfully
     assert result.returncode == 0, (
-        f"Script failed for {scenario['name']}: {result.stderr}"
+        f"Script failed for {scenario['name']}:\n{result.stderr}\n{result.stdout}"
     )
 
     # Parse the config file to get nx, ny, nz
@@ -129,6 +130,90 @@ def test_gen_3dvm_scenarios(scenario: ScenarioDict):
             f"Std diff: {comparison_results[key]['std_diff']}"
         )
         # Note: We ignore inbasin comparison as the original C code saves incorrect values
+
+
+def test_gen_3dvm_scenarios_multiprocessing(scenario: ScenarioDict):
+    """
+    Test generate_3d_model.py with different scenarios in multiprocessing mode
+    and compare outputs with benchmarks.
+    """
+
+    # Create output directory for this scenario
+    scenario["output_path"].mkdir(parents=True, exist_ok=True)
+
+    # Run the generate_3d_model.py script with --out-dir and --np 2 for multiprocessing
+    result = subprocess.run(
+        [
+            "python",
+            "-B",  # Don't write .pyc files to avoid bytecode compilation race condition
+            str(SCRIPT_DIR / "generate_3d_model.py"),
+            str(scenario["config_file"]),
+            "--out-dir",
+            str(scenario["output_path"]),
+            "--nzcvm-data-root",
+            str(scenario["data_root"]),
+            "--np",
+            "2",
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+    # Check if the script ran successfully
+    assert result.returncode == 0, (
+        f"Script failed for {scenario['name']}:\n{result.stderr}\n{result.stdout}"
+    )
+
+    # Convert HDF5 output to EMOD3D binary format
+    hdf5_file = scenario["output_path"] / "velocity_model.h5"
+    assert hdf5_file.exists(), f"HDF5 output file not found at {hdf5_file}"
+
+    convert_result = subprocess.run(
+        [
+            "python",
+            "-B",
+            str(TOOLS_DIR / "convert_hdf5_to_emod3d.py"),
+            str(hdf5_file),
+            str(scenario["output_path"]),
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+    assert convert_result.returncode == 0, (
+        f"Conversion failed for {scenario['name']}:\n{convert_result.stderr}\n{convert_result.stdout}"
+    )
+
+    # Parse the config file to get nx, ny, nz
+    vm_params = parse_nzcvm_config(scenario["config_file"])
+    nx = vm_params["nx"]
+    ny = vm_params["ny"]
+    nz = vm_params["nz"]
+
+    # Compare output files with benchmarks
+    comparison_results = compare_output_files(
+        scenario["benchmark_path"],
+        scenario["output_path"],
+        nx,
+        ny,
+        nz,
+        threshold=1e-5,  # Using the default threshold from compare_emod3d.py
+    )
+
+    # Check critical files (vp, vs, rho) are allclose
+    for key in ["vp", "vs", "rho"]:
+        assert key in comparison_results, (
+            f"Missing {key} in comparison results for {scenario['name']}"
+        )
+        assert comparison_results[key]["size_check"], (
+            f"Size check failed for {key} in {scenario['name']}"
+        )
+        assert comparison_results[key]["allclose"], (
+            f"{key} data not close enough for {scenario['name']}:\n"
+            f"Max diff: {comparison_results[key]['max_diff']}\n"
+            f"Mean diff: {comparison_results[key]['mean_diff']}\n"
+            f"Std diff: {comparison_results[key]['std_diff']}"
+        )
 
 
 if __name__ == "__main__":
