@@ -129,19 +129,9 @@ def _apply_gtl(
         Struct containing vp, vs, and rho values.
     mesh_vector : MeshVector
         Struct containing mesh information such as latitude, longitude, and vs30.
-    i_transition : float
-        The last value where GTL is applied is treated as the anchor point.
-        For example, in a fine grid spacing of 1m, the last value is taken where GTL modified velocities should be smoothly joined
-        to tomography. It picks 350 m. If it is a coarse grid spacing of 100 m, it picks 300 m as the GTL is applied only till depths of 300 m.
-    vs_transition : float
-        Vs at the transition depth (i_transition).
-    vp_transition : float
-        Vp at the transition depth (i_transition).
     ely_taper_depth : float, optional
         Effective thickness of the Geotechnical Layer (taper depth), by default 350.0.
-        
-
-
+        The transition depth is determined automatically as the depth closest to this value.
     """
     gtl_mask = relative_depths <= ely_taper_depth
     if np.any(gtl_mask):
