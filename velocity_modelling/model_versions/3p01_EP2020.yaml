@@ -1,0 +1,58 @@
+surfaces:
+  - path: surface/NZ_DEM_HD.h5
+    submodel: ep_tomography_submod_v2010
+
+tomography:
+  - name: EP2020
+    vs30: nz_with_offshore
+    special_offshore_tapering: true
+    GTL: true
+
+basin_edge_smoothing: true
+basins:
+  - Canterbury_v25p9
+  - NorthCanterbury_v25p8
+  - BanksPeninsulaVolcanics_v19p1
+  - Kaikoura_v25p5
+  - Cheviot_v19p1
+  - Hanmer_v25p3
+  - Marlborough_v19p1
+  - Nelson_v25p9
+  - Wellington_v25p5
+  - WaikatoHauraki_v19p7
+  - Wanaka_v20p6
+  - Mackenzie_v20p6
+  - Wakatipu_v20p7
+  - Alexandra_v20p7
+  - Ranfurly_v20p7
+  - NE_Otago_v20p7
+  - Mosgiel_v20p7
+  - Balclutha_v20p7
+  - Dunedin_v20p7
+  - Murchison_v20p7
+  - Waitaki_v20p8
+  - Hakataramea_v20p8
+  - Karamea_v20p11
+  - Collingwood_v20p11
+  - SpringsJunction_v20p11
+  - HawkesBay_v21p7
+  - Napier_v21p7
+  - GreaterWellington_v21p7
+  - Porirua_v21p7
+  - Gisborne_v21p11
+  - SouthernHawkesBay_v21p12
+  - Wairarapa_v21p12
+  - OmaioBay_v25p5
+  - Whangaparoa_v23p4
+  - PalmerstonNorth_v25p8
+  - Southland_v25p5
+  - TeAnau_v25p5
+  - TolagaBay_v25p5
+  - Waiapu_v25p5
+  - WestCoast_v25p5
+  - Westport_v25p9
+  - QueenCharlotte_v25p8
+  - CastleHill_v25p8
+  - Whakatane_v25p8
+  - TeAraroa_v25p9
+  - Rarakau_v25p9
