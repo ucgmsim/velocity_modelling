@@ -927,7 +927,7 @@ class CVMRegistry:
             with h5py.File(hdf5_path, "r") as h5f:
                 for i, elev in enumerate(surf_depth):
                     surfaces.append({})
-                    elev_str = str(int(elev)) if elev == int(elev) else f"{elev:.2f}"
+                    elev_str = str(elev)
 
                     try:
                         elev_group = h5f[elev_str]
