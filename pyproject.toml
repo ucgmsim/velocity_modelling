@@ -14,30 +14,32 @@ name = "velocity_modelling"
 authors = [{ name = "ucgmsim" }]
 description = "Velocity modelling library"
 readme = "README.md"
-requires-python = ">=3.11,<3.14"
+requires-python = ">=3.11"
 dynamic = ["version"]
 dependencies = [
-    "numpy",
-    "h5py",
-    "pandas[parquet]",
-    "matplotlib",
-    "shapely",
-    "geopandas",
-    "numba",
-    "pyyaml",
-    "tqdm",
-    "typer",
-    "threadpoolctl",
-    "cartopy",
-    "qcore-utils",
+  "cartopy>=0.23",
+  "geopandas>=0.14",
+  "h5py>=3.11",
+  "matplotlib>=3.8",
+  "numba>=0.57.0; python_version == '3.11'",
+  "numba>=0.59.0; python_version == '3.12'",
+  "numba>=0.61.0; python_version == '3.13'",
+  "numba>=0.63.0; python_version == '3.14'",
+  "numpy>=2.0,<3.0",
+  "pandas[parquet]>=2.0,<3.0",
+  "pyyaml>=6.0",
+  "qcore-utils>=2025.12.1",
+  "shapely>=2.0",
+  "threadpoolctl>=3.3",
+  "tqdm>=4.66",
+  "typer>=0.19",
 ]
-
 [project.optional-dependencies]
 test = [
-    "hypothesis[numpy]",
-    "pytest",
-    "pytest-cov",
-    "pytest-repeat",
+  "hypothesis[numpy]>=6.141.1",
+  "pytest>=8.4.2",
+  "pytest-cov>=7.0.0",
+  "pytest-repeat>=0.9.4",
 ]
 
 [tool.deptry]
