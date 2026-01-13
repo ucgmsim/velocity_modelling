@@ -348,7 +348,7 @@ def compute_z_threshold(
 
     Finds the depth where shear-wave velocity (Vs) first exceeds the
     specified threshold value. This is commonly used for basin depth
-    estimation (Z1.0, Z2.5).
+    estimation (Z1.0, Z2.5). The output depth is also rounded to 3 decimal places.
 
     Parameters
     ----------
@@ -402,6 +402,9 @@ def compute_z_threshold(
 
     # Convert depth to kilometers (z_write is negative in meters)
     z_km = z_write / -1000.0
+
+    # Round to 3dp for output consistency
+    z_km = round(z_km, 3)
     return z_km
 
 
