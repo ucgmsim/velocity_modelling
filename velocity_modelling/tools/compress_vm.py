@@ -1,3 +1,5 @@
+"""Compress velocity models for archival outputs"""
+
 from pathlib import Path
 from typing import Annotated
 
