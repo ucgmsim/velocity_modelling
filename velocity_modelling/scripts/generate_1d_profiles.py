@@ -542,20 +542,25 @@ def generate_1d_profiles(
     # PRE-COMPUTE BASIN MEMBERSHIP FOR ALL PROFILES
     logger.log(logging.INFO, "Pre-computing basin membership for all profiles")
 
-    basin_membership = BasinMembership(
-        basin_data_list,
-        smooth_boundary=nz_tomography_data.smooth_boundary,
-        logger=logger,
-    )
-    profile_basin_membership = basin_membership.check_stations(
-        df["lat"].values, df["lon"].values
-    )
+    # Pre-calculate mesh coordinates to ensure consistency with basin checks.
+    # This prevents "point outside basin" errors caused by slight shifts between
+    # input CSV coordinates and the generated model grid, while maintaining
+    # the speed of vectorized basin checks.
+    mesh_lats = np.zeros(len(df))
+    mesh_lons = np.zeros(len(df))
+    global_meshes = []
 
-    logger.log(logging.INFO, f"Basin membership computed for {len(df)} profiles")
+    # Use a silent logger to avoid spamming logs during coordinate generation
+    silent_logger = logging.getLogger("silent_mesh_gen")
+    silent_logger.setLevel(logging.WARNING)
 
-    for i in tqdm(range(len(df)), desc="Generating profiles", unit="profile"):
-        logger.log(logging.INFO, f"Generating profile {i + 1} of {len(df)}")
+    lats = df["lat"].values
+    lons = df["lon"].values
+    zmins = df["zmin"].values
+    zmaxs = df["zmax"].values
+    spacings = df["spacing"].values
 
+    for i in tqdm(range(len(df)), desc="Pre-computing meshes"):
         # Initialize model extent
         model_extent = {
             "version": vm_params["model_version"],
@@ -563,8 +568,8 @@ def generate_1d_profiles(
             "extent_x": 1.0,
             "extent_y": 1.0,
             "h_lat_lon": 1.0,
-            "origin_lat": df["lat"].iloc[i],
-            "origin_lon": df["lon"].iloc[i],
+            "origin_lat": lats[i],
+            "origin_lon": lons[i],
         }
 
         # Set depth parameters
@@ -574,13 +579,10 @@ def generate_1d_profiles(
             model_extent["h_depth"] = 1.0  # Placeholder, as actual depths are set later
         else:
             spacing_offset = 0.5
-            model_extent["extent_zmin"] = (
-                df["zmin"].iloc[i] - spacing_offset * df["spacing"].iloc[i]
-            )
-            model_extent["extent_zmax"] = (
-                df["zmax"].iloc[i] + spacing_offset * df["spacing"].iloc[i]
-            )
-            model_extent["h_depth"] = df["spacing"].iloc[i]
+            model_extent["extent_zmin"] = zmins[i] - spacing_offset * spacings[i]
+            model_extent["extent_zmax"] = zmaxs[i] + spacing_offset * spacings[i]
+            model_extent["h_depth"] = spacings[i]
+
         model_extent["nx"] = int(
             model_extent["extent_x"] / model_extent["h_lat_lon"] + 0.5
         )
@@ -593,15 +595,34 @@ def generate_1d_profiles(
             + 0.5
         )
 
-        # Generate mesh (only for depth calculation, not basin membership)
-        global_mesh = gen_full_model_grid_great_circle(model_extent, logger)
+        gm = gen_full_model_grid_great_circle(model_extent, silent_logger)
+
         if depth_values:
-            global_mesh.nz = len(depth_values)
+            gm.nz = len(depth_values)
+            gm.z = np.array([-1000 * dep for dep in depth_values])
+
+        global_meshes.append(gm)
+        mesh_lats[i] = np.array(gm.lat).flat[0]
+        mesh_lons[i] = np.array(gm.lon).flat[0]
+
+    basin_membership = BasinMembership(
+        basin_data_list,
+        smooth_boundary=nz_tomography_data.smooth_boundary,
+        logger=logger,
+    )
+    profile_basin_membership = basin_membership.check_stations(mesh_lats, mesh_lons)
+
+    logger.log(logging.INFO, f"Basin membership computed for {len(df)} profiles")
+
+    for i in tqdm(range(len(df)), desc="Generating profiles", unit="profile"):
+        logger.log(logging.INFO, f"Generating profile {i + 1} of {len(df)}")
+
+        global_mesh = global_meshes[i]
+        if depth_values:
             logger.log(
                 logging.DEBUG,
                 f"Number of model points - nx: {global_mesh.nx}, ny: {global_mesh.ny}, nz: {global_mesh.nz}",
             )
-            global_mesh.z = np.array([-1000 * dep for dep in depth_values])
 
         basin_indices = profile_basin_membership[i]
 
