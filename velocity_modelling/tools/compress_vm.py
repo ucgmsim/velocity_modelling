@@ -191,9 +191,9 @@ def compress_vm(
         complevel=complevel,
         shuffle=shuffle,
         chunksizes=(
-            chunk_x or dset.sizes["x"],
-            chunk_y or dset.sizes["y"],
             chunk_z or dset.sizes["z"],
+            chunk_y or dset.sizes["y"],
+            chunk_x or dset.sizes["x"],
         ),
     )
 
