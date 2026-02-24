@@ -602,8 +602,8 @@ def generate_1d_profiles(
             gm.z = np.array([-1000 * dep for dep in depth_values])
 
         global_meshes.append(gm)
-        mesh_lats[i] = np.array(gm.lat).flat[0]
-        mesh_lons[i] = np.array(gm.lon).flat[0]
+        mesh_lats[i] = gm.lat.flat[0]
+        mesh_lons[i] = gm.lon.flat[0]
 
     basin_membership = BasinMembership(
         basin_data_list,
