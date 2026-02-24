@@ -1,4 +1,4 @@
-"""Compress velocity models for archival outputs"""
+"""Lossy compress velocity models for archival outputs"""
 
 from pathlib import Path
 from typing import Annotated
@@ -7,6 +7,8 @@ import h5py
 import numpy as np
 import typer
 import xarray as xr
+
+from qcore import cli
 
 app = typer.Typer()
 
@@ -25,9 +27,8 @@ def get_extrema(h5_dataset: h5py.Dataset) -> tuple[float, float]:
         (min, max) values for dataset.
     """
     min_v, max_v = np.inf, -np.inf
-
-    for i in range(h5_dataset.shape[1]):
-        slice_data = h5_dataset[:, i, :]
+    for chunk in range(h5_dataset.iter_chunks()):
+        slice_data = h5_dataset[chunk]
         min_v = min(min_v, np.nanmin(slice_data))
         max_v = max(max_v, np.nanmax(slice_data))
     return min_v, max_v
@@ -57,16 +58,16 @@ def compress_quality(file: h5py.File, quality: str) -> xr.DataArray:
     int_max = np.iinfo(np.uint8).max
     min, max = get_extrema(quality_array)
     scale = (max - min) / int_max
-    for i in range(ny):
+    for chunk in quality_array.iter_chunks():
         # Copy out one y-slice to a local copy.
-        y_slice = quality_array[:, i, :].astype(np.float32)
+        y_slice = quality_array[chunk].astype(np.float32)
         # y_slice_quantised = round(y_slice / scale_max) as uint8
         # Need to do this with `out` parameters to avoid extra unneeded copies
         np.subtract(y_slice, min, out=y_slice)
         np.divide(y_slice, scale, out=y_slice)
         np.round(y_slice, out=y_slice)
         y_slice_quantised = y_slice.astype(np.uint8)
-        quantised_array[:, i, :] = y_slice_quantised
+        quantised_array[chunk] = y_slice_quantised
 
     attrs = dict(quality_array.attrs)
     attrs["scale_factor"] = scale
@@ -149,11 +150,10 @@ def compressed_vm_as_dataset(file: h5py.File) -> xr.Dataset:
     ds = ds.assign_coords(
         dict(lon=(("x", "y"), lon), lat=(("x", "y"), lat), depth=(("z"), z)),
     )
-    ds = ds.set_coords(["lat", "lon", "depth"])
     return ds
 
 
-@app.command()
+@cli.from_docstring(app)
 def compress_vm(
     vm_path: Path,
     output: Path,
