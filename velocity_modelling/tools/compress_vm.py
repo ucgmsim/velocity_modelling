@@ -51,8 +51,7 @@ def compress_quality(file: h5py.File, quality: str) -> xr.DataArray:
         and minimum value, respectively.
     """
     quality_array = file["properties"][quality]
-    shape = quality_array.shape
-    (nz, ny, nx) = shape
+    shape = (nz, ny, nx) = quality_array.shape
     quantised_array = np.zeros(shape, dtype=np.uint8)
     int_max = np.iinfo(np.uint8).max
     min, max = get_extrema(quality_array)
@@ -65,8 +64,7 @@ def compress_quality(file: h5py.File, quality: str) -> xr.DataArray:
         np.subtract(y_slice, min, out=y_slice)
         np.divide(y_slice, scale, out=y_slice)
         np.round(y_slice, out=y_slice)
-        y_slice_quantised = y_slice.astype(np.uint8)
-        quantised_array[:, i, :] = y_slice_quantised
+        quantised_array[:, i, :] = y_slice.astype(np.uint8)
 
     attrs = dict(quality_array.attrs)
     attrs["scale_factor"] = scale
