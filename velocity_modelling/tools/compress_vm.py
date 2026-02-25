@@ -27,7 +27,7 @@ def get_extrema(h5_dataset: h5py.Dataset) -> tuple[float, float]:
         (min, max) values for dataset.
     """
     min_v, max_v = np.inf, -np.inf
-    for chunk in range(h5_dataset.iter_chunks()):
+    for chunk in h5_dataset.iter_chunks():
         slice_data = h5_dataset[chunk]
         min_v = min(min_v, np.nanmin(slice_data))
         max_v = max(max_v, np.nanmax(slice_data))
@@ -71,7 +71,7 @@ def compress_quality(file: h5py.File, quality: str) -> xr.DataArray:
     attrs = dict(quality_array.attrs)
     attrs["scale_factor"] = scale
     attrs["add_offset"] = min
-    attrs["_FillValue"] = max
+    attrs["_FillValue"] = int_max
     z = np.arange(nz)
     y = np.arange(ny)
     x = np.arange(nx)
@@ -157,9 +157,9 @@ def compress_vm(
     vm_path: Path,
     output: Path,
     complevel: Annotated[int, typer.Option(min=1, max=19)] = 4,
-    chunk_x: Annotated[int | None, typer.Option(min=1)] = 64,
+    chunk_x: Annotated[int | None, typer.Option(min=1)] = 256,
     chunk_y: Annotated[int | None, typer.Option(min=1)] = 256,
-    chunk_z: Annotated[int | None, typer.Option(min=1)] = 256,
+    chunk_z: Annotated[int | None, typer.Option(min=1)] = 64,
     shuffle: bool = True,
 ) -> None:
     """Compress a velocity model for archival storage.
@@ -183,16 +183,18 @@ def compress_vm(
     """
     with h5py.File(vm_path) as vm:
         dset = compressed_vm_as_dataset(vm)
-
+    nz = dset.sizes['z']
+    ny = dset.sizes['y']
+    nx = dset.sizes['x']
     common_options = dict(
         dtype="uint8",
         zlib=True,
         complevel=complevel,
         shuffle=shuffle,
         chunksizes=(
-            chunk_z or dset.sizes["z"],
-            chunk_y or dset.sizes["y"],
-            chunk_x or dset.sizes["x"],
+            min(chunk_z or nz, nz),
+            min(chunk_y or ny, ny),
+            min(chunk_x or nx, nx),
         ),
     )
 
