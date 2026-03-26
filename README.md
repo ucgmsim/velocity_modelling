@@ -2,6 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![DOI](https://zenodo.org/badge/801819829.svg)](https://doi.org/10.5281/zenodo.19228320)
 
 This repository contains the **code** for generating and working with the NZ Community Velocity Model (NZCVM). The NZCVM provides detailed 3D representations of New Zealand's subsurface velocity structure for seismic hazard analysis and earthquake engineering.
 
