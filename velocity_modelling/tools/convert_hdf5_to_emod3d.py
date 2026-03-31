@@ -50,6 +50,21 @@ def _convert_dataset(
     Opens its own h5py.File handle with locking=False so that multiple
     threads can read concurrently without HDF5 file-locking conflicts,
     which is important on HPC parallel filesystems (Lustre/GPFS).
+
+    Parameters
+    ----------
+    src_h5 : Path
+        Path to the source HDF5 file.
+    dataset_path : str
+        Internal HDF5 path to the dataset to convert (e.g. ``/properties/vp``).
+    out_file : Path
+        Path to the binary output file to write.
+    ny : int
+        Number of grid points in the y (latitude) direction.
+    nz : int
+        Number of grid points in the z (depth) direction.
+    nx : int
+        Number of grid points in the x (longitude) direction.
     """
     z_values = slice(nz)
     x_values = slice(nx)
