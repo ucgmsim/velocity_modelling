@@ -151,7 +151,7 @@ def convert_hdf5_to_emod3d(
                 _convert_dataset, src_h5, dset_path, out_file, ny, nz, nx,
                 show_progress = (i == 0), # show_progress only for the first dataset
             ): dset_path
-            for im, (dset_path, out_file) in enumerate(files.items())
+            for i, (dset_path, out_file) in enumerate(files.items())
         }
         for future in futures:
             future.result()
