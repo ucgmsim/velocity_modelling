@@ -24,7 +24,7 @@ written by a parallel process moments before.
 """
 
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Annotated
 
@@ -138,23 +138,42 @@ def convert_hdf5_to_emod3d(
         "/properties/inbasin": out_dir / "in_basin_mask.b",
     }
 
-    for filepath in files.values():
-        filepath.unlink(missing_ok=True)
+    # Write to temp files first; rename to final paths only on full success so
+    # the output directory is never left in a partially-written state.
+    tmp_files = {dset: out.with_suffix(out.suffix + ".tmp") for dset, out in files.items()}
+    for tmp in tmp_files.values():
+        tmp.unlink(missing_ok=True)
 
-    with h5py.File(src_h5, "r", locking=False) as f:
-        nz, ny, nx = f["/properties/vp"].shape
+    with h5py.File(src_h5, "r", locking=False) as hf:
+        nz, ny, nx = hf["/properties/vp"].shape
 
     # Only the first dataset (vp) shows a progress bar; the others run silently.
+    first_exc: BaseException | None = None
     with ThreadPoolExecutor(max_workers=4) as executor:
         futures = {
             executor.submit(
-                _convert_dataset, src_h5, dset_path, out_file, ny, nz, nx,
+                _convert_dataset, src_h5, dset_path, tmp_files[dset_path], ny, nz, nx,
                 show_progress = (i == 0), # show_progress only for the first dataset
             ): dset_path
-            for i, (dset_path, out_file) in enumerate(files.items())
+            for i, dset_path in enumerate(files)
         }
-        for future in futures:
-            future.result()
+        for fut in as_completed(futures):
+            exc = fut.exception()
+            if exc is not None and first_exc is None:
+                first_exc = exc
+                # Cancel any futures that have not started yet.
+                for pending in futures:
+                    pending.cancel()
+
+    if first_exc is not None:
+        # Remove any temp files that were (partially) written before the failure.
+        for tmp in tmp_files.values():
+            tmp.unlink(missing_ok=True)
+        raise first_exc
+
+    # All threads succeeded: atomically promote temp files to their final paths.
+    for dset, out_file in files.items():
+        tmp_files[dset].replace(out_file)
 
     end_time = time.time()
     processing_time = end_time - start_time
