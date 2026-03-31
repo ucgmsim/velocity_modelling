@@ -8,6 +8,28 @@ format expected by EMOD3D, producing the same output files as emod3d.py:
 - vs3dfile.s (S-wave velocities)
 - rho3dfile.d (densities)
 - in_basin_mask.b (basin membership mask)
+
+Parallelisation
+---------------
+The four output datasets (vp, vs, rho, inbasin) are written concurrently using a
+``ThreadPoolExecutor(max_workers=4)``.  Threads are used rather than processes
+because the bottleneck is I/O (reading from HDF5 and writing binary files), not
+CPU computation, so the GIL is not a limiting factor.
+
+Each thread opens its own independent ``h5py.File`` handle with ``locking=False``.
+This is both thread-safe (no shared file handle) and avoids the stale-lock errors
+that HDF5 can raise on HPC parallel filesystems (Lustre/GPFS) when the file was
+written by a parallel process moments before.
+
+Behaviour with fewer than 4 CPU cores
+--------------------------------------
+``max_workers=4`` is the number of concurrent *threads*, not processes, so it is
+not constrained by the physical CPU core count.  On a single-core machine the
+operating system will interleave the four threads, and because each thread spends
+most of its time waiting for I/O the overall wall-clock time will still be
+significantly shorter than the equivalent sequential conversion.  In practice, the
+speedup is limited by storage bandwidth rather than core count, so four threads
+remain a sensible default even on low-core-count machines.
 """
 
 import time
