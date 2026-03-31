@@ -18,6 +18,7 @@ from typing import Annotated
 import h5py
 import numpy as np
 import typer
+from tqdm import tqdm
 
 from qcore import cli
 
@@ -31,12 +32,28 @@ def _convert_dataset(
     ny: int,
     nz: int,
     nx: int,
+    show_progress: bool = False,
 ) -> None:
     """Convert a single HDF5 dataset to a binary output file.
 
     Opens its own h5py.File handle with locking=False so that multiple
     threads can read concurrently without HDF5 file-locking conflicts,
     which is important on HPC parallel filesystems (Lustre/GPFS).
+
+    Parameters
+    ----------
+    src_h5: Path
+        Path to HDF5 dataset to convert.
+    dataset_path: Path
+        Path to output file.
+    ny: int
+        Number of points in each dimension.
+    nz: int
+        Number of points in each dimension.
+    nx: int
+        Number of points in each dimension.
+    show_progress: bool, optional, default: False
+        Show progress bar if True.
     """
     z_values = slice(nz)
     x_values = slice(nx)
@@ -46,7 +63,8 @@ def _convert_dataset(
         open(out_file, "wb") as out,
     ):
         dset = f[dataset_path]
-        for j in range(ny):
+        y_iter = tqdm(range(ny), desc="Converting y-slices", unit="slice") if show_progress else range(ny)
+        for j in y_iter:
             dset.read_direct(buffer, (z_values, j, x_values))
             out.write(buffer.astype(np.float32).tobytes())
 
@@ -111,12 +129,14 @@ def convert_hdf5_to_emod3d(
     with h5py.File(src_h5, "r", locking=False) as f:
         nz, ny, nx = f["/properties/vp"].shape
 
+    # Only the first dataset (vp) shows a progress bar; the others run silently.
     with ThreadPoolExecutor(max_workers=4) as executor:
         futures = {
             executor.submit(
-                _convert_dataset, src_h5, dset_path, out_file, ny, nz, nx
+                _convert_dataset, src_h5, dset_path, out_file, ny, nz, nx,
+                show_progress = (i == 0), # show_progress only for the first dataset
             ): dset_path
-            for dset_path, out_file in files.items()
+            for im, (dset_path, out_file) in enumerate(files.items())
         }
         for future in futures:
             future.result()
