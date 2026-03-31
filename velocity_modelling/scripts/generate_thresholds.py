@@ -7,8 +7,8 @@ for station locations using the NZCVM Python implementation.
 This script provides a CLI wrapper around the core compute_station_thresholds() function
 from threshold.py. For programmatic access, import and use compute_station_thresholds() directly.
 
-Usage
------
+Examples
+--------
 Command line (default CSV format):
     python generate_thresholds.py locations.csv --model-version 2.07 --topo-type SQUASHED_TAPERED
 

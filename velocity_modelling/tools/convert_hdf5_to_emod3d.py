@@ -8,6 +8,19 @@ format expected by EMOD3D, producing the same output files as emod3d.py:
 - vs3dfile.s (S-wave velocities)
 - rho3dfile.d (densities)
 - in_basin_mask.b (basin membership mask)
+
+Parallelisation
+---------------
+The four output datasets (vp, vs, rho, inbasin) are written concurrently using a
+``ThreadPoolExecutor(max_workers=4)``.  Threads are used rather than processes
+because the bottleneck is I/O (reading from HDF5 and writing binary files), not
+CPU computation, so the GIL is not a limiting factor.
+
+Each thread opens its own independent ``h5py.File`` handle with ``locking=False``.
+This is both thread-safe (no shared file handle) and avoids the stale-lock errors
+that HDF5 can raise on HPC parallel filesystems (Lustre/GPFS) when the file was
+written by a parallel process moments before.
+
 """
 
 import time
@@ -42,18 +55,20 @@ def _convert_dataset(
 
     Parameters
     ----------
-    src_h5: Path
-        Path to HDF5 dataset to convert.
-    dataset_path: Path
-        Path to output file.
-    ny: int
-        Number of points in each dimension.
-    nz: int
-        Number of points in each dimension.
-    nx: int
-        Number of points in each dimension.
-    show_progress: bool, optional, default: False
-        Show progress bar if True.
+    src_h5 : Path
+        Path to the source HDF5 file.
+    dataset_path : str
+        Internal HDF5 path to the dataset to convert (e.g. ``/properties/vp``).
+    out_file : Path
+        Path to the binary output file to write.
+    ny : int
+        Number of grid points in the y (latitude) direction.
+    nz : int
+        Number of grid points in the z (depth) direction.
+    nx : int
+        Number of grid points in the x (longitude) direction.
+    show_progress : bool, optional
+        Whether to show a progress bar for the y-slices. Default is False.
     """
     z_values = slice(nz)
     x_values = slice(nx)

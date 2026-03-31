@@ -11,8 +11,8 @@ This module provides:
 - Core computation function for batch threshold calculation
 - File writing utilities
 
-Usage Examples
---------------
+Examples
+--------
 
 Example 1: Basic usage with default parameters (Z1.0 and Z2.5)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
