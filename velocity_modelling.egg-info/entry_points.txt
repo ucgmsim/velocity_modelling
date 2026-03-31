@@ -1,9 +1,0 @@
-[console_scripts]
-compress-vm = velocity_modelling.tools.compress_vm:app
-convert_hdf5_to_emod3d = velocity_modelling.tools.convert_hdf5_to_emod3d:app
-extract_cross_section = velocity_modelling.scripts.extract_cross_section:app
-generate_1d_profiles = velocity_modelling.scripts.generate_1d_profiles:app
-generate_3d_model = velocity_modelling.scripts.generate_3d_model:app
-generate_thresholds = velocity_modelling.scripts.generate_thresholds:app
-hdf5-to-emod3d = velocity_modelling.tools.convert_hdf5_to_emod3d:app
-nzcvm-data-helper = velocity_modelling.data_helper:app
