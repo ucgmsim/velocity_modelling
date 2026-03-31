@@ -11,17 +11,44 @@ format expected by EMOD3D, producing the same output files as emod3d.py:
 """
 
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Annotated
 
 import h5py
 import numpy as np
 import typer
-from tqdm import tqdm
 
 from qcore import cli
 
 app = typer.Typer(pretty_exceptions_enable=False)
+
+
+def _convert_dataset(
+    src_h5: Path,
+    dataset_path: str,
+    out_file: Path,
+    ny: int,
+    nz: int,
+    nx: int,
+) -> None:
+    """Convert a single HDF5 dataset to a binary output file.
+
+    Opens its own h5py.File handle with locking=False so that multiple
+    threads can read concurrently without HDF5 file-locking conflicts,
+    which is important on HPC parallel filesystems (Lustre/GPFS).
+    """
+    z_values = slice(nz)
+    x_values = slice(nx)
+    buffer = np.empty((nz, nx), dtype=np.float32)
+    with (
+        h5py.File(src_h5, "r", locking=False) as f,
+        open(out_file, "wb") as out,
+    ):
+        dset = f[dataset_path]
+        for j in range(ny):
+            dset.read_direct(buffer, (z_values, j, x_values))
+            out.write(buffer.astype(np.float32).tobytes())
 
 
 def convert_hdf5_to_emod3d(
@@ -71,55 +98,35 @@ def convert_hdf5_to_emod3d(
 
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    vp3dfile = out_dir / "vp3dfile.p"
-    vs3dfile = out_dir / "vs3dfile.s"
-    rho3dfile = out_dir / "rho3dfile.d"
-    in_basin_mask_file = out_dir / "in_basin_mask.b"
+    files = {
+        "/properties/vp": out_dir / "vp3dfile.p",
+        "/properties/vs": out_dir / "vs3dfile.s",
+        "/properties/rho": out_dir / "rho3dfile.d",
+        "/properties/inbasin": out_dir / "in_basin_mask.b",
+    }
 
-    for filepath in [vp3dfile, vs3dfile, rho3dfile, in_basin_mask_file]:
+    for filepath in files.values():
         filepath.unlink(missing_ok=True)
 
-    with (
-        open(vp3dfile, "wb") as fvp,
-        open(vs3dfile, "wb") as fvs,
-        open(rho3dfile, "wb") as frho,
-        open(in_basin_mask_file, "wb") as fmask,
-        h5py.File(src_h5, "r") as f,
-    ):
-        # Read data arrays - HDF5 format is (nz, ny, nx)
-        vp_full = f["/properties/vp"]  # (nz, ny, nx)
-        vs_full = f["/properties/vs"]  # (nz, ny, nx)
-        rho_full = f["/properties/rho"]  # (nz, ny, nx)
-        inbasin_full = f["/properties/inbasin"]  # (nz, ny, nx)
+    with h5py.File(src_h5, "r", locking=False) as f:
+        nz, ny, nx = f["/properties/vp"].shape
 
-        nz, ny, nx = vp_full.shape
-
-        dsets = [vp_full, vs_full, rho_full, inbasin_full]
-
-        buffer = np.empty((nz, nx), dtype=np.float32)
-
-        files = [fvp, fvs, frho, fmask]
-        z_values = slice(nz)
-        x_values = slice(nx)
-
-        for j in tqdm(range(ny), desc="Processing y-slices", unit="slice"):
-            for dset, outp in zip(dsets, files):
-                # This directly reads into the y-slice buffer without
-                # creating an intermediate array. Due to the way the
-                # HDF5 file is chunked, I believe you *could* just
-                # slice the dataset directly but to be sure this
-                # avoids any possible intermediate array creation.
-                dset.read_direct(buffer, (z_values, j, x_values))
-                outp.write(buffer.astype(np.float32).tobytes())
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = {
+            executor.submit(
+                _convert_dataset, src_h5, dset_path, out_file, ny, nz, nx
+            ): dset_path
+            for dset_path, out_file in files.items()
+        }
+        for future in futures:
+            future.result()
 
     end_time = time.time()
     processing_time = end_time - start_time
 
     print("✅ Conversion complete!")
-    print(f"   Created: {vp3dfile}")
-    print(f"   Created: {vs3dfile}")
-    print(f"   Created: {rho3dfile}")
-    print(f"   Created: {in_basin_mask_file}")
+    for filepath in files.values():
+        print(f"   Created: {filepath}")
     print(f"   Processing time: {processing_time:.2f} seconds")
 
 
