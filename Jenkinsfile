@@ -103,7 +103,7 @@ pipeline {
                         sh """
                             source ~/.local/bin/env sh
                             cd ${env.WORKSPACE}
-                            uv venv
+                            uv venv --clear
                             source .venv/bin/activate
                             uv pip install -e .
                         """
