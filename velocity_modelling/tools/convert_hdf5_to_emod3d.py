@@ -81,7 +81,7 @@ def _convert_dataset(
         y_iter = tqdm(range(ny), desc="Converting y-slices", unit="slice") if show_progress else range(ny)
         for j in y_iter:
             dset.read_direct(buffer, (z_values, j, x_values))
-            out.write(buffer.astype(np.float32).tobytes())
+            out.write(buffer.tobytes())
 
 
 def convert_hdf5_to_emod3d(
