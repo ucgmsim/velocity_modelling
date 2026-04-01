@@ -8,9 +8,23 @@ format expected by EMOD3D, producing the same output files as emod3d.py:
 - vs3dfile.s (S-wave velocities)
 - rho3dfile.d (densities)
 - in_basin_mask.b (basin membership mask)
+
+Parallelisation
+---------------
+The four output datasets (vp, vs, rho, inbasin) are written concurrently using a
+``ThreadPoolExecutor(max_workers=4)``.  Threads are used rather than processes
+because the bottleneck is I/O (reading from HDF5 and writing binary files), not
+CPU computation, so the GIL is not a limiting factor.
+
+Each thread opens its own independent ``h5py.File`` handle with ``locking=False``.
+This is both thread-safe (no shared file handle) and avoids the stale-lock errors
+that HDF5 can raise on HPC parallel filesystems (Lustre/GPFS) when the file was
+written by a parallel process moments before.
+
 """
 
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Annotated
 
@@ -22,6 +36,52 @@ from tqdm import tqdm
 from qcore import cli
 
 app = typer.Typer(pretty_exceptions_enable=False)
+
+
+def _convert_dataset(
+    src_h5: Path,
+    dataset_path: str,
+    out_file: Path,
+    ny: int,
+    nz: int,
+    nx: int,
+    show_progress: bool = False,
+) -> None:
+    """Convert a single HDF5 dataset to a binary output file.
+
+    Opens its own h5py.File handle with locking=False so that multiple
+    threads can read concurrently without HDF5 file-locking conflicts,
+    which is important on HPC parallel filesystems (Lustre/GPFS).
+
+    Parameters
+    ----------
+    src_h5 : Path
+        Path to the source HDF5 file.
+    dataset_path : str
+        Internal HDF5 path to the dataset to convert (e.g. ``/properties/vp``).
+    out_file : Path
+        Path to the binary output file to write.
+    ny : int
+        Number of grid points in the y (latitude) direction.
+    nz : int
+        Number of grid points in the z (depth) direction.
+    nx : int
+        Number of grid points in the x (longitude) direction.
+    show_progress : bool, optional
+        Whether to show a progress bar for the y-slices. Default is False.
+    """
+    z_values = slice(nz)
+    x_values = slice(nx)
+    buffer = np.empty((nz, nx), dtype=np.float32)
+    with (
+        h5py.File(src_h5, "r", locking=False) as f,
+        open(out_file, "wb") as out,
+    ):
+        dset = f[dataset_path]
+        y_iter = tqdm(range(ny), desc="Converting y-slices", unit="slice") if show_progress else range(ny)
+        for j in y_iter:
+            dset.read_direct(buffer, (z_values, j, x_values))
+            out.write(buffer.tobytes())
 
 
 def convert_hdf5_to_emod3d(
@@ -71,55 +131,56 @@ def convert_hdf5_to_emod3d(
 
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    vp3dfile = out_dir / "vp3dfile.p"
-    vs3dfile = out_dir / "vs3dfile.s"
-    rho3dfile = out_dir / "rho3dfile.d"
-    in_basin_mask_file = out_dir / "in_basin_mask.b"
+    files = {
+        "/properties/vp": out_dir / "vp3dfile.p",
+        "/properties/vs": out_dir / "vs3dfile.s",
+        "/properties/rho": out_dir / "rho3dfile.d",
+        "/properties/inbasin": out_dir / "in_basin_mask.b",
+    }
 
-    for filepath in [vp3dfile, vs3dfile, rho3dfile, in_basin_mask_file]:
-        filepath.unlink(missing_ok=True)
+    # Write to temp files first; rename to final paths only on full success so
+    # the output directory is never left in a partially-written state.
+    tmp_files = {dset: out.with_suffix(out.suffix + ".tmp") for dset, out in files.items()}
+    for tmp in tmp_files.values():
+        tmp.unlink(missing_ok=True)
 
-    with (
-        open(vp3dfile, "wb") as fvp,
-        open(vs3dfile, "wb") as fvs,
-        open(rho3dfile, "wb") as frho,
-        open(in_basin_mask_file, "wb") as fmask,
-        h5py.File(src_h5, "r") as f,
-    ):
-        # Read data arrays - HDF5 format is (nz, ny, nx)
-        vp_full = f["/properties/vp"]  # (nz, ny, nx)
-        vs_full = f["/properties/vs"]  # (nz, ny, nx)
-        rho_full = f["/properties/rho"]  # (nz, ny, nx)
-        inbasin_full = f["/properties/inbasin"]  # (nz, ny, nx)
+    with h5py.File(src_h5, "r", locking=False) as hf:
+        nz, ny, nx = hf["/properties/vp"].shape
 
-        nz, ny, nx = vp_full.shape
+    # Only the first dataset (vp) shows a progress bar; the others run silently.
+    first_exc: BaseException | None = None
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = {
+            executor.submit(
+                _convert_dataset, src_h5, dset_path, tmp_files[dset_path], ny, nz, nx,
+                show_progress = (i == 0), # show_progress only for the first dataset
+            ): dset_path
+            for i, dset_path in enumerate(files)
+        }
+        for fut in as_completed(futures):
+            exc = fut.exception()
+            if exc is not None and first_exc is None:
+                first_exc = exc
+                # Cancel any futures that have not started yet.
+                for pending in futures:
+                    pending.cancel()
 
-        dsets = [vp_full, vs_full, rho_full, inbasin_full]
+    if first_exc is not None:
+        # Remove any temp files that were (partially) written before the failure.
+        for tmp in tmp_files.values():
+            tmp.unlink(missing_ok=True)
+        raise first_exc
 
-        buffer = np.empty((nz, nx), dtype=np.float32)
-
-        files = [fvp, fvs, frho, fmask]
-        z_values = slice(nz)
-        x_values = slice(nx)
-
-        for j in tqdm(range(ny), desc="Processing y-slices", unit="slice"):
-            for dset, outp in zip(dsets, files):
-                # This directly reads into the y-slice buffer without
-                # creating an intermediate array. Due to the way the
-                # HDF5 file is chunked, I believe you *could* just
-                # slice the dataset directly but to be sure this
-                # avoids any possible intermediate array creation.
-                dset.read_direct(buffer, (z_values, j, x_values))
-                outp.write(buffer.astype(np.float32).tobytes())
+    # All threads succeeded: atomically promote temp files to their final paths.
+    for dset, out_file in files.items():
+        tmp_files[dset].replace(out_file)
 
     end_time = time.time()
     processing_time = end_time - start_time
 
     print("✅ Conversion complete!")
-    print(f"   Created: {vp3dfile}")
-    print(f"   Created: {vs3dfile}")
-    print(f"   Created: {rho3dfile}")
-    print(f"   Created: {in_basin_mask_file}")
+    for filepath in files.values():
+        print(f"   Created: {filepath}")
     print(f"   Processing time: {processing_time:.2f} seconds")
 
 
