@@ -5,11 +5,13 @@ on:
     types: [opened, synchronize, reopened]
 
 permissions:
+  contents: read
   pull-requests: write
   issues: write
 
 jobs:
   review:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: self-hosted
     steps:
       - name: Checkout code
@@ -321,6 +323,7 @@ jobs:
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   pull_number: context.issue.number,
+                  commit_id: context.payload.pull_request.head.sha,
                   body: `## 🤖 AI Code Review (${model})`,
                   event: 'COMMENT',
                   comments: reviewComments
@@ -335,6 +338,7 @@ jobs:
                       owner: context.repo.owner,
                       repo: context.repo.repo,
                       pull_number: context.issue.number,
+                      commit_id: context.payload.pull_request.head.sha,
                       body: comment.body,
                       path: comment.path,
                       line: comment.line,
