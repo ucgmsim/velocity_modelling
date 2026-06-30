@@ -6,6 +6,6 @@ on:
 
 jobs:
   call-review:
-    uses: ucgmsim/ollama_pr_review/.github/workflows/pr-review.yml@main
+    uses: ucgmsim/ollama_pr_review/.github/workflows/pr-review.yml@@v1.0.0
     secrets:
       OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
