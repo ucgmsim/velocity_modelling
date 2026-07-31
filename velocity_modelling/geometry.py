@@ -1092,7 +1092,7 @@ def gen_full_model_grid_great_circle(
     # Use adding 0.5 then casting with int() to achieve round-half-up behavior, which matches the intended calculation method.
     nx_expected = int(xmax / h_lat_lon + 0.5)
     ny_expected = int(ymax / h_lat_lon + 0.5)
-    nz_expected = int((zmax - zmin) / h_depth + 0.5)
+    nz_expected = int((zmax - zmin) / h_depth + 0.5) + 1
 
     if nx != nx_expected:
         raise ValueError(
@@ -1126,8 +1126,8 @@ def gen_full_model_grid_great_circle(
     global_mesh.x = 0.5 * h_lat_lon + h_lat_lon * np.arange(nx) - 0.5 * xmax
 
     global_mesh.y = 0.5 * h_lat_lon + h_lat_lon * np.arange(ny) - 0.5 * ymax
-
-    global_mesh.z = -1000 * (0.5 * h_depth + h_depth * np.arange(nz) + zmin)
+    global_mesh.z = -1000.0 * (h_depth * np.arange(nz) + zmin)
+    global_mesh.z[0] -= h_depth / 4 * 1000.0
 
     arg = origin_rot * RPERD
     cos_a = np.cos(arg)

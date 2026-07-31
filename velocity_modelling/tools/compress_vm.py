@@ -134,6 +134,7 @@ def compressed_vm_as_dataset(file: h5py.File) -> xr.Dataset:
     z_resolution = float(file["config"].attrs["h_depth"])
     nz = compressed_vp.shape[0]
     z = np.arange(nz) * z_resolution
+    z[0] += z_resolution / 4
 
     ds = xr.Dataset(
         {
@@ -183,9 +184,9 @@ def compress_vm(
     """
     with h5py.File(vm_path) as vm:
         dset = compressed_vm_as_dataset(vm)
-    nz = dset.sizes['z']
-    ny = dset.sizes['y']
-    nx = dset.sizes['x']
+    nz = dset.sizes["z"]
+    ny = dset.sizes["y"]
+    nx = dset.sizes["x"]
     common_options = dict(
         dtype="uint8",
         zlib=True,
