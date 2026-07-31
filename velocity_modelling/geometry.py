@@ -1092,7 +1092,7 @@ def gen_full_model_grid_great_circle(
     # Use adding 0.5 then casting with int() to achieve round-half-up behavior, which matches the intended calculation method.
     nx_expected = int(xmax / h_lat_lon + 0.5)
     ny_expected = int(ymax / h_lat_lon + 0.5)
-    nz_expected = int((zmax - zmin) / h_depth + 0.5)
+    nz_expected = int((zmax - zmin) / h_depth + 0.5) + 1
 
     if nx != nx_expected:
         raise ValueError(
