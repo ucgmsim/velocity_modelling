@@ -209,10 +209,11 @@ def write_profiles(
                 if i == mesh_vector.nz - 1:
                     delta_depth = LAST_LAYER_DEPTH
                 elif i == 0:
-                    delta_depth = (
-                        4 * mesh_vector.z[i]
-                    )  # HACK: assuming that the first mesh vector is sampled at dz/4
+                    delta_depth = -vm_params["h_depth"] * 1000.0
                     dep_bot = delta_depth
+                elif i == 1:
+                    delta_depth = -vm_params["h_depth"] * 1000.0
+                    dep_bot += delta_depth
                 else:
                     delta_depth = mesh_vector.z[i] - mesh_vector.z[i - 1]
                     dep_bot += delta_depth
@@ -580,9 +581,8 @@ def generate_1d_profiles(
             model_extent["extent_zmax"] = max(depth_values)
             model_extent["h_depth"] = 1.0  # Placeholder, as actual depths are set later
         else:
-            spacing_offset = 0.5
-            model_extent["extent_zmin"] = zmins[i] - spacing_offset * spacings[i]
-            model_extent["extent_zmax"] = zmaxs[i] + spacing_offset * spacings[i]
+            model_extent["extent_zmin"] = zmins[i]
+            model_extent["extent_zmax"] = zmaxs[i]
             model_extent["h_depth"] = spacings[i]
 
         model_extent["nx"] = int(
