@@ -320,9 +320,9 @@ def compute_vs_average(
     >>> vs_avg = compute_vs_average(mesh, qualities)
     >>> print(f"VS30: {vs_avg:.3f} km/s")
     """
-    vs_sum = np.trapezoid(
-        1.0 / qualities_vector.vs, -partial_global_mesh.z
-    )  # negative sign converts elevation to depth
+    depth = -partial_global_mesh.z  # negative sign converts elevation to depth
+    inv_vs = 1.0 / qualities_vector.vs
+    vs_sum = np.trapezoid(np.r_[inv_vs[0], inv_vs], np.r_[0.0, depth])
 
     # Total depth in meters (z values are negative, so we negate)
     total_depth = -partial_global_mesh.z[partial_global_mesh.nz - 1]
