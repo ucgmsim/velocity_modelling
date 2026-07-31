@@ -203,22 +203,18 @@ def write_profiles(
         file_path = profiles_dir / f"{profile_id}.1d"
         with file_path.open("w") as f:
             f.write(f"{mesh_vector.nz}\n")
-            dep_bot = 0.0
+            dep_top = 0.0
             for i in range(mesh_vector.nz):
                 vs = max(qualities_vector.vs[i], vm_params["min_vs"])
                 if i == mesh_vector.nz - 1:
-                    delta_depth = LAST_LAYER_DEPTH
-                elif i == 0:
-                    delta_depth = -vm_params["h_depth"] * 1000.0 / 2
-                    dep_bot = delta_depth
+                    dep_bot = LAST_LAYER_DEPTH
                 else:
-                    delta_depth = -vm_params["h_depth"] * 1000.0
-                    dep_bot += delta_depth
+                    dep_bot = mesh_vector.z[i + 1]
                 qs = 41.0 + 34.0 * vs  # Graves and Pitarka (2010)
                 qp = 2.0 * qs  # We usually assume Qp = 2 * Qs
-
+                thickness = abs(dep_bot - dep_top)
                 f.write(
-                    f"{-delta_depth / 1000:.3f} \t {qualities_vector.vp[i]:.3f} \t "
+                    f"{thickness / 1000:.3f} \t {qualities_vector.vp[i]:.3f} \t "
                     f"{vs:.3f} \t {qualities_vector.rho[i]:.3f} \t "
                     f"{qp:.3f} \t {qs:.3f}\n"
                 )
