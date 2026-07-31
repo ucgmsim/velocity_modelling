@@ -193,9 +193,26 @@ def parse_nzcvm_config(config_path: Path, logger: Logger | None = None) -> dict:
 
         vm_params["nx"] = int(vm_params["extent_x"] / vm_params["h_lat_lon"] + 0.5)
         vm_params["ny"] = int(vm_params["extent_y"] / vm_params["h_lat_lon"] + 0.5)
-        vm_params["nz"] = int(
-            (vm_params["extent_zmax"] - vm_params["extent_zmin"]) / vm_params["h_depth"]
-            + 0.5
+        #
+        vm_params["nz"] = (
+            int(
+                (vm_params["extent_zmax"] - vm_params["extent_zmin"])
+                / vm_params["h_depth"]
+                + 0.5
+            )
+            + 1  # Padding row: EMOD3D does not read the last layer of the velocity model so we generate an extra one to compensate.
+            # From genmodel.c:
+            # shft = 0;
+            # if(fs)      /* shift model down one grid point for free surface */
+            #    shft = 1;
+            # for(iz=nz-1;iz>=1;iz--) // note index pointer
+            #    {
+            #    for(ix=0;ix<nx;ix++)
+            #       {
+            #       i = iz*nx + ix;
+            #       ip = (iz-shft)*nx + ix; // shft = 1 means that that we are never reading the nz - 1 layer. When iz = nz - 1, iz - shft = *nz - 2*.
+            #       lam2mu[i] = a[ip]*a[ip]*rho[ip];   // a/b/rho are the raw pmodfile/smodfile/dmodfile buffers
+            #       ...
         )
 
     except FileNotFoundError:
