@@ -224,7 +224,11 @@ class MeshVector:
 
 @njit
 def point_on_vertex(
-    boundary_lats: np.ndarray, boundary_lons: np.ndarray, lat: float, lon: float
+    boundary_lats: np.ndarray,
+    boundary_lons: np.ndarray,
+    lat: float,
+    lon: float,
+    tol: float = 1e-07,
 ) -> bool:
     """
     Check if a point lies on a vertex of a basin boundary.
@@ -239,17 +243,20 @@ def point_on_vertex(
         Latitude of the point to check.
     lon : float
         Longitude of the point to check.
+    tol : float
+        Tolerance for floating point equality test, default: 1e-07
+
 
     Returns
     -------
     bool
-        True if the point matches a boundary vertex within tolerance (1e-07), otherwise False.
+        True if the point matches a boundary vertex within tolerance, otherwise False.
     """
     # Vectorized comparison using NumPy with tolerance
     lat_matches = (
-        np.abs(boundary_lats - lat) <= 1e-07
+        np.abs(boundary_lats - lat) <= tol
     )  # np.isclose is not supported by njit
-    lon_matches = np.abs(boundary_lons - lon) <= 1e-07
+    lon_matches = np.abs(boundary_lons - lon) <= tol
 
     matches = np.logical_and(lat_matches, lon_matches)
 
@@ -335,7 +342,9 @@ def find_edge_inds(
 
 
 @njit
-def find_corner_inds(lats: np.ndarray, lons: np.ndarray, lat: float, lon: float):
+def find_corner_inds(
+    lats: np.ndarray, lons: np.ndarray, lat: float, lon: float, tol: float = 1e-07
+):
     """
     Find the corner indices of the given latitude and longitude arrays.
 
@@ -349,6 +358,8 @@ def find_corner_inds(lats: np.ndarray, lons: np.ndarray, lat: float, lon: float)
         Latitude of the given point.
     lon : float
         Longitude of the given point.
+    tol : float
+        Tolerance for floating point equality test, default : 1e-07
 
     Returns
     -------
@@ -361,18 +372,18 @@ def find_corner_inds(lats: np.ndarray, lons: np.ndarray, lat: float, lon: float)
     nlat = len(lats)
     nlon = len(lons)
 
-    if np.abs(lat - lats[0]) <= 1e-07:
+    if np.abs(lat - lats[0]) <= tol:
         corner_lat_ind = 0
-    elif np.abs(lat - lats[-1]) <= 1e-07:
+    elif np.abs(lat - lats[-1]) <= tol:
         corner_lat_ind = nlat - 1
     else:
         raise ValueError(
             f"Point lies outside of surface bounds. Lat {lat} outside [{lats[0]} {lats[-1]}]"
         )
 
-    if np.abs(lon - lons[0]) <= 1e-07:
+    if np.abs(lon - lons[0]) <= tol:
         corner_lon_ind = 0
-    elif np.abs(lon - lons[-1]) <= 1e-07:
+    elif np.abs(lon - lons[-1]) <= tol:
         corner_lon_ind = nlon - 1
     else:
         raise ValueError(
@@ -384,7 +395,7 @@ def find_corner_inds(lats: np.ndarray, lons: np.ndarray, lat: float, lon: float)
 
 @njit
 def find_basin_adjacent_points_numba(
-    lats: np.ndarray, lons: np.ndarray, lat: float, lon: float
+    lats: np.ndarray, lons: np.ndarray, lat: float, lon: float, tol: float = 1e-07
 ) -> tuple[bool, np.ndarray, np.ndarray]:
     """
     Identify adjacent latitude/longitude indices for a given point in basin coordinates.
@@ -399,6 +410,9 @@ def find_basin_adjacent_points_numba(
         Target latitude for adjacency checks.
     lon : float
         Target longitude for adjacency checks.
+    tol : float
+        Tolerance for floating point equality test, default: 1e-7
+
 
     Returns
     -------
@@ -424,10 +438,11 @@ def find_basin_adjacent_points_numba(
     if 0 < lat_idx < len(lats):
         lat_ind[0] = lat_idx - 1
         lat_ind[1] = lat_idx
-    elif lat_idx == 0 and lats[0] == lat:
+
+    elif lat_idx == 0 and np.abs(lats[0] - lat) <= tol:
         lat_ind[0] = 0
         lat_ind[1] = 1
-    elif lat_idx == len(lats) and lats[-1] == lat:
+    elif lat_idx == len(lats) and np.abs(lats[-1] - lat) <= tol:
         lat_ind[0] = len(lats) - 1
         lat_ind[1] = len(lats)
 
@@ -441,10 +456,10 @@ def find_basin_adjacent_points_numba(
     if 0 < lon_idx < len(lons):
         lon_ind[0] = lon_idx - 1
         lon_ind[1] = lon_idx
-    elif lon_idx == 0 and lons[0] == lon:
+    elif lon_idx == 0 and np.abs(lons[0] - lon) <= tol:
         lon_ind[0] = 0
         lon_ind[1] = 1
-    elif lon_idx == len(lons) and lons[-1] == lon:
+    elif lon_idx == len(lons) and np.abs(lons[-1] - lon) <= tol:
         lon_ind[0] = len(lons) - 1
         lon_ind[1] = len(lons)
 

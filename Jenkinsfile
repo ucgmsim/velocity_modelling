@@ -103,7 +103,7 @@ pipeline {
                         sh """
                             source ~/.local/bin/env sh
                             cd ${env.WORKSPACE}
-                            uv venv
+                            uv venv --clear
                             source .venv/bin/activate
                             uv pip install -e .
                         """
@@ -151,6 +151,7 @@ pipeline {
                                     echo "Data verification passed, starting tests..."
                                     # Create the unique test output directory
                                     mkdir -p ${test_output_dir}
+                                    export PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 # disable auto-loading external pytest plugins in CI
                                     pytest -s tests/ --benchmark-dir /nzvm/benchmarks --nzvm-binary-path /nzvm/NZVM --data-root ${env.WORKSPACE}/velocity_modelling/nzcvm_data
                                 """
                             }

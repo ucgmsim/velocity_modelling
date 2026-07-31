@@ -33,6 +33,7 @@ dependencies = [
   "threadpoolctl>=3.3",
   "tqdm>=4.66",
   "typer>=0.19",
+  "xarray[io]>=2025.10.1",
 ]
 [project.optional-dependencies]
 test = [
@@ -58,6 +59,7 @@ generate_thresholds = "velocity_modelling.scripts.generate_thresholds:app"
 convert_hdf5_to_emod3d = "velocity_modelling.tools.convert_hdf5_to_emod3d:app"
 nzcvm-data-helper = "velocity_modelling.data_helper:app"
 hdf5-to-emod3d = "velocity_modelling.tools.convert_hdf5_to_emod3d:app"
+compress-vm = "velocity_modelling.tools.compress_vm:app"
 # Add more scripts as needed:
 # script_name = "module.path:app"
 
