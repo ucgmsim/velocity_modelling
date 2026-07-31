@@ -321,13 +321,7 @@ def compute_vs_average(
     >>> print(f"VS30: {vs_avg:.3f} km/s")
     """
     # Calculate dZ (spacing between depth points in meters)
-    dz = partial_global_mesh.z[0] - partial_global_mesh.z[1]
-
-    # Calculate time-averaged (harmonic mean) velocity
-    # Sum of (layer_thickness / layer_velocity)
-    vs_sum = 0.0
-    for j in range(partial_global_mesh.nz):
-        vs_sum += dz / qualities_vector.vs[j]
+    vs_sum = np.trapezoid(1.0 / qualities_vector.vs, partial_global_mesh.z)
 
     # Total depth in meters (z values are negative, so we negate)
     total_depth = -partial_global_mesh.z[partial_global_mesh.nz - 1]

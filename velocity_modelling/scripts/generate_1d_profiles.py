@@ -209,10 +209,12 @@ def write_profiles(
                 if i == mesh_vector.nz - 1:
                     delta_depth = LAST_LAYER_DEPTH
                 elif i == 0:
-                    delta_depth = 2 * mesh_vector.z[i]
+                    delta_depth = (
+                        4 * mesh_vector.z[i]
+                    )  # HACK: assuming that the first mesh vector is sampled at dz/4
                     dep_bot = delta_depth
                 else:
-                    delta_depth = 2 * (mesh_vector.z[i] - dep_bot)
+                    delta_depth = mesh_vector.z[i] - mesh_vector.z[i - 1]
                     dep_bot += delta_depth
                 qs = 41.0 + 34.0 * vs  # Graves and Pitarka (2010)
                 qp = 2.0 * qs  # We usually assume Qp = 2 * Qs

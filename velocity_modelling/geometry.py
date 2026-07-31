@@ -1111,8 +1111,8 @@ def gen_full_model_grid_great_circle(
     global_mesh.x = 0.5 * h_lat_lon + h_lat_lon * np.arange(nx) - 0.5 * xmax
 
     global_mesh.y = 0.5 * h_lat_lon + h_lat_lon * np.arange(ny) - 0.5 * ymax
-
-    global_mesh.z = -1000 * (0.5 * h_depth + h_depth * np.arange(nz) + zmin)
+    global_mesh.z = -1000.0 * (h_depth * np.arange(nz) + zmin)
+    global_mesh.z[0] += h_depth / 4 * 1000.0
 
     arg = origin_rot * RPERD
     cos_a = np.cos(arg)
