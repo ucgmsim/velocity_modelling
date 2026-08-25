@@ -20,7 +20,7 @@ pytest-repeat
 
 # Project dependencies
 numba
-qcore @ git+https://github.com/ucgmsim/qcore.git
+qcore @ git+https://github.com/ucgmsim/qcore.git@2672a3b
 pyyaml
 tqdm
 typer
