@@ -264,6 +264,55 @@ def point_on_vertex(
 
 
 @njit
+def is_inside_postgis(polygon: np.ndarray, point: tuple[float, float]) -> int:
+    """
+    Check whether a point lies inside a polygon, using PostGIS's winding-number test.
+
+    Copied from qcore.point_in_polygon, which qcore 2026.10 removed.
+
+    Parameters
+    ----------
+    polygon : np.ndarray
+        The polygon's vertices, e.g. [[x1, y1], [x2, y2], ...].
+    point : tuple[float, float]
+        The point to test, (x, y).
+
+    Returns
+    -------
+    int
+        0 if the point is outside the polygon, 1 if it is inside, 2 if it is on
+        the polygon's boundary.
+    """
+    length = len(polygon)
+    intersections = 0
+
+    dx2 = point[0] - polygon[0][0]
+    dy2 = point[1] - polygon[0][1]
+    jj = 1
+
+    while jj < length:
+        dx = dx2
+        dy = dy2
+        dx2 = point[0] - polygon[jj][0]
+        dy2 = point[1] - polygon[jj][1]
+
+        # Check if the point is on the polygon
+        F = (dx - dx2) * dy - dx * (dy - dy2)  # noqa: N806
+        if 0.0 == F and dx * dx2 <= 0 and dy * dy2 <= 0:
+            return 2
+
+        if (dy >= 0 > dy2) or (dy2 >= 0 > dy):
+            if F > 0:
+                intersections += 1
+            elif F < 0:
+                intersections -= 1
+
+        jj += 1
+
+    return 1 if intersections != 0 else 0
+
+
+@njit
 def find_edge_inds(
     lats: np.ndarray,
     lons: np.ndarray,

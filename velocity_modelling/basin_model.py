@@ -16,13 +16,13 @@ from pathlib import Path
 import numpy as np
 from numba import njit
 
-from qcore import point_in_polygon
 from velocity_modelling.geometry import (
     AdjacentPoints,
     GlobalMesh,
     MeshVector,
     PartialGlobalMesh,
     SmoothingBoundary,
+    is_inside_postgis,
     point_on_vertex,
 )
 from velocity_modelling.interpolate import (
@@ -128,7 +128,7 @@ def determine_basin_contains_lat_lon(
         lats = boundary[:, 1]
         lons = boundary[:, 0]
 
-        if point_in_polygon.is_inside_postgis(boundary, (lon, lat)) or point_on_vertex(
+        if is_inside_postgis(boundary, (lon, lat)) or point_on_vertex(
             lats, lons, lat, lon
         ):
             return True
