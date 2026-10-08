@@ -131,7 +131,7 @@ For detailed instructions, see [Extracting Cross-Sections](wiki/Extracting-Cross
 Computes velocity and depth threshold values (Vs30, Vs500, Z1.0, Z2.5) for station locations.
 
 ```bash
-generate_thresholds locations.csv --model-version 2.07 --threshold-type Z1.0 --threshold-type Z2.5 --topo-type SQUASHED_TAPERED --out-dir /path/to/output
+generate_thresholds locations.csv --model-version 2.07 --threshold-type 1.0 --threshold-type 2.5 --topo-type SQUASHED_TAPERED --out-dir /path/to/output
 ```
 
 Key features:
@@ -234,7 +234,7 @@ nzcvm-data-helper ensure
    echo "STATION_B,172.6,-43.6" >> locations.csv
    
    # Generate thresholds (with custom topography handling)
-   generate_thresholds locations.csv --model-version 2.07 --threshold-type Z1.0 --threshold-type Z2.5 --topo-type SQUASHED_TAPERED --out-dir /tmp/thresholds
+   generate_thresholds locations.csv --model-version 2.07 --threshold-type 1.0 --threshold-type 2.5 --topo-type SQUASHED_TAPERED --out-dir /tmp/thresholds
    
    # Or use legacy station file format (lon lat name)
    echo "172.5 -43.5 STATION_A" > stations.txt

@@ -599,7 +599,7 @@ def compute_station_thresholds(
 
         nx = 1
         ny = 1
-        nz = int((zmax - zmin) / h_depth + 0.5)
+        nz = int((zmax - zmin) / h_depth + 0.5) +1
 
         vm_params_template["nx"] = nx
         vm_params_template["ny"] = ny
