@@ -14,7 +14,15 @@ name = "velocity_modelling"
 authors = [{ name = "ucgmsim" }]
 description = "Velocity modelling library"
 readme = "README.md"
-requires-python = ">=3.11"
+# Python 3.15 is blocked by h5py (used directly and through h5netcdf).
+# h5py has no cp315 wheels on PyPI yet (they are expected with h5py 3.17,
+# see https://github.com/h5py/h5py/issues/2972), and building it from the
+# sdist needs a system HDF5.
+# Lift the cap once h5py ships cp315 wheels. When lifting it, also:
+#   - relax pandas<3.0 below: pandas 2.x has no cp315 wheels (3.0.6 does);
+#   - add a numba line for python_version >= '3.15' (numba 0.68 ships cp315),
+#     otherwise numba is not installed on 3.15 at all.
+requires-python = ">=3.11,<3.15"
 dynamic = ["version"]
 dependencies = [
   "cartopy>=0.23",
